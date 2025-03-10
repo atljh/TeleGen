@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: bot  # Використовуємо стадію для бота
     container_name: telegram_content_bot
     restart: always
     env_file:
@@ -13,7 +14,7 @@ services:
       - db
       - redis
     volumes:
-      - ./app:/app
+      - ./bot:/bot
     command: ["python", "main.py"]
 
   db:
@@ -25,7 +26,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
   redis:
     image: redis:7
@@ -34,12 +39,13 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - ./redis_data:/data
 
-  admin:
+  admin_panel:
     build:
-      context: ./admin
+      context: .
       dockerfile: Dockerfile
+      target: admin_panel  # Використовуємо стадію для адмінки
     container_name: telegram_bot_admin
     restart: always
     env_file:
@@ -49,7 +55,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./admin:/admin
+      - ./admin_panel:/admin_panel
     command: ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
 
 volumes:

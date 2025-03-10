@@ -1,0 +1,44 @@
+DOCKER_COMPOSE = docker-compose
+MANAGE = docker-compose exec admin python manage.py
+
+.PHONY: up down build restart logs clean migrate superuser test
+
+up:
+	$(DOCKER_COMPOSE) up --build -d
+
+down:
+	$(DOCKER_COMPOSE) down
+
+restart:
+	$(DOCKER_COMPOSE) down
+	$(DOCKER_COMPOSE) up --build -d
+
+build:
+	$(DOCKER_COMPOSE) build
+
+logs:
+	$(DOCKER_COMPOSE) logs -f
+
+clean:
+	$(DOCKER_COMPOSE) down -v --remove-orphans
+
+migrate:
+	$(MANAGE) migrate
+
+superuser:
+	$(MANAGE) createsuperuser
+
+test:
+	$(MANAGE) test
+
+shell:
+	$(MANAGE) shell
+
+db-shell:
+	docker-compose exec db psql -U $(DB_USER) -d $(DB_NAME)
+
+status:
+	$(DOCKER_COMPOSE) ps
+
+admin:
+	open http://localhost:8000/admin
