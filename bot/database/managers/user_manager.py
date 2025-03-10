@@ -1,9 +1,11 @@
+from asgiref.sync import sync_to_async
 from admin_panel.admin_panel.models import User
 from bot.database.exceptions import UserNotFoundError
 
 
 class UserManager:
     @staticmethod
+    @sync_to_async
     def get_or_create_user(telegram_id, username=None):
         user, created = User.objects.get_or_create(
             telegram_id=telegram_id,
