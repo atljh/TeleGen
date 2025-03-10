@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   bot:
     build:
       context: .
       dockerfile: Dockerfile
-      target: bot  # Використовуємо стадію для бота
-    container_name: telegram_content_bot
+      target: bot
+    container_name: telegram_bot
     restart: always
     env_file:
       - .env
@@ -45,8 +43,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: admin_panel  # Використовуємо стадію для адмінки
-    container_name: telegram_bot_admin
+      target: admin_panel
+    container_name: admin_panel
     restart: always
     env_file:
       - .env
@@ -56,6 +54,7 @@ services:
       - "8000:8000"
     volumes:
       - ./admin_panel:/admin_panel
+      - ./staticfiles:/admin/staticfiles
     command: ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
 
 volumes:

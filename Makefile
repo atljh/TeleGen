@@ -1,5 +1,5 @@
 DOCKER_COMPOSE = docker-compose
-MANAGE = docker-compose exec admin python manage.py
+MANAGE = docker-compose exec admin_panel python manage.py
 
 .PHONY: up down build restart logs clean migrate superuser test
 
@@ -31,6 +31,8 @@ superuser:
 test:
 	$(MANAGE) test
 
+seed:
+	$(MANAGE) seed_data
 shell:
 	$(MANAGE) shell
 

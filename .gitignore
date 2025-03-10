@@ -173,3 +173,4 @@ cython_debug/
 
 postgres_data
 redis_data
+staticfiles
