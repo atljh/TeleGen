@@ -1,10 +1,10 @@
 from admin_panel.admin_panel.models import Channel
 from database.exceptions import ChannelNotFoundError
+from database.utils.async_orm import AsyncORM
 
 
-class ChannelManager:
-    @staticmethod
-    def create_channel(user, channel_name, channel_id):
+class ChannelManager(AsyncORM):
+    def create_channel(self, user, channel_name, channel_id):
         channel = Channel.objects.create(
             user=user,
             channel_name=channel_name,
@@ -12,18 +12,15 @@ class ChannelManager:
         )
         return channel
 
-    @staticmethod
-    def get_channels_by_user(user):
+    def get_channels_by_user(self, user):
         return Channel.objects.filter(user=user)
 
-    @staticmethod
-    def get_channel_by_id(channel_id):
+    def get_channel_by_id(self, channel_id):
         try:
-            return Channel.objects.get(id=channel_id)
+            return Channel.objects.get(self, id=channel_id)
         except Channel.DoesNotExist:
             raise ChannelNotFoundError(f"Channel with id={channel_id} not found.")
 
-    @staticmethod
-    def delete_channel(channel_id):
+    def delete_channel(self, channel_id):
         channel = ChannelManager.get_channel_by_id(channel_id)
         channel.delete()

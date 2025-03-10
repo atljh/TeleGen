@@ -6,13 +6,15 @@ from aiogram_dialog import DialogManager, StartMode
 from dialogs.main_dialog import MainMenu
 from database.managers.user_manager import UserManager
 
+user_manager = UserManager()
+
 
 async def cmd_start(message: types.Message, dialog_manager: DialogManager):
     user = message.from_user
     telegram_id = user.id
     username = user.username
 
-    db_user, created = await UserManager.get_or_create_user(
+    db_user, created = await user_manager.get_or_create_user(
         telegram_id=telegram_id,
         username=username
     )
