@@ -14,6 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV PYTHONPATH="${PYTHONPATH}:/app"
+
 FROM base as admin_panel
 
 WORKDIR /admin_panel

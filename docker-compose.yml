@@ -13,7 +13,7 @@ services:
       - redis
     volumes:
       - ./bot:/bot
-    command: ["python", "-m", "main.py"]
+    command: ["python", "main.py"]
 
   db:
     image: postgres:15
@@ -24,7 +24,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./data/postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -37,7 +37,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./redis_data:/data
+      - ./data/redis_data:/data
 
   admin_panel:
     build:
