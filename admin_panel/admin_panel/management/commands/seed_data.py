@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from core.models import User, Channel, Flow, Post
+from admin_panel.models import User, Channel, Flow, Post
 from faker import Faker
 import random
 from django.utils import timezone
@@ -10,7 +10,6 @@ class Command(BaseCommand):
     help = "Заповнення бази тестовими даними"
 
     def handle(self, *args, **kwargs):
-        # Створення користувачів
         for _ in range(10):
             User.objects.create(
                 telegram_id=fake.random_int(min=100000000, max=999999999),
@@ -19,7 +18,6 @@ class Command(BaseCommand):
                 subscription_end_date=fake.future_date(),
             )
 
-        # Створення каналів
         users = User.objects.all()
         for user in users:
             Channel.objects.create(
@@ -28,7 +26,6 @@ class Command(BaseCommand):
                 channel_id=fake.random_int(min=100000000, max=999999999),
             )
 
-        # Створення флоу
         channels = Channel.objects.all()
         for channel in channels:
             Flow.objects.create(
@@ -38,7 +35,6 @@ class Command(BaseCommand):
                 parameters={"param1": "value1", "param2": "value2"},
             )
 
-        # Створення постів
         flows = Flow.objects.all()
         for flow in flows:
             Post.objects.create(
