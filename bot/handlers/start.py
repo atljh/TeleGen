@@ -8,7 +8,6 @@ from bot.services.user_service import UserService
 
 user_service = UserService()
 
-
 async def cmd_start(message: types.Message, dialog_manager: DialogManager):
     user = message.from_user
     telegram_id = user.id
