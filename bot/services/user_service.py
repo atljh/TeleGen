@@ -1,22 +1,26 @@
 from admin_panel.admin_panel.models import User
 from bot.database.repositories.user_repository import UserRepository
+from bot.database.dtos.user_dto import UserDTO
 
 
 class UserService:
     def __init__(self):
         self.user_repository = UserRepository()
 
-    async def create_or_get_user(self, telegram_id: int, username: str | None = None) -> tuple[User, bool]:
-        return await self.user_repository.get_or_create_user(telegram_id, username)
+    async def create_or_get_user(self, telegram_id: int, username: str | None = None) -> tuple[UserDTO, bool]:
+        user, created = await self.user_repository.get_or_create_user(telegram_id, username)
+        return UserDTO.from_orm(user), created
 
-    async def get_user(self, telegram_id: int) -> User:
-        return await self.user_repository.get_user_by_telegram_id(telegram_id)
+    async def get_user(self, telegram_id: int) -> UserDTO:
+        user = await self.user_repository.get_user_by_telegram_id(telegram_id)
+        return UserDTO.from_orm(user)
 
-    async def update_subscription(self, telegram_id: int, subscription_status: bool, subscription_end_date: str | None = None) -> User:
+    async def update_subscription(self, telegram_id: int, subscription_status: bool, subscription_end_date: str | None = None) -> UserDTO:
         user = await self.user_repository.get_user_by_telegram_id(telegram_id)
         user.subscription_status = subscription_status
         user.subscription_end_date = subscription_end_date
-        return await self.user_repository.update_user(user)
+        updated_user = await self.user_repository.update_user(user)
+        return UserDTO.from_orm(updated_user)
 
     async def delete_user(self, telegram_id: int):
         user = await self.user_repository.get_user_by_telegram_id(telegram_id)

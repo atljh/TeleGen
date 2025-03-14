@@ -13,18 +13,17 @@ async def cmd_start(message: types.Message, dialog_manager: DialogManager):
     telegram_id = user.id
     username = user.username
 
-    db_user, created = await user_service.create_or_get_user(
+    db_user_dto, created = await user_service.create_or_get_user(
         telegram_id=telegram_id,
         username=username
     )
 
     if created:
-        await message.answer(f"Новый пользователь создан: {db_user}")
+        await message.answer(f"Новый пользователь создан: {db_user_dto}")
     else:
-        await message.answer(f"Добро пожаловать обратно, {db_user}!")
+        await message.answer(f"Добро пожаловать обратно, {db_user_dto}!")
 
     await dialog_manager.start(state=MainMenu.main, mode=StartMode.RESET_STACK)
-
 
 def register_handlers(dp: Dispatcher):
     dp.message.register(cmd_start, Command("start"))
