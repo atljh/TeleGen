@@ -1,11 +1,10 @@
 from admin_panel.admin_panel.models import User
-from bot.database.repositories.user_repository import UserRepository
 from bot.database.dtos.user_dto import UserDTO
-
+from bot.database.repositories.user_repository import UserRepository
 
 class UserService:
-    def __init__(self):
-        self.user_repository = UserRepository()
+    def __init__(self, user_repository: UserRepository):
+        self.user_repository = user_repository
 
     async def create_or_get_user(self, telegram_id: int, username: str | None = None) -> tuple[UserDTO, bool]:
         user, created = await self.user_repository.get_or_create_user(telegram_id, username)

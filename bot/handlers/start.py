@@ -4,14 +4,14 @@ from aiogram.filters import Command
 from aiogram_dialog import DialogManager, StartMode
 
 from dialogs.main_dialog import MainMenu
-from bot.services.user_service import UserService
-
-user_service = UserService()
+from bot.containers import Container
 
 async def cmd_start(message: types.Message, dialog_manager: DialogManager):
     user = message.from_user
     telegram_id = user.id
     username = user.username
+
+    user_service = Container.user_service()
 
     db_user_dto, created = await user_service.create_or_get_user(
         telegram_id=telegram_id,

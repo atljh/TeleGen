@@ -1,10 +1,13 @@
 import os
+import asyncio
+import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
-import logging
-import asyncio
 from dotenv import load_dotenv
 from aiogram_dialog import setup_dialogs
+
+from handlers import start
+from bot.containers import Container
 
 load_dotenv()
 
@@ -20,7 +23,7 @@ async def main():
 
     setup_dialogs(dp)
 
-    from handlers import start
+    container = Container()
     start.register_handlers(dp)
 
     logging.basicConfig(level=logging.INFO)
