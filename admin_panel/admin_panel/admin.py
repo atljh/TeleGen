@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics, Notification, AdminPanel
+    User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics, Notification
 )
 
 @admin.register(User)
@@ -71,10 +71,3 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'message', 'is_read', 'created_at')
     search_fields = ('user__username', 'message')
     list_filter = ('is_read', 'created_at')
-
-# Реєстрація моделі адмін-панелі
-@admin.register(AdminPanel)
-class AdminPanelAdmin(admin.ModelAdmin):
-    list_display = ('user', 'action', 'action_date')
-    search_fields = ('user__username', 'action')
-    list_filter = ('action_date',)
