@@ -7,6 +7,7 @@ class User(models.Model):
     subscription_end_date = models.DateTimeField(null=True, blank=True, verbose_name="Дата закінчення підписки")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     subscription_type = models.CharField(max_length=50, null=True, blank=True, verbose_name="Тип підписки")
+    payment_method = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return f"{self.username} (Telegram ID: {self.telegram_id})"
