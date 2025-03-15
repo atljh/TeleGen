@@ -2,7 +2,9 @@ from django.db import models
 
 class User(models.Model):
     telegram_id = models.BigIntegerField(unique=True, verbose_name="Telegram ID")
-    username = models.CharField(max_length=100, null=True, blank=True, verbose_name="Ім'я користувача")
+    username = models.CharField(max_length=100, null=True, blank=True, verbose_name="Telegram username")
+    first_name = models.CharField(max_length=100, null=True, blank=True, verbose_name="Ім'я")
+    last_name = models.CharField(max_length=100, null=True, blank=True, verbose_name="Прізвище")
     subscription_status = models.BooleanField(default=False, verbose_name="Статус підписки")
     subscription_end_date = models.DateTimeField(null=True, blank=True, verbose_name="Дата закінчення підписки")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
