@@ -23,6 +23,7 @@ clean:
 	$(DOCKER_COMPOSE) down -v --remove-orphans
 
 migrate:
+	$(MANAGE) makemigrations
 	$(MANAGE) migrate
 
 superuser:
