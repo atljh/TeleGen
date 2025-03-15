@@ -17,11 +17,10 @@ async def cmd_start(message: types.Message, dialog_manager: DialogManager):
         telegram_id=telegram_id,
         username=username
     )
-
     if created:
-        await message.answer(f"Новый пользователь создан: {db_user_dto}")
+        await message.answer(f"Новый пользователь создан: {db_user_dto.username}")
     else:
-        await message.answer(f"Добро пожаловать обратно, {db_user_dto}!")
+        await message.answer(f"Добро пожаловать обратно, {db_user_dto.username}!")
 
     await dialog_manager.start(state=MainMenu.main, mode=StartMode.RESET_STACK)
 

@@ -1,6 +1,5 @@
 import os
 import asyncio
-import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from dotenv import load_dotenv
@@ -8,6 +7,7 @@ from aiogram_dialog import setup_dialogs
 
 from handlers import start
 from bot.containers import Container
+from bot.utils.logging import setup_logging
 
 load_dotenv()
 
@@ -26,7 +26,7 @@ async def main():
     container = Container()
     start.register_handlers(dp)
 
-    logging.basicConfig(level=logging.INFO)
+    setup_logging()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

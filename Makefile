@@ -11,7 +11,7 @@ down:
 
 restart:
 	$(DOCKER_COMPOSE) down
-	$(DOCKER_COMPOSE) up --build -d
+	$(DOCKER_COMPOSE) up --build
 
 build:
 	$(DOCKER_COMPOSE) build
