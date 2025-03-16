@@ -1,5 +1,4 @@
-from admin_panel.admin_panel.models import User
-from bot.database.dtos.user_dto import UserDTO
+from bot.database.dtos import UserDTO
 from bot.database.repositories.user_repository import UserRepository
 
 class UserService:
