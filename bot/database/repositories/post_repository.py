@@ -4,13 +4,13 @@ from database.exceptions import PostNotFoundError
 class PostRepository:
     async def create_post(
         self,
-        flow,
-        content,
-        source_url=None,
+        flow: Flow,
+        content: str,
+        source_url: str = None,
         status="draft",
         scheduled_time=None
     ) -> Post:
-        return await Post.objects.aget_or_create(
+        return await Post.objects.acreate(
             flow=flow,
             content=content,
             source_url=source_url,
