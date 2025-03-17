@@ -1,13 +1,13 @@
-from admin_panel.admin_panel.models import Post, Flow
-from database.exceptions import PostNotFoundError
+from admin_panel.admin_panel.models import Post
+from bot.database.exceptions import PostNotFoundError
 
 class PostRepository:
     async def create_post(
         self,
-        flow: Flow,
+        flow,
         content: str,
-        source_url: str = None,
-        status="draft",
+        source_url: str | None = None,
+        status: str = "draft",
         scheduled_time=None
     ) -> Post:
         return await Post.objects.acreate(
@@ -18,18 +18,15 @@ class PostRepository:
             scheduled_time=scheduled_time
         )
 
-    async def get_posts_by_flow(self, flow: Flow) -> Post:
-        return Post.objects.filter(flow=flow)
-
-    async def get_post_by_id(self, post_id):
+    async def get_post_by_id(self, post_id: int) -> Post:
         try:
             return await Post.objects.aget(id=post_id)
         except Post.DoesNotExist:
             raise PostNotFoundError(f"Post with id={post_id} not found.")
-        
+
     async def update_post(self, post: Post) -> Post:
         await post.asave()
         return post
-    
-    async def delete_post(self, post: Post) -> None:
+
+    async def delete_post(self, post: Post):
         await post.adelete()

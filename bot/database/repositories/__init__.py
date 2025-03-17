@@ -2,3 +2,8 @@ from user_repository import UserRepository
 from post_repository import PostRepository
 from flow_repository import FlowRepository
 from channel_repository import ChannelRepository
+from draft_repository import DraftRepository
+from subscription_repository import SubscriptionRepository
+from payment_repository import PaymentRepository
+from aisettings_repository import AISettingsRepository
+from statistic_repository import StatisticsRepository
