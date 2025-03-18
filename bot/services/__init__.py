@@ -16,3 +16,4 @@ from post_service import PostRepository
 from draft_service import DraftDTO
 from subscription_service import SubscriptionService
 from payment_service import PaymentService
+from statistics_service import StatisticsService

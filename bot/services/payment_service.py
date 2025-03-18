@@ -3,10 +3,10 @@ from bot.database.repositories import PaymentRepository, UserRepository
 
 class PaymentService:
     def __init__(
-            self,
-            payment_repository = PaymentRepository,
-            user_repository = UserRepository
-        ):
+        self,
+        payment_repository: PaymentRepository,
+        user_repository: UserRepository
+    ):
         self.payment_repository = payment_repository
         self.user_repository = user_repository
 
