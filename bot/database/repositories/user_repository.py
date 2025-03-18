@@ -15,6 +15,12 @@ class UserRepository:
         except User.DoesNotExist:
             raise UserNotFoundError(f"User with telegram_id={telegram_id} not found.")
 
+    async def get_user_by_id(self, user_id: int) -> User:
+        try:
+            return await User.objects.aget(id=user_id)
+        except User.DoesNotExist:
+            raise UserNotFoundError(f"User with id={user_id} not found.")
+
     async def update_user(self, user: User) -> User:
         await user.asave()
         return user

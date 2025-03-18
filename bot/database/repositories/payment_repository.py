@@ -1,10 +1,10 @@
-from admin_panel.admin_panel.models import Payment
+from admin_panel.admin_panel.models import Payment, User
 from bot.database.exceptions import PaymentNotFoundError
 
 class PaymentRepository:
     async def create_payment(
         self,
-        user,
+        user: User,
         amount: float,
         payment_method: str,
         is_successful: bool = False
