@@ -15,6 +15,13 @@ class AISettingsRepository:
         except AISettings.DoesNotExist:
             raise AISettingsNotFoundError(f"AISettings with id={ai_settings_id} not found.")
 
+    async def get_ai_settings_by_user(self, user) -> AISettings:
+
+        try:
+            return await AISettings.objects.aget(user=user)
+        except AISettings.DoesNotExist:
+            raise AISettingsNotFoundError(f"AISettings with user={user} not found.")
+
     async def update_ai_settings(self, ai_settings: AISettings) -> AISettings:
         await ai_settings.asave()
         return ai_settings
