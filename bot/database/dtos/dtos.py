@@ -8,10 +8,10 @@ class UserDTO(BaseModel):
     username: str | None
     first_name: str | None
     last_name: str | None
-    subscription_type: str
+    subscription_type: str | None
     subscription_status: bool
     subscription_end_date: datetime | None
-    payment_method: str
+    payment_method: str | None
     created_at: datetime
 
     class Config:
