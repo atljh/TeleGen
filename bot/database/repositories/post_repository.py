@@ -1,10 +1,10 @@
-from admin_panel.admin_panel.models import Post
+from admin_panel.admin_panel.models import Post, Flow
 from bot.database.exceptions import PostNotFoundError
 
 class PostRepository:
     async def create_post(
         self,
-        flow,
+        flow: Flow,
         content: str,
         source_url: str | None = None,
         status: str = "draft",
