@@ -12,8 +12,10 @@ from admin_panel.admin_panel.models import User, Channel, Flow, Post
 from user_service import UserService
 from channel_service import ChannelService
 from flow_service import FlowService
+from post_service import PostService
 from post_service import PostRepository
-from draft_service import DraftDTO
+from draft_service import DraftService
+from aisettings_service import AISettingsService
 from subscription_service import SubscriptionService
 from payment_service import PaymentService
 from statistics_service import StatisticsService
