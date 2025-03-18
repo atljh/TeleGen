@@ -1,14 +1,14 @@
 class UserNotFoundError(Exception):
     pass
 
-
 class ChannelNotFoundError(Exception):
     pass
-
 
 class FlowNotFoundError(Exception):
     pass
 
+class DraftNotFoundError(Exception):
+    pass
 
 class PostNotFoundError(Exception):
     pass
