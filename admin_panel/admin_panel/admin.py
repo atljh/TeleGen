@@ -3,12 +3,26 @@ from .models import (
     User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics
 )
 
+
+class AISettingsInline(admin.TabularInline):
+    model = AISettings
+    extra = 0  # Количество пустых форм для добавления новых объектов
+    fields = ('prompt', 'style')  # Поля, которые будут отображаться в таблице
+    readonly_fields = ('created_at', 'updated_at')  # Поля только для чтения (если есть)
+
+class SubscriptionInline(admin.TabularInline):
+    model = Subscription
+    extra = 0
+    fields = ('channel', 'subscription_type', 'end_date', 'is_active')
+    readonly_fields = ('created_at', 'updated_at')  # Поля только для чтения (если есть)
+
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'telegram_id', 'subscription_type', 'subscription_end_date')
     search_fields = ('username', 'telegram_id')
     list_filter = ('subscription_type', )
-    inlines = []
+    inlines = [AISettingsInline, SubscriptionInline]
 
 @admin.register(Channel)
 class ChannelAdmin(admin.ModelAdmin):
