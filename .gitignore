@@ -170,7 +170,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-
+.DS_Store
 postgres_data
 redis_data
 staticfiles

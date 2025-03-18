@@ -143,17 +143,3 @@ class Statistics(models.Model):
     class Meta:
         verbose_name = "Статистика"
         verbose_name_plural = "Статистика"
-
-
-class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', verbose_name="Користувач")
-    message = models.TextField(verbose_name="Повідомлення")
-    is_read = models.BooleanField(default=False, verbose_name="Прочитано")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
-
-    def __str__(self):
-        return f"Сповіщення для {self.user.username}"
-
-    class Meta:
-        verbose_name = "Сповіщення"
-        verbose_name_plural = "Сповіщення"

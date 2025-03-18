@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics, Notification
+    User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics
 )
 
 @admin.register(User)
@@ -8,6 +8,7 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'telegram_id', 'subscription_type', 'subscription_end_date')
     search_fields = ('username', 'telegram_id')
     list_filter = ('subscription_type', )
+    inlines = []
 
 @admin.register(Channel)
 class ChannelAdmin(admin.ModelAdmin):
@@ -57,8 +58,3 @@ class StatisticsAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'channel__name')
     list_filter = ('last_updated',)
 
-@admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'message', 'is_read', 'created_at')
-    search_fields = ('user__username', 'message')
-    list_filter = ('is_read', 'created_at')
