@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from admin_panel.models import User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics, Notification
+from admin_panel.models import User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics
 from faker import Faker
 import random
 from django.utils import timezone
@@ -101,12 +101,5 @@ class Command(BaseCommand):
                 total_posts=fake.random_int(min=0, max=100),
                 total_views=fake.random_int(min=0, max=1000),
                 total_likes=fake.random_int(min=0, max=500),
-            )
-
-        for user in users:
-            Notification.objects.create(
-                user=user,
-                message=fake.sentence(),
-                is_read=fake.boolean(),
             )
         self.stdout.write(self.style.SUCCESS("Тестові дані успішно створені!"))
