@@ -9,7 +9,8 @@ class MainMenu(StatesGroup):
     main = State()
 
 async def on_click(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.message.answer("Ви натиснули кнопку! 🎉")
+    # await callback.message.answer("Ви натиснули кнопку! 🎉")
+    ...
 
 main_dialog = Dialog(
     Window(
