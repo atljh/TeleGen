@@ -8,14 +8,9 @@ from aiogram.fsm.state import State, StatesGroup
 class MainMenu(StatesGroup):
     main = State()
 
-async def on_click(callback: CallbackQuery, button: Button, manager: DialogManager):
-    # await callback.message.answer("Ви натиснули кнопку! 🎉")
-    ...
 
 main_dialog = Dialog(
     Window(
-        Const("Привіт! Це головне меню. 🚀"),
-        Button(Const("Натисни мене"), id="btn_click", on_click=on_click),
         state=MainMenu.main,
     )
 )

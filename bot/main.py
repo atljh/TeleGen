@@ -5,12 +5,11 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from dotenv import load_dotenv
 from aiogram_dialog import setup_dialogs
 
-from handlers import start, generation
+from handlers import register_handlers
 from bot.containers import Container
 from bot.utils.logging import setup_logging
 
-from dialogs.main_dialog import main_dialog
-from dialogs.generation_dialog import generation_dialog
+from dialogs import register_dialogs
 
 load_dotenv()
 
@@ -21,15 +20,11 @@ async def main():
     bot = Bot(token=API_TOKEN, session=session)
     dp = Dispatcher()
 
-    dp.include_router(main_dialog)
-    dp.include_router(generation_dialog)
-
+    register_dialogs(dp)
     setup_dialogs(dp)
-
+    register_handlers(dp)
     container = Container()
-    start.register_handlers(dp)
-    generation.register_handlers(dp)
-
+    
     setup_logging()
     await dp.start_polling(bot)
 
