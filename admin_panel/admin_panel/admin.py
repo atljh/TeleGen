@@ -8,13 +8,11 @@ class AISettingsInline(admin.TabularInline):
     model = AISettings
     extra = 0 
     fields = ('prompt', 'style')
-    readonly_fields = ('created_at', 'updated_at')
 
 class SubscriptionInline(admin.TabularInline):
     model = Subscription
     extra = 0
     fields = ('channel', 'subscription_type', 'end_date', 'is_active')
-    readonly_fields = ('created_at', 'updated_at')
 
 
 @admin.register(User)
