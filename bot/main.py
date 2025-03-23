@@ -22,7 +22,7 @@ async def main():
 
     register_dialogs(dp)
     setup_dialogs(dp)
-    register_handlers(dp)
+    dp.include_router(register_handlers()) 
     container = Container()
     
     setup_logging()
