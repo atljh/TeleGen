@@ -8,7 +8,6 @@ from aiogram_dialog import setup_dialogs
 from handlers import register_handlers
 from bot.containers import Container
 from bot.utils.logging import setup_logging
-from handlers.generation import register_generation
 from dialogs import register_dialogs
 
 load_dotenv()
