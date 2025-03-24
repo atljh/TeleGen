@@ -3,10 +3,9 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog.widgets.text import Const
 from aiogram_dialog import DialogManager
 from aiogram.types import CallbackQuery
-from aiogram.fsm.state import State, StatesGroup
+from aiogram_dialog import DialogManager, StartMode
 
-class SettingsMenu(StatesGroup):
-    main = State()
+from dialogs.main.states import MainMenu 
 
 async def on_channel1(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.answer("Канал1")
@@ -17,17 +16,5 @@ async def on_channel2(callback: CallbackQuery, button: Button, manager: DialogMa
 async def pay_subscription(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.answer("Оплата пiдписки")
 
-
-settings_dialog = Dialog(
-    Window(
-        Const("Налаштування\n\nОберiть канал"),
-        Row(
-            Button(Const("Канал1"), id="channel1", on_click=on_channel1),
-            Button(Const("Канал2"), id="channel2", on_click=on_channel2),
-        ),
-        Row(
-            Button(Const("Оплата пiдписки"), id="pay_subscription", on_click=pay_subscription),
-        ),
-        state=SettingsMenu.main,
-    )
-)
+async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
