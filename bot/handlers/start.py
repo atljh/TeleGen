@@ -1,10 +1,9 @@
 from aiogram import types
 from aiogram.dispatcher.dispatcher import Dispatcher
 from aiogram.filters import Command
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram_dialog import DialogManager, StartMode
 
-from dialogs.main_dialog import MainMenu
+from dialogs.main.states import MainMenu
 from bot.containers import Container
 
 async def cmd_start(message: types.Message, dialog_manager: DialogManager):

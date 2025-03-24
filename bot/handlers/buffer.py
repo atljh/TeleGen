@@ -11,5 +11,6 @@ async def handle_buffer(callback: types.CallbackQuery, dialog_manager: DialogMan
     await callback.answer()
     await dialog_manager.start(state=BufferMenu.main, mode=StartMode.RESET_STACK)
 
-def register_buffer(dp: Dispatcher):
-    dp.include_router(router)
+
+def register_buffer(router: Router):
+    router.callback_query.register(handle_buffer)

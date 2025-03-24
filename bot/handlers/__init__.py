@@ -1,10 +1,11 @@
 from aiogram import Router
 
 from .start import register_handlers as register_start_handlers
-from .generation import register_generation
+from .generation import register_generation, on_generation_click
 from .settings import register_settings
 from .support import register_support
 from .buffer import register_buffer
+
 
 router = Router()
 
