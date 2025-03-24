@@ -1,6 +1,4 @@
-from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Button, Row
-from aiogram_dialog.widgets.text import Const
 from aiogram_dialog import DialogManager
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode

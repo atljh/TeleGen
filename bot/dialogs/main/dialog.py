@@ -8,7 +8,7 @@ from .callbacks import (
     on_generation_click,
     on_buffer_click,
     on_settings_click,
-    # on_help_click,
+    on_support_click,
 )
 
 def create_main_dialog():
@@ -24,8 +24,8 @@ def create_main_dialog():
                 Button(Const("📂 Буфер"), id="buffer", on_click=on_buffer_click),
             ),
             Row(
-                Button(Const("Налаштування"), id="settings", on_click=on_settings_click),
-                Button(Const("Пiдтримка"), id="support", on_click=on_buffer_click),
+                Button(Const("⚙️ Налаштування"), id="settings", on_click=on_settings_click),
+                Button(Const("❓ Допомога"), id="help", on_click=on_support_click),
             ),
             state=MainMenu.main,
             parse_mode=ParseMode.MARKDOWN_V2,

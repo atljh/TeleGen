@@ -5,6 +5,7 @@ from aiogram_dialog.widgets.kbd import Button
 from dialogs.generation.states import GenerationMenu
 from dialogs.buffer.states import BufferMenu
 from dialogs.settings.states import SettingsMenu
+from dialogs.support.states import SupportMenu
 
 async def on_generation_click(
     callback: CallbackQuery, 
@@ -29,3 +30,11 @@ async def on_settings_click(
 ):
     await callback.answer()
     await manager.start(SettingsMenu.main, mode=StartMode.RESET_STACK)
+
+async def on_support_click(
+    callback: CallbackQuery, 
+    button: Button, 
+    manager: DialogManager
+):
+    await callback.answer()
+    await manager.start(SupportMenu.main, mode=StartMode.RESET_STACK)
