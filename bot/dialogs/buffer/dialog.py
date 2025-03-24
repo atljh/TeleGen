@@ -1,10 +1,7 @@
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery
-
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Button, Row
-from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.kbd import Button, Row, Back
+from aiogram_dialog.widgets.text import Const
 
 from .states import BufferMenu
 from .callbacks import (
@@ -31,5 +28,6 @@ def create_buffer_dialog():
                 Button(Const("🔙 Назад"), id="back", on_click=go_back_to_main),
             ),
             state=BufferMenu.main,
+            parse_mode=ParseMode.HTML
         )
     )
