@@ -2,7 +2,6 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
-
 from dialogs.main.states import MainMenu 
 
 async def on_channel1(callback: CallbackQuery, button: Button, manager: DialogManager):

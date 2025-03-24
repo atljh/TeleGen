@@ -23,7 +23,7 @@ def create_generation_dialog():
                 Button(Const("Додати канал"), id="add_channel", on_click=add_channel),
             ),
             Row(
-                Button(Const("⬅ Назад"), id="back", on_click=go_back_to_main),
+                Button(Const("🔙 Назад"), id="back", on_click=go_back_to_main),
             ),
             state=GenerationMenu.main,
             parse_mode=ParseMode.MARKDOWN_V2,

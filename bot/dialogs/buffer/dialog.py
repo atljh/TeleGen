@@ -11,7 +11,8 @@ from .callbacks import (
     publish_now,
     schedule_publish,
     edit_post,
-    delete_draft
+    delete_draft,
+    go_back_to_main
 )
 
 def create_buffer_dialog():
@@ -26,7 +27,9 @@ def create_buffer_dialog():
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=edit_post),
                 Button(Const("🗑 Видалити чернетку"), id="delete_draft", on_click=delete_draft),
             ),
-            Back(Const("🔙 Назад")),
+            Row(
+                Button(Const("🔙 Назад"), id="back", on_click=go_back_to_main),
+            ),
             state=BufferMenu.main,
         )
     )

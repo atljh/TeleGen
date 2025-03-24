@@ -1,6 +1,8 @@
 from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row, Back
-from aiogram_dialog import DialogManager
+from aiogram_dialog import DialogManager, StartMode
+
+from dialogs.main.states import MainMenu 
 
 
 async def publish_now(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -14,3 +16,6 @@ async def edit_post(callback: CallbackQuery, button: Button, manager: DialogMana
 
 async def delete_draft(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.answer("🗑 Чернетку видалено!")
+
+async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
