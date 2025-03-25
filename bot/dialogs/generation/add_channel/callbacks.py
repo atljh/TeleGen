@@ -5,8 +5,8 @@ from aiogram_dialog import DialogManager
 from .states import AddChannelMenu
 
 async def check_permissions(callback: CallbackQuery, button: Button, manager: DialogManager):
-    has_permissions = True
-    
+    # has_permissions = await check_bot_admin_status(manager)
+    has_permissions = True    
     await manager.update({
         "result": "✅ Бот має всі необхідні права!" if has_permissions 
                  else "❌ Бот не має необхідних прав!"

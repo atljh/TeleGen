@@ -6,8 +6,8 @@ from aiogram_dialog.widgets.kbd import Url
 from aiogram_dialog.widgets.text import Jinja
 
 from .states import AddChannelMenu
-
 from .getters import channel_data_getter
+from .callbacks import check_permissions
 
 def create_add_channel_dialog():
     return Dialog(
@@ -26,7 +26,7 @@ def create_add_channel_dialog():
                     text=Const("📲 Додати бота в канал"),
                     url=Jinja("{{bot_url}}")
                 ),
-                Button(Const("✅ Перевірити права"), id="check_permissions"),
+                Button(Const("✅ Перевірити права"), id="check_permissions", on_click=check_permissions),
             ),
             Back(Const("🔙 Назад")),
             state=AddChannelMenu.instructions,
@@ -36,7 +36,7 @@ def create_add_channel_dialog():
         Window(
             Format(
                 "🔍 <b>Перевірка прав</b>\n\n"
-                "{result}\n\n"
+                "{dialog_data[result]}\n\n"
                 "Якщо все правильно - можете починати роботу!"
             ),
             Back(Const("🔙 Назад")),
