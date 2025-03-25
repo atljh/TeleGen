@@ -13,7 +13,7 @@ async def on_channel2(callback: CallbackQuery, button: Button, manager: DialogMa
     await callback.message.answer("Канал2")
 
 async def add_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(AddChannelMenu.instructions)
+    await manager.start(AddChannelMenu.enter_channel_id)
 
 async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)

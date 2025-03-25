@@ -5,5 +5,5 @@ async def channel_data_getter(dialog_manager: DialogManager, **kwargs):
     me = await bot.get_me()
     return {
         "bot_username": me.username,
-        "bot_url": f"https://t.me/{me.username}?startgroup=admin"
+        "bot_url": f"https://t.me/{me.username}?startchannel=admin"
     }
