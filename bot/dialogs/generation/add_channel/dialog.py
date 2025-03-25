@@ -4,16 +4,17 @@ from aiogram_dialog.widgets.kbd import Button, Row, Back
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Url
 from aiogram_dialog.widgets.text import Jinja
+from aiogram_dialog.widgets.input import MessageInput
 
 from .states import AddChannelMenu
 from .getters import channel_data_getter
-from .callbacks import check_permissions, process_channel_id
+from .callbacks import check_permissions, process_channel_input
 
 def create_add_channel_dialog():
     return Dialog(
         Window(
-            Const("Введіть @username або ID вашого каналу:"),
-            Button(Const("Продовжити"), id="confirm_channel", on_click=process_channel_id),
+            Const("✏️ Введіть @username або ID вашого каналу:"),
+            MessageInput(process_channel_input),
             state=AddChannelMenu.enter_channel_id,
             parse_mode=ParseMode.HTML
         ),

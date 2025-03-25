@@ -1,6 +1,7 @@
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
+from aiogram_dialog.widgets.input import MessageInput
 
 from .states import AddChannelMenu
 from bot.utils.permissions import check_bot_permissions
@@ -28,10 +29,20 @@ async def check_permissions(callback: CallbackQuery, button: Button, manager: Di
     await manager.update({"result": result})
     await manager.switch_to(AddChannelMenu.check_permissions)
 
-async def process_channel_id(callback: CallbackQuery, button: Button, manager: DialogManager):
-    channel_id = "отриманий_ідентифікатор"  
+async def process_channel_input(message: Message, message_input: MessageInput, manager: DialogManager):
+    channel_id = message.text.strip()
+    
+    if not channel_id:
+        await message.answer("❌ Будь ласка, введіть ідентифікатор каналу")
+        return
+    
+    if not (channel_id.startswith('@') or channel_id.lstrip('-').isdigit()):
+        await message.answer("❌ Невірний формат. Введіть @username або ID каналу")
+        return
+    
     await manager.update({
         "channel_id": channel_id,
-        "channel_name": f"Канал ({channel_id})"
+        "channel_name": channel_id if channel_id.startswith('@') else f"ID: {channel_id}"
     })
+    
     await manager.switch_to(AddChannelMenu.instructions)
