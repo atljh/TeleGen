@@ -17,6 +17,7 @@ API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 async def main():
     session = AiohttpSession()
     bot = Bot(token=API_TOKEN, session=session)
+    
     dp = Dispatcher()
 
     register_dialogs(dp)
