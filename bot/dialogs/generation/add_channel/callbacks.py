@@ -1,20 +1,39 @@
+from aiogram import Bot
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import DialogManager
+from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog.widgets.input import MessageInput
 
 from .states import AddChannelMenu
 from bot.utils.permissions import check_bot_permissions
+from bot.utils.validation import is_valid_channel
+from dialogs.main.states import MainMenu 
+
+from bot.dialogs.generation.states import GenerationMenu
+
+async def go_back_to_generation(callback: CallbackQuery, button: Button, manager: DialogManager):
+    try:
+        await manager.start(GenerationMenu.main, mode=StartMode.RESET_STACK)
+    except Exception as e:
+        print(f"Помилка переходу: {e}")
+        await callback.answer("Помилка переходу до генерації")
+
+async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
 
 async def check_permissions(callback: CallbackQuery, button: Button, manager: DialogManager):
     bot = manager.middleware_data["bot"]
-    chat_id = manager.dialog_data.get("channel_id")
+    channel_id = manager.dialog_data.get("channel_id")
     
-    if not chat_id:
+    if not channel_id:
         await callback.answer("❌ Спочатку вкажіть канал")
         return
     
-    permissions = await check_bot_permissions(bot, chat_id)
+    if not await is_valid_channel(bot, channel_id):
+        await callback.answer("❌ Канал не знайдено або бот не має доступу")
+        return
+
+    permissions = await check_bot_permissions(bot, channel_id)
     
     if permissions:
         result = (

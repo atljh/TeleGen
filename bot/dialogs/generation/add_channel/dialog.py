@@ -1,19 +1,25 @@
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.kbd import Button, Row, Back
-from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.kbd import Url
-from aiogram_dialog.widgets.text import Jinja
+from aiogram_dialog.widgets.kbd import Button, Row, Back, Url
+from aiogram_dialog.widgets.text import Const, Format, Jinja
 from aiogram_dialog.widgets.input import MessageInput
 
 from .states import AddChannelMenu
 from .getters import channel_data_getter
-from .callbacks import check_permissions, process_channel_input
+from .callbacks import (
+    check_permissions,
+    process_channel_input,
+    go_back_to_generation,
+    go_back_to_main
+)
 
 def create_add_channel_dialog():
     return Dialog(
         Window(
             Const("✏️ Введіть @username або ID вашого каналу:"),
+            Row(
+                Button(Const("◀️ Назад"), id="go_back_to_generation", on_click=go_back_to_main),
+            ),
             MessageInput(process_channel_input),
             state=AddChannelMenu.enter_channel_id,
             parse_mode=ParseMode.HTML
@@ -35,14 +41,20 @@ def create_add_channel_dialog():
                 ),
                 Button(Const("✅ Перевірити права"), id="check_permissions", on_click=check_permissions),
             ),
-            Back(Const("🔙 Назад")),
+            Row(
+                Back(Const("◀️ Назад")),
+                Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
+            ),
             state=AddChannelMenu.instructions,
             parse_mode=ParseMode.HTML,
             getter=channel_data_getter
         ),
         Window(
             Format("{dialog_data[result]}"),
-            Back(Const("🔙 Назад")),
+            Row(
+                Back(Const("◀️ Назад")),
+                Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
+            ),
             state=AddChannelMenu.check_permissions,
             parse_mode=ParseMode.HTML
         )
