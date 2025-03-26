@@ -55,6 +55,15 @@ def create_add_channel_dialog():
             getter=channel_data_getter
         ),
         Window(
+            Format("{dialog_data[result]}"),
+            Row(
+                Button(Const("🔄 Спробувати знову"), id="retry_check", on_click=check_permissions),
+                Back(Const("◀️ Назад")),
+            ),
+            state=AddChannelMenu.check_permissions,
+            parse_mode=ParseMode.HTML
+        ),
+        Window(
             Format(
                 "🎉 <b>Дякуємо! Канал {dialog_data[channel_name]} успішно доданий.</b>\n\n"
                 "Наразі вам доступна обмежена безкоштовна підписка.\n"

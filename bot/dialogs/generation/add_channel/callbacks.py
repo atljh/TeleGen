@@ -6,6 +6,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from .states import AddChannelMenu
 from bot.utils.permissions import check_bot_permissions
 from bot.utils.validation import is_valid_channel
+from bot.containers import Container
 
 
 async def check_permissions(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -13,38 +14,64 @@ async def check_permissions(callback: CallbackQuery, button: Button, manager: Di
     channel_id = manager.dialog_data.get("channel_id")
     
     if not channel_id:
-        await callback.answer("❌ Спочатку вкажіть канал")
+        await callback.answer("❌ Будь ласка, спочатку вкажіть канал")
         return
     
-    if not await is_valid_channel(bot, channel_id):
-        await callback.answer("❌ Канал не знайдено або бот не має доступу")
-        return
+    try:
+        chat = await bot.get_chat(channel_id)
+        permissions = await bot.get_chat_member(chat.id, bot.id)
+        
+        if not all([
+            permissions.can_post_messages,
+            permissions.can_edit_messages,
+            permissions.can_manage_chat
+        ]):
+            raise PermissionError("Бот не має всіх необхідних прав")
+            
+        await save_channel_and_proceed(callback.from_user, chat, manager)
+        
+    except Exception as e:
+        await handle_permission_error(e, manager)
 
-    permissions = await check_bot_permissions(bot, channel_id)
+async def save_channel_and_proceed(user, chat, manager):
+    channel_service = Container.channel_service()
+    channel_dto, created = await channel_service.get_or_create_channel(
+        user=user,
+        channel_id=str(chat.id),
+        name=chat.title,
+        description=getattr(chat, 'description', None)
+    )
     
-    if permissions:
-        can_post_messages = permissions['can_post_messages']
-        can_edit_messages = permissions['can_edit_messages']
-        can_delete_messages = permissions['can_delete_messages']
-        if all([can_post_messages, can_edit_messages, can_delete_messages]):
-            await on_success_channel_add(callback, button, manager)
-            return
-        else:
-            result = "❌ Бот не має необхiдних прав у каналi"
-    else:
-        result = "❌ Не вдалося перевірити права. Переконайтесь, що бот доданий до каналу як адміністратор"
+    await manager.update({
+        "result": f"✅ Канал {chat.title} успішно додано!",
+        "channel_name": chat.title,
+        "channel_id": str(chat.id)
+    })
+    await manager.switch_to(AddChannelMenu.success)
+
+async def handle_permission_error(error, manager):
+    error_msg = str(error)
+    if "Not enough rights" in error_msg:
+        error_msg = "❌ Бот не має всіх необхідних прав!"
     
-    # await manager.update({"result": result})
-    # await manager.switch_to(AddChannelMenu.check_permissions)
-    await callback.answer(result)
+    await manager.update({"result": error_msg})
+    await manager.switch_to(AddChannelMenu.check_permissions)
 
-
-async def on_success_channel_add(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def on_success_channel_add(
+    callback: CallbackQuery,
+    button: Button,
+    manager: DialogManager
+):
     channel_name = manager.dialog_data.get("channel_name", "ваш канал")
     await manager.update({"channel_name": channel_name})
     await manager.switch_to(AddChannelMenu.success)
 
-async def process_channel_input(message: Message, message_input: MessageInput, manager: DialogManager):
+
+async def process_channel_input(
+    message: Message,
+    message_input: MessageInput,
+    manager: DialogManager
+):
     channel_id = message.text.strip()
     
     if not channel_id:
