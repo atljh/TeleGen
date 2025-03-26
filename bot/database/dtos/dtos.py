@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from admin_panel.admin_panel.models import Channel, User
 
 
 class UserDTO(BaseModel):
@@ -22,12 +23,25 @@ class ChannelDTO(BaseModel):
     user_id: int
     channel_id: str
     name: str
-    description: str
+    description: str | None
     created_at: datetime
     is_active: bool
 
     class Config:
         from_attributes = True
+        arbitrary_types_allowed = True
+
+    @classmethod
+    def from_orm(cls, channel: Channel):
+        return cls(
+            id=channel.id,
+            user_id=channel.user.id,
+            channel_id=channel.channel_id,
+            name=channel.name,
+            description=channel.description,
+            created_at=channel.created_at,
+            is_active=channel.is_active
+        )
 
 class FlowDTO(BaseModel):
     id: int

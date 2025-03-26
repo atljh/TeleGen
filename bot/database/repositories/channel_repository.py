@@ -1,12 +1,23 @@
-from admin_panel.admin_panel.models import Channel
+from admin_panel.admin_panel.models import Channel, User
 from bot.database.exceptions import ChannelNotFoundError
 
+
 class ChannelRepository:
-    async def get_or_create_channel(self, user, channel_id: str, name: str, description: str | None = None) -> tuple[Channel, bool]:
+    async def get_or_create_channel(
+        self,
+        user: User,
+        channel_id: str,
+        name: str,
+        description: str | None = None
+    ) -> tuple[Channel, bool]:
         return await Channel.objects.aget_or_create(
             user=user,
             channel_id=channel_id,
-            defaults={"name": name, "description": description}
+            defaults={
+                "name": name,
+                "description": description,
+                "is_active": True
+            }
         )
 
     async def get_channel_by_id(self, channel_id: str) -> Channel:

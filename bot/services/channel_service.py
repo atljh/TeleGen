@@ -1,20 +1,36 @@
 from bot.database.dtos import ChannelDTO
-from bot.database.repositories.channel_repository import ChannelRepository
-
+from bot.database.repositories import (
+    ChannelRepository,
+    UserRepository
+)
+from bot.database.dtos import UserDTO
 
 class ChannelService:
-    def __init__(self, channel_repository: ChannelRepository):
+    def __init__(
+        self,
+        channel_repository: ChannelRepository,
+        user_repository: UserRepository
+    ):
         self.channel_repository = channel_repository
+        self.user_repository = user_repository
 
     async def get_or_create_channel(
         self,
-        user,
+        user_telegram_id: int,
         channel_id: str,
         name: str,
         description: str | None = None
     ) -> tuple[ChannelDTO, bool]:
+        user = await self.user_repository.get_user_by_telegram_id(user_telegram_id)
+        
+        if not user:
+            raise ValueError(f"User with id {user.id} not found")
+        
         channel, created = await self.channel_repository.get_or_create_channel(
-            user, channel_id, name, description
+            user=user,
+            channel_id=channel_id,
+            name=name,
+            description=description
         )
         return ChannelDTO.from_orm(channel), created
     

@@ -8,6 +8,7 @@ from bot.utils.permissions import check_bot_permissions
 from bot.utils.validation import is_valid_channel
 from bot.containers import Container
 
+import logging
 
 async def check_permissions(callback: CallbackQuery, button: Button, manager: DialogManager):
     bot = manager.middleware_data["bot"]
@@ -28,25 +29,30 @@ async def check_permissions(callback: CallbackQuery, button: Button, manager: Di
         ]):
             raise PermissionError("Бот не має всіх необхідних прав")
             
-        await save_channel_and_proceed(callback.from_user, chat, manager)
+        await save_channel_and_proceed(callback.from_user.id, chat, manager)
         
     except Exception as e:
         await handle_permission_error(e, manager)
 
-async def save_channel_and_proceed(user, chat, manager):
+async def save_channel_and_proceed(telegram_id: int, chat, manager: DialogManager):
     channel_service = Container.channel_service()
+    
     channel_dto, created = await channel_service.get_or_create_channel(
-        user=user,
+        user_telegram_id=telegram_id,
         channel_id=str(chat.id),
         name=chat.title,
         description=getattr(chat, 'description', None)
     )
     
+    logging.info(f"Канал {'створено' if created else 'знайдено'}: {channel_dto}")
+    
     await manager.update({
         "result": f"✅ Канал {chat.title} успішно додано!",
         "channel_name": chat.title,
-        "channel_id": str(chat.id)
+        "channel_id": str(chat.id),
+        "is_new_channel": created
     })
+    
     await manager.switch_to(AddChannelMenu.success)
 
 async def handle_permission_error(error, manager):
