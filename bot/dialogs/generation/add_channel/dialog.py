@@ -9,9 +9,11 @@ from .getters import channel_data_getter
 from .callbacks import (
     check_permissions,
     process_channel_input,
-    go_back_to_main,
     create_flow,
     subscribe
+)
+from utils.buttons import (
+    go_back_to_main
 )
 
 def create_add_channel_dialog():
@@ -51,15 +53,6 @@ def create_add_channel_dialog():
             state=AddChannelMenu.instructions,
             parse_mode=ParseMode.HTML,
             getter=channel_data_getter
-        ),
-        Window(
-            Format("{dialog_data[result]}"),
-            Row(
-                Back(Const("◀️ Назад")),
-                Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
-            ),
-            state=AddChannelMenu.check_permissions,
-            parse_mode=ParseMode.HTML
         ),
         Window(
             Format(
