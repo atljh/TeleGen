@@ -31,18 +31,6 @@ class ChannelDTO(BaseModel):
         from_attributes = True
         arbitrary_types_allowed = True
 
-    @classmethod
-    def from_orm(cls, channel: Channel):
-        return cls(
-            id=channel.id,
-            user_id=channel.user.id,
-            channel_id=channel.channel_id,
-            name=channel.name,
-            description=channel.description,
-            created_at=channel.created_at,
-            is_active=channel.is_active
-        )
-
 class FlowDTO(BaseModel):
     id: int
     channel_id: int

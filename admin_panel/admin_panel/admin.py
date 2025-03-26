@@ -17,7 +17,8 @@ class SubscriptionInline(admin.TabularInline):
 class ChannelInline(admin.TabularInline):
     model = Channel
     extra = 0
-    fields = ('name', 'description', )
+    fields = ('name', 'created_at',)
+    readonly_fields = ('created_at',)
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -31,6 +32,7 @@ class ChannelAdmin(admin.ModelAdmin):
     list_display = ('name', 'channel_id', 'user', 'created_at', 'is_active')
     search_fields = ('name', 'channel_id', 'user__username', 'user__telegram_id')
     list_filter = ('is_active', 'created_at')
+    readonly_fields = ('created_at',)
 
 @admin.register(Flow)
 class FlowAdmin(admin.ModelAdmin):
