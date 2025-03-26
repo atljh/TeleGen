@@ -13,7 +13,8 @@ from .callbacks import (
     subscribe
 )
 from utils.buttons import (
-    go_back_to_main
+    go_back_to_main,
+    go_back_to_generation
 )
 
 def create_add_channel_dialog():
@@ -21,7 +22,7 @@ def create_add_channel_dialog():
         Window(
             Const("✏️ Введіть @username або ID вашого каналу:"),
             Row(
-                Button(Const("◀️ Назад"), id="go_back_to_generation", on_click=go_back_to_main),
+                Button(Const("◀️ Назад"), id="go_back_to_generation", on_click=go_back_to_generation),
             ),
             MessageInput(process_channel_input),
             state=AddChannelMenu.enter_channel_id,
@@ -43,9 +44,6 @@ def create_add_channel_dialog():
                     url=Jinja("{{bot_url}}")
                 ),
                 Button(Const("✅ Перевірити права"), id="check_permissions", on_click=check_permissions),
-            ),
-            Row(
-                Back(Const("◀️ Назад")),
             ),
             Row(
                 Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),

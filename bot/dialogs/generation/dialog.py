@@ -14,7 +14,6 @@ from .callbacks import (
 )
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
-    # Get dependencies from middleware
     channel_service = Container.channel_service()
     user_telegram_id = dialog_manager.event.from_user.id
     logging.info(user_telegram_id)
@@ -29,13 +28,13 @@ def create_generation_dialog():
             Const("Оберiть канал\nабо додайте новий"),
             Group(
                 Select(
-                    text=Format("{item.name}"),  # Display channel name
-                    item_id_getter=lambda channel: channel.id,  # Use channel ID
-                    items="channels",  # Key from getter data
+                    text=Format("{item.name}"),
+                    item_id_getter=lambda channel: channel.id,
+                    items="channels",
                     id="channel_select",
                     on_click=on_channel_selected,
                 ),
-                width=2,  # 2 buttons per row
+                width=2,
             ),
             Row(
                 Button(Const("Додати канал"), id="add_channel", on_click=add_channel),
@@ -45,6 +44,6 @@ def create_generation_dialog():
             ),
             state=GenerationMenu.main,
             parse_mode=ParseMode.MARKDOWN_V2,
-            getter=get_user_channels_data,  # Data fetcher
+            getter=get_user_channels_data,
         )
     )
