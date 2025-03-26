@@ -18,6 +18,10 @@ class ChannelService:
         )
         return ChannelDTO.from_orm(channel), created
     
+    async def get_user_channels(self, user_id: int) -> list[ChannelDTO]:
+        channels = await self.channel_repository.get_user_channels(user_id)
+        return [ChannelDTO.from_orm(channel) for channel in channels]
+    
     async def get_channel(self, channel_id: str) -> ChannelDTO:
         channel = await self.channel_repository.get_channel_by_id(channel_id)
         return ChannelDTO.from_orm(channel)
