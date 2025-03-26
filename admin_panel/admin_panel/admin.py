@@ -14,13 +14,17 @@ class SubscriptionInline(admin.TabularInline):
     extra = 0
     fields = ('channel', 'subscription_type', 'end_date', 'is_active')
 
+class ChannelInline(admin.TabularInline):
+    model = Channel
+    extra = 0
+    fields = ('name', 'description', )
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'telegram_id', 'subscription_type', 'subscription_end_date')
     search_fields = ('username', 'telegram_id')
     list_filter = ('subscription_type', )
-    inlines = [AISettingsInline, SubscriptionInline]
+    inlines = [ChannelInline, AISettingsInline, SubscriptionInline]
 
 @admin.register(Channel)
 class ChannelAdmin(admin.ModelAdmin):
