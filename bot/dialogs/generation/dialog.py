@@ -6,11 +6,16 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog import DialogManager
 
 from bot.containers import Container
-from .states import GenerationMenu, ChannelMenu
+from .states import GenerationMenu
 from .callbacks import (
     on_channel_selected,
     add_channel,
-    go_back_to_main
+    go_back_to_main,
+
+    on_create_flow,
+    on_buffer,
+    on_book_recall,
+    on_message
 )
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
@@ -52,13 +57,13 @@ def create_generation_dialog():
             Column(
                 Button(Const("Flow\nСтворити флоу"), id="create_flow", on_click=on_create_flow),
                 Button(Const("Буфер"), id="buffer", on_click=on_buffer),
-                Button(Const("Забронювати рекалиний топ"), id="book_recall", on_click=on_book_recall),
+                Button(Const("Забронювати рекламний топ"), id="book_recall", on_click=on_book_recall),
                 Button(Const("Message"), id="message", on_click=on_message),
             ),
             Row(
-                Back(Const("<<<Назад")),
+                Back(Const("🔙 Назад")),
             ),
-            state=ChannelMenu.main,
+            state=GenerationMenu.channel_main,
             parse_mode=ParseMode.MARKDOWN_V2,
         )
     )

@@ -4,7 +4,7 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
 from dialogs.main.states import MainMenu
-from .states import ChannelMenu
+from .states import GenerationMenu
 from .add_channel.states import AddChannelMenu
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ async def on_channel_selected(
         manager.dialog_data["selected_channel"] = selected_channel
         
         await callback.answer(f"Channel {selected_channel.name}")
-        await manager.switch_to(ChannelMenu.main)
+        await manager.switch_to(GenerationMenu.channel_main)
         
     except Exception as e:
         logger.error(f"Channel selection error: {e}")
@@ -42,3 +42,15 @@ async def add_channel(callback: CallbackQuery, button: Button, manager: DialogMa
 
 async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
+
+async def on_create_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(GenerationMenu.create_flow)
+
+async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(GenerationMenu.buffer)
+
+async def on_book_recall(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(GenerationMenu.book_recall)
+
+async def on_message(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(GenerationMenu.message)
