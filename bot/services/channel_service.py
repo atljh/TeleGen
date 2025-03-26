@@ -46,8 +46,9 @@ class ChannelService:
         except Exception as e:
             raise e
     
-    async def get_user_channels(self, user_id: int) -> list[ChannelDTO]:
-        channels = await self.channel_repository.get_user_channels(user_id)
+    async def get_user_channels(self, user_telegram_id: int) -> list[ChannelDTO]:
+        user = await self.user_repository.get_user_by_telegram_id(user_telegram_id)
+        channels = await self.channel_repository.get_user_channels(user)
         return [ChannelDTO.from_orm(channel) for channel in channels]
     
     async def get_channel(self, channel_id: str) -> ChannelDTO:

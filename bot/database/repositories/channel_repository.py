@@ -1,3 +1,4 @@
+from typing import List
 from admin_panel.admin_panel.models import Channel, User
 from bot.database.exceptions import ChannelNotFoundError
 
@@ -19,6 +20,12 @@ class ChannelRepository:
                 "is_active": True
             }
         )
+
+    async def get_user_channels(
+        self,
+        user: User
+    ) -> List[Channel]:
+        return [channel async for channel in Channel.objects.filter(user=user).order_by('-created_at')]
 
     async def get_channel_by_id(self, channel_id: str) -> Channel:
         try:
