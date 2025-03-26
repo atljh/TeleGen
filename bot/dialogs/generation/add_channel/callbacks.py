@@ -36,17 +36,26 @@ async def check_permissions(callback: CallbackQuery, button: Button, manager: Di
     permissions = await check_bot_permissions(bot, channel_id)
     
     if permissions:
+        can_post_messages = permissions['can_post_messages']
+        can_edit_messages = permissions['can_edit_messages']
+        can_delete_messages = permissions['can_delete_messages']
         result = (
-            "✅ Бот має всі необхідні права:\n"
+            "✅ Бот доданий до каналу:\n"
             f"• Надсилання повідомлень: {'Так' if permissions['can_post_messages'] else 'Ні'}\n"
             f"• Редагування повідомлень: {'Так' if permissions['can_edit_messages'] else 'Ні'}\n"
             f"• Видалення повідомлень: {'Так' if permissions['can_delete_messages'] else 'Ні'}"
         )
+        await on_success_channel_add(callback, button, manager)
     else:
         result = "❌ Не вдалося перевірити права. Переконайтесь, що бот доданий до каналу як адміністратор"
     
     await manager.update({"result": result})
     await manager.switch_to(AddChannelMenu.check_permissions)
+
+async def on_success_channel_add(callback: CallbackQuery, button: Button, manager: DialogManager):
+    channel_name = manager.dialog_data.get("channel_name", "ваш канал")
+    await manager.update({"channel_name": channel_name})
+    await manager.switch_to(AddChannelMenu.success)
 
 async def process_channel_input(message: Message, message_input: MessageInput, manager: DialogManager):
     channel_id = message.text.strip()
@@ -65,3 +74,9 @@ async def process_channel_input(message: Message, message_input: MessageInput, m
     })
     
     await manager.switch_to(AddChannelMenu.instructions)
+
+async def create_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.answer("Функція в розробці")
+
+async def subscribe(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.answer("Функція в розробці")

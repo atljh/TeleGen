@@ -9,8 +9,9 @@ from .getters import channel_data_getter
 from .callbacks import (
     check_permissions,
     process_channel_input,
-    go_back_to_generation,
-    go_back_to_main
+    go_back_to_main,
+    create_flow,
+    subscribe
 )
 
 def create_add_channel_dialog():
@@ -27,12 +28,12 @@ def create_add_channel_dialog():
         Window(
             Jinja(
                 "📝 <b>Інструкція з додавання бота до каналу</b>\n\n"
-                "1. Додайте <a href='{{bot_url}}'>@{{bot_username}}</a> як адміністратора\n"
-                "2. Надайте боту такі права:\n"
+                "<b>1. Додайте <a href='{{bot_url}}'>@{{bot_username}}</a> як адміністратора</b>\n\n"
+                "<b>2. Надайте боту такі права:\n"
                 "   • Надсилання повідомлень\n"
                 "   • Редагування повідомлень\n"
-                "   • Управління чатом\n\n"
-                "3. Натисніть кнопку 'Перевірити права'"
+                "   • Управління чатом</b>\n\n"
+                "<b>3. Натисніть кнопку 'Перевірити права'</b>"
             ),
             Row(
                 Url(
@@ -43,6 +44,8 @@ def create_add_channel_dialog():
             ),
             Row(
                 Back(Const("◀️ Назад")),
+            ),
+            Row(
                 Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=AddChannelMenu.instructions,
@@ -56,6 +59,22 @@ def create_add_channel_dialog():
                 Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=AddChannelMenu.check_permissions,
+            parse_mode=ParseMode.HTML
+        ),
+        Window(
+            Format(
+                "🎉 <b>Дякуємо! Канал {dialog_data[channel_name]} успішно доданий.</b>\n\n"
+                "Наразі вам доступна обмежена безкоштовна підписка.\n"
+                "Для розширення функціоналу підпишіться на платну версію"
+            ),
+            Row(
+                Button(Const("Створити флоу"), id="create_flow", on_click=create_flow),
+                Button(Const("Оформити підписку"), id="subscribe", on_click=subscribe),
+            ),
+            Row(
+                Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
+            ),
+            state=AddChannelMenu.success,
             parse_mode=ParseMode.HTML
         )
     )
