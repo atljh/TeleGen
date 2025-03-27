@@ -6,6 +6,7 @@ from aiogram_dialog import DialogManager, StartMode
 from dialogs.main.states import MainMenu
 from .states import GenerationMenu
 from .add_channel.states import AddChannelMenu
+from .flow.states import FlowMenu
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,10 @@ async def add_channel(callback: CallbackQuery, button: Button, manager: DialogMa
 async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
 
+
+async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.start(FlowMenu.main)
+
 async def on_create_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(GenerationMenu.create_flow)
 
@@ -51,5 +56,3 @@ async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogMana
 async def on_book_recall(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(GenerationMenu.book_recall)
 
-async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(GenerationMenu.message)

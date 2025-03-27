@@ -11,7 +11,6 @@ from .callbacks import (
     on_channel_selected,
     add_channel,
     go_back_to_main,
-
     on_create_flow,
     on_buffer,
     on_book_recall,
@@ -49,7 +48,7 @@ def create_generation_dialog():
                 Button(Const("🔙 Назад"), id="back", on_click=go_back_to_main),
             ),
             state=GenerationMenu.main,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=get_user_channels_data,
         ),
         Window(
@@ -62,6 +61,10 @@ def create_generation_dialog():
             ),
             Row(
                 Back(Const("🔙 Назад")),
+            ),
+            Row(
+                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main),
+
             ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.MARKDOWN_V2,
