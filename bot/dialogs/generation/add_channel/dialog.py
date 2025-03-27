@@ -56,7 +56,7 @@ def create_add_channel_dialog():
             Format("{dialog_data[result]}"),
             Row(
                 Button(Const("🔄 Спробувати знову"), id="retry_check", on_click=check_permissions),
-                Back(Const("◀️ Назад")),
+                Back(Const("◀🔙 Назад")),
             ),
             state=AddChannelMenu.check_permissions,
             parse_mode=ParseMode.HTML

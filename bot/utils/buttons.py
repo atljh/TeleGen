@@ -10,3 +10,6 @@ async def go_back_to_main(callback: CallbackQuery, button: Button, manager: Dial
 
 async def go_back_to_generation(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(GenerationMenu.main, mode=StartMode.RESET_STACK)
+
+async def go_back_to_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.start(GenerationMenu.channel_main, mode=StartMode.RESET_STACK)

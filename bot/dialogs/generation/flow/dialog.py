@@ -4,6 +4,10 @@ from aiogram_dialog.widgets.kbd import Button, Column, Row, Back
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram.enums import ParseMode
 
+from utils.buttons import (
+    go_back_to_channel,
+    go_back_to_main
+)
 from .states import FlowMenu
 from .callbacks import (
     on_publish_now,
@@ -26,7 +30,10 @@ def create_flow_dialog():
                 Button(Const("Сохранить в буфер"), id="save_to_buffer", on_click=on_save_to_buffer),
             ),
             Row(
-                Back(Const("Назад")),
+                Button(Const("🔙 Назад"), id="go_back_to_channel", on_click=go_back_to_channel),
+            ),
+            Row(
+                Button(Const("Головне меню "), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=FlowMenu.main,
             parse_mode=ParseMode.HTML,
