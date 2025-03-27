@@ -17,7 +17,6 @@ from .callbacks import (
     schedule_post
 )
 
-
 async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
     data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data
