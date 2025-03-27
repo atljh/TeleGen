@@ -17,7 +17,7 @@ from .callbacks import (
 )
 
 
-def create_flow_dialog():
+def flow_dialog():
     return Dialog(
         Window(
             Const("This component is used as the top message in a series.\n\n"

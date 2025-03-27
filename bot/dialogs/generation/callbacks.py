@@ -7,6 +7,7 @@ from dialogs.main.states import MainMenu
 from .states import GenerationMenu
 from .add_channel.states import AddChannelMenu
 from .flow.states import FlowMenu
+from .create_flow.states import CreateFlowMenu
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManage
     await manager.start(FlowMenu.main)
 
 async def on_create_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(GenerationMenu.create_flow)
+    await manager.start(CreateFlowMenu.select_source)
 
 async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(GenerationMenu.buffer)

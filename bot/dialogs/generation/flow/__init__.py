@@ -1,3 +1,3 @@
-from .dialog import create_flow_dialog 
+from .dialog import flow_dialog 
 
-all = ["create_flow_dialog"]
+all = ["flow_dialog"]
