@@ -18,12 +18,14 @@ from .callbacks import (
 
 
 async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
-    data = dialog_manager.dialog_data
+    data = dialog_manager.start_data or {}
+    dialog_data = dialog_manager.dialog_data
+    dialog_manager.dialog_data["post_text"] = dialog_data.get("post_text", "Текст відсутній")
     return {
-        "post_text": data.get("post_text", "Текст відсутній"),
-        "has_media": "✅" if "media" in data else "❌",
-        "publish_time": data.get("publish_time", datetime.now()).strftime("%d.%m.%Y %H:%M"),
-        "is_scheduled": "🕒 Заплановано" if "publish_time" in data else "⏳ Не заплановано"
+        "post_text": data.get("post_text") or dialog_data.get("post_text", "Текст відсутній"),
+        "has_media": "✅" if "media" in dialog_data else "❌",
+        "publish_time": dialog_data.get("publish_time", datetime.now()).strftime("%d.%m.%Y %H:%M"),
+        "is_scheduled": "🕒 Заплановано" if "publish_time" in dialog_data else "⏳ Не заплановано"
     }
 
 def create_buffer_dialog():
@@ -60,22 +62,4 @@ def create_buffer_dialog():
             ),
             state=BufferMenu.set_schedule,
         ),
-
-        Window(
-            Format(
-                "✏️ <b>Редагування тексту</b>\n\n"
-                "Поточний текст:\n{post_text}\n\n"
-                "Надішліть новий текст:"
-            ),
-            MessageInput(
-                func=on_text_edited,
-                content_types=ContentType.TEXT
-            ),
-            Row(
-                Back(Const("◀️ Скасувати")),
-            ),
-            state=BufferMenu.edit_text,
-            parse_mode=ParseMode.HTML,
-            getter=get_buffer_data
-        )
     )

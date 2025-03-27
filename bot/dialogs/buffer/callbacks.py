@@ -20,9 +20,6 @@ async def publish_now(callback: CallbackQuery, button: Button, manager: DialogMa
         bot: Bot = manager.middleware_data["bot"]
         channel_service = Container.channel_service()
         
-        post_text = manager.dialog_data.get("post_text", "📢 <b>Тестова публікація</b>\n\nЦе тестовий пост для перевірки функціоналу.")
-        media = manager.dialog_data.get("media")
-        
         channels = await channel_service.get_user_channels(callback.from_user.id)
         
         if not channels:
@@ -40,7 +37,8 @@ async def publish_now(callback: CallbackQuery, button: Button, manager: DialogMa
                 )
         
         await callback.answer("🔄 Публікація завершена")
-        
+        await manager.start(BufferMenu.preview)
+
     except Exception as e:
         logger.error(f"Критична помилка публікації: {e}")
         await callback.answer("❌ Сталася критична помилка при публікації!")
@@ -80,7 +78,6 @@ async def send_post(bot: Bot, post_data: dict, channel_id: int):
             text=post_data['post_text'],
             parse_mode=ParseMode.HTML
         )
-
 
 
 async def open_calendar(callback: CallbackQuery, widget, dialog_manager: DialogManager):

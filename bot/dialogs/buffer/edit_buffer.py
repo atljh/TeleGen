@@ -17,10 +17,13 @@ class EditPostMenu(StatesGroup):
     edit_links = State()
     edit_buttons = State()
 
+async def get_edit_data(dialog_manager: DialogManager, **kwargs):
+    return {"post_text": dialog_manager.dialog_data.get("post_text", "Текст вiдсутнiй")}
+
 def create_edit_dialog():
     return Dialog(
         Window(
-            Const("TEST POST TEXT"),
+            Format("Поточний текст: {post_text}"),
             Row(
                 Button(Const("Змінити текст"), id="edit_text_btn", on_click=lambda c, b, m: m.switch_to(EditPostMenu.edit_text)),
                 Button(Const("Змінити медіа"), id="edit_media_btn", on_click=lambda c, b, m: m.switch_to(EditPostMenu.edit_media)),
@@ -33,7 +36,8 @@ def create_edit_dialog():
                 Button(Const("◀️ Назад"), id='go_back_to_buffer', on_click=go_back_to_buffer),
             ),
             state=EditPostMenu.edit_options,
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
+            getter=get_edit_data,
         ),
 
         Window(
@@ -62,13 +66,14 @@ def create_edit_dialog():
             state=EditPostMenu.edit_media,
             parse_mode=ParseMode.HTML
         ),
-
     )
 
 
 async def save_new_text(message: Message, widget: MessageInput, manager: DialogManager):
-    manager.dialog_data["post_text"] = message.html_text
-    await manager.switch_to(EditPostMenu.edit_options)
+    new_text = message.html_text
+    manager.dialog_data["post_text"] = new_text
+
+    await manager.start(BufferMenu.preview, mode=StartMode.RESET_STACK, data={"post_text": new_text})
     await message.answer("✅ Текст успішно оновлено!")
 
 async def save_new_media(message: Message, widget: MessageInput, manager: DialogManager):
