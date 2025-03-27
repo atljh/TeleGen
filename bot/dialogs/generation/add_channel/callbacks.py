@@ -4,6 +4,7 @@ from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog.widgets.input import MessageInput
 
 from .states import AddChannelMenu
+from dialogs.generation.states import GenerationMenu
 from bot.utils.permissions import check_bot_permissions
 from bot.utils.validation import is_valid_channel
 from bot.containers import Container
@@ -45,6 +46,10 @@ async def save_channel_and_proceed(telegram_id: int, chat, manager: DialogManage
     )
     
     logging.info(f"Канал {'створено' if created else 'знайдено'}: {channel_dto}")
+
+    if not created:
+        await manager.switch_to(GenerationMenu.main)
+        return
     
     await manager.update({
         "result": f"✅ Канал {chat.title} успішно додано!",

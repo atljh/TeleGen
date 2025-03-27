@@ -30,7 +30,6 @@ async def on_channel_selected(
             
         manager.dialog_data["selected_channel"] = selected_channel
         
-        await callback.answer(f"Channel {selected_channel.name}")
         await manager.switch_to(GenerationMenu.channel_main)
         
     except Exception as e:
@@ -52,5 +51,5 @@ async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogMana
 async def on_book_recall(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(GenerationMenu.book_recall)
 
-async def on_message(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(GenerationMenu.message)
