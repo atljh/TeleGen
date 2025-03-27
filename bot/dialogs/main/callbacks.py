@@ -21,7 +21,7 @@ async def on_buffer_click(
     manager: DialogManager
 ):
     await callback.answer()
-    await manager.start(BufferMenu.main, mode=StartMode.RESET_STACK)
+    await manager.start(BufferMenu.preview, mode=StartMode.RESET_STACK)
 
 async def on_settings_click(
     callback: CallbackQuery, 
