@@ -7,3 +7,6 @@ async def is_valid_channel(bot: Bot, channel_id: str) -> bool:
         return chat.type in ["channel", "supergroup"]
     except Exception:
         return False
+    
+def is_valid_link(link: str) -> bool:
+    return link.startswith(('http://', 'https://'))
