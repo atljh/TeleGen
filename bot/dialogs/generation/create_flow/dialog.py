@@ -11,6 +11,10 @@ from .callbacks import(
     on_web,
     on_telegram,
 
+    on_once_a_day,
+    on_once_a_12,
+    on_once_an_hour,
+
     on_source_link_entered,
     on_existing_source_selected,
     on_add_new_source_type
@@ -33,21 +37,40 @@ def create_flow_dialog():
             parse_mode=ParseMode.HTML,
         ),
         Window(
+            Const("Оберіть частоту генерацii"),
+            Column(
+                Button(Const("Раз на день"), id="once_a_day", on_click=on_once_a_day),
+                Button(Const("Раз на 12 годин"), id="once_a_12", on_click=on_once_a_12),
+                Button(Const("Раз на годину"), id="once_an_hour", on_click=on_once_an_hour),
+            ),
+            state=CreateFlowMenu.select_frequency,
+            parse_mode=ParseMode.HTML,
+        ),
+        Window(
+            Const("Оберіть обмеження по кiлькостi знакiв в постах"),
+            Column(
+                Button(Const("До 100"), id="instagram", on_click=on_instagram),
+                Button(Const("До 300"), id="facebook", on_click=on_facebook),
+                Button(Const("До 100"), id="web", on_click=on_web),
+            ),
+            state=CreateFlowMenu.select_words_limit,
+            parse_mode=ParseMode.HTML,
+        ),
+        Window(
             Const("Відправьте лінк з обраного джерела за шаблоном"),
             Column(
-                Button(Const("НАЗВА ДЖЕРЕЛА1"), id="source1"),
-                Button(Const("НАЗВА ДЖЕРЕЛА2"), id="source2"),
-                Button(Const("+ДОДАТИ НОВИЙ ТИП"), id="add_new_source_type"),
+                Button(Const("НАЗВА ДЖЕРЕЛА1"), id="source1", on_click=on_existing_source_selected),
+                Button(Const("НАЗВА ДЖЕРЕЛА2"), id="source2", on_click=on_existing_source_selected),
+                Button(Const("+ДОДАТИ НОВИЙ ТИП"), id="add_new_source_type", on_click=on_add_new_source_type),
             ),
             Row(
                 Back(Const("НАЗАД")),
             ),
-            # Отдельно добавляем TextInput (не внутри Column)
             TextInput(
                 id="source_link_input",
                 on_success=on_source_link_entered,
             ),
             state=CreateFlowMenu.add_source_link,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
         ),
     )
