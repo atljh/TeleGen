@@ -6,6 +6,9 @@ from aiogram_dialog.widgets.input import TextInput
 from utils.validation import is_valid_link
 from .states import CreateFlowMenu
 
+
+# ==================SOURCE======================
+
 async def on_instagram(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data['selected_source'] = 'instagram'
     await callback.answer("Обрано Instagram")
@@ -26,6 +29,7 @@ async def on_telegram(callback: CallbackQuery, button: Button, manager: DialogMa
     await callback.answer("Обрано telegram")
     await manager.switch_to(CreateFlowMenu.add_source_link)
 
+# ==================FREQUENCY======================
 
 async def on_once_a_day(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data['selected_frequency'] = 'once_a_day'
@@ -42,6 +46,22 @@ async def on_once_an_hour(callback: CallbackQuery, button: Button, manager: Dial
     await callback.answer("Раз на годину")
     await manager.switch_to(CreateFlowMenu.select_words_limit)
 
+# ==================WORDS LIMIT======================
+
+async def on_to_100(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data['selected_words_limit'] = 'to_100'
+    await callback.answer("До 100")
+    await manager.switch_to(CreateFlowMenu.select_words_limit)
+
+async def on_to_300(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data['selected_words_limit'] = 'to_300'
+    await callback.answer("До 300")
+    await manager.switch_to(CreateFlowMenu.select_words_limit)
+
+async def on_to_1000(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data['selected_words_limit'] = 'to_1000'
+    await callback.answer("До 1000")
+    await manager.switch_to(CreateFlowMenu.select_words_limit)
 
 
 async def on_source_link_entered(

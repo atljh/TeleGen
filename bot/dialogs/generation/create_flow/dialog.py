@@ -4,6 +4,7 @@ from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.text import Const
 from aiogram.enums import ParseMode
 
+from utils.buttons import go_back_to_main
 from .states import CreateFlowMenu
 from .callbacks import(
     on_instagram,
@@ -14,6 +15,10 @@ from .callbacks import(
     on_once_a_day,
     on_once_a_12,
     on_once_an_hour,
+
+    on_to_100,
+    on_to_300,
+    on_to_1000,
 
     on_source_link_entered,
     on_existing_source_selected,
@@ -33,6 +38,9 @@ def create_flow_dialog():
             Row(
                 Next(Const("Далі"), id="next"),
             ),
+            Row(
+                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)
+            ),
             state=CreateFlowMenu.select_source,
             parse_mode=ParseMode.HTML,
         ),
@@ -43,15 +51,21 @@ def create_flow_dialog():
                 Button(Const("Раз на 12 годин"), id="once_a_12", on_click=on_once_a_12),
                 Button(Const("Раз на годину"), id="once_an_hour", on_click=on_once_an_hour),
             ),
+            Row(
+                Back(Const("🔙 Назад")),
+            ),
             state=CreateFlowMenu.select_frequency,
             parse_mode=ParseMode.HTML,
         ),
         Window(
             Const("Оберіть обмеження по кiлькостi знакiв в постах"),
             Column(
-                Button(Const("До 100"), id="instagram", on_click=on_instagram),
-                Button(Const("До 300"), id="facebook", on_click=on_facebook),
-                Button(Const("До 100"), id="web", on_click=on_web),
+                Button(Const("До 100"), id="to_100", on_click=on_to_100),
+                Button(Const("До 300"), id="to_300", on_click=on_to_300),
+                Button(Const("До 1000"), id="to_1000", on_click=on_to_1000),
+            ),
+            Row(
+                Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.select_words_limit,
             parse_mode=ParseMode.HTML,
@@ -64,7 +78,7 @@ def create_flow_dialog():
                 Button(Const("+ДОДАТИ НОВИЙ ТИП"), id="add_new_source_type", on_click=on_add_new_source_type),
             ),
             Row(
-                Back(Const("НАЗАД")),
+                Back(Const("🔙 Назад")),
             ),
             TextInput(
                 id="source_link_input",
