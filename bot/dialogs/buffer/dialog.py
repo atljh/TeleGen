@@ -12,37 +12,33 @@ from .states import BufferMenu
 from .callbacks import (
     publish_now,
     on_text_edited,
-    on_media_edited,
-    on_calendar_selected,
-    publish_immediately,
-    schedule_publication
+    open_calendar,
+    schedule_post
 )
 
 
-async def get_post_preview_data(dialog_manager: DialogManager, **kwargs):
+async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
     data = dialog_manager.dialog_data
     return {
         "post_text": data.get("post_text", "Текст відсутній"),
         "has_media": "✅" if "media" in data else "❌",
-        "publish_time": data.get(
-            "publish_time", 
-            datetime.now()
-        ).strftime("%d.%m.%Y %H:%M")
+        "publish_time": data.get("publish_time", datetime.now()).strftime("%d.%m.%Y %H:%M"),
+        "is_scheduled": "🕒 Заплановано" if "publish_time" in data else "⏳ Не заплановано"
     }
 
 def create_buffer_dialog():
     return Dialog(
         Window(
-            Const(
+            Format(
                 "📌 <b>Буфер публікацій</b>\n\n"
-                "<b>Текст:</b> {post_text}\n"
-                "<b>Медіа:</b> {has_media}\n"
-                "<b>Час публікації:</b> {publish_time}\n\n"
+                "Текст: {post_text}\n"
+                "Медіа: {has_media}\n"
+                "Статус: {is_scheduled}\n\n"
                 "Оберіть дію:"
             ),
             Row(
                 Button(Const("✅ Опублікувати зараз"), id="publish_now", on_click=publish_now),
-                Button(Const("📅 Запланувати"), id="schedule_publish", on_click=schedule_publication),
+                Button(Const("📅 Запланувати"), id="schedule_publish", on_click=open_calendar),
             ),
             Row(
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_text_edited),
@@ -53,6 +49,33 @@ def create_buffer_dialog():
             ),
             state=BufferMenu.preview,
             parse_mode=ParseMode.HTML,
-            getter=get_post_preview_data
+            getter=get_buffer_data
+        ),
+
+        Window(
+            Const("📅 Виберіть дату публікації:"),
+            Calendar(id="calendar", on_click=schedule_post),
+            Row(
+                Back(Const("◀️ Скасувати")),
+            ),
+            state=BufferMenu.set_schedule,
+        ),
+
+        Window(
+            Format(
+                "✏️ <b>Редагування тексту</b>\n\n"
+                "Поточний текст:\n{post_text}\n\n"
+                "Надішліть новий текст:"
+            ),
+            MessageInput(
+                func=on_text_edited,
+                content_types=ContentType.TEXT
+            ),
+            Row(
+                Back(Const("◀️ Скасувати")),
+            ),
+            state=BufferMenu.edit_text,
+            parse_mode=ParseMode.HTML,
+            getter=get_buffer_data
         )
     )
