@@ -34,8 +34,6 @@ services:
     image: redis:7
     container_name: telegram_bot_redis
     restart: always
-    ports:
-      - "6379:6379"
     volumes:
       - ./data/redis_data:/data
 
