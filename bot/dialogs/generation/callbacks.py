@@ -39,7 +39,7 @@ async def on_channel_selected(
         await callback.answer("Error processing selection")
 
 async def add_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(AddChannelMenu.enter_channel_id)
+    await manager.start(AddChannelMenu.instructions)
 
 async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)

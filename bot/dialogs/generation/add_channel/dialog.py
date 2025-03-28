@@ -20,15 +20,6 @@ from utils.buttons import (
 def create_add_channel_dialog():
     return Dialog(
         Window(
-            Const("✏️ Введіть @username або ID вашого каналу:"),
-            Row(
-                Button(Const("◀️ Назад"), id="go_back_to_generation", on_click=go_back_to_generation),
-            ),
-            MessageInput(process_channel_input),
-            state=AddChannelMenu.enter_channel_id,
-            parse_mode=ParseMode.HTML
-        ),
-        Window(
             Jinja(
                 "📝 <b>Інструкція з додавання бота до каналу</b>\n\n"
                 "<b>1. Додайте <a href='{{bot_url}}'>@{{bot_username}}</a> як адміністратора</b>\n\n"
@@ -51,15 +42,6 @@ def create_add_channel_dialog():
             state=AddChannelMenu.instructions,
             parse_mode=ParseMode.HTML,
             getter=channel_data_getter
-        ),
-        Window(
-            Format("{dialog_data[result]}"),
-            Row(
-                Button(Const("🔄 Спробувати знову"), id="retry_check", on_click=check_permissions),
-                Back(Const("◀🔙 Назад")),
-            ),
-            state=AddChannelMenu.check_permissions,
-            parse_mode=ParseMode.HTML
         ),
         Window(
             Format(
