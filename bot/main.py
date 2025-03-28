@@ -11,6 +11,8 @@ from bot.containers import Container
 from bot.utils.logging import setup_logging
 from dialogs import register_dialogs
 
+from dialogs.generation.add_channel.callbacks import channel_router
+
 load_dotenv()
 
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -27,6 +29,7 @@ async def main():
     setup_dialogs(dp)
 
     dp.include_router(register_handlers())
+    dp.include_router(channel_router)
     
     container = Container()
     
