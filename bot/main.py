@@ -35,7 +35,7 @@ async def main():
     
     setup_logging()
     
-    await dp.start_polling(bot, allowed_updates=["chat_member", "message", "callback_query"])
+    await dp.start_polling(bot, allowed_updates=["my_chat_member", "message", "callback_query"])
 
 
 if __name__ == "__main__":
