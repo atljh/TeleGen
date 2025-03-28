@@ -18,7 +18,7 @@ from aiogram.filters import ChatMemberUpdatedFilter
 channel_router = Router()
 
 
-@channel_router.chat_member(ChatMemberUpdatedFilter(member_status_changed=True))
+@channel_router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=True))
 async def handle_chat_member_update(event: ChatMemberUpdated, dialog_manager: DialogManager):
     logging.info(event)
     if event.new_chat_member.user.id == event.bot.id:
