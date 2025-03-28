@@ -35,7 +35,8 @@ async def main():
     
     setup_logging()
     
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+    await dp.start_polling(bot, allowed_updates=["chat_member", "message", "callback_query"])
+
 
 if __name__ == "__main__":
     asyncio.run(main())
