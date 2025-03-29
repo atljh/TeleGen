@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.kbd import Button, Row, Column, Back, Calendar
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 from aiogram_dialog import DialogManager, StartMode
 
-from dialogs.main.states import MainMenu 
+from dialogs.main.states import MainMenu
 from .states import BufferMenu
 from .edit_buffer import EditPostMenu
 from bot.containers import Container
@@ -15,7 +15,11 @@ from bot.containers import Container
 logger = logging.getLogger(__name__)
 
 
-async def publish_now(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def publish_now(
+    callback: CallbackQuery,
+    button: Button,
+    manager: DialogManager
+):
     try:
         bot: Bot = manager.middleware_data["bot"]
         channel_service = Container.channel_service()

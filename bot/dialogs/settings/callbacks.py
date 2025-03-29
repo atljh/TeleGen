@@ -1,15 +1,41 @@
+import logging
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 
+from bot.dialogs.generation.states import GenerationMenu
 from dialogs.main.states import MainMenu 
+from .states import SettingsMenu
 
-async def on_channel1(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.message.answer("Канал1")
+logger = logging.getLogger(__name__)
 
-async def on_channel2(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.message.answer("Канал2")
+
+async def on_channel_selected(
+    callback: CallbackQuery,
+    widget,
+    manager: DialogManager,
+    item_id: str
+):
+    try:
+        data = manager.dialog_data
+        channels = data.get("channels", [])
+        selected_channel = next(
+            (channel for channel in channels if str(channel.id) == item_id),
+            None
+        )
+        
+        if not selected_channel:
+            await callback.answer("Channel not found!")
+            return
+            
+        manager.dialog_data["selected_channel"] = selected_channel
+        
+        await manager.switch_to(SettingsMenu.channel_settings)
+        
+    except Exception as e:
+        logger.error(f"Channel selection error: {e}")
+        await callback.answer("Error processing selection")
 
 async def pay_subscription(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.answer("Оплата пiдписки")

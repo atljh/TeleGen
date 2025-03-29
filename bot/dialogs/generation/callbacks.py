@@ -20,7 +20,6 @@ async def on_channel_selected(
     try:
         data = manager.dialog_data
         channels = data.get("channels", [])
-        logger.info(f'Channels {channels}')
         selected_channel = next(
             (channel for channel in channels if str(channel.id) == item_id),
             None
