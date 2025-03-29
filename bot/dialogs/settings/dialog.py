@@ -27,10 +27,10 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
 def create_settings_dialog():
     return Dialog(
         Window(
-            Const("Оберiть канал\nабо додайте новий"),
+            Const("📋 <b>Оберіть канал або додайте новий</b>"),
             Group(
                 Select(
-                    text=Format("{item.name}"),
+                    text=Format("📢 {item.name}"),
                     item_id_getter=lambda channel: channel.id,
                     items="channels",
                     id="channel_select",
@@ -39,25 +39,34 @@ def create_settings_dialog():
                 width=2,
             ),
             Row(
-                Button(Const("Оплата пiдписки"), id="pay_subscription", on_click=pay_subscription),
+                Button(Const("💳 Оплата підписки"), id="pay_subscription", on_click=pay_subscription),
             ),
             Row(
                 Button(Const("🔙 Назад"), id="back", on_click=go_back_to_main),
             ),
             state=SettingsMenu.main,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=get_user_channels_data,
         ),
         Window(
-            Const("Channel"),
-            Row(
-                Back(Const("🔙 Назад")),
+            Format(
+                "⚙️ <b>Налаштування каналу:</b>\n\n"
+                "📢 <b>Назва:</b> {dialog_data[selected_channel].name}\n"
+                "🆔 <b>ID:</b> <code>{dialog_data[selected_channel].id}</code>\n"
+                # "🔘 <b>Статус:</b> {dialog_data[selected_channel].status}\n"
+                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}"
+            ),
+            Column(
+                Button(Const("✏️ Змінити назву"), id="edit_name"),
+                Button(Const("🔄 Змінити статус"), id="toggle_status"),
+                Button(Const("📊 Статистика"), id="show_stats"),
+                Button(Const("🗑️ Видалити канал"), id="delete_channel"),
             ),
             Row(
-                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main),
-
+                Back(Const("◀️ До списку каналів")),
+                Button(Const("🏠 В головне меню"), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=SettingsMenu.channel_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         )
     )
