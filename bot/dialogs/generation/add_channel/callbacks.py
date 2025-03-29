@@ -11,32 +11,6 @@ from bot.containers import Container
 
 import logging
 
-from aiogram import Router
-from aiogram.types import ChatMemberUpdated
-from aiogram.filters import ChatMemberUpdatedFilter
-
-channel_router = Router()
-
-
-@channel_router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=True))
-async def handle_chat_member_update(event: ChatMemberUpdated, dialog_manager: DialogManager):
-    logging.info(event)
-    if event.new_chat_member.user.id == event.bot.id:
-        if event.new_chat_member.status in ['administrator', 'creator']:
-            channel_service = Container.channel_service()
-            await channel_service.get_or_create_channel(
-                user_telegram_id=event.from_user.id,
-                channel_id=str(event.chat.id),
-                name=event.chat.title
-            )
-            
-            await dialog_manager.start(
-                AddChannelMenu.success,
-                data={
-                    "channel_name": event.chat.title,
-                    "channel_id": str(event.chat.id)
-                }
-            )
 
 async def check_permissions(callback: CallbackQuery, button: Button, manager: DialogManager):
     bot = manager.middleware_data["bot"]
