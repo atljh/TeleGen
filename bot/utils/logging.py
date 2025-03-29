@@ -10,6 +10,6 @@ def setup_logging():
     )
 
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
-    logging.getLogger("aiogram").setLevel(logging.WARNING)
+    logging.getLogger("aiogram").setLevel(logging.DEBUG)
