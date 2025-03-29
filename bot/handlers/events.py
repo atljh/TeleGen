@@ -1,4 +1,3 @@
-# handlers/events.py
 import logging
 from aiogram import Router
 from aiogram.dispatcher.dispatcher import Dispatcher
@@ -12,6 +11,7 @@ router = Router()
 @router.my_chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> ADMINISTRATOR))
 async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogManager):
     logging.info(f"Chat member update received: {event}")
+    
     if event.new_chat_member.user.id == event.bot.id:
         channel_service = Container.channel_service()
         
@@ -21,9 +21,15 @@ async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogMan
             name=event.chat.title
         )
         
-        await event.answer(
-            text=f"✅ Бота добавлено в {event.chat.type} \"{event.chat.title}\" як адміністратора!"
-        )
+        try:
+            await event.bot.send_message(
+                chat_id=event.from_user.id,
+                text=f"✅ Бота було додано до каналу \"{event.chat.title}\" як адміністратора!\n\n"
+                     f"Тепер ви можете керувати публікаціями через меню бота."
+            )
+        except Exception as e:
+            logging.error(f"Не вдалося надіслати сповіщення користувачу: {e}")
+            
 
 def register_event_handlers(dp: Dispatcher):
     dp.include_router(router)
