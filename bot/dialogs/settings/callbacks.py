@@ -1,10 +1,9 @@
 import logging
-from aiogram_dialog.widgets.kbd import Button, Row
+from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog import DialogManager
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 
-from bot.dialogs.generation.states import GenerationMenu
 from dialogs.main.states import MainMenu 
 from .states import SettingsMenu
 

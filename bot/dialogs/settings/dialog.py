@@ -1,6 +1,6 @@
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column
+from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.text import Const
 from aiogram_dialog import DialogManager
@@ -56,10 +56,8 @@ def create_settings_dialog():
                 "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}"
             ),
             Column(
-                Button(Const("✏️ Змінити назву"), id="edit_name"),
-                Button(Const("🔄 Змінити статус"), id="toggle_status"),
-                Button(Const("📊 Статистика"), id="show_stats"),
-                Button(Const("🗑️ Видалити канал"), id="delete_channel"),
+                Next(Const("Загальнi"), id="main_settings"),
+                Button(Const("Налаштувати флоу"), id="flow_settings"),
             ),
             Row(
                 Back(Const("◀️ До списку каналів")),
@@ -67,5 +65,25 @@ def create_settings_dialog():
             ),
             state=SettingsMenu.channel_settings,
             parse_mode=ParseMode.HTML,
-        )
+        ),
+        Window(
+            Format(
+                "⚙️ <b>Налаштування каналу:</b>\n\n"
+                "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
+                "🆔 <b>ID:</b> <code>{dialog_data[selected_channel].channel_id}</code>\n"
+                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}"
+            ),
+            Column(
+                Button(Const("✏️ Змінити назву"), id="edit_name"),
+                Button(Const("🔄 Змінити статус"), id="toggle_status"),
+                Button(Const("📊 Статистика"), id="show_stats"),
+                Button(Const("🗑️ Видалити канал"), id="delete_channel"),
+            ),
+            Row(
+                Back(Const("◀️ До налаштувань")),
+                Button(Const("🏠 В головне меню"), id="go_back_to_main", on_click=go_back_to_main),
+            ),
+            state=SettingsMenu.channel_main_settings,
+            parse_mode=ParseMode.HTML,
+        ),
     )
