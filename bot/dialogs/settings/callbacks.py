@@ -41,3 +41,6 @@ async def pay_subscription(callback: CallbackQuery, button: Button, manager: Dia
 
 async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
+
+async def confirm_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.confirm_delete)

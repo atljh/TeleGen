@@ -11,7 +11,8 @@ from .states import SettingsMenu
 from .callbacks import (
     on_channel_selected,
     pay_subscription,
-    go_back_to_main
+    go_back_to_main,
+    confirm_delete_channel
 )
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
@@ -68,22 +69,34 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "⚙️ <b>Налаштування каналу:</b>\n\n"
+                "⚙️ <b>НАЛАШТУВАННЯ Загальні</b>\n\n"
                 "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
-                "🆔 <b>ID:</b> <code>{dialog_data[selected_channel].channel_id}</code>\n"
                 "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}"
+
+                # "ℹ️ На вашому каналі працює {dialog_data[selected_channel].subscription_type}\n\n"
             ),
             Column(
-                Button(Const("✏️ Змінити назву"), id="edit_name"),
-                Button(Const("🔄 Змінити статус"), id="toggle_status"),
-                Button(Const("📊 Статистика"), id="show_stats"),
-                Button(Const("🗑️ Видалити канал"), id="delete_channel"),
+                Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings"),
+                Button(Const("🌍 Налаштування часового поясу"), id="timezone_settings"),
+                Button(Const("😊 Емоції перед заголовком"), id="emoji_settings"),
+                Button(Const("📝 Підпис каналу"), id="channel_signature"),
+                Button(Const("🗑️ Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
             ),
             Row(
-                Back(Const("◀️ До налаштувань")),
-                Button(Const("🏠 В головне меню"), id="go_back_to_main", on_click=go_back_to_main),
+                Back(Const("<<< Назад")),
             ),
             state=SettingsMenu.channel_main_settings,
             parse_mode=ParseMode.HTML,
         ),
+        
+        Window(
+            Const("⚠️ <b>Ви впевнені, що хочете видалити цей канал?</b>\n\n"
+                 "Усі дані будуть втрачені без можливості відновлення."),
+            Column(
+                Button(Const("✅ Так, видалити"), id="confirm_delete"),
+                Button(Const("❌ Скасувати"), id="cancel_delete"),
+            ),
+            state=SettingsMenu.confirm_delete,
+            parse_mode=ParseMode.HTML,
+        )
     )
