@@ -52,8 +52,8 @@ def create_settings_dialog():
             Format(
                 "⚙️ <b>Налаштування каналу:</b>\n\n"
                 "📢 <b>Назва:</b> {dialog_data[selected_channel].name}\n"
-                "🆔 <b>ID:</b> <code>{dialog_data[selected_channel].id}</code>\n"
-                # "🔘 <b>Статус:</b> {dialog_data[selected_channel].status}\n"
+                "🆔 <b>ID:</b> <code>{dialog_data[selected_channel].channe_id}</code>\n"
+                "🔘 <b>Опис:</b> {dialog_data[selected_channel].description}\n"
                 "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}"
             ),
             Column(
