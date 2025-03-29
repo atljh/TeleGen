@@ -59,8 +59,7 @@ class ChannelService:
         channel = await self.channel_repository.get_channel_by_id(channel_id)
         updated_channel = await self.channel_repository.update_channel(channel)
         return ChannelDTO.from_orm(updated_channel)
-        
 
-    async def delete_user(self, channel_id: str):
+    async def delete_channel(self, channel_id: str):
         channel =  await self.channel_repository.get_channel_by_id(channel_id)
         await self.channel_repository.delete_channel(channel)

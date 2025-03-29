@@ -6,7 +6,6 @@ from aiogram.filters import (
     ADMINISTRATOR, IS_MEMBER,
     KICKED
 )
-from aiogram.enums import ChatMemberStatus
 from aiogram_dialog import DialogManager
 from bot.containers import Container
 import logging
@@ -42,6 +41,10 @@ async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogMan
 )
 async def bot_removed_from_channel(event: ChatMemberUpdated, dialog_manager: DialogManager):
     if event.new_chat_member.user.id == event.bot.id:
+
+        channel_service = Container.channel_service()
+        await channel_service.delete_channel(str(event.chat.id))
+        
         try:
             await event.bot.send_message(
                 chat_id=event.from_user.id,
