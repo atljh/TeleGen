@@ -5,3 +5,4 @@ class SettingsMenu(StatesGroup):
     channel_settings = State()
     channel_main_settings = State()
     confirm_delete = State()
+    flow_settings = State()

@@ -1,6 +1,6 @@
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next
+from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.text import Const
 from aiogram_dialog import DialogManager
@@ -17,6 +17,7 @@ from .callbacks import (
     delete_channel,
     cancel_delete_channel
 )
+from .flow_settings import open_flow_settings
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     channel_service = Container.channel_service()
@@ -27,6 +28,29 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
         "channels": channels or []
     }
 
+def create_flow_settings_window():
+    return Window(
+        Format(
+            "🔄 <b>НАЛАШТУВАННЯ ФЛОУ</b>\n\n"
+            "📢 <b>Канал:</b> {dialog_data[selected_channel].name}\n\n"
+            # "ℹ️ На вашому каналі працює {dialog_data[selected_channel].subscription_type}\n"
+            "🔢 <b>1520</b> (останній ID посту)\n\n"
+        ),
+        Column(
+            Button(Const("⏱ Частота генерації"), id="generation_frequency"),
+            Button(Const("🔠 Обмеження по знакам"), id="character_limit"),
+            Button(Const("📌 Виділення заголовку"), id="title_highlight"),
+            Button(Const("📢 Рекламний блок"), id="ad_block"),
+            Button(Const("📊 Кількість постів у флоу"), id="posts_in_flow"),
+            Button(Const("🗑 Видалити канал"), id="delete_channel"),
+            Button(Const("📚 Налаштування джерел"), id="source_settings"),
+        ),
+        Row(
+            SwitchTo(Const("<<< Назад"), id="back_to_main", state=SettingsMenu.channel_settings),
+        ),
+        state=SettingsMenu.flow_settings,
+        parse_mode=ParseMode.HTML,
+    )
 
 def create_settings_dialog():
     return Dialog(
@@ -61,7 +85,7 @@ def create_settings_dialog():
             ),
             Column(
                 Next(Const("Загальнi"), id="main_settings"),
-                Button(Const("Налаштувати флоу"), id="flow_settings"),
+                Button(Const("Налаштувати флоу"), id="flow_settings", on_click=open_flow_settings),
             ),
             Row(
                 Back(Const("◀️ До списку каналів")),
@@ -101,5 +125,6 @@ def create_settings_dialog():
             ),
             state=SettingsMenu.confirm_delete,
             parse_mode=ParseMode.HTML,
-        )
+        ),
+    create_flow_settings_window(),
     )
