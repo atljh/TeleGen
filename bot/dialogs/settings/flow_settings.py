@@ -7,12 +7,16 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 
 from .states import SettingsMenu
+from .callbacks import confirm_delete_channel
 
 # ================== ОБРАБОТЧИКИ ГЛАВНОГО МЕНЮ ФЛОУ ==================
 
 async def open_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
-    """Открывает настройки флоу"""
     await manager.switch_to(SettingsMenu.flow_settings)
+
+
+async def open_main_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.main)
 
 # ================== ОСНОВНЫЕ ОБРАБОТЧИКИ ФЛОУ ==================
 
@@ -74,3 +78,65 @@ async def adjust_character_limit(callback: CallbackQuery, button: Button, manage
     
     await callback.answer(f"Ліміт {action} до {new_limit if new_limit > 0 else '∞'} знаків")
     await manager.back()
+
+# ================== ОКНА НАСТРОЕК ФЛОУ ==================
+def create_flow_settings_window():
+    return Window(
+        Format(
+            "🔄 <b>НАЛАШТУВАННЯ ФЛОУ</b>\n\n"
+            "📢 <b>Канал:</b> {dialog_data[selected_channel].name}\n\n"
+        ),
+        Column(
+            Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),
+            Button(Const("🔠 Обмеження по знакам"), id="character_limit", on_click=set_character_limit),
+            Button(Const("📌 Виділення заголовку: {dialog_data[title_highlight]|yesno}"), 
+                 id="title_highlight", on_click=toggle_title_highlight),
+            Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
+            Button(Const("📊 Кількість постів у флоу"), id="posts_in_flow", on_click=set_posts_in_flow),
+            Button(Const("📚 Налаштування джерел"), id="source_settings", on_click=open_source_settings),
+            Button(Const("🗑 Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
+        ),
+        Row(
+            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_main_settings),
+        ),
+        state=SettingsMenu.flow_settings,
+        parse_mode=ParseMode.HTML,
+    )
+
+def create_frequency_settings_window():
+    return Window(
+        Const("⏱ <b>Налаштування частоти генерації</b>\n\n"
+             "Оберіть як часто бот буде генерувати пости:"),
+        Column(
+            Button(Const("🕒 Кожні 3 години"), id="freq_3h"),
+            Button(Const("🕕 Кожні 6 годин"), id="freq_6h"),
+            Button(Const("🕘 Кожні 12 годин"), id="freq_12h"),
+            Button(Const("🌙 Раз на день"), id="freq_24h"),
+            Button(Const("✏️ Вказати власний інтервал"), id="custom_freq"),
+        ),
+        Row(
+            Back(Const("◀️ Назад")),
+        ),
+        state=SettingsMenu.generation_frequency,
+        parse_mode=ParseMode.HTML,
+    )
+
+def create_character_limit_window():
+    return Window(
+        Format(
+            "🔠 <b>Обмеження по знакам</b>\n\n"
+            "Поточний ліміт: {dialog_data[char_limit]} знаків\n\n"
+            "Оберіть дію:"
+        ),
+        Column(
+            Button(Const("➕ Збільшити"), id="increase_limit"),
+            Button(Const("➖ Зменшити"), id="decrease_limit"),
+            Button(Const("✏️ Вказати точне число"), id="set_exact_limit"),
+            Button(Const("♾ Вимкнути обмеження"), id="disable_limit"),
+        ),
+        Row(
+            Back(Const("◀️ Назад")),
+        ),
+        state=SettingsMenu.character_limit,
+        parse_mode=ParseMode.HTML,
+    )

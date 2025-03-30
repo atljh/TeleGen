@@ -12,4 +12,3 @@ class SettingsMenu(StatesGroup):
     ad_block_settings = State()
     posts_in_flow = State()
     source_settings = State()
-    # Добавьте другие состояния по мере необходимости
