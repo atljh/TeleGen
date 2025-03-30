@@ -12,7 +12,10 @@ from .callbacks import (
     on_channel_selected,
     pay_subscription,
     go_back_to_main,
-    confirm_delete_channel
+    confirm_delete_channel,
+
+    delete_channel,
+    cancel_delete_channel
 )
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
@@ -93,8 +96,8 @@ def create_settings_dialog():
             Const("⚠️ <b>Ви впевнені, що хочете видалити цей канал?</b>\n\n"
                  "Усі дані будуть втрачені без можливості відновлення."),
             Column(
-                Button(Const("✅ Так, видалити"), id="confirm_delete"),
-                Button(Const("❌ Скасувати"), id="cancel_delete"),
+                Button(Const("✅ Так, видалити"), id="confirm_delete", on_click=delete_channel),
+                Button(Const("❌ Скасувати"), id="cancel_delete", on_click=cancel_delete_channel),
             ),
             state=SettingsMenu.confirm_delete,
             parse_mode=ParseMode.HTML,

@@ -4,6 +4,7 @@ from aiogram_dialog import DialogManager
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 
+from bot.containers import Container
 from dialogs.main.states import MainMenu 
 from .states import SettingsMenu
 
@@ -44,3 +45,13 @@ async def go_back_to_main(callback: CallbackQuery, button: Button, manager: Dial
 
 async def confirm_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(SettingsMenu.confirm_delete)
+
+async def delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
+    channel_service = Container.channel_service() 
+    channel = manager.dialog_data['selected_channel']
+    await channel_service.delete_channel(channel.channel_id)
+    await callback.answer(f"Канал {channel.name} видалено")
+    await manager.switch_to(SettingsMenu.main)
+
+async def cancel_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.channel_main_settings)
