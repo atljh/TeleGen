@@ -10,6 +10,8 @@ from aiogram_dialog import DialogManager
 from bot.containers import Container
 import logging
 
+from bot.database.exceptions import ChannelNotFoundError
+
 channel_router = Router()
 
 @channel_router.my_chat_member(
@@ -43,8 +45,10 @@ async def bot_removed_from_channel(event: ChatMemberUpdated, dialog_manager: Dia
     if event.new_chat_member.user.id == event.bot.id:
 
         channel_service = Container.channel_service()
-        await channel_service.delete_channel(str(event.chat.id))
-        
+        try:
+            await channel_service.delete_channel(str(event.chat.id))
+        except ChannelNotFoundError:
+            pass
         try:
             await event.bot.send_message(
                 chat_id=event.from_user.id,
