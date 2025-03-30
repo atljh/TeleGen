@@ -1,8 +1,8 @@
 import logging
-from aiogram_dialog.widgets.kbd import Button
-from aiogram_dialog import DialogManager
 from aiogram.types import CallbackQuery
-from aiogram_dialog import DialogManager, StartMode
+from aiogram_dialog.widgets.kbd import Button
+from aiogram_dialog import DialogManager, StartMode, Dialog, Window
+from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 
 from bot.containers import Container
 from dialogs.main.states import MainMenu 
