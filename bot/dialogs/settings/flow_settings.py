@@ -89,19 +89,29 @@ def create_flow_settings_window():
         Column(
             Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),
             Button(Const("🔠 Обмеження по знакам"), id="character_limit", on_click=set_character_limit),
-            Button(Const("📌 Виділення заголовку: {dialog_data[title_highlight]|yesno}"), 
-                 id="title_highlight", on_click=toggle_title_highlight),
+            Button(
+                Format("📌 Виділення заголовку: {highlight_status}"), 
+                id="title_highlight", 
+                on_click=toggle_title_highlight
+            ),
             Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
             Button(Const("📊 Кількість постів у флоу"), id="posts_in_flow", on_click=set_posts_in_flow),
             Button(Const("📚 Налаштування джерел"), id="source_settings", on_click=open_source_settings),
             Button(Const("🗑 Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
         ),
         Row(
-            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_main_settings),
+            Button(Const("◀️ Назад"), id="open_main_settings", on_click=open_main_settings),
         ),
         state=SettingsMenu.flow_settings,
         parse_mode=ParseMode.HTML,
+        getter=flow_settings_getter
     )
+
+async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
+    current = dialog_manager.dialog_data.get("title_highlight", False)
+    return {
+        "highlight_status": "✅ увімкнено" if current else "❌ вимкнено"
+    }
 
 def create_frequency_settings_window():
     return Window(
