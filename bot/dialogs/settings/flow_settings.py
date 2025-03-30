@@ -5,9 +5,12 @@ from aiogram_dialog import DialogManager, Window, Dialog
 from aiogram_dialog.widgets.kbd import Button, Back, SwitchTo, Select
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
+from aiogram_dialog.widgets.input import TextInput, MessageInput
 
 from .states import SettingsMenu
 from .callbacks import confirm_delete_channel
+
+import logging
 
 # ================== ОБРАБОТЧИКИ ГЛАВНОГО МЕНЮ ФЛОУ ==================
 
@@ -83,7 +86,7 @@ async def set_exact_limit(callback: CallbackQuery, button: Button, manager: Dial
     await manager.switch_to(SettingsMenu.exact_limit_input)
     await callback.answer("Введіть число від 100 до 10000")
 
-async def handle_exact_limit_input(message: Message, dialog_manager: DialogManager):
+async def handle_exact_limit_input(message: Message, widget, dialog_manager: DialogManager):
     try:
         limit = int(message.text)
         if 100 <= limit <= 10000:
@@ -95,17 +98,6 @@ async def handle_exact_limit_input(message: Message, dialog_manager: DialogManag
     except ValueError:
         await message.answer("Будь ласка, введіть коректне число")
 
-def create_exact_limit_input_window():
-    return Window(
-        Const("✏️ <b>Введіть точний ліміт символів</b>\n\n"
-             "Допустимий діапазон: 100-10000\n\n"
-             "Або натисніть 'Назад' для скасування"),
-        Row(
-            Back(Const("◀️ Назад")),
-        ),
-        state=SettingsMenu.exact_limit_input,
-        parse_mode=ParseMode.HTML
-    )
 
 # ================== ОКНА НАСТРОЕК ФЛОУ ==================
 def create_flow_settings_window():
@@ -162,6 +154,22 @@ def create_frequency_settings_window():
         ),
         state=SettingsMenu.generation_frequency,
         parse_mode=ParseMode.HTML,
+    )
+
+def create_exact_limit_input_window():
+    return Window(
+        Const("✏️ <b>Введіть точний ліміт символів</b>\n\n"
+             "Допустимий діапазон: 100-10000\n\n"
+             "Або натисніть 'Назад' для скасування"),
+        MessageInput(
+            handle_exact_limit_input,
+            filter=F.text,
+        ),
+        Row(
+            Back(Const("◀️ Назад")),
+        ),
+        state=SettingsMenu.exact_limit_input,
+        parse_mode=ParseMode.HTML
     )
 
 def create_character_limit_window():
