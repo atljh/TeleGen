@@ -1,6 +1,6 @@
 from aiogram import F
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, Window, Dialog
 from aiogram_dialog.widgets.kbd import Button, Back, SwitchTo, Select
 from aiogram_dialog.widgets.text import Const, Format
@@ -76,7 +76,36 @@ async def adjust_character_limit(callback: CallbackQuery, button: Button, manage
     }.get(button.widget_id, "змінено")
     
     await callback.answer(f"Ліміт {action} до {new_limit if new_limit > 0 else '∞'} знаків")
-    await manager.back()
+    await manager.show()
+    
+
+async def set_exact_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.exact_limit_input)
+    await callback.answer("Введіть число від 100 до 10000")
+
+async def handle_exact_limit_input(message: Message, dialog_manager: DialogManager):
+    try:
+        limit = int(message.text)
+        if 100 <= limit <= 10000:
+            dialog_manager.dialog_data["char_limit"] = limit
+            await dialog_manager.switch_to(SettingsMenu.character_limit)
+            await message.answer(f"Ліміт оновлено до {limit} знаків")
+        else:
+            await message.answer("Будь ласка, введіть число від 100 до 10000")
+    except ValueError:
+        await message.answer("Будь ласка, введіть коректне число")
+
+def create_exact_limit_input_window():
+    return Window(
+        Const("✏️ <b>Введіть точний ліміт символів</b>\n\n"
+             "Допустимий діапазон: 100-10000\n\n"
+             "Або натисніть 'Назад' для скасування"),
+        Row(
+            Back(Const("◀️ Назад")),
+        ),
+        state=SettingsMenu.exact_limit_input,
+        parse_mode=ParseMode.HTML
+    )
 
 # ================== ОКНА НАСТРОЕК ФЛОУ ==================
 def create_flow_settings_window():
@@ -143,13 +172,33 @@ def create_character_limit_window():
             "Оберіть дію:"
         ),
         Column(
-            Button(Const("➕ Збільшити"), id="increase_limit"),
-            Button(Const("➖ Зменшити"), id="decrease_limit"),
-            Button(Const("✏️ Вказати точне число"), id="set_exact_limit"),
-            Button(Const("♾ Вимкнути обмеження"), id="disable_limit"),
+            Button(
+                Const("➕ Збільшити"), 
+                id="increase_limit", 
+                on_click=adjust_character_limit
+            ),
+            Button(
+                Const("➖ Зменшити"), 
+                id="decrease_limit", 
+                on_click=adjust_character_limit
+            ),
+            Button(
+                Const("✏️ Вказати точне число"), 
+                id="set_exact_limit",
+                on_click=set_exact_limit
+            ),
+            Button(
+                Const("♾ Вимкнути обмеження"), 
+                id="disable_limit",
+                on_click=adjust_character_limit
+            ),
         ),
         Row(
-            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("◀️ Назад"), 
+                id="open_flow_settings", 
+                on_click=open_flow_settings
+            ),
         ),
         state=SettingsMenu.character_limit,
         parse_mode=ParseMode.HTML,
