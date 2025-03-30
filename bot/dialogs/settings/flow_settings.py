@@ -14,7 +14,6 @@ from .callbacks import confirm_delete_channel
 async def open_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(SettingsMenu.flow_settings)
 
-
 async def open_main_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(SettingsMenu.main)
 
@@ -107,6 +106,11 @@ def create_flow_settings_window():
         getter=flow_settings_getter
     )
 
+async def character_limit_getter(dialog_manager: DialogManager, **kwargs):
+    return {
+        "char_limit": dialog_manager.dialog_data.get("char_limit", 1000)
+    }
+
 async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
     current = dialog_manager.dialog_data.get("title_highlight", False)
     return {
@@ -125,7 +129,7 @@ def create_frequency_settings_window():
             Button(Const("✏️ Вказати власний інтервал"), id="custom_freq"),
         ),
         Row(
-            Back(Const("◀️ Назад")),
+            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=SettingsMenu.generation_frequency,
         parse_mode=ParseMode.HTML,
@@ -135,7 +139,7 @@ def create_character_limit_window():
     return Window(
         Format(
             "🔠 <b>Обмеження по знакам</b>\n\n"
-            "Поточний ліміт: {dialog_data[char_limit]} знаків\n\n"
+            "Поточний ліміт: {char_limit} знаків\n\n"
             "Оберіть дію:"
         ),
         Column(
@@ -145,8 +149,9 @@ def create_character_limit_window():
             Button(Const("♾ Вимкнути обмеження"), id="disable_limit"),
         ),
         Row(
-            Back(Const("◀️ Назад")),
+            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=SettingsMenu.character_limit,
         parse_mode=ParseMode.HTML,
+        getter=character_limit_getter
     )
