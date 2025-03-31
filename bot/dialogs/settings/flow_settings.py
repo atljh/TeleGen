@@ -310,9 +310,7 @@ def create_source_settings_window():
             Button(Const("✏️ Редагувати джерела"), id="edit_sources"),
             Button(Const("🗑 Видалити джерело"), id="delete_source"),
         ),
-        Row(
-            Back(Const("◀️ Назад")),
-        ),
+        Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),    
         state=SettingsMenu.source_settings,
         parse_mode=ParseMode.HTML
     )
