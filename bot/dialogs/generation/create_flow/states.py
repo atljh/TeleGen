@@ -9,3 +9,6 @@ class CreateFlowMenu(StatesGroup):
     message_preview = State()
     title_highlight_confirm = State()
     ad_time_settings = State()
+
+    flow_volume_settings = State()
+    custom_volume_input = State()

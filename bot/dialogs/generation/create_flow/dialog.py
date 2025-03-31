@@ -1,6 +1,6 @@
 from aiogram import F
 from aiogram_dialog import Dialog, Window, DialogManager
-from aiogram_dialog.widgets.kbd import Button, Column, Row, Next, Back
+from aiogram_dialog.widgets.kbd import Button, Column, Row, Next, Back, Select
 from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import MessageInput
@@ -8,7 +8,10 @@ from aiogram.enums import ParseMode
 
 from utils.buttons import go_back_to_main
 from .states import CreateFlowMenu
-from .getters import ad_time_getter
+from .getters import (
+    ad_time_getter,
+    flow_volume_getter
+)
 from .callbacks import(
     to_channel,
 
@@ -33,7 +36,11 @@ from .callbacks import(
     reject_title_highlight,
     
     handle_time_input,
-    reset_ad_time
+    reset_ad_time,
+    
+    on_volume_selected,
+    open_custom_volume_input,
+    handle_custom_volume_input
 )
 from dialogs.generation.callbacks import on_create_flow
 
@@ -126,6 +133,48 @@ def create_flow_dialog():
             state=CreateFlowMenu.ad_time_settings,
             parse_mode=ParseMode.HTML,
             getter=ad_time_getter
+        ),
+        Window(
+            Format("📊 <b>Налаштування об'єму флоу</b>\n\n"
+                "Оберіть кількість останніх постів,\n"
+                "яку треба зберігати у флоу:\n\n"
+                "Поточне значення: {current_value}"),
+            Column(
+                Select(
+                    text=Format("{item}"),
+                    items="volume_options",
+                    item_id_getter=lambda x: x,
+                    id="volume_select",
+                    on_click=on_volume_selected,
+                ),
+            ),
+            Row(
+                Button(
+                    Const("✏️ Вказати своє число"), 
+                    id="custom_volume", 
+                    on_click=open_custom_volume_input
+                ),
+            ),
+            Row(
+                Back(Const("◀️ Назад")),
+            ),
+            state=CreateFlowMenu.flow_volume_settings,
+            parse_mode=ParseMode.HTML,
+            getter=flow_volume_getter
+        ),
+        Window(
+            Const("✏️ <b>Введіть власне число</b>\n\n"
+                "Діапазон: 1-50\n\n"
+                "Або натисніть 'Назад'"),
+            MessageInput(
+                handle_custom_volume_input,
+                filter=F.text & ~F.text.startswith('/')
+            ),
+            Row(
+                Back(Const("◀️ Назад")),
+            ),
+            state=CreateFlowMenu.custom_volume_input,
+            parse_mode=ParseMode.HTML
         ),
         Window(
             Const("Відправьте лінк з обраного джерела за шаблоном"),
