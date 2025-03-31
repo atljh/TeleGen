@@ -21,7 +21,8 @@ from .flow_settings import (
     create_flow_settings_window,
     create_character_limit_window,
     create_frequency_settings_window,
-    create_exact_limit_input_window
+    create_exact_limit_input_window,
+    create_ad_block_settings_window
 )
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
@@ -111,4 +112,5 @@ def create_settings_dialog():
         create_frequency_settings_window(),
         create_character_limit_window(),
         create_exact_limit_input_window(),
+        create_ad_block_settings_window(),
     )

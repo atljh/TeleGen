@@ -98,6 +98,11 @@ async def handle_exact_limit_input(message: Message, widget, dialog_manager: Dia
     except ValueError:
         await message.answer("Будь ласка, введіть коректне число")
 
+async def toggle_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
+    ad_enabled = button.widget_id == "enable_ads"
+    manager.dialog_data["ad_enabled"] = ad_enabled
+    await callback.answer(f"Рекламний блок {'увімкнено' if ad_enabled else 'вимкнено'}")
+    await manager.switch_to(SettingsMenu.flow_settings)
 
 # ================== ОКНА НАСТРОЕК ФЛОУ ==================
 def create_flow_settings_window():
@@ -137,6 +142,29 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
     return {
         "highlight_status": "✅ увімкнено" if current else "❌ вимкнено"
     }
+
+
+def create_ad_block_settings_window():
+    return Window(
+        Const("📢 <b>Налаштування рекламного блоку</b>"),
+        Column(
+            Button(
+                Const("✅ Включити рекламу"), 
+                id="enable_ads",
+                on_click=toggle_ad_block
+            ),
+            Button(
+                Const("❌ Вимкнути рекламу"), 
+                id="disable_ads",
+                on_click=toggle_ad_block
+            ),
+        ),
+        Row(
+            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
+        state=SettingsMenu.ad_block_settings,
+        parse_mode=ParseMode.HTML
+    )
 
 def create_frequency_settings_window():
     return Window(
