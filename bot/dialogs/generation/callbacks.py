@@ -43,7 +43,6 @@ async def add_channel(callback: CallbackQuery, button: Button, manager: DialogMa
 async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
 
-
 async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(FlowMenu.main)
 

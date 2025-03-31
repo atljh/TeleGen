@@ -7,6 +7,8 @@ from aiogram.enums import ParseMode
 from utils.buttons import go_back_to_main
 from .states import CreateFlowMenu
 from .callbacks import(
+    to_channel,
+
     on_instagram,
     on_facebook,
     on_web,
@@ -24,6 +26,7 @@ from .callbacks import(
     on_existing_source_selected,
     on_add_new_source_type
 )
+from dialogs.generation.callbacks import on_channel_selected
 
 def create_flow_dialog():
     return Dialog(
@@ -36,7 +39,8 @@ def create_flow_dialog():
                 Button(Const("Telegram"), id="telegram", on_click=on_telegram),
             ),
             Row(
-                Next(Const("Далі"), id="next"),
+                Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
+                Next(Const("🔜 Далі"), id="next"),
             ),
             Row(
                 Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)

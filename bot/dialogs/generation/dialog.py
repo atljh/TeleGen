@@ -52,7 +52,7 @@ def create_generation_dialog():
             getter=get_user_channels_data,
         ),
         Window(
-            Const("Channel"),
+            Format("📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"),
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow),
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),
@@ -67,6 +67,6 @@ def create_generation_dialog():
 
             ),
             state=GenerationMenu.channel_main,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         )
     )

@@ -6,6 +6,10 @@ from aiogram_dialog.widgets.input import TextInput
 from utils.validation import is_valid_link
 from .states import CreateFlowMenu
 
+from dialogs.generation.states import GenerationMenu
+
+async def to_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.start(GenerationMenu.main, mode=StartMode.RESET_STACK)
 
 # ==================SOURCE======================
 
