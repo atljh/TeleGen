@@ -12,3 +12,5 @@ class CreateFlowMenu(StatesGroup):
 
     flow_volume_settings = State()
     custom_volume_input = State()
+    
+    signature_settings = State()

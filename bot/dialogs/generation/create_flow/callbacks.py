@@ -138,7 +138,7 @@ async def reset_ad_time(callback: CallbackQuery, button: Button, manager: Dialog
 
 async def on_volume_selected(callback: CallbackQuery, widget, manager: DialogManager, item_id: str):
     manager.dialog_data["flow_volume"] = int(item_id)
-    await manager.switch_to(CreateFlowMenu.flow_settings)
+    await manager.switch_to(CreateFlowMenu.signature_settings)
     await callback.answer(f"Встановлено зберігання {item_id} постів")
 
 async def open_custom_volume_input(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -150,9 +150,24 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
         volume = int(message.text)
         if 1 <= volume <= 50:
             manager.dialog_data["flow_volume"] = volume
-            await manager.switch_to(CreateFlowMenu.flow_settings)
+            await manager.switch_to(CreateFlowMenu.signature_settings)
             await message.answer(f"✅ Встановлено: {volume} постів")
         else:
             await message.answer("❌ Число має бути від 1 до 50")
     except ValueError:
         await message.answer("❌ Введіть коректне число")
+
+
+# ==================SIGNATURE======================
+
+
+async def handle_signature_input(message: Message, widget, manager: DialogManager):
+    manager.dialog_data["signature"] = message.text
+    
+    await manager.switch_to(CreateFlowMenu.flow_settings)
+    await message.answer(f"✅ Підпис оновлено:\n{message.text}")
+
+async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data["signature"] = None
+    await callback.answer("Підпис видалено")
+    await manager.switch_to(CreateFlowMenu.flow_settings)

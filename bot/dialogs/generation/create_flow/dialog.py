@@ -10,7 +10,8 @@ from utils.buttons import go_back_to_main
 from .states import CreateFlowMenu
 from .getters import (
     ad_time_getter,
-    flow_volume_getter
+    flow_volume_getter,
+    signature_getter
 )
 from .callbacks import(
     to_channel,
@@ -40,7 +41,10 @@ from .callbacks import(
     
     on_volume_selected,
     open_custom_volume_input,
-    handle_custom_volume_input
+    handle_custom_volume_input,
+    
+    handle_signature_input,
+    skip_signature
 )
 from dialogs.generation.callbacks import on_create_flow
 
@@ -175,6 +179,23 @@ def create_flow_dialog():
             ),
             state=CreateFlowMenu.custom_volume_input,
             parse_mode=ParseMode.HTML
+        ),
+        Window(
+            Format("✍️ <b>Налаштування підпису до постів</b>\n\n"
+                "Поточний підпис:\n"
+                "{current_signature}\n\n"
+                "Відправте новий підпис або натисніть 'Пропустити'"),
+            MessageInput(
+                handle_signature_input,
+                filter=F.text & ~F.text.startswith('/')
+            ),
+            Row(
+                Button(Const("⏩ Пропустити"), id="skip_signature", on_click=skip_signature),
+                Back(Const("◀️ Назад")),
+            ),
+            state=CreateFlowMenu.signature_settings,
+            parse_mode=ParseMode.HTML,
+            getter=signature_getter
         ),
         Window(
             Const("Відправьте лінк з обраного джерела за шаблоном"),

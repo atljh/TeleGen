@@ -12,3 +12,8 @@ async def flow_volume_getter(dialog_manager: DialogManager, **kwargs):
         "current_value": dialog_manager.dialog_data.get("flow_volume", "не встановлено"),
         "volume_options": ["5", "10", "20"]
     }
+
+async def signature_getter(dialog_manager: DialogManager, **kwargs):
+    return {
+        "current_signature": dialog_manager.dialog_data.get("signature", "Підпис не встановлено")
+    }
