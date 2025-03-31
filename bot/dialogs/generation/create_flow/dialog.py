@@ -8,6 +8,7 @@ from aiogram.enums import ParseMode
 
 from utils.buttons import go_back_to_main
 from .states import CreateFlowMenu
+from .getters import ad_time_getter
 from .callbacks import(
     to_channel,
 
@@ -29,7 +30,10 @@ from .callbacks import(
     on_add_new_source_type,
     
     confirm_title_highlight,
-    reject_title_highlight
+    reject_title_highlight,
+    
+    handle_time_input,
+    reset_ad_time
 )
 from dialogs.generation.callbacks import on_create_flow
 
@@ -111,11 +115,9 @@ def create_flow_dialog():
               "<code>hh:mm</code>\n\n"
               "Поточне повідомлення:\n"
               "{message}"),
-            Column(
-                MessageInput(
-                    handle_time_input,
-                    filter=F.text & ~F.text.startswith('/')
-                ),
+            MessageInput(
+                handle_time_input,
+                filter=F.text & ~F.text.startswith('/')
             ),
             Row(
                 Back(Const("◀️ Назад")),

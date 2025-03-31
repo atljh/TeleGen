@@ -1,3 +1,4 @@
+import re
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
@@ -104,10 +105,29 @@ async def on_add_new_source_type(
 
 async def confirm_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data["title_highlight"] = True
-    await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
+    await manager.switch_to(CreateFlowMenu.ad_time_settings)
     await callback.answer("Заголовок буде виділено")
 
 async def reject_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data["title_highlight"] = False
-    await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
+    await manager.switch_to(CreateFlowMenu.ad_time_settings)
     await callback.answer("Заголовок не буде виділено")
+
+
+# ==================AD TIME======================
+
+
+async def handle_time_input(message: Message, widget, manager: DialogManager):
+    if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', message.text):
+        await message.answer("❌ Невірний формат часу. Введіть у форматі hh:mm (наприклад, 15:20)")
+        return
+    
+    manager.dialog_data["ad_time"] = message.text
+
+    await manager.switch_to(CreateFlowMenu.ad_time_settings)
+    await message.answer(f"✅ Час рекламного топу оновлено: {message.text}")
+
+async def reset_ad_time(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data["ad_time"] = None
+    await callback.answer("Час рекламного топу скинуто")
+    await manager.show()
