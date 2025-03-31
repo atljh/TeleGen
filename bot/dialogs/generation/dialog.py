@@ -26,6 +26,20 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
         "channels": channels or []
     }
 
+async def get_channel_data(dialog_manager: DialogManager, **kwargs):
+    selected_channel = dialog_manager.dialog_data.get("selected_channel")
+    
+    if not selected_channel:
+        logging.error("No selected channel in dialog_data")
+        return {
+            "channel_name": "Канал не вибрано",
+        }
+    
+    logging.info(f"Selected channel: {selected_channel}")
+    
+    return {
+        "channel_name": getattr(selected_channel, "name", "Без назви"),
+    }
 
 def create_generation_dialog():
     return Dialog(
@@ -52,7 +66,7 @@ def create_generation_dialog():
             getter=get_user_channels_data,
         ),
         Window(
-            Format("📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"),
+            Format("📢 <b>Назва: {channel_name}</b>\n"),
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow),
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),
@@ -68,5 +82,6 @@ def create_generation_dialog():
             ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.HTML,
+            getter=get_channel_data
         )
     )
