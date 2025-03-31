@@ -16,16 +16,8 @@ from .callbacks import (
     delete_channel,
     cancel_delete_channel
 )
-from .flow_settings import (
-    open_flow_settings,
-    create_flow_settings_window,
-    create_character_limit_window,
-    create_frequency_settings_window,
-    create_exact_limit_input_window,
-    create_ad_block_settings_window,
-    create_posts_in_flow_window,
-    create_source_settings_window,
-    create_exact_posts_input_window
+from .flow_settigs.callbacks import (
+    start_flow_settings
 )
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
@@ -73,7 +65,7 @@ def create_settings_dialog():
             ),
             Column(
                 SwitchTo(Const("Загальні"), id="main_settings", state=SettingsMenu.channel_main_settings),
-                Button(Const("Налаштувати флоу"), id="flow_settings", on_click=open_flow_settings),
+                Button(Const("Налаштувати флоу"), id="flow_settings", on_click=start_flow_settings),
             ),
             Row(
                 Back(Const("◀️ До списку каналів")),
@@ -110,13 +102,5 @@ def create_settings_dialog():
             ),
             state=SettingsMenu.confirm_delete,
             parse_mode=ParseMode.HTML,
-        ),
-        create_flow_settings_window(),
-        create_frequency_settings_window(),
-        create_character_limit_window(),
-        create_exact_limit_input_window(),
-        create_ad_block_settings_window(),
-        create_posts_in_flow_window(),
-        create_source_settings_window(),
-        create_exact_posts_input_window()
+        )
     )

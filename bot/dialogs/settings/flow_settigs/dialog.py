@@ -7,137 +7,31 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 
-from .states import SettingsMenu
-from .callbacks import confirm_delete_channel
+from .states import FlowSettingsMenu
+from .callbacks import (
+    set_character_limit,
+    set_exact_limit,
+    set_exact_posts_count,
+    set_frequency,
+    set_generation_frequency,
+    set_posts_in_flow,
+    toggle_ad_block,
+    toggle_title_highlight,
+    configure_ad_block,
+    open_flow_settings,
+    open_main_settings,
+    open_source_settings,
+    handle_exact_posts_input,
+    handle_exact_limit_input,
+    adjust_character_limit,
+    adjust_posts_count
+)
 
-import logging
-
-# ================== ОБРАБОТЧИКИ ГЛАВНОГО МЕНЮ ФЛОУ ==================
-
-async def open_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.flow_settings)
-
-async def open_main_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.main)
-
-# ================== ОСНОВНЫЕ ОБРАБОТЧИКИ ФЛОУ ==================
-
-async def set_generation_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.generation_frequency)
-
-async def set_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.character_limit)
-
-async def toggle_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
-    current = manager.dialog_data.get("title_highlight", False)
-    manager.dialog_data["title_highlight"] = not current
-    await callback.answer(f"Виділення заголовку {'увімкнено' if not current else 'вимкнено'}")
-
-async def configure_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.ad_block_settings)
-
-async def set_posts_in_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.posts_in_flow)
-
-async def open_source_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.source_settings)
-
-
-# ================== ОБРАБОТЧИКИ ПОД-НАСТРОЕК ==================
-
-async def set_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
-    freq_map = {
-        "freq_3h": 3,
-        "freq_6h": 6,
-        "freq_12h": 12,
-        "freq_24h": 24
-    }
-    
-    if button.widget_id in freq_map:
-        manager.dialog_data["generation_freq"] = freq_map[button.widget_id]
-        await callback.answer(f"Частоту встановлено: кожні {freq_map[button.widget_id]} годин")
-    else:
-        await manager.switch_to(SettingsMenu.custom_frequency_input)
-    
-    await manager.back()
-
-async def adjust_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
-    current = manager.dialog_data.get("char_limit", 1000)
-    
-    if button.widget_id == "increase_limit":
-        new_limit = current + 100
-    elif button.widget_id == "decrease_limit":
-        new_limit = max(100, current - 100)
-    elif button.widget_id == "disable_limit":
-        new_limit = 0
-    
-    manager.dialog_data["char_limit"] = new_limit
-    action = {
-        "increase_limit": "збільшено",
-        "decrease_limit": "зменшено",
-        "disable_limit": "вимкнено"
-    }.get(button.widget_id, "змінено")
-    
-    await callback.answer(f"Ліміт {action} до {new_limit if new_limit > 0 else '∞'} знаків")
-    await manager.show()
-    
-
-async def set_exact_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.exact_limit_input)
-    await callback.answer("Введіть число від 100 до 10000")
-
-async def handle_exact_limit_input(message: Message, widget, dialog_manager: DialogManager):
-    try:
-        limit = int(message.text)
-        if 100 <= limit <= 10000:
-            dialog_manager.dialog_data["char_limit"] = limit
-            await dialog_manager.switch_to(SettingsMenu.character_limit)
-            await message.answer(f"Ліміт оновлено до {limit} знаків")
-        else:
-            await message.answer("Будь ласка, введіть число від 100 до 10000")
-    except ValueError:
-        await message.answer("Будь ласка, введіть коректне число")
-
-async def toggle_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
-    ad_enabled = button.widget_id == "enable_ads"
-    manager.dialog_data["ad_enabled"] = ad_enabled
-    await callback.answer(f"Рекламний блок {'увімкнено' if ad_enabled else 'вимкнено'}")
-    await manager.switch_to(SettingsMenu.flow_settings)
-
-async def adjust_posts_count(callback: CallbackQuery, button: Button, manager: DialogManager):
-    current = manager.dialog_data.get("posts_count", 1)
-    if button.widget_id == "increase_posts":
-        new_count = min(10, current + 1)
-    else:
-        new_count = max(1, current - 1)
-    
-    manager.dialog_data["posts_count"] = new_count
-    await callback.answer(f"Кількість постів: {new_count}")
-    await manager.show()
-
-
-async def set_exact_posts_count(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.exact_posts_input)
-    await callback.answer("Введіть число від 1 до 10")
-
-async def handle_exact_posts_input(message: Message, widget, dialog_manager: DialogManager):
-    try:
-        count = int(message.text)
-        if 1 <= count <= 10:
-            dialog_manager.dialog_data["posts_count"] = count
-            await dialog_manager.switch_to(SettingsMenu.posts_in_flow)
-            await message.answer(f"✅ Встановлено: {count} постів")
-        else:
-            await message.answer("⚠️ Введіть число від 1 до 10")
-    except ValueError:
-        await message.answer("❌ Введіть коректне число")
-
-# ================== ОКНА НАСТРОЕК ФЛОУ ==================
 def create_flow_settings_window():
     return Window(
         Format(
             "🔄 <b>НАЛАШТУВАННЯ ФЛОУ</b>\n\n"
-            "📢 <b>Канал:</b> {dialog_data[selected_channel].name}\n\n"
+            "📢 <b>Канал: {channel_name}</b>\n\n"
         ),
         Column(
             Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),
@@ -154,22 +48,30 @@ def create_flow_settings_window():
         Row(
             Button(Const("◀️ Назад"), id="open_main_settings", on_click=open_main_settings),
         ),
-        state=SettingsMenu.flow_settings,
+        state=FlowSettingsMenu.flow_settings,
         parse_mode=ParseMode.HTML,
         getter=flow_settings_getter
     )
+
+
+async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
+    selected_channel = (
+        dialog_manager.start_data.get("selected_channel") 
+        or dialog_manager.dialog_data.get("selected_channel")
+    )
+    
+    if selected_channel:
+        dialog_manager.dialog_data["selected_channel"] = selected_channel
+    
+    return {
+        "channel_name": selected_channel.name,
+        "highlight_status": "✅ увімкнено" if dialog_manager.dialog_data.get("title_highlight", False) else "❌ вимкнено"
+    }
 
 async def character_limit_getter(dialog_manager: DialogManager, **kwargs):
     return {
         "char_limit": dialog_manager.dialog_data.get("char_limit", 1000)
     }
-
-async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
-    current = dialog_manager.dialog_data.get("title_highlight", False)
-    return {
-        "highlight_status": "✅ увімкнено" if current else "❌ вимкнено"
-    }
-
 
 def create_ad_block_settings_window():
     return Window(
@@ -189,7 +91,7 @@ def create_ad_block_settings_window():
         Row(
             Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
-        state=SettingsMenu.ad_block_settings,
+        state=FlowSettingsMenu.ad_block_settings,
         parse_mode=ParseMode.HTML
     )
 
@@ -207,7 +109,7 @@ def create_frequency_settings_window():
         Row(
             Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
-        state=SettingsMenu.generation_frequency,
+        state=FlowSettingsMenu.generation_frequency,
         parse_mode=ParseMode.HTML,
     )
 
@@ -223,7 +125,7 @@ def create_exact_limit_input_window():
         Row(
             Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
-        state=SettingsMenu.exact_limit_input,
+        state=FlowSettingsMenu.exact_limit_input,
         parse_mode=ParseMode.HTML
     )
 
@@ -263,7 +165,7 @@ def create_character_limit_window():
                 on_click=open_flow_settings
             ),
         ),
-        state=SettingsMenu.character_limit,
+        state=FlowSettingsMenu.character_limit,
         parse_mode=ParseMode.HTML,
         getter=character_limit_getter
     )
@@ -284,7 +186,7 @@ def create_posts_in_flow_window():
         Row(
             Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),        
         ),
-        state=SettingsMenu.posts_in_flow,
+        state=FlowSettingsMenu.posts_in_flow,
         parse_mode=ParseMode.HTML,
         getter=posts_in_flow_getter
     )
@@ -297,7 +199,7 @@ def create_exact_posts_input_window():
             filter=F.text & ~F.text.startswith('/')
         ),
         Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
-        state=SettingsMenu.exact_posts_input,
+        state=FlowSettingsMenu.exact_posts_input,
         parse_mode=ParseMode.HTML
     )
 
@@ -311,6 +213,18 @@ def create_source_settings_window():
             Button(Const("🗑 Видалити джерело"), id="delete_source"),
         ),
         Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),    
-        state=SettingsMenu.source_settings,
+        state=FlowSettingsMenu.source_settings,
         parse_mode=ParseMode.HTML
+    )
+
+def create_flow_settings_dialog():
+    return Dialog(
+        create_flow_settings_window(),
+        create_frequency_settings_window(),
+        create_character_limit_window(),
+        create_exact_limit_input_window(),
+        create_ad_block_settings_window(),
+        create_posts_in_flow_window(),
+        create_source_settings_window(),
+        create_exact_posts_input_window()
     )

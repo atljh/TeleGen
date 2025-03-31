@@ -26,7 +26,7 @@ from .callbacks import(
     on_existing_source_selected,
     on_add_new_source_type
 )
-from dialogs.generation.callbacks import on_channel_selected
+from dialogs.generation.callbacks import on_create_flow
 
 def create_flow_dialog():
     return Dialog(
@@ -88,7 +88,7 @@ def create_flow_dialog():
                 Button(Const("+ДОДАТИ НОВИЙ ТИП"), id="add_new_source_type", on_click=on_add_new_source_type),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Button(Const("🔙 Назад"), id='on_create_flow', on_click=on_create_flow),
             ),
             Row(
                 Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)
