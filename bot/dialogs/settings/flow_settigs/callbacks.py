@@ -29,7 +29,6 @@ async def open_main_settings(callback: CallbackQuery, button: Button, manager: D
     )
 
 
-
 # ================== ОСНОВНЫЕ ОБРАБОТЧИКИ ФЛОУ ==================
 
 async def set_generation_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
