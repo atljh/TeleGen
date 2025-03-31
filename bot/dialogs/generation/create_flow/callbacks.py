@@ -71,36 +71,50 @@ async def on_to_1000(callback: CallbackQuery, button: Button, manager: DialogMan
 
 # ==================SOURCE======================
 
-async def on_source_link_entered(
-    message: Message, 
-    widget: TextInput, 
-    manager: DialogManager, 
-    data: str
-):
-    if not is_valid_link(data):
-        await message.answer("Невірний формат посилання!")
+async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data["selected_source_type"] = button.widget_id
+    manager.dialog_data["selected_source_name"] = button.text
+    
+    await manager.switch_to(CreateFlowMenu.add_source_link)
+    await callback.answer(f"Обрано {button.text}")
+
+async def on_source_link_entered(message: Message, widget: TextInput, manager: DialogManager, data: str):
+    if not validate_link(data, manager.dialog_data["selected_source_type"]):
+        await message.answer("❌ Невірний формат посилання для цього типу джерела!")
         return
     
-    manager.dialog_data['source_link'] = data
-    await manager.switch_to(CreateFlowMenu.message_preview)
+    source = {
+        "type": manager.dialog_data["selected_source_type"],
+        "link": data,
+    }
+    
+    if "sources" not in manager.dialog_data:
+        manager.dialog_data["sources"] = []
+    
+    manager.dialog_data["sources"].append(source)
+    manager.dialog_data["source_link"] = data
+    await manager.switch_to(CreateFlowMenu.source_confirmation)
 
-async def on_existing_source_selected(
-    callback: CallbackQuery, 
-    button: Button, 
-    manager: DialogManager
-):
-    source_name = button.widget_id
-    manager.dialog_data['selected_source'] = source_name
-    await callback.answer(f"Обрано {source_name}")
-    await manager.switch_to(CreateFlowMenu.message_preview)
+async def add_more_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(CreateFlowMenu.select_source_type)
+    await callback.answer("Додаємо ще одне джерело")
 
-async def on_add_new_source_type(
-    callback: CallbackQuery, 
-    button: Button, 
-    manager: DialogManager
-):
-    await manager.switch_to(CreateFlowMenu.select_source)
-    await callback.answer("Оберіть новий тип джерела")
+async def continue_to_next_step(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(CreateFlowMenu.next_step)
+    await callback.answer("Продовжуємо налаштування флоу")
+
+async def show_my_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.answer("Список ваших джерел...")
+
+def validate_link(link: str, source_type: str) -> bool:
+    patterns = {
+        "instagram": r"(https?:\/\/)?(www\.)?instagram\.com\/[A-Za-z0-9_\.]+",
+        "facebook": r"(https?:\/\/)?(www\.)?facebook\.com\/[A-Za-z0-9_\.]+",
+        "web": r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
+        "telegram": r"(https?:\/\/)?(www\.)?t\.me\/[A-Za-z0-9_\.]+"
+    }
+    import re
+    return bool(re.match(patterns.get(source_type.lower(), ""), link))
 
 # ==================TITLE======================
 

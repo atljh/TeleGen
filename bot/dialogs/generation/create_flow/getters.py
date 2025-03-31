@@ -32,6 +32,39 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
         "flow_id": flow_data.get("id", "---")
     }
 
+async def source_type_getter(dialog_manager: DialogManager, **kwargs):
+    return {
+        "has_selected_sources": len(dialog_manager.dialog_data.get("sources", [])) > 0
+    }
+
+async def source_link_getter(dialog_manager: DialogManager, **kwargs):
+    source_type = dialog_manager.dialog_data.get("selected_source_type", "")
+    source_name = {
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "web": "Web-сайт",
+        "telegram": "Telegram"
+    }.get(source_type, "джерело")
+    
+    examples = {
+        "instagram": "https://instagram.com/username",
+        "facebook": "https://facebook.com/page",
+        "web": "https://example.com",
+        "telegram": "https://t.me/channel"
+    }
+    
+    return {
+        "source_name": source_name,
+        "link_example": examples.get(source_type, "https://...")
+    }
+
+async def source_confirmation_getter(dialog_manager: DialogManager, **kwargs):
+    return {
+        "source_type": dialog_manager.dialog_data.get("selected_source_type"),
+        "source_link": dialog_manager.dialog_data.get("source_link")
+    }
+
+
 async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
 
     flow_data = dialog_manager.dialog_data

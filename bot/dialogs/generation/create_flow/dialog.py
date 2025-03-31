@@ -13,9 +13,13 @@ from .getters import (
     ad_time_getter,
     flow_volume_getter,
     signature_getter,
-    flow_confirmation_getter
+    flow_confirmation_getter,
+    source_link_getter,
+    source_confirmation_getter,
+    source_type_getter
 )
 from .callbacks import(
+    show_my_sources,
     to_channel,
 
     on_instagram,
@@ -32,8 +36,10 @@ from .callbacks import(
     on_to_1000,
 
     on_source_link_entered,
-    on_existing_source_selected,
-    on_add_new_source_type,
+    on_source_type_selected,
+    on_source_link_entered,
+    add_more_sources,
+    continue_to_next_step,
     
     confirm_title_highlight,
     reject_title_highlight,
@@ -53,22 +59,56 @@ from dialogs.generation.callbacks import on_create_flow
 def create_flow_dialog():
     return Dialog(
         Window(
-            Const("Оберіть тип джерела з існуючих. Та послідовно додайте кожне з них по інструкції"),
+            Format("📌 <b>Оберіть тип джерела</b>\n\n"
+                  "Доступні варіанти:"),
             Column(
-                Button(Const("Instagram"), id="instagram", on_click=on_instagram),
-                Button(Const("Facebook"), id="facebook", on_click=on_facebook),
-                Button(Const("Web"), id="web", on_click=on_web),
-                Button(Const("Telegram"), id="telegram", on_click=on_telegram),
+                Button(Const("📷 Instagram"), id="instagram", on_click=on_source_type_selected),
+                Button(Const("👍 Facebook"), id="facebook", on_click=on_source_type_selected),
+                Button(Const("🌐 Web-сайт"), id="web", on_click=on_source_type_selected),
+                Button(Const("✈️ Telegram"), id="telegram", on_click=on_source_type_selected),
             ),
             Row(
                 Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
                 Next(Const("🔜 Далі"), id="next"),
+
+                Next(Const("Далі ▶️"), id="next", when="has_selected_sources"),
             ),
             Row(
-                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)
+                Button(Const("🏠 На головну"), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=CreateFlowMenu.select_source,
             parse_mode=ParseMode.HTML,
+            getter=source_type_getter
+        ),
+        Window(
+            Format("🔗 <b>Додавання {source_name}</b>\n\n"
+                  "Відправте посилання за шаблоном:\n"
+                  "<code>{link_example}</code>"),
+            TextInput(
+                id="source_link_input",
+                on_success=on_source_link_entered,
+                filter=F.text & ~F.text.startswith('/')
+            ),
+            Row(
+                Back(Const("◀️ Назад")),
+                Button(Const("📋 Мої джерела"), id="my_sources", on_click=show_my_sources),
+            ),
+            state=CreateFlowMenu.add_source_link,
+            parse_mode=ParseMode.HTML,
+            getter=source_link_getter
+        ),
+        Window(
+            Format("✅ <b>Джерело додано</b>\n\n"
+                  "Тип: {source_type}\n"
+                  "Посилання: {source_link}\n\n"
+                  "Додати ще одне джерело?"),
+            Column(
+                Button(Const("➕ Так"), id="add_more_sources", on_click=add_more_sources),
+                Button(Const("❌ Ні, продовжити"), id="continue_flow", on_click=continue_to_next_step),
+            ),
+            state=CreateFlowMenu.source_confirmation,
+            parse_mode=ParseMode.HTML,
+            getter=source_confirmation_getter
         ),
         Window(
             Const("Оберіть частоту генерацii"),
@@ -218,24 +258,5 @@ def create_flow_dialog():
             parse_mode=ParseMode.HTML,
             getter=flow_confirmation_getter
         ),
-        Window(
-            Const("Відправьте лінк з обраного джерела за шаблоном"),
-            Column(
-                Button(Const("НАЗВА ДЖЕРЕЛА1"), id="source1", on_click=on_existing_source_selected),
-                Button(Const("НАЗВА ДЖЕРЕЛА2"), id="source2", on_click=on_existing_source_selected),
-                Button(Const("+ДОДАТИ НОВИЙ ТИП"), id="add_new_source_type", on_click=on_add_new_source_type),
-            ),
-            Row(
-                Button(Const("🔙 Назад"), id='on_create_flow', on_click=on_create_flow),
-            ),
-            Row(
-                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)
-            ),
-            TextInput(
-                id="source_link_input",
-                on_success=on_source_link_entered,
-            ),
-            state=CreateFlowMenu.add_source_link,
-            parse_mode=ParseMode.MARKDOWN_V2,
-        ),
+
     )
