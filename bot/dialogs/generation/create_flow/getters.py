@@ -38,11 +38,13 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     frequency_map = {
         'once_a_12': 'Кожні 12 годин',
         'once_a_6': 'Кожні 6 годин',
+        'once_a_1': 'Кожну годину',
     }
     
     words_limit_map = {
         'to_300': 'До 300 слів',
         'to_500': 'До 500 слів',
+        'to_1000': 'До 1000 слів',
 
     }
     sources = "\n".join(
