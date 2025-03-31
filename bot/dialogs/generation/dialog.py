@@ -34,9 +34,7 @@ async def get_channel_data(dialog_manager: DialogManager, **kwargs):
         return {
             "channel_name": "Канал не вибрано",
         }
-    
-    logging.info(f"Selected channel: {selected_channel}")
-    
+        
     return {
         "channel_name": getattr(selected_channel, "name", "Без назви"),
     }
