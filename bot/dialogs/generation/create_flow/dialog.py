@@ -7,11 +7,13 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram.enums import ParseMode
 
 from utils.buttons import go_back_to_main
+from dialogs.settings.flow_settings.callbacks import open_flow_settings
 from .states import CreateFlowMenu
 from .getters import (
     ad_time_getter,
     flow_volume_getter,
-    signature_getter
+    signature_getter,
+    flow_confirmation_getter
 )
 from .callbacks import(
     to_channel,
@@ -196,6 +198,25 @@ def create_flow_dialog():
             state=CreateFlowMenu.signature_settings,
             parse_mode=ParseMode.HTML,
             getter=signature_getter
+        ),
+        Window(
+            Format("🎉 <b>Вітаю! Ваш флоу створений!</b>\n\n"
+                "Зміни можна внести в налаштуваннях\n\n"
+                "<b>Параметри Flow \"{flow_name}\":</b>\n"
+                "Тематика: {theme}\n"
+                "Джерела ({source_count}):\n{sources}\n"
+                "Частота генерації: {frequency}\n"
+                "Кількість знаків: {char_limit}\n"
+                "Виділення заголовка: {title_highlight}\n"
+                "Підпис до постів: {signature}\n\n"
+                "ID: {flow_id}"),
+            Column(
+                Button(Const("🔙 До налаштувань"), id="to_settings", on_click=open_flow_settings),
+                Button(Const("🏠 В головне меню"), id="to_main", on_click=go_back_to_main),
+            ),
+            state=CreateFlowMenu.confirmation,
+            parse_mode=ParseMode.HTML,
+            getter=flow_confirmation_getter
         ),
         Window(
             Const("Відправьте лінк з обраного джерела за шаблоном"),

@@ -17,7 +17,7 @@ from .callbacks import (
     delete_channel,
     cancel_delete_channel
 )
-from .flow_settigs.callbacks import (
+from .flow_settings.callbacks import (
     start_flow_settings
 )
 

@@ -10,7 +10,7 @@ from .generation import (
 from .buffer import create_buffer_dialog
 from .buffer.edit_buffer import create_edit_dialog
 from .settings import create_settings_dialog
-from .settings.flow_settigs import create_flow_settings_dialog
+from .settings.flow_settings import create_flow_settings_dialog
 from .support import create_support_dialog
 
 def register_dialogs(dp: Dispatcher):

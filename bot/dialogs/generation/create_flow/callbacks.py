@@ -164,10 +164,10 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     manager.dialog_data["signature"] = message.text
     
-    await manager.switch_to(CreateFlowMenu.flow_settings)
+    await manager.switch_to(CreateFlowMenu.confirmation)
     await message.answer(f"✅ Підпис оновлено:\n{message.text}")
 
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data["signature"] = None
     await callback.answer("Підпис видалено")
-    await manager.switch_to(CreateFlowMenu.flow_settings)
+    await manager.switch_to(CreateFlowMenu.confirmation)
