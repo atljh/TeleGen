@@ -1,4 +1,5 @@
 import re
+import logging
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
@@ -163,11 +164,12 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     manager.dialog_data["signature"] = message.text
-    
+    logging.info(manager.dialog_data)
     await manager.switch_to(CreateFlowMenu.confirmation)
     await message.answer(f"✅ Підпис оновлено:\n{message.text}")
 
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data["signature"] = None
+    logging.info(manager.dialog_data)
     await callback.answer("Підпис видалено")
     await manager.switch_to(CreateFlowMenu.confirmation)

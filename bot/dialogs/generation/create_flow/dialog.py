@@ -206,7 +206,7 @@ def create_flow_dialog():
                 "Тематика: {theme}\n"
                 "Джерела ({source_count}):\n{sources}\n"
                 "Частота генерації: {frequency}\n"
-                "Кількість знаків: {char_limit}\n"
+                "Кількість знаків: {words_limit}\n"
                 "Виділення заголовка: {title_highlight}\n"
                 "Підпис до постів: {signature}\n\n"
                 "ID: {flow_id}"),

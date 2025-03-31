@@ -21,6 +21,30 @@ async def signature_getter(dialog_manager: DialogManager, **kwargs):
 async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     flow_data = dialog_manager.dialog_data.get("created_flow", {})
     
+
+    return {
+
+
+        "frequency": flow_data.get("frequency", "не встановлено"),
+        "char_limit": flow_data.get("char_limit", "не встановлено"),
+        "title_highlight": "так" if flow_data.get("title_highlight") else "ні",
+        "signature": flow_data.get("signature", "немає підпису"),
+        "flow_id": flow_data.get("id", "---")
+    }
+
+async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
+
+    flow_data = dialog_manager.dialog_data
+    frequency_map = {
+        'once_a_12': 'Кожні 12 годин',
+        'once_a_6': 'Кожні 6 годин',
+    }
+    
+    words_limit_map = {
+        'to_300': 'До 300 слів',
+        'to_500': 'До 500 слів',
+
+    }
     sources = "\n".join(
         f"{src['type']} - {src['link']}" 
         for src in flow_data.get("sources", [])
@@ -31,9 +55,17 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
         "theme": flow_data.get("theme", "не вказано"),
         "source_count": len(flow_data.get("sources", [])),
         "sources": sources or "немає джерел",
-        "frequency": flow_data.get("frequency", "не встановлено"),
-        "char_limit": flow_data.get("char_limit", "не встановлено"),
-        "title_highlight": "так" if flow_data.get("title_highlight") else "ні",
-        "signature": flow_data.get("signature", "немає підпису"),
-        "flow_id": flow_data.get("id", "---")
+        'frequency': frequency_map.get(
+            flow_data.get('selected_frequency'),
+            flow_data.get('selected_frequency')
+        ),
+        'words_limit': words_limit_map.get(
+            flow_data.get('selected_words_limit'),
+            flow_data.get('selected_words_limit')
+        ),
+        'title_highlight': 'Так' if flow_data.get('title_highlight') else 'Ні',
+        'ad_time': flow_data.get('ad_time', 'Не встановлено'),
+        'flow_volume': flow_data.get('flow_volume', 5),
+        'signature': flow_data.get('signature', 'Без підпису'),
+        'flow_id': 1
     }
