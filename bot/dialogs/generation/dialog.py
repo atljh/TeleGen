@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column
@@ -26,17 +27,28 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
         "channels": channels or []
     }
 
-async def get_channel_data(dialog_manager: DialogManager, **kwargs):
-    selected_channel = dialog_manager.dialog_data.get("selected_channel")
+async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
+    start_data = dialog_manager.start_data or {}
+    dialog_data = dialog_manager.dialog_data or {}
+    
+    selected_channel = (
+        start_data.get("selected_channel") 
+        or dialog_data.get("selected_channel")
+    )
     
     if not selected_channel:
-        logging.error("No selected channel in dialog_data")
         return {
             "channel_name": "Канал не вибрано",
+            "channel_id": "N/A",
+            "created_at": datetime.now()
         }
-        
+    
+    dialog_manager.dialog_data["selected_channel"] = selected_channel
+    
     return {
-        "channel_name": getattr(selected_channel, "name", "Без назви"),
+        "channel_name": selected_channel.name,
+        "channel_id": selected_channel.channel_id,
+        "created_at": selected_channel.created_at,
     }
 
 def create_generation_dialog():
@@ -80,6 +92,6 @@ def create_generation_dialog():
             ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.HTML,
-            getter=get_channel_data
+            getter=selected_channel_getter
         )
     )

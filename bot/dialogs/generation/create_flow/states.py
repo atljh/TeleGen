@@ -7,3 +7,4 @@ class CreateFlowMenu(StatesGroup):
     select_frequency = State()
     select_words_limit = State()
     message_preview = State()
+    title_highlight_confirm = State()

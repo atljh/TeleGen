@@ -55,18 +55,19 @@ async def on_once_an_hour(callback: CallbackQuery, button: Button, manager: Dial
 async def on_to_100(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data['selected_words_limit'] = 'to_100'
     await callback.answer("До 100")
-    await manager.switch_to(CreateFlowMenu.select_words_limit)
+    await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
 
 async def on_to_300(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data['selected_words_limit'] = 'to_300'
     await callback.answer("До 300")
-    await manager.switch_to(CreateFlowMenu.select_words_limit)
+    await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
 
 async def on_to_1000(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data['selected_words_limit'] = 'to_1000'
     await callback.answer("До 1000")
-    await manager.switch_to(CreateFlowMenu.select_words_limit)
+    await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
 
+# ==================SOURCE======================
 
 async def on_source_link_entered(
     message: Message, 
@@ -98,3 +99,15 @@ async def on_add_new_source_type(
 ):
     await manager.switch_to(CreateFlowMenu.select_source)
     await callback.answer("Оберіть новий тип джерела")
+
+# ==================TITLE======================
+
+async def confirm_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data["title_highlight"] = True
+    await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
+    await callback.answer("Заголовок буде виділено")
+
+async def reject_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data["title_highlight"] = False
+    await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
+    await callback.answer("Заголовок не буде виділено")

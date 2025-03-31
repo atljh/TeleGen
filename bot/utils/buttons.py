@@ -14,7 +14,6 @@ async def go_back_to_generation(callback: CallbackQuery, button: Button, manager
 
 async def go_back_to_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
-    logging.info(selected_channel)
     await manager.start(
         GenerationMenu.channel_main,
         data={"selected_channel": selected_channel},

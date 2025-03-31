@@ -1,7 +1,9 @@
-from aiogram_dialog import Dialog, Window
+from aiogram import F
+from aiogram_dialog import Dialog, Window, DialogManager
 from aiogram_dialog.widgets.kbd import Button, Column, Row, Next, Back
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.text import Const
+from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.input import MessageInput
 from aiogram.enums import ParseMode
 
 from utils.buttons import go_back_to_main
@@ -24,7 +26,10 @@ from .callbacks import(
 
     on_source_link_entered,
     on_existing_source_selected,
-    on_add_new_source_type
+    on_add_new_source_type,
+    
+    confirm_title_highlight,
+    reject_title_highlight
 )
 from dialogs.generation.callbacks import on_create_flow
 
@@ -79,6 +84,46 @@ def create_flow_dialog():
             ),
             state=CreateFlowMenu.select_words_limit,
             parse_mode=ParseMode.HTML,
+        ),
+        Window(
+            Const("✏️ <b>Чи потрібно виділяти заголовок?</b>\n\n"),
+            Column(
+                Button(
+                    Const("✅ Так"),
+                    id="highlight_yes",
+                    on_click=confirm_title_highlight
+                ),
+                Button(
+                    Const("❌ Ні"),
+                    id="highlight_no",
+                    on_click=reject_title_highlight
+                ),
+            ),
+            Row(
+                Back(Const("◀️ Назад")),
+            ),
+            state=CreateFlowMenu.title_highlight_confirm,
+            parse_mode=ParseMode.HTML,
+        ),
+        Window(
+            Format("⏰ <b>Налаштування рекламного топу</b>\n\n"
+              "Введіть час рекламного топу в форматі\n"
+              "<code>hh:mm</code>\n\n"
+              "Поточне повідомлення:\n"
+              "{message}"),
+            Column(
+                MessageInput(
+                    handle_time_input,
+                    filter=F.text & ~F.text.startswith('/')
+                ),
+            ),
+            Row(
+                Back(Const("◀️ Назад")),
+                Button(Const("🔄 Скинути"), id="reset_time", on_click=reset_ad_time),
+            ),
+            state=CreateFlowMenu.ad_time_settings,
+            parse_mode=ParseMode.HTML,
+            getter=ad_time_getter
         ),
         Window(
             Const("Відправьте лінк з обраного джерела за шаблоном"),
