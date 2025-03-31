@@ -58,6 +58,9 @@ def create_flow_dialog():
             Row(
                 Back(Const("🔙 Назад")),
             ),
+            Row(
+                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)
+            ),
             state=CreateFlowMenu.select_frequency,
             parse_mode=ParseMode.HTML,
         ),
@@ -71,6 +74,9 @@ def create_flow_dialog():
             Row(
                 Back(Const("🔙 Назад")),
             ),
+            Row(
+                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)
+            ),
             state=CreateFlowMenu.select_words_limit,
             parse_mode=ParseMode.HTML,
         ),
@@ -83,6 +89,9 @@ def create_flow_dialog():
             ),
             Row(
                 Back(Const("🔙 Назад")),
+            ),
+            Row(
+                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main)
             ),
             TextInput(
                 id="source_link_input",
