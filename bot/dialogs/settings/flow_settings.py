@@ -104,6 +104,34 @@ async def toggle_ad_block(callback: CallbackQuery, button: Button, manager: Dial
     await callback.answer(f"Рекламний блок {'увімкнено' if ad_enabled else 'вимкнено'}")
     await manager.switch_to(SettingsMenu.flow_settings)
 
+async def adjust_posts_count(callback: CallbackQuery, button: Button, manager: DialogManager):
+    current = manager.dialog_data.get("posts_count", 1)
+    if button.widget_id == "increase_posts":
+        new_count = min(10, current + 1)
+    else:
+        new_count = max(1, current - 1)
+    
+    manager.dialog_data["posts_count"] = new_count
+    await callback.answer(f"Кількість постів: {new_count}")
+    await manager.show()
+
+
+async def set_exact_posts_count(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.exact_posts_input)
+    await callback.answer("Введіть число від 1 до 10")
+
+async def handle_exact_posts_input(message: Message, widget, dialog_manager: DialogManager):
+    try:
+        count = int(message.text)
+        if 1 <= count <= 10:
+            dialog_manager.dialog_data["posts_count"] = count
+            await dialog_manager.switch_to(SettingsMenu.posts_in_flow)
+            await message.answer(f"✅ Встановлено: {count} постів")
+        else:
+            await message.answer("⚠️ Введіть число від 1 до 10")
+    except ValueError:
+        await message.answer("❌ Введіть коректне число")
+
 # ================== ОКНА НАСТРОЕК ФЛОУ ==================
 def create_flow_settings_window():
     return Window(
@@ -122,7 +150,6 @@ def create_flow_settings_window():
             Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
             Button(Const("📊 Кількість постів у флоу"), id="posts_in_flow", on_click=set_posts_in_flow),
             Button(Const("📚 Налаштування джерел"), id="source_settings", on_click=open_source_settings),
-            Button(Const("🗑 Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
         ),
         Row(
             Button(Const("◀️ Назад"), id="open_main_settings", on_click=open_main_settings),
@@ -194,7 +221,7 @@ def create_exact_limit_input_window():
             filter=F.text,
         ),
         Row(
-            Back(Const("◀️ Назад")),
+            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=SettingsMenu.exact_limit_input,
         parse_mode=ParseMode.HTML
@@ -239,4 +266,53 @@ def create_character_limit_window():
         state=SettingsMenu.character_limit,
         parse_mode=ParseMode.HTML,
         getter=character_limit_getter
+    )
+
+async def posts_in_flow_getter(dialog_manager: DialogManager, **kwargs):
+    return {
+        "posts_count": dialog_manager.dialog_data.get("posts_count", 1)
+    }
+
+def create_posts_in_flow_window():
+    return Window(
+        Format("📊 <b>Кількість постів у флоу</b>\n\nПоточне значення: {posts_count}"),
+        Column(
+            Button(Const("➕ Збільшити"), id="increase_posts", on_click=adjust_posts_count),
+            Button(Const("➖ Зменшити"), id="decrease_posts", on_click=adjust_posts_count),
+            Button(Const("✏️ Вказати точне число"), id="set_exact_posts", on_click=set_exact_posts_count),
+        ),
+        Row(
+            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),        
+        ),
+        state=SettingsMenu.posts_in_flow,
+        parse_mode=ParseMode.HTML,
+        getter=posts_in_flow_getter
+    )
+
+def create_exact_posts_input_window():
+    return Window(
+        Const("✏️ <b>Введіть кількість постів</b>\n(1-10)"),
+        MessageInput(
+            handle_exact_posts_input,
+            filter=F.text & ~F.text.startswith('/')
+        ),
+        Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        state=SettingsMenu.exact_posts_input,
+        parse_mode=ParseMode.HTML
+    )
+
+    
+def create_source_settings_window():
+    return Window(
+        Const("📚 <b>Налаштування джерел</b>"),
+        Column(
+            Button(Const("➕ Додати джерело"), id="add_source"),
+            Button(Const("✏️ Редагувати джерела"), id="edit_sources"),
+            Button(Const("🗑 Видалити джерело"), id="delete_source"),
+        ),
+        Row(
+            Back(Const("◀️ Назад")),
+        ),
+        state=SettingsMenu.source_settings,
+        parse_mode=ParseMode.HTML
     )

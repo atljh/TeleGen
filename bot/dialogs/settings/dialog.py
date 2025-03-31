@@ -22,7 +22,10 @@ from .flow_settings import (
     create_character_limit_window,
     create_frequency_settings_window,
     create_exact_limit_input_window,
-    create_ad_block_settings_window
+    create_ad_block_settings_window,
+    create_posts_in_flow_window,
+    create_source_settings_window,
+    create_exact_posts_input_window
 )
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
@@ -93,7 +96,7 @@ def create_settings_dialog():
                 Button(Const("🗑️ Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
             ),
             Row(
-                Back(Const("<<< Назад")),
+                Back(Const("◀️ Назад")),
             ),
             state=SettingsMenu.channel_main_settings,
             parse_mode=ParseMode.HTML,
@@ -113,4 +116,7 @@ def create_settings_dialog():
         create_character_limit_window(),
         create_exact_limit_input_window(),
         create_ad_block_settings_window(),
+        create_posts_in_flow_window(),
+        create_source_settings_window(),
+        create_exact_posts_input_window()
     )
