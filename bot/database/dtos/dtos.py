@@ -1,3 +1,4 @@
+from enum import Enum
 from pydantic import BaseModel
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
@@ -31,21 +32,41 @@ class ChannelDTO(BaseModel):
         from_attributes = True
         arbitrary_types_allowed = True
 
+class ContentLength(str, Enum):
+    SHORT = "short"      # До 300 знаків
+    MEDIUM = "medium"    # 300-1000 знаків
+    LONG = "long"        # Понад 1000 знаків
+
+class GenerationFrequency(str, Enum):
+    HOURLY = "hourly"        # Кожну годину
+    DAILY = "daily"          # Раз на день
+    WEEKLY = "weekly"        # Раз на тиждень
+    CUSTOM = "custom"        # Користувацький графік
+
 class FlowDTO(BaseModel):
     id: int
     channel_id: int
     name: str
     theme: str
-    source: str
-    content_length: str
+    sources: list[str]       # Список посилань на джерела
+    content_length: ContentLength
     use_emojis: bool
     use_premium_emojis: bool
+    title_highlight: bool    # Виділення заголовків
     cta: bool
-    frequency: str
+    frequency: GenerationFrequency
+    signature: str | None    # Підпис до постів
+    flow_volume: int         # Кількість постів у флоу
+    ad_time: str | None      # Час для рекламних топів (HH:MM)
     created_at: datetime
+    updated_at: datetime | None
 
     class Config:
         from_attributes = True
+        use_enum_values = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }
 
 class PostDTO(BaseModel):
     id: int
