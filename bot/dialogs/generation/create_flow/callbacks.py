@@ -5,7 +5,7 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.input import TextInput
 
-from bot.database.dtos.dtos import ContentLength, GenerationFrequency
+from bot.database.dtos import ContentLength, GenerationFrequency
 from bot.database.exceptions import ChannelNotFoundError
 
 from .states import CreateFlowMenu
@@ -164,81 +164,84 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 
 
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
-    manager.dialog_data["signature"] = message.text
-    logging.info(manager.dialog_data)
-    await manager.switch_to(CreateFlowMenu.confirmation)
-    await message.answer(f"✅ Підпис оновлено:\n{message.text}")
+    try:
+        manager.dialog_data["signature"] = message.text
+        logger.info(f"Signature set: {message.text}")
+        
+        flow = await create_new_flow(manager)
+        
+        await manager.switch_to(CreateFlowMenu.confirmation)
+        await message.answer(f"✅ Флоу успішно створено з підписом:\n{message.text}")
+        
+    except ChannelNotFoundError:
+        await message.answer("❌ Канал не знайдено")
+        await manager.switch_to(CreateFlowMenu.select_source)
+    except Exception as e:
+        logger.error(f"Flow creation error: {e}")
+        await message.answer("❌ Помилка створення Flow")
+        await manager.back()
 
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data["signature"] = None
-    logging.info(manager.dialog_data)
-    await callback.answer("Підпис видалено")
-    await manager.switch_to(CreateFlowMenu.confirmation)
-
-
-# ==================CONFIRMATION======================
-
-async def on_flow_created(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
+        manager.dialog_data["signature"] = None
+        logger.info("Signature skipped")
+        
         flow = await create_new_flow(manager)
+        
         await manager.switch_to(CreateFlowMenu.confirmation)
+        await callback.answer("✅ Флоу успішно створено без підпису")
+        
     except ChannelNotFoundError:
         await callback.answer("❌ Канал не знайдено")
-        await manager.switch_to(CreateFlowMenu.select_channel)
+        await manager.switch_to(CreateFlowMenu.select_source)
     except Exception as e:
         logger.error(f"Flow creation error: {e}")
         await callback.answer("❌ Помилка створення Flow")
         await manager.back()
 
+# ==================CONFIRMATION======================
 
 async def create_new_flow(manager: DialogManager):
-    try:
-        flow_data = manager.dialog_data
-        channel_id = flow_data.get("channel_id")
-        
-        if not channel_id:
-            raise ValueError("Channel ID not found")
-        
-        flow_service = Container.flow_service()
-        
-        new_flow = await flow_service.create_flow(
-            channel_id=flow_data["channel_id"],
-            name=flow_data.get("flow_name", "Новий Flow"),
-            theme=flow_data.get("theme", "Загальна"),
-            sources=flow_data.get("sources", []),
-            content_length=ContentLength(flow_data.get("words_limit", "medium")),
-            use_emojis=flow_data.get("use_emojis", False),
-            use_premium_emojis=flow_data.get("use_premium_emojis", False),
-            title_highlight=flow_data.get("title_highlight", False),
-            cta=flow_data.get("cta", False),
-            frequency=GenerationFrequency(flow_data.get("frequency", "daily")),
-            signature=flow_data.get("signature", ""),
-            flow_volume=flow_data.get("flow_volume", 5),
-            ad_time=flow_data.get("ad_time")
-        )
-        
-        manager.dialog_data["created_flow"] = {
-            "id": new_flow.id,
-            "name": new_flow.name,
-            "theme": new_flow.theme,
-            "sources": flow_data.get("sources", []),
-            "frequency": flow_data["frequency"],
-            "words_limit": flow_data["words_limit"],
-            "title_highlight": flow_data["title_highlight"],
-            "signature": new_flow.signature,
-            "flow_volume": new_flow.flow_volume,
-            "ad_time": new_flow.ad_time
-        }
-        
-        logger.info(f"Created new Flow ID: {new_flow.id}")
-        return new_flow
-        
-    except ChannelNotFoundError as e:
-        logger.error(f"Channel not found: {e}")
-        raise
-    except Exception as e:
-        logger.error(f"Error creating flow: {e}")
-        raise
+    flow_data = manager.dialog_data
+
+    channel_id = flow_data.get("selected_channel").id
+    if not channel_id:
+        raise ValueError("Channel ID not found")
+    logging.info(f"CHANNEL_ID {type(channel_id)}")
+
+    flow_service = Container.flow_service()
+    
+    new_flow = await flow_service.create_flow(
+        channel_id=int(channel_id),
+        name=flow_data.get("flow_name", "Новий Flow"),
+        theme=flow_data.get("theme", "Загальна"),
+        sources=flow_data.get("sources", []),
+        content_length=ContentLength(flow_data.get("words_limit", "medium")),
+        use_emojis=flow_data.get("use_emojis", False),
+        use_premium_emojis=flow_data.get("use_premium_emojis", False),
+        title_highlight=flow_data.get("title_highlight", False),
+        cta=flow_data.get("cta", False),
+        frequency=GenerationFrequency(flow_data.get("frequency", "daily")),
+        signature=flow_data.get("signature", ""),
+        flow_volume=flow_data.get("flow_volume", 5),
+        ad_time=flow_data.get("ad_time")
+    )
+    
+    manager.dialog_data["created_flow"] = {
+        "id": new_flow.id,
+        "name": new_flow.name,
+        "theme": new_flow.theme,
+        "sources": flow_data.get("sources", []),
+        "frequency": flow_data["frequency"],
+        "words_limit": flow_data["words_limit"],
+        "title_highlight": flow_data["title_highlight"],
+        "signature": new_flow.signature,
+        "flow_volume": new_flow.flow_volume,
+        "ad_time": new_flow.ad_time
+    }
+    
+    logger.info(f"Created new Flow ID: {new_flow.id}")
+    return new_flow
 
 async def show_my_flows(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:

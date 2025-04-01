@@ -47,6 +47,7 @@ class Container(containers.DeclarativeContainer):
     flow_service = providers.Factory(
         FlowService,
         flow_repository=flow_repository,
+        channel_repository=channel_repository
     )
 
     post_service = providers.Factory(
