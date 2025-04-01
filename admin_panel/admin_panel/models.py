@@ -36,23 +36,73 @@ class Channel(models.Model):
 
 
 class Flow(models.Model):
-    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='flows', verbose_name="Канал")
+    class ContentLength(models.TextChoices):
+        SHORT = "short", "Короткий (до 300 знаків)"
+        MEDIUM = "medium", "Середній (300-1000 знаків)"
+        LONG = "long", "Довгий (понад 1000 знаків)"
+
+    class GenerationFrequency(models.TextChoices):
+        HOURLY = "hourly", "Кожну годину"
+        DAILY = "daily", "Раз на день"
+        WEEKLY = "weekly", "Раз на тиждень"
+        CUSTOM = "custom", "Користувацький графік"
+
+    channel = models.ForeignKey(
+        "Channel",
+        on_delete=models.CASCADE,
+        related_name="flows",
+        verbose_name="Канал"
+    )
     name = models.CharField(max_length=255, verbose_name="Назва флоу")
     theme = models.CharField(max_length=100, verbose_name="Тематика")
-    source = models.CharField(max_length=100, verbose_name="Джерело контенту")  # Telegram, Instagram, Twitter, Web
-    content_length = models.CharField(max_length=50, verbose_name="Обсяг тексту")  # Short, Medium, Long
+    sources = models.JSONField(
+        default=list,
+        verbose_name="Джерела контенту"
+    )  # Список: [{"type": "telegram", "link": "..."}, ...]
+    content_length = models.CharField(
+        max_length=50,
+        choices=ContentLength.choices,
+        verbose_name="Обсяг тексту"
+    )
     use_emojis = models.BooleanField(default=False, verbose_name="Використання емодзі")
-    use_premium_emojis = models.BooleanField(default=False, verbose_name="Використання преміум емодзі")
+    use_premium_emojis = models.BooleanField(default=False, verbose_name="Преміум емодзі")
+    title_highlight = models.BooleanField(default=False, verbose_name="Виділення заголовків")
     cta = models.BooleanField(default=False, verbose_name="Заклик до дії (CTA)")
-    frequency = models.CharField(max_length=50, verbose_name="Частота генерації")  # Daily, Weekly, Monthly
+    frequency = models.CharField(
+        max_length=50,
+        choices=GenerationFrequency.choices,
+        verbose_name="Частота генерації"
+    )
+    signature = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Підпис до постів"
+    )
+    flow_volume = models.PositiveSmallIntegerField(
+        default=5,
+        verbose_name="Кількість постів у флоу"
+    )
+    ad_time = models.CharField(
+        max_length=5,
+        null=True,
+        blank=True,
+        verbose_name="Час для рекламних топів (HH:MM)"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата оновлення")
 
     def __str__(self):
-        return f"{self.name} (Тема: {self.theme})"
+        return f"{self.name} ({self.theme})"
 
     class Meta:
         verbose_name = "Флоу"
         verbose_name_plural = "Флоу"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["channel", "created_at"]),
+            models.Index(fields=["name"]),
+        ]
+
 
 class Post(models.Model):
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE, related_name='posts', verbose_name="Флоу")
