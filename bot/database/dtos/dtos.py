@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
 
@@ -54,7 +54,7 @@ class FlowDTO(BaseModel):
     use_premium_emojis: bool
     title_highlight: bool    # Виділення заголовків
     cta: bool
-    frequency: GenerationFrequency
+    frequency: str
     signature: str | None    # Підпис до постів
     flow_volume: int         # Кількість постів у флоу
     ad_time: str | None      # Час для рекламних топів (HH:MM)
@@ -63,7 +63,6 @@ class FlowDTO(BaseModel):
 
     class Config:
         from_attributes = True
-        use_enum_values = True
         json_encoders = {
             datetime: lambda v: v.isoformat(),
         }

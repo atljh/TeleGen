@@ -28,20 +28,19 @@ class FlowService:
         flow_volume: int = 5,          
         ad_time: str | None = None
     ) -> FlowDTO:
+        channel = await self.channel_repository.get_channel_by_id(channel_id)
+        
+        if isinstance(content_length, ContentLength):
+            content_length = content_length.value
+            
+        if isinstance(frequency, GenerationFrequency):
+            frequency = frequency.value
         try:
-            channel = await self.channel_repository.get_channel_by_id(channel_id)
-
-            if isinstance(content_length, ContentLength):
-                content_length = content_length.value
-                
-            if isinstance(frequency, GenerationFrequency):
-                frequency = frequency.value
-
             flow = await self.flow_repository.create_flow(
                 channel=channel,
                 name=name,
                 theme=theme,
-                sources=[{"url": url} for url in sources],
+                sources=sources,
                 content_length=content_length,
                 use_emojis=use_emojis,
                 use_premium_emojis=use_premium_emojis,
@@ -52,15 +51,16 @@ class FlowService:
                 flow_volume=flow_volume,
                 ad_time=ad_time,
             )
-            
-            return FlowDTO.from_orm(flow)
-            
-        except ChannelNotFoundError as e:
-            logger.error(f"Channel {channel_id} not found")
-            raise
         except Exception as e:
-            logger.error(f"Error creating flow: {e}")
-            raise
+            logger.error(f"Flow error {e}", exc_info=True)
+            return
+        try:
+            flow_dto = FlowDTO.from_orm(flow)
+        except Exception as e:
+            logger.error(f"DTO conversion error: {e}", exc_info=True)
+            return
+        return FlowDTO.from_orm(flow)
+
 
     async def get_flow_by_id(self, flow_id: int) -> FlowDTO:
         try:
