@@ -11,6 +11,7 @@ from dialogs.settings.states import SettingsMenu
 
 async def start_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
+    logging.info(selected_channel)
     await manager.start(
         FlowSettingsMenu.flow_settings,
         data={"selected_channel": selected_channel},

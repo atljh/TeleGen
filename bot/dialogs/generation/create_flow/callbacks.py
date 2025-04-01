@@ -6,6 +6,9 @@ from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.input import TextInput
 
 from .states import CreateFlowMenu
+from bot.containers import Container
+
+logger = logging.getLogger(__name__)
 
 from dialogs.generation.states import GenerationMenu
 
@@ -168,3 +171,31 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
     logging.info(manager.dialog_data)
     await callback.answer("Підпис видалено")
     await manager.switch_to(CreateFlowMenu.confirmation)
+
+
+# ==================CONFIRMATION======================
+
+
+async def show_my_flows(callback: CallbackQuery, button: Button, manager: DialogManager):
+    # await manager.start(MyFlowsMenu.list)
+    await callback.answer("Список ваших Flow")
+
+async def start_generation_process(callback: CallbackQuery, button: Button, manager: DialogManager):
+    try:
+        flow_data = manager.dialog_data.get("created_flow", {})
+        flow_id = flow_data.get("id")
+        
+        if not flow_id:
+            raise ValueError("Flow ID not found in dialog data")
+        
+        flow_service = Container.flow_service()
+        flow = await flow_service.get_flow_by_id(flow_id)
+        
+        logger.info(f"Starting generation for Flow ID: {flow_id}")
+        
+        await callback.answer(f"🔁 Генерація для '{flow.name}' запущена!")
+        await manager.switch_to(GenerationMenu.status)
+        
+    except Exception as e:
+        logger.error(f"Error starting generation: {e}")
+        await callback.answer("❌ Помилка запуску генерації")

@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram.enums import ParseMode
 
 from utils.buttons import go_back_to_main
-from dialogs.settings.flow_settings.callbacks import open_flow_settings
+from dialogs.settings.flow_settings.callbacks import start_flow_settings
 from .states import CreateFlowMenu
 from .getters import (
     ad_time_getter,
@@ -98,7 +98,7 @@ def create_flow_dialog():
                   "Додати ще одне джерело?"),
             Column(
                 Button(Const("➕ Так"), id="add_more_sources", on_click=add_more_sources),
-                Next(Const("❌ Ні, продовжити"), id="continue_flow"),
+                Next(Const("🔜 Ні, продовжити"), id="continue_flow"),
             ),
             state=CreateFlowMenu.source_confirmation,
             parse_mode=ParseMode.HTML,
@@ -245,7 +245,8 @@ def create_flow_dialog():
                 "Підпис до постів: {signature}\n\n"
                 "ID: {flow_id}"),
             Column(
-                Button(Const("🔙 До налаштувань"), id="to_settings", on_click=open_flow_settings),
+                Button(Const("Налаштування Flow"), id="to_settings", on_click=start_flow_settings),
+                Button(Const("Почати генерацiю"), id="start_generation"),
                 Button(Const("🏠 В головне меню"), id="to_main", on_click=go_back_to_main),
             ),
             state=CreateFlowMenu.confirmation,

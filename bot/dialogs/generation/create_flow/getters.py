@@ -1,5 +1,5 @@
 from aiogram_dialog import DialogManager
-
+import logging
 
 async def ad_time_getter(dialog_manager: DialogManager, **kwargs):
     return {
@@ -33,6 +33,12 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     }
 
 async def source_type_getter(dialog_manager: DialogManager, **kwargs):
+    selected_channel = (dialog_manager.start_data.get("selected_channel") 
+        or dialog_manager.dialog_data.get("selected_channel")
+    )
+    
+    if selected_channel:
+        dialog_manager.dialog_data["selected_channel"] = selected_channel
     return {
         "has_selected_sources": len(dialog_manager.dialog_data.get("sources", [])) > 0
     }
@@ -75,6 +81,7 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     }
     
     words_limit_map = {
+        'to_100': 'До 100 слів',
         'to_300': 'До 300 слів',
         'to_500': 'До 500 слів',
         'to_1000': 'До 1000 слів',

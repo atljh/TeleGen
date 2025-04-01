@@ -52,7 +52,13 @@ async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManage
     )
 
 async def on_create_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(CreateFlowMenu.select_source)
+    selected_channel = manager.dialog_data.get("selected_channel")
+    logging.info(selected_channel)
+    await manager.start(
+        CreateFlowMenu.select_source,
+        data={"selected_channel": selected_channel},
+        mode=StartMode.RESET_STACK 
+    )
 
 async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(GenerationMenu.buffer)
