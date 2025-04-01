@@ -76,7 +76,7 @@ async def on_source_type_selected(callback: CallbackQuery, button: Button, manag
     manager.dialog_data["selected_source_name"] = button.text
     
     await manager.switch_to(CreateFlowMenu.add_source_link)
-    await callback.answer(f"Обрано {button.text}")
+    await callback.answer(f"Обрано {button.widget_id}")
 
 async def on_source_link_entered(message: Message, widget: TextInput, manager: DialogManager, data: str):
     if not validate_link(data, manager.dialog_data["selected_source_type"]):
