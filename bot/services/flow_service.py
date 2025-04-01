@@ -1,7 +1,10 @@
+import logging
+from datetime import datetime
 from bot.database.dtos import FlowDTO
 from bot.database.repositories import FlowRepository, ChannelRepository
 from bot.database.exceptions import ChannelNotFoundError
 
+logger = logging.getLogger(__name__)
 
 class FlowService:
     def __init__(self, flow_repository: FlowRepository, channel_repository: ChannelRepository):
@@ -17,35 +20,63 @@ class FlowService:
         content_length: str,
         use_emojis: bool,
         cta: bool,
-        frequency: str
-        ) -> FlowDTO:
-        channel = await self.channel_repository.get_channel_by_id(channel_id)
+        frequency: str,
+        signature: str = ""
+    ) -> FlowDTO:
         try:
             channel = await self.channel_repository.get_channel_by_id(channel_id)
+            
+            flow = await self.flow_repository.create_flow(
+                channel=channel,
+                name=name,
+                theme=theme,
+                source=source,
+                content_length=content_length,
+                use_emojis=use_emojis,
+                cta=cta,
+                frequency=frequency,
+                signature=signature,
+                created_at=datetime.now()
+            )
+            return FlowDTO.from_orm(flow)
+            
         except ChannelNotFoundError as e:
-            raise ChannelNotFoundError(f"Channel with id={channel_id} not found.") from e
+            logger.error(f"Channel {channel_id} not found")
+            raise
+        except Exception as e:
+            logger.error(f"Error creating flow: {e}")
+            raise
 
-        flow = await self.flow_repository.create_flow(
-            channel=channel,
-            name=name,
-            theme=theme,
-            source=source,
-            content_length=content_length,
-            use_emojis=use_emojis,
-            cta=cta,
-            frequency=frequency
-        )
-        return FlowDTO.from_orm(flow)
-    
     async def get_flow_by_id(self, flow_id: int) -> FlowDTO:
-        flow = await self.flow_repository.get_flow_by_id(flow_id)
-        return FlowDTO.from_orm(flow)
-    
-    async def update_flow(self, flow_id) -> FlowDTO:
-        flow = await self.flow_repository.get_flow_by_id(flow_id)
-        updated_flow = await self.flow_repository.update_flow(flow)
-        return FlowDTO.from_orm(updated_flow)
+        try:
+            flow = await self.flow_repository.get_flow_by_id(flow_id)
+            return FlowDTO.from_orm(flow)
+        except Exception as e:
+            logger.error(f"Error getting flow {flow_id}: {e}")
+            raise
+
+    async def get_user_flows(self, user_id: int) -> list[FlowDTO]:
+        try:
+            flows = await self.flow_repository.get_user_flows(user_id)
+            return [FlowDTO.from_orm(f) for f in flows]
+        except Exception as e:
+            logger.error(f"Error getting flows for user {user_id}: {e}")
+            raise
+
+    async def update_flow(self, flow_id: int, **kwargs) -> FlowDTO:
+        try:
+            flow = await self.flow_repository.get_flow_by_id(flow_id)
+            updated_flow = await self.flow_repository.update_flow(flow, **kwargs)
+            return FlowDTO.from_orm(updated_flow)
+        except Exception as e:
+            logger.error(f"Error updating flow {flow_id}: {e}")
+            raise
 
     async def delete_flow(self, flow_id: int):
-        flow = await self.flow_repository.get_flow_by_id(flow_id)
-        await self.flow_repository.delete_flow(flow)
+        try:
+            flow = await self.flow_repository.get_flow_by_id(flow_id)
+            await self.flow_repository.delete_flow(flow)
+            logger.info(f"Deleted flow {flow_id}")
+        except Exception as e:
+            logger.error(f"Error deleting flow {flow_id}: {e}")
+            raise
