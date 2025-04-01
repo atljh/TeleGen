@@ -204,11 +204,10 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
 async def create_new_flow(manager: DialogManager):
     flow_data = manager.dialog_data
 
-    channel_id = flow_data.get("selected_channel").id
+    channel_id = flow_data.get("selected_channel").channel_id
     if not channel_id:
         raise ValueError("Channel ID not found")
-    logging.info(f"CHANNEL_ID {type(channel_id)}")
-
+    logger.info(channel_id)
     flow_service = Container.flow_service()
     
     new_flow = await flow_service.create_flow(
