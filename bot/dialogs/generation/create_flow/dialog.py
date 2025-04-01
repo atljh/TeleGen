@@ -21,11 +21,7 @@ from .getters import (
 from .callbacks import(
     show_my_sources,
     to_channel,
-
-    on_instagram,
-    on_facebook,
-    on_web,
-    on_telegram,
+    to_select_frequency,
 
     on_once_a_day,
     on_once_a_12,
@@ -69,9 +65,7 @@ def create_flow_dialog():
             ),
             Row(
                 Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
-                Next(Const("🔜 Далі"), id="next"),
-
-                Next(Const("Далі ▶️"), id="next", when="has_selected_sources"),
+                Button(Const("🔜 Далі"), id="next", when="has_selected_sources", on_click=to_select_frequency),
             ),
             Row(
                 Button(Const("🏠 На головну"), id="go_back_to_main", on_click=go_back_to_main),
@@ -104,7 +98,7 @@ def create_flow_dialog():
                   "Додати ще одне джерело?"),
             Column(
                 Button(Const("➕ Так"), id="add_more_sources", on_click=add_more_sources),
-                Button(Const("❌ Ні, продовжити"), id="continue_flow", on_click=continue_to_next_step),
+                Next(Const("❌ Ні, продовжити"), id="continue_flow"),
             ),
             state=CreateFlowMenu.source_confirmation,
             parse_mode=ParseMode.HTML,

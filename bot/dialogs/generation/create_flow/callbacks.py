@@ -5,7 +5,6 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.input import TextInput
 
-from utils.validation import is_valid_link
 from .states import CreateFlowMenu
 
 from dialogs.generation.states import GenerationMenu
@@ -13,27 +12,55 @@ from dialogs.generation.states import GenerationMenu
 async def to_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(GenerationMenu.main, mode=StartMode.RESET_STACK)
 
+async def to_select_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(CreateFlowMenu.select_frequency)
+
 # ==================SOURCE======================
 
-async def on_instagram(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data['selected_source'] = 'instagram'
-    await callback.answer("Обрано Instagram")
+async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
+    manager.dialog_data["selected_source_type"] = button.widget_id
+    manager.dialog_data["selected_source_name"] = button.text
+    
     await manager.switch_to(CreateFlowMenu.add_source_link)
+    await callback.answer(f"Обрано {button.widget_id}")
 
-async def on_facebook(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data['selected_source'] = 'facebook'
-    await callback.answer("Обрано Facebook")
-    await manager.switch_to(CreateFlowMenu.add_source_link)
+async def on_source_link_entered(message: Message, widget: TextInput, manager: DialogManager, data: str):
+    if not validate_link(data, manager.dialog_data["selected_source_type"]):
+        await message.answer("❌ Невірний формат посилання для цього типу джерела!")
+        return
+    
+    source = {
+        "type": manager.dialog_data["selected_source_type"],
+        "link": data,
+    }
+    
+    if "sources" not in manager.dialog_data:
+        manager.dialog_data["sources"] = []
+    
+    manager.dialog_data["sources"].append(source)
+    manager.dialog_data["source_link"] = data
+    await manager.switch_to(CreateFlowMenu.source_confirmation)
 
-async def on_web(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data['selected_source'] = 'web'
-    await callback.answer("Обрано Web")
-    await manager.switch_to(CreateFlowMenu.add_source_link)
+async def add_more_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(CreateFlowMenu.select_source)
+    await callback.answer("Додаємо ще одне джерело")
 
-async def on_telegram(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data['selected_source'] = 'telegram'
-    await callback.answer("Обрано telegram")
-    await manager.switch_to(CreateFlowMenu.add_source_link)
+async def continue_to_next_step(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(CreateFlowMenu.next_step)
+    await callback.answer("Продовжуємо налаштування флоу")
+
+async def show_my_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.answer("Список ваших джерел...")
+
+def validate_link(link: str, source_type: str) -> bool:
+    patterns = {
+        "instagram": r"(https?:\/\/)?(www\.)?instagram\.com\/[A-Za-z0-9_\.]+",
+        "facebook": r"(https?:\/\/)?(www\.)?facebook\.com\/[A-Za-z0-9_\.]+",
+        "web": r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
+        "telegram": r"(https?:\/\/)?(www\.)?t\.me\/[A-Za-z0-9_\.]+"
+    }
+    import re
+    return bool(re.match(patterns.get(source_type.lower(), ""), link))
 
 # ==================FREQUENCY======================
 
@@ -69,52 +96,6 @@ async def on_to_1000(callback: CallbackQuery, button: Button, manager: DialogMan
     await callback.answer("До 1000")
     await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
 
-# ==================SOURCE======================
-
-async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data["selected_source_type"] = button.widget_id
-    manager.dialog_data["selected_source_name"] = button.text
-    
-    await manager.switch_to(CreateFlowMenu.add_source_link)
-    await callback.answer(f"Обрано {button.widget_id}")
-
-async def on_source_link_entered(message: Message, widget: TextInput, manager: DialogManager, data: str):
-    if not validate_link(data, manager.dialog_data["selected_source_type"]):
-        await message.answer("❌ Невірний формат посилання для цього типу джерела!")
-        return
-    
-    source = {
-        "type": manager.dialog_data["selected_source_type"],
-        "link": data,
-    }
-    
-    if "sources" not in manager.dialog_data:
-        manager.dialog_data["sources"] = []
-    
-    manager.dialog_data["sources"].append(source)
-    manager.dialog_data["source_link"] = data
-    await manager.switch_to(CreateFlowMenu.source_confirmation)
-
-async def add_more_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(CreateFlowMenu.select_source_type)
-    await callback.answer("Додаємо ще одне джерело")
-
-async def continue_to_next_step(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(CreateFlowMenu.next_step)
-    await callback.answer("Продовжуємо налаштування флоу")
-
-async def show_my_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.answer("Список ваших джерел...")
-
-def validate_link(link: str, source_type: str) -> bool:
-    patterns = {
-        "instagram": r"(https?:\/\/)?(www\.)?instagram\.com\/[A-Za-z0-9_\.]+",
-        "facebook": r"(https?:\/\/)?(www\.)?facebook\.com\/[A-Za-z0-9_\.]+",
-        "web": r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
-        "telegram": r"(https?:\/\/)?(www\.)?t\.me\/[A-Za-z0-9_\.]+"
-    }
-    import re
-    return bool(re.match(patterns.get(source_type.lower(), ""), link))
 
 # ==================TITLE======================
 
