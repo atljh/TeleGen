@@ -23,8 +23,6 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     
 
     return {
-
-
         "frequency": flow_data.get("frequency", "не встановлено"),
         "char_limit": flow_data.get("char_limit", "не встановлено"),
         "title_highlight": "так" if flow_data.get("title_highlight") else "ні",
