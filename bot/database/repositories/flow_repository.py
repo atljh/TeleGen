@@ -8,7 +8,7 @@ class FlowRepository:
         channel,
         name: str,
         theme: str,
-        sources: list[str],
+        sources: list[dict],
         content_length: str,
         use_emojis: bool,
         use_premium_emojis: bool,

@@ -17,7 +17,7 @@ class FlowService:
         channel_id: int,
         name: str,
         theme: str,
-        sources: list[str],
+        sources: list[dict],
         content_length: ContentLength | str,
         use_emojis: bool,
         use_premium_emojis: bool,
@@ -30,7 +30,7 @@ class FlowService:
     ) -> FlowDTO:
         try:
             channel = await self.channel_repository.get_channel_by_id(channel_id)
-            logger.info(f"LOL {channel}")
+
             if isinstance(content_length, ContentLength):
                 content_length = content_length.value
                 
@@ -41,7 +41,7 @@ class FlowService:
                 channel=channel,
                 name=name,
                 theme=theme,
-                sources=[{"url": url} for url in sources],  # Сохраняем как список словарей
+                sources=[{"url": url} for url in sources],
                 content_length=content_length,
                 use_emojis=use_emojis,
                 use_premium_emojis=use_premium_emojis,
@@ -51,8 +51,6 @@ class FlowService:
                 signature=signature,
                 flow_volume=flow_volume,
                 ad_time=ad_time,
-                created_at=datetime.now(),
-                updated_at=datetime.now()
             )
             
             return FlowDTO.from_orm(flow)

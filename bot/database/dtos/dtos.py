@@ -48,7 +48,7 @@ class FlowDTO(BaseModel):
     channel_id: int
     name: str
     theme: str
-    sources: list[str]       # Список посилань на джерела
+    sources: list[dict]       # Список посилань на джерела
     content_length: ContentLength
     use_emojis: bool
     use_premium_emojis: bool

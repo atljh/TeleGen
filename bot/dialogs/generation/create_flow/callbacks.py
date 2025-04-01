@@ -166,7 +166,6 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     try:
         manager.dialog_data["signature"] = message.text
-        logger.info(f"Signature set: {message.text}")
         
         flow = await create_new_flow(manager)
         
@@ -184,7 +183,6 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
         manager.dialog_data["signature"] = None
-        logger.info("Signature skipped")
         
         flow = await create_new_flow(manager)
         
