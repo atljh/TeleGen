@@ -61,6 +61,8 @@ class FlowService:
             return
         return FlowDTO.from_orm(flow)
 
+    async def get_flow_by_channel_id(self, channel_id: int) -> FlowDTO:
+        return await self.flow_repository.get_flow_by_channel_id(channel_id)
 
     async def get_flow_by_id(self, flow_id: int) -> FlowDTO:
         try:

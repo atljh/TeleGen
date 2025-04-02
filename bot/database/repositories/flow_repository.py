@@ -47,11 +47,14 @@ class FlowRepository:
         except Exception as e:
             logging.error(f"Error during flow creation: {e}", exc_info=True)
 
-    async def get_flow_by_id(self, flow_id: int) -> Flow:
+    async def get_flow_by_channel_id(self, channel_id: int) -> Flow:
         try:
-            return await Flow.objects.aget(id=flow_id)
+            return await Flow.objects.aget(channel_id=channel_id)
         except Flow.DoesNotExist:
-            raise FlowNotFoundError(f"Flow with id={flow_id} not found.")
+            raise FlowNotFoundError(f"No flow found for channel {channel_id}")
+
+    async def get_flows_by_channel_id(self, channel_id: int) -> list[Flow]:
+        return await Flow.objects.filter(channel_id=channel_id).first()
 
     async def update_flow(self, flow: Flow) -> Flow:
         await flow.asave()
