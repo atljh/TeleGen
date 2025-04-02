@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 from pydantic import BaseModel, validator
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
@@ -71,14 +72,39 @@ class PostDTO(BaseModel):
     id: int
     flow_id: int
     content: str
-    source_url: str
+    source_url: str | None
     publication_date: datetime | None
     is_published: bool
     is_draft: bool
     created_at: datetime
+    image_path: str | None
+    has_image: bool = False
 
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
+        }
+
+    @classmethod
+    def from_orm(cls, obj):
+        if hasattr(obj, 'image'):
+            image_path = obj.image.url if obj.image else None
+        else:
+            image_path = getattr(obj, 'image_path', None)
+            
+        return cls(
+            id=obj.id,
+            flow_id=obj.flow_id,
+            content=obj.content,
+            source_url=obj.source_url,
+            publication_date=obj.publication_date,
+            is_published=obj.is_published,
+            is_draft=obj.is_draft,
+            created_at=obj.created_at,
+            image_path=image_path,
+            has_image=bool(image_path)
+        )
 
 class DraftDTO(BaseModel):
     id: int

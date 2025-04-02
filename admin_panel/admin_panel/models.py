@@ -112,6 +112,12 @@ class Post(models.Model):
     is_published = models.BooleanField(default=False, verbose_name="Опубліковано")
     is_draft = models.BooleanField(default=False, verbose_name="Чернетка")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
+    image = models.ImageField(
+        upload_to='posts/images/',
+        blank=True,
+        null=True,
+        verbose_name="Зображення"
+    )
 
     def __str__(self):
         return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"
