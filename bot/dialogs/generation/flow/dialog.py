@@ -26,6 +26,10 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         start_data.get("selected_channel") 
         or dialog_data.get("selected_channel")
     )
+    channel_flow = (
+        start_data.get("channel_flow") 
+        or dialog_data.get("channel_flow")
+    )
     
     if not selected_channel:
         return {
@@ -35,17 +39,20 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         }
     
     dialog_manager.dialog_data["selected_channel"] = selected_channel
+    dialog_manager.dialog_data["channel_flow"] = channel_flow
+
     
     return {
         "channel_name": selected_channel.name,
         "channel_id": selected_channel.channel_id,
         "created_at": selected_channel.created_at,
+        "channel_flow": channel_flow.name
     }
 
 def flow_dialog():
     return Dialog(
         Window(
-            Format("{channel_name}"),
+            Format("Канал {channel_name}\nФлоу {channel_flow}"),
             Column(
                 Button(Const("Опубликовать сейчас"), id="publish_now", on_click=on_publish_now),
                 Button(Const("Запланировать публикацию"), id="schedule", on_click=on_schedule),

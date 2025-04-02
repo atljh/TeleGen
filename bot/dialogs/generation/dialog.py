@@ -35,6 +35,10 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         start_data.get("selected_channel") 
         or dialog_data.get("selected_channel")
     )
+    channel_flow = (
+        start_data.get("channel_flow") 
+        or dialog_data.get("channel_flow")
+    )
     
     if not selected_channel:
         return {
@@ -44,13 +48,15 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         }
     
     dialog_manager.dialog_data["selected_channel"] = selected_channel
+    dialog_manager.dialog_data["channel_flow"] = channel_flow
+
     
     return {
         "channel_name": selected_channel.name,
         "channel_id": selected_channel.channel_id,
         "created_at": selected_channel.created_at,
+        "channel_flow": channel_flow.name
     }
-
 def create_generation_dialog():
     return Dialog(
         Window(
@@ -76,7 +82,7 @@ def create_generation_dialog():
             getter=get_user_channels_data,
         ),
         Window(
-            Format("📢 <b>Назва: {channel_name}</b>\n"),
+            Format("📢 <b>Назва: {channel_name}</b>\n<b>Флоу: {channel_flow}</b>\n"),
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow),
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),

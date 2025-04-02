@@ -170,7 +170,6 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
         flow = await create_new_flow(manager)
         
         await manager.switch_to(CreateFlowMenu.confirmation)
-        await message.answer(f"✅ Флоу успішно створено з підписом:\n{message.text}")
         
     except ChannelNotFoundError:
         await message.answer("❌ Канал не знайдено")
@@ -187,7 +186,6 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
         flow = await create_new_flow(manager)
         
         await manager.switch_to(CreateFlowMenu.confirmation)
-        await callback.answer("✅ Флоу успішно створено без підпису")
         
     except ChannelNotFoundError:
         await callback.answer("❌ Канал не знайдено")
