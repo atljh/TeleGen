@@ -20,7 +20,7 @@ def create_main_dialog():
                 "👇👇👇"
             ),
             Row(
-                Button(Const("✨ Генерация"), id="generation", on_click=on_generation_click),
+                Button(Const("✨ Генерацiя"), id="generation", on_click=on_generation_click),
                 Button(Const("📂 Буфер"), id="buffer", on_click=on_buffer_click),
             ),
             Row(

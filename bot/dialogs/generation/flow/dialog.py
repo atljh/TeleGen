@@ -18,12 +18,10 @@ from utils.buttons import (
 )
 from .states import FlowMenu
 from .callbacks import (
-    on_publish_now,
-    on_schedule,
-    on_edit,
+    on_edit_post,
+    on_publish_post,
     on_save_to_buffer,
-    on_refresh_posts,
-    on_post_select
+    on_schedule_post
 )
 
 
@@ -63,16 +61,6 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         "items": posts
     }
 
-async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
-    post_id = manager.dialog_data.get("current_post_id")
-    post_service = Container.post_service()
-    await post_service.publish_post(post_id)
-    await callback.answer(f"Пост {post_id} опубликован!")
-    await manager.show()
-
-async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
-    post_id = manager.dialog_data.get("current_post_id")
-    await callback.answer(f"Редактирование поста {post_id}")
 
 async def on_next_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     posts = manager.dialog_data.get("posts", [])
@@ -112,27 +100,36 @@ async def get_current_post_data(dialog_manager: DialogManager, **kwargs):
 def flow_dialog() -> Dialog:
     return Dialog(
         Window(
-            Format("📌 Канал: {channel_name}\n"
-                "📊 Флоу: {channel_flow}\n\n"
-                "--- Пост {post_number}/{posts_count} ---\n\n"
-                "📅 {current_post[pub_time]}\n"
-                "🔄 {current_post[status]}\n\n"
-                "{current_post[content_preview]}"),
+            Format("📌 <b>Канал:</b> {channel_name}\n"
+                "📊 <b>Флоу:</b> {channel_flow}\n\n"
+                ""
+                "<i>{current_post[content_preview]}</i>\n\n"
+                ""
+                "🕒 <b>Дата публікації:</b> {current_post[pub_time]}\n"
+                "📌 <b>Статус:</b> {current_post[status]}\n\n"
+                "📝 <b>Пост {post_number}/{posts_count}</b>\n"
+                ),
+            
+            Row(
+                Button(Const("⬅️"), id="prev_post", on_click=on_prev_post, when="has_prev"),
+                Button(Const("➡️"), id="next_post", on_click=on_next_post, when="has_next"),
+            ),
             
             Group(
-                Button(Const("⬅️ Назад"), id="prev_post", on_click=on_prev_post, when="has_prev"),
-                Button(Const("➡️ Вперед"), id="next_post", on_click=on_next_post, when="has_next"),
+                Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
+                Button(Const("📋 В буфер"), id="save_to_buffer", on_click=on_save_to_buffer),
                 width=2
             ),
             
             Group(
-                Button(Const("✅ Опубликовать"), id="publish_post", on_click=on_publish_post),
-                Button(Const("✏️ Редактировать"), id="edit_post", on_click=on_edit_post),
+                Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
+                Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),
                 width=2
             ),
             
             Cancel(Const("🔙 Назад")),
             getter=get_current_post_data,
-            state=FlowMenu.posts_list,  # Замените на ваше состояние
+            state=FlowMenu.posts_list,
+            parse_mode=ParseMode.HTML
         ),
     )
