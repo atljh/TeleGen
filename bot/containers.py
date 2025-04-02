@@ -53,6 +53,7 @@ class Container(containers.DeclarativeContainer):
     post_service = providers.Factory(
         PostService,
         post_repository=post_repository,
+        flow_repository=flow_repository
     )
 
     draft_service = providers.Factory(

@@ -72,7 +72,7 @@ class PostDTO(BaseModel):
     flow_id: int
     content: str
     source_url: str
-    publication_date: datetime
+    publication_date: datetime | None
     is_published: bool
     is_draft: bool
     created_at: datetime

@@ -1,6 +1,7 @@
 from admin_panel.admin_panel.models import Post, Flow
 from bot.database.exceptions import PostNotFoundError
 
+
 class PostRepository:
     async def create_post(
         self,
@@ -23,6 +24,9 @@ class PostRepository:
             return await Post.objects.aget(id=post_id)
         except Post.DoesNotExist:
             raise PostNotFoundError(f"Post with id={post_id} not found.")
+
+    async def get_posts_by_flow_id(self, flow_id: int) -> list[Post]:
+        return [post async for post in Post.objects.filter(flow_id=flow_id).order_by('-created_at')]
 
     async def update_post(self, post: Post) -> Post:
         await post.asave()

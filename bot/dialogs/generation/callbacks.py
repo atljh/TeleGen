@@ -34,9 +34,6 @@ async def on_channel_selected(
         flow_service = Container.flow_service()
         channel_flow = await flow_service.get_flow_by_channel_id(int(item_id))
 
-        logging.info(selected_channel)
-        logging.info(channel_flow)
-
         manager.dialog_data.update({
             "selected_channel": selected_channel,
             "channel_flow": channel_flow
@@ -58,7 +55,7 @@ async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManage
     selected_channel = manager.dialog_data.get("selected_channel")
     channel_flow = manager.dialog_data.get('channel_flow')
     await manager.start(
-        FlowMenu.main,
+        FlowMenu.posts_list,
         data={
             "selected_channel": selected_channel,
             "channel_flow": channel_flow,
@@ -83,4 +80,3 @@ async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogMana
 
 async def on_book_recall(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(GenerationMenu.book_recall)
-
