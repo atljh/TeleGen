@@ -223,17 +223,9 @@ async def create_new_flow(manager: DialogManager):
         flow_volume=flow_data.get("flow_volume", 5),
         ad_time=flow_data.get("ad_time")
     )
-    logger.info("OK")
     manager.dialog_data["created_flow"] = {
-        "id": new_flow.id,
-        "name": new_flow.name,
-        "theme": new_flow.theme,
-        "sources": flow_data.get("sources", []),
-        "words_limit": flow_data["words_limit"],
-        "title_highlight": flow_data["title_highlight"],
-        "signature": new_flow.signature,
-        "flow_volume": new_flow.flow_volume,
-        "ad_time": new_flow.ad_time
+        "flow_id": new_flow.id,
+        "flow_name": new_flow.name,
     }
     
     logger.info(f"Created new Flow ID: {new_flow.id}")
