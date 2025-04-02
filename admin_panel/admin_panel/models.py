@@ -47,11 +47,11 @@ class Flow(models.Model):
         WEEKLY = "weekly", "Раз на тиждень"
         CUSTOM = "custom", "Користувацький графік"
 
-    channel = models.ForeignKey(
-        "Channel",
+    channel = models.OneToOneField(
+        Channel,
         on_delete=models.CASCADE,
-        related_name="flows",
-        verbose_name="Канал"
+        primary_key=False,
+        unique=True
     )
     name = models.CharField(max_length=255, verbose_name="Назва флоу")
     theme = models.CharField(max_length=100, verbose_name="Тематика")
