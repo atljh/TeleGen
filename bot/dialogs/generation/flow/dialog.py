@@ -116,7 +116,7 @@ def flow_dialog() -> Dialog:
     return Dialog(
         Window(
             StaticMedia(
-                path="{current_post[image_path]}",  # путь к изображению
+                path="{current_post[image_path]}",
                 type="photo"
             ),
             Format(
