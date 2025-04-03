@@ -118,21 +118,6 @@ class Post(models.Model):
         null=True,
         verbose_name="Зображення"
     )
-    @property
-    def media_type(self):
-        if self.image:
-            return 'image'
-        elif self.video:
-            return 'video'
-        return None
-    
-    @property
-    def media_url(self):
-        if self.image:
-            return self.image.url
-        elif self.video:
-            return self.video.url
-        return None
 
     def __str__(self):
         return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"
