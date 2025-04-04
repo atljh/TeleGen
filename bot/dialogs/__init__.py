@@ -1,6 +1,5 @@
 from aiogram import Dispatcher
 
-from .main import create_main_dialog
 from .generation import (
     create_generation_dialog,
     create_add_channel_dialog,
@@ -14,7 +13,6 @@ from .settings.flow_settings import create_flow_settings_dialog
 from .support import create_support_dialog
 
 def register_dialogs(dp: Dispatcher):
-    main_dialog = create_main_dialog()
     generation_dialog = create_generation_dialog()
     add_channel_dialog = create_add_channel_dialog()
     d_flow_dialog = flow_dialog()
@@ -28,7 +26,6 @@ def register_dialogs(dp: Dispatcher):
 
     support_dialog = create_support_dialog()
     
-    dp.include_router(main_dialog)
     dp.include_router(generation_dialog)
     dp.include_router(add_channel_dialog)
     dp.include_router(d_flow_dialog)

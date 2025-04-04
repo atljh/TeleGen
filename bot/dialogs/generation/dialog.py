@@ -11,7 +11,6 @@ from .states import GenerationMenu
 from .callbacks import (
     on_channel_selected,
     add_channel,
-    go_back_to_main,
     on_create_flow,
     on_buffer,
     on_book_recall,
@@ -75,7 +74,7 @@ def create_generation_dialog():
                 Button(Const("Додати канал"), id="add_channel", on_click=add_channel),
             ),
             Row(
-                Button(Const("🔙 Назад"), id="back", on_click=go_back_to_main),
+                Button(Const("🔙 Назад"), id="back"),
             ),
             state=GenerationMenu.main,
             parse_mode=ParseMode.MARKDOWN_V2,
@@ -93,7 +92,7 @@ def create_generation_dialog():
                 Back(Const("🔙 Назад")),
             ),
             Row(
-                Button(Const("В головне меню"), id="go_back_to_main", on_click=go_back_to_main),
+                Button(Const("В головне меню"), id="go_back_to_main"),
 
             ),
             state=GenerationMenu.channel_main,

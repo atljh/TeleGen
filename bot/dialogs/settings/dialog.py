@@ -12,7 +12,6 @@ from .states import SettingsMenu
 from .callbacks import (
     on_channel_selected,
     pay_subscription,
-    go_back_to_main,
     confirm_delete_channel,
     delete_channel,
     cancel_delete_channel
@@ -73,9 +72,7 @@ def create_settings_dialog():
             Row(
                 Button(Const("💳 Оплата підписки"), id="pay_subscription", on_click=pay_subscription),
             ),
-            Row(
-                Button(Const("🔙 Назад"), id="back", on_click=go_back_to_main),
-            ),
+
             state=SettingsMenu.main,
             parse_mode=ParseMode.HTML,
             getter=get_user_channels_data,
@@ -93,7 +90,6 @@ def create_settings_dialog():
             ),
             Row(
                 Back(Const("◀️ До списку каналів")),
-                Button(Const("🏠 В головне меню"), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=SettingsMenu.channel_settings,
             parse_mode=ParseMode.HTML,

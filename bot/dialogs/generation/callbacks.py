@@ -3,7 +3,6 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
-from dialogs.main.states import MainMenu
 from .states import GenerationMenu
 from .add_channel.states import AddChannelMenu
 from .flow.states import FlowMenu
@@ -48,8 +47,6 @@ async def on_channel_selected(
 async def add_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(AddChannelMenu.instructions)
 
-async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
 
 async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")

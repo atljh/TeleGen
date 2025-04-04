@@ -7,7 +7,6 @@ from aiogram_dialog.widgets.kbd import Button, Row, Column, Back, Calendar
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 from aiogram_dialog import DialogManager, StartMode
 
-from dialogs.main.states import MainMenu
 from .states import BufferMenu
 from .edit_buffer import EditPostMenu
 from bot.containers import Container

@@ -115,10 +115,10 @@ async def get_current_post_data(dialog_manager: DialogManager, **kwargs):
 def flow_dialog() -> Dialog:
     return Dialog(
         Window(
-            StaticMedia(
-                path="{current_post[image_path]}",
-                type="photo"
-            ),
+            # StaticMedia(
+            #     path="{current_post[image_path]}",
+            #     type="photo"
+            # ),
             Format(
                 "{current_post[content_preview]}\n\n"
                 ""

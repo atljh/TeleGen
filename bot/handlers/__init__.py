@@ -1,9 +1,8 @@
-# handlers/__init__.py
-from aiogram import Router
-from aiogram.dispatcher.dispatcher import Dispatcher 
-from .start import register_handlers as register_start_handlers
+from .start import router as start_router
+from .main_menu import router as menu_router
 
-router = Router()
+routers = [start_router, menu_router]
 
-def register_handlers(dp: Dispatcher):
-    register_start_handlers(dp)
+def register_handlers(dp):
+    for router in routers:
+        dp.include_router(router)

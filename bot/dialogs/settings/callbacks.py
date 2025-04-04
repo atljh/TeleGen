@@ -4,7 +4,6 @@ from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog import DialogManager, StartMode, Dialog, Window
 
 from bot.containers import Container
-from dialogs.main.states import MainMenu
 
 from .states import SettingsMenu
 
@@ -39,9 +38,6 @@ async def on_channel_selected(
 
 async def pay_subscription(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.answer("Оплата пiдписки")
-
-async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(MainMenu.main, mode=StartMode.RESET_STACK)
 
 async def confirm_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(SettingsMenu.confirm_delete)
