@@ -68,18 +68,24 @@ class FlowDTO(BaseModel):
             datetime: lambda v: v.isoformat(),
         }
 
+class MediaType(str, Enum):
+    IMAGE = 'image'
+    VIDEO = 'video'
+
+
 class PostDTO(BaseModel):
     id: int
     flow_id: int
     content: str
-    source_url: str | None
-    publication_date: datetime | None
+    source_url: Optional[str] = None
+    publication_date: Optional[datetime] = None
     is_published: bool
     is_draft: bool
     created_at: datetime
-    image_path: str | None
-    has_image: bool = False
-
+    
+    media_url: Optional[str] = None
+    media_type: Optional[MediaType] = None
+    
     class Config:
         from_attributes = True
         json_encoders = {
@@ -87,23 +93,30 @@ class PostDTO(BaseModel):
         }
 
     @classmethod
-    def from_orm(cls, obj):
-        if hasattr(obj, 'image'):
-            image_path = obj.image.url if obj.image else None
-        else:
-            image_path = getattr(obj, 'image_path', None)
-            
+    def from_orm(cls, post):
+        media_url = None
+        media_type = None
+        thumbnail_url = None
+        
+        if post.image:
+            media_url = post.image.url
+            media_type = MediaType.IMAGE
+        elif post.video:
+            media_url = post.video.url
+            media_type = MediaType.VIDEO
+        
         return cls(
-            id=obj.id,
-            flow_id=obj.flow_id,
-            content=obj.content,
-            source_url=obj.source_url,
-            publication_date=obj.publication_date,
-            is_published=obj.is_published,
-            is_draft=obj.is_draft,
-            created_at=obj.created_at,
-            image_path=image_path,
-            has_image=bool(image_path)
+            id=post.id,
+            flow_id=post.flow_id,
+            content=post.content,
+            source_url=post.source_url,
+            publication_date=post.publication_date,
+            is_published=post.is_published,
+            is_draft=post.is_draft,
+            created_at=post.created_at,
+            media_url=media_url,
+            media_type=media_type,
+            thumbnail_url=thumbnail_url
         )
 
 class DraftDTO(BaseModel):
