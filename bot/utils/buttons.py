@@ -5,9 +5,6 @@ from aiogram_dialog.widgets.kbd import Button
 
 from dialogs.generation.states import GenerationMenu
 
-async def go_back_to_main(callback: CallbackQuery, button: Button, manager: DialogManager):
-    ...
-
 async def go_back_to_generation(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.start(GenerationMenu.main, mode=StartMode.RESET_STACK)
 

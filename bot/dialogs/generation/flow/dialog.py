@@ -19,7 +19,6 @@ from bot.containers import Container
 
 from utils.buttons import (
     go_back_to_channel,
-    go_back_to_main
 )
 from .states import FlowMenu
 from .callbacks import (

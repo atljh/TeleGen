@@ -6,7 +6,6 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram.enums import ParseMode
 
-from utils.buttons import go_back_to_main
 from dialogs.settings.flow_settings.callbacks import start_flow_settings
 from .states import CreateFlowMenu
 from .getters import (
@@ -66,9 +65,6 @@ def create_flow_dialog():
             Row(
                 Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
                 Button(Const("🔜 Далі"), id="next", when="has_selected_sources", on_click=to_select_frequency),
-            ),
-            Row(
-                Button(Const("🏠 На головну"), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=CreateFlowMenu.select_source,
             parse_mode=ParseMode.HTML,

@@ -8,7 +8,6 @@ from aiogram_dialog import DialogManager
 
 from datetime import datetime, timedelta
 
-from utils.buttons import go_back_to_main
 from .states import BufferMenu
 from .callbacks import (
     publish_now,
@@ -45,9 +44,6 @@ def create_buffer_dialog():
             Row(
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_text_edited),
                 Button(Const("🗑 Видалити чернетку"), id="delete_draft"),
-            ),
-            Row(
-                Button(Const("◀️ Назад"), id='go_back_to_main', on_click=go_back_to_main),
             ),
             state=BufferMenu.preview,
             parse_mode=ParseMode.HTML,

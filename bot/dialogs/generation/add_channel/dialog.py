@@ -13,7 +13,6 @@ from .callbacks import (
     subscribe
 )
 from utils.buttons import (
-    go_back_to_main,
     go_back_to_generation
 )
 
