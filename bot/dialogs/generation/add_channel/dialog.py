@@ -35,9 +35,6 @@ def create_add_channel_dialog():
                     url=Jinja("{{bot_url}}")
                 ),
             ),
-            Row(
-                Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
-            ),
             state=AddChannelMenu.instructions,
             parse_mode=ParseMode.HTML,
             getter=channel_data_getter
@@ -51,9 +48,6 @@ def create_add_channel_dialog():
             Row(
                 Button(Const("Створити флоу"), id="create_flow", on_click=create_flow),
                 Button(Const("Оформити підписку"), id="subscribe", on_click=subscribe),
-            ),
-            Row(
-                Button(Const("Головне меню"), id="go_back_to_main", on_click=go_back_to_main),
             ),
             state=AddChannelMenu.success,
             parse_mode=ParseMode.HTML

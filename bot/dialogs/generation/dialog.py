@@ -91,10 +91,6 @@ def create_generation_dialog():
             Row(
                 Back(Const("🔙 Назад")),
             ),
-            Row(
-                Button(Const("В головне меню"), id="go_back_to_main"),
-
-            ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.HTML,
             getter=selected_channel_getter
