@@ -3,7 +3,7 @@ from datetime import datetime
 from bot.database.dtos import FlowDTO
 from bot.database.dtos import ContentLength, GenerationFrequency
 from bot.database.repositories import FlowRepository, ChannelRepository
-from bot.database.exceptions import ChannelNotFoundError
+from bot.database.exceptions import ChannelNotFoundError, FlowNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +61,11 @@ class FlowService:
             return
         return FlowDTO.from_orm(flow)
 
-    async def get_flow_by_channel_id(self, channel_id: int) -> FlowDTO:
-        return await self.flow_repository.get_flow_by_channel_id(channel_id)
+    async def get_flow_by_channel_id(self, channel_id: int) -> FlowDTO | None:
+        try:
+            return await self.flow_repository.get_flow_by_channel_id(channel_id)
+        except FlowNotFoundError:
+            return None
 
     async def get_flow_by_id(self, flow_id: int) -> FlowDTO:
         try:

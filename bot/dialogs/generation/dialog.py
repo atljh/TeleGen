@@ -54,7 +54,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         "channel_name": selected_channel.name,
         "channel_id": selected_channel.channel_id,
         "created_at": selected_channel.created_at,
-        "channel_flow": channel_flow.name
+        "channel_flow": channel_flow.name if channel_flow else ''
     }
 def create_generation_dialog():
     return Dialog(
