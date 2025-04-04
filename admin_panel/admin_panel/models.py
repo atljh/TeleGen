@@ -118,6 +118,12 @@ class Post(models.Model):
         null=True,
         verbose_name="Зображення"
     )
+    video = models.FileField(
+        upload_to='posts/videos/',
+        blank=True,
+        null=True,
+        verbose_name="Відео"
+    )
     @property
     def media_type(self):
         if self.image:
