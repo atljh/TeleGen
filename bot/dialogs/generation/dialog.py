@@ -73,9 +73,6 @@ def create_generation_dialog():
             Row(
                 Button(Const("Додати канал"), id="add_channel", on_click=add_channel),
             ),
-            Row(
-                Button(Const("🔙 Назад"), id="back"),
-            ),
             state=GenerationMenu.main,
             parse_mode=ParseMode.MARKDOWN_V2,
             getter=get_user_channels_data,
@@ -87,6 +84,9 @@ def create_generation_dialog():
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),
                 Button(Const("Буфер"), id="buffer", on_click=on_buffer),
                 Button(Const("Забронювати рекламний топ"), id="book_recall", on_click=on_book_recall),
+            ),
+            Row(
+                Back(Const("🔙 Назад")),
             ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.HTML,
