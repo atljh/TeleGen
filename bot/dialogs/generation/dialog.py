@@ -88,9 +88,6 @@ def create_generation_dialog():
                 Button(Const("Буфер"), id="buffer", on_click=on_buffer),
                 Button(Const("Забронювати рекламний топ"), id="book_recall", on_click=on_book_recall),
             ),
-            Row(
-                Back(Const("🔙 Назад")),
-            ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.HTML,
             getter=selected_channel_getter
