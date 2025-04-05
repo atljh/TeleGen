@@ -51,6 +51,10 @@ async def add_channel(callback: CallbackQuery, button: Button, manager: DialogMa
 async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
     channel_flow = manager.dialog_data.get('channel_flow')
+    logger.info(channel_flow)
+    if not channel_flow:
+        await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
+        return
     await manager.start(
         FlowMenu.posts_list,
         data={
@@ -64,7 +68,7 @@ async def on_create_flow(callback: CallbackQuery, button: Button, manager: Dialo
     selected_channel = manager.dialog_data.get("selected_channel")
     channel_flow = manager.dialog_data.get('channel_flow')
     if channel_flow:
-        await callback.answer(f"У канала {selected_channel.name} уже есть Флоу")
+        await callback.answer(f"У канала {selected_channel.name} вже є Флоу")
         return
     await manager.start(
         CreateFlowMenu.select_source,
