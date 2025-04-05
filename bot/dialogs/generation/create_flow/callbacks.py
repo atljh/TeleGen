@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 from dialogs.generation.states import GenerationMenu
 
 async def to_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(GenerationMenu.main, mode=StartMode.RESET_STACK)
+    await manager.start(
+        GenerationMenu.channel_main,
+        mode=StartMode.RESET_STACK,
+    )
 
 async def to_select_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(CreateFlowMenu.select_frequency)
@@ -51,9 +54,6 @@ async def add_more_sources(callback: CallbackQuery, button: Button, manager: Dia
     await manager.switch_to(CreateFlowMenu.select_source)
     await callback.answer("Додаємо ще одне джерело")
 
-async def continue_to_next_step(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(CreateFlowMenu.next_step)
-    await callback.answer("Продовжуємо налаштування флоу")
 
 async def show_my_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.answer("Список ваших джерел...")

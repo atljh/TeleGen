@@ -16,46 +16,11 @@ from .callbacks import (
     on_book_recall,
     on_flow
 )
+from .gettets import (
+    get_user_channels_data,
+    selected_channel_getter
+)
 
-async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
-    channel_service = Container.channel_service()
-    user_telegram_id = dialog_manager.event.from_user.id
-    channels = await channel_service.get_user_channels(user_telegram_id)
-    dialog_manager.dialog_data["channels"] = channels or []
-    return {
-        "channels": channels or []
-    }
-
-async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
-    start_data = dialog_manager.start_data or {}
-    dialog_data = dialog_manager.dialog_data or {}
-    
-    selected_channel = (
-        start_data.get("selected_channel") 
-        or dialog_data.get("selected_channel")
-    )
-    channel_flow = (
-        start_data.get("channel_flow") 
-        or dialog_data.get("channel_flow")
-    )
-    
-    if not selected_channel:
-        return {
-            "channel_name": "Канал не вибрано",
-            "channel_id": "N/A",
-            "created_at": datetime.now()
-        }
-    
-    dialog_manager.dialog_data["selected_channel"] = selected_channel
-    dialog_manager.dialog_data["channel_flow"] = channel_flow
-
-    
-    return {
-        "channel_name": selected_channel.name,
-        "channel_id": selected_channel.channel_id,
-        "created_at": selected_channel.created_at,
-        "channel_flow": channel_flow.name if channel_flow else ''
-    }
 def create_generation_dialog():
     return Dialog(
         Window(
@@ -78,7 +43,7 @@ def create_generation_dialog():
             getter=get_user_channels_data,
         ),
         Window(
-            Format("📢 <b>Назва: {channel_name}</b>\n<b>Флоу: {channel_flow}</b>\n"),
+            Format("<b>Назва: {channel_name}</b>\n<b>Флоу: {channel_flow}</b>\n"),
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow),
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),

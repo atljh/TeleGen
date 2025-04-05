@@ -34,7 +34,6 @@ from .callbacks import(
     on_source_type_selected,
     on_source_link_entered,
     add_more_sources,
-    continue_to_next_step,
     
     confirm_title_highlight,
     reject_title_highlight,
