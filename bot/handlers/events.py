@@ -30,8 +30,10 @@ async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogMan
 
         me = await event.bot.get_me()
 
-        await dialog_manager.start(
-            state=AddChannelMenu.success,
+        user_dm = dialog_manager.bg(user_id=event.from_user.id, chat_id=event.from_user.id)
+
+        await user_dm.start(
+            AddChannelMenu.success,
             data={
                 "channel_id": str(event.chat.id),
                 "channel_name": event.chat.title,
@@ -39,8 +41,7 @@ async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogMan
                 "bot_url": f"https://t.me/{me.username}",
                 "bot_username": me.username
             },
-            mode=StartMode.RESET_STACK,
-            **{"chat_id": event.from_user.id}
+            mode=StartMode.RESET_STACK
         )
 
 @channel_router.my_chat_member(
