@@ -44,6 +44,9 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
 
 async def source_type_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data
+    selected_channel = dialog_manager.start_data.get("selected_channel") 
+
+    dialog_manager.dialog_data["selected_channel"] = selected_channel
     selected_sources = dialog_data.get("sources", [])
     sources_list = "\n".join(
         f"▫️ {source.get('type', '')} - {source.get('link', '')}"
