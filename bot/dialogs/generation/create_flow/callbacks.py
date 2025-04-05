@@ -81,17 +81,17 @@ def validate_link(link: str, source_type: str) -> bool:
 # ==================FREQUENCY======================
 
 async def on_once_a_day(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data['selected_frequency'] = 'once_a_day'
+    manager.dialog_data['selected_frequency'] = 'daily'
     await callback.answer("Раз на день")
     await manager.switch_to(CreateFlowMenu.select_words_limit)
 
 async def on_once_a_12(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data['selected_frequency'] = 'once_a_12'
+    manager.dialog_data['selected_frequency'] = '12h'
     await callback.answer("Раз на 12 годин")
     await manager.switch_to(CreateFlowMenu.select_words_limit)
 
 async def on_once_an_hour(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data['selected_frequency'] = 'once_an_hour'
+    manager.dialog_data['selected_frequency'] = 'hourly'
     await callback.answer("Раз на годину")
     await manager.switch_to(CreateFlowMenu.select_words_limit)
 
@@ -175,18 +175,16 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     try:
-        manager.dialog_data["signature"] = message.text
+        manager.dialog_data["raw_signature"] = message.text
+        manager.dialog_data["signature"] = message.html_text
         
-        flow = await create_new_flow(manager)
+        manager.dialog_data["display_signature"] = message.text
         
         await manager.switch_to(CreateFlowMenu.confirmation)
         
-    except ChannelNotFoundError:
-        await message.answer("❌ Канал не знайдено")
-        await manager.switch_to(CreateFlowMenu.select_source)
     except Exception as e:
-        logger.error(f"Flow creation error: {e}")
-        await message.answer("❌ Помилка створення Flow")
+        logger.error(f"Signature input error: {e}")
+        await message.answer("❌ Помилка збереження підпису")
         await manager.back()
 
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):

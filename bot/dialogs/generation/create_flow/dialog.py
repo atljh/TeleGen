@@ -105,9 +105,9 @@ def create_flow_dialog():
         Window(
             Const("Оберіть частоту генерацii"),
             Column(
-                Button(Const("Раз на день"), id="once_a_day", on_click=on_once_a_day),
-                Button(Const("Раз на 12 годин"), id="once_a_12", on_click=on_once_a_12),
-                Button(Const("Раз на годину"), id="once_an_hour", on_click=on_once_an_hour),
+                Button(Const("Раз на день"), id="daily", on_click=on_once_a_day),
+                Button(Const("Раз на 12 годин"), id="12h", on_click=on_once_a_12),
+                Button(Const("Раз на годину"), id="hourly", on_click=on_once_an_hour),
             ),
             Row(
                 Back(Const("🔙 Назад")),
@@ -211,8 +211,9 @@ def create_flow_dialog():
         Window(
             Format("✍️ <b>Налаштування підпису до постів</b>\n\n"
                 "Поточний підпис:\n"
-                "{current_signature}\n\n"
-                "Відправте новий підпис або натисніть 'Пропустити'"),
+                "<code>{current_signature}</code>\n\n"
+                "Відправте новий підпис або натисніть 'Пропустити'\n"
+                "<i>Підтримка emoji та HTML-розмітки</i>"),
             MessageInput(
                 handle_signature_input,
                 filter=F.text & ~F.text.startswith('/')

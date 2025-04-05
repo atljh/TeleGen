@@ -13,10 +13,13 @@ async def flow_volume_getter(dialog_manager: DialogManager, **kwargs):
         "current_value": dialog_manager.dialog_data.get("flow_volume", "не встановлено"),
         "volume_options": ["5", "10", "20"]
     }
-
 async def signature_getter(dialog_manager: DialogManager, **kwargs):
+    dialog_data = dialog_manager.dialog_data
+    
+    current_signature = dialog_data.get("display_signature", "Підпис ще не встановлено")
+    
     return {
-        "current_signature": dialog_manager.dialog_data.get("signature", "Підпис не встановлено")
+        "current_signature": current_signature,
     }
 
 async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
@@ -31,16 +34,6 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
         "flow_id": flow_data.get("id", "---")
     }
 
-# async def source_type_getter(dialog_manager: DialogManager, **kwargs):
-#     selected_channel = (dialog_manager.start_data.get("selected_channel") 
-#         or dialog_manager.dialog_data.get("selected_channel")
-#     )
-    
-#     if selected_channel:
-#         dialog_manager.dialog_data["selected_channel"] = selected_channel
-#     return {
-#         "has_selected_sources": len(dialog_manager.dialog_data.get("sources", [])) > 0
-#     }
 
 async def source_type_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data
@@ -94,9 +87,9 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
 
     flow_data = dialog_manager.dialog_data
     frequency_map = {
-        'once_a_12': 'Кожні 12 годин',
-        'once_a_6': 'Кожні 6 годин',
-        'once_a_1': 'Кожну годину',
+        'daily': 'Раз на день',
+        '12h': 'Раз на 12 годин',
+        'hourly': 'Раз на годину',
     }
     
     words_limit_map = {
