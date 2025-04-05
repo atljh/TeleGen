@@ -7,8 +7,8 @@ from aiogram_dialog.widgets.input import MessageInput
 from bot.dialogs.generation.add_channel.states import AddChannelMenu 
 from .getters import channel_data_getter
 from .callbacks import (
-    create_flow,
-    subscribe
+    subscribe,
+    on_create_flow
 )
 from utils.buttons import (
     go_back_to_generation
@@ -55,7 +55,7 @@ def create_add_channel_dialog():
                 "Для розширення функціоналу підпишіться на платну версію"
             ),
             Row(
-                Button(Const("⚡ Створити флоу"), id="create_flow", on_click=create_flow),
+                Button(Const("⚡ Створити флоу"), id="on_create_flow", on_click=on_create_flow),
                 Button(Const("💎 Оформити підписку"), id="subscribe", on_click=subscribe),
             ),
             Row(

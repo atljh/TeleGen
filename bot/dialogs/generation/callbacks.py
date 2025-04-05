@@ -5,8 +5,9 @@ from aiogram_dialog import DialogManager, StartMode
 
 from .states import GenerationMenu
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
+from bot.dialogs.generation.create_flow.states import CreateFlowMenu
+
 from .flow.states import FlowMenu
-from .create_flow.states import CreateFlowMenu
 
 logger = logging.getLogger(__name__)
 

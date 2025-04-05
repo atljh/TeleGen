@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram.enums import ParseMode
 
 from dialogs.settings.flow_settings.callbacks import start_flow_settings
-from .states import CreateFlowMenu
+from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from .getters import (
     ad_time_getter,
     flow_volume_getter,

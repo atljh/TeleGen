@@ -8,7 +8,7 @@ from aiogram_dialog.widgets.input import TextInput
 from bot.database.dtos import ContentLength, GenerationFrequency
 from bot.database.exceptions import ChannelNotFoundError
 
-from .states import CreateFlowMenu
+from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from bot.containers import Container
 
 logger = logging.getLogger(__name__)
