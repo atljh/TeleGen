@@ -1,3 +1,4 @@
+import logging
 from aiogram import Router
 from aiogram.types import ChatMemberUpdated
 from aiogram.dispatcher.dispatcher import Dispatcher
@@ -6,11 +7,11 @@ from aiogram.filters import (
     ADMINISTRATOR, IS_MEMBER,
     KICKED
 )
-from aiogram_dialog import DialogManager
+from aiogram_dialog import DialogManager, StartMode
 from bot.containers import Container
-import logging
 
 from bot.database.exceptions import ChannelNotFoundError
+from bot.dialogs.generation.add_channel.states import AddChannelMenu
 
 channel_router = Router()
 
@@ -20,23 +21,27 @@ channel_router = Router()
 async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogManager):
     if event.new_chat_member.user.id == event.bot.id:
         channel_service = Container.channel_service()
-        
+
         channel = await channel_service.get_or_create_channel(
             user_telegram_id=event.from_user.id,
             channel_id=str(event.chat.id),
             name=event.chat.title
         )
-        
-        try:
-            await event.bot.send_message(
-                chat_id=event.from_user.id,
-                text=f"✅ Бота додано до каналу <b>{event.chat.title}</b> як адміністратора!\n\n"
-                     "Тепер ви можете керувати публікаціями через меню бота.",
-                parse_mode="HTML"
-            )
-        except Exception as e:
-            logging.error(f"Не вдалося надіслати сповіщення: {e}")
 
+        me = await event.bot.get_me()
+
+        await dialog_manager.start(
+            state=AddChannelMenu.success,
+            data={
+                "channel_id": str(event.chat.id),
+                "channel_name": event.chat.title,
+                "channel_username": event.chat.username or "",
+                "bot_url": f"https://t.me/{me.username}",
+                "bot_username": me.username
+            },
+            mode=StartMode.RESET_STACK,
+            **{"chat_id": event.from_user.id}
+        )
 
 @channel_router.my_chat_member(
     ChatMemberUpdatedFilter(IS_MEMBER >> KICKED)
@@ -59,6 +64,3 @@ async def bot_removed_from_channel(event: ChatMemberUpdated, dialog_manager: Dia
             )
         except Exception as e:
             logging.error(f"Не вдалося надіслати сповіщення: {e}")
-
-def register_event_handlers(dp: Dispatcher):
-    dp.include_router(channel_router)

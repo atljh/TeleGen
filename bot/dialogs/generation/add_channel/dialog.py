@@ -1,20 +1,26 @@
 from aiogram.enums import ParseMode
-from aiogram_dialog import Dialog, Window
+from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Url
 from aiogram_dialog.widgets.text import Const, Format, Jinja
 from aiogram_dialog.widgets.input import MessageInput
 
-from .states import AddChannelMenu
+from bot.dialogs.generation.add_channel.states import AddChannelMenu 
 from .getters import channel_data_getter
 from .callbacks import (
-    check_permissions,
-    process_channel_input,
     create_flow,
     subscribe
 )
 from utils.buttons import (
     go_back_to_generation
 )
+
+async def channel_success_getter(dialog_manager: DialogManager, **kwargs):
+    data = dialog_manager.start_data or {}
+    return {
+        "channel_id": dialog_manager.start_data.get("channel_id"),
+        "channel_name": dialog_manager.start_data.get("channel_name"),
+        "channel_username": dialog_manager.start_data.get("channel_username")
+    }
 
 def create_add_channel_dialog():
     return Dialog(
@@ -43,18 +49,20 @@ def create_add_channel_dialog():
         ),
         Window(
             Format(
-                "🎉 <b>Дякуємо! Канал {dialog_data[channel_name]} успішно доданий.</b>\n\n"
+                "🎉 <b>Дякуємо! Канал {channel_name} успішно доданий.</b>\n\n"
+                "ID каналу: <code>{channel_id}</code>\n"
                 "Наразі вам доступна обмежена безкоштовна підписка.\n"
                 "Для розширення функціоналу підпишіться на платну версію"
             ),
             Row(
-                Button(Const("Створити флоу"), id="create_flow", on_click=create_flow),
-                Button(Const("Оформити підписку"), id="subscribe", on_click=subscribe),
+                Button(Const("⚡ Створити флоу"), id="create_flow", on_click=create_flow),
+                Button(Const("💎 Оформити підписку"), id="subscribe", on_click=subscribe),
             ),
             Row(
-                Button(Const("🔙 Назад"), id="go_back_to_generation", on_click=go_back_to_generation),
+                Button(Const("🔙 Назад"), id="back", on_click=go_back_to_generation),
             ),
             state=AddChannelMenu.success,
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
+            getter=channel_success_getter
         )
     )

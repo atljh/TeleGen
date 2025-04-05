@@ -49,7 +49,6 @@ from .callbacks import(
     handle_signature_input,
     skip_signature
 )
-from dialogs.generation.callbacks import on_create_flow
 
 def create_flow_dialog():
     return Dialog(

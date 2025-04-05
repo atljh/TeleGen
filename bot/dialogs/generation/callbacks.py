@@ -4,7 +4,7 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
 from .states import GenerationMenu
-from .add_channel.states import AddChannelMenu
+from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from .flow.states import FlowMenu
 from .create_flow.states import CreateFlowMenu
 

@@ -1,4 +1,3 @@
-# main.py
 import os
 import asyncio
 from dotenv import load_dotenv
@@ -7,7 +6,6 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
 from handlers import register_handlers
-from handlers.events import register_event_handlers
 from bot.containers import Container
 from bot.utils.logging import setup_logging
 from dialogs import register_dialogs
@@ -24,7 +22,6 @@ async def main():
     dp = Dispatcher(storage=storage)
 
     register_handlers(dp)
-    register_event_handlers(dp)
     
     register_dialogs(dp)
     setup_dialogs(dp)

@@ -3,10 +3,8 @@ from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog.widgets.input import MessageInput
 
-from .states import AddChannelMenu
+from bot.dialogs.generation.add_channel.states import AddChannelMenu 
 from dialogs.generation.states import GenerationMenu
-from bot.utils.permissions import check_bot_permissions
-from bot.utils.validation import is_valid_channel
 from bot.containers import Container
 
 import logging

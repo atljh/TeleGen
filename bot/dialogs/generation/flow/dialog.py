@@ -17,9 +17,6 @@ from django.conf import settings
 
 from bot.containers import Container
 
-from utils.buttons import (
-    go_back_to_channel,
-)
 from .states import FlowMenu
 from .callbacks import (
     on_edit_post,
