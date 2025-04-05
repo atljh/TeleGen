@@ -79,7 +79,7 @@ def create_flow_dialog():
             ),
             Row(
                 Back(Const("◀️ Назад")),
-                Button(Const("📋 Мої джерела"), id="my_sources", on_click=show_my_sources),
+                # Button(Const("📋 Мої джерела"), id="my_sources", on_click=show_my_sources),
             ),
             state=CreateFlowMenu.add_source_link,
             parse_mode=ParseMode.HTML,
