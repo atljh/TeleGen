@@ -52,8 +52,12 @@ from .callbacks import(
 def create_flow_dialog():
     return Dialog(
         Window(
-            Format("📌 <b>Оберіть тип джерела</b>\n\n"
-                  "Доступні варіанти:"),
+            Format(
+                "📌 <b>Оберіть тип джерела</b>\n\n"
+                "Доступні варіанти:\n\n"
+                "🛒 <b>Вже обрані джерела:</b>\n"
+                "{selected_sources}"
+            ),
             Column(
                 Button(Const("📷 Instagram"), id="instagram", on_click=on_source_type_selected),
                 Button(Const("👍 Facebook"), id="facebook", on_click=on_source_type_selected),

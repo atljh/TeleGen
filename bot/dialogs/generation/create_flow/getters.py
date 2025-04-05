@@ -1,3 +1,4 @@
+import html
 from aiogram_dialog import DialogManager
 import logging
 
@@ -30,15 +31,28 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
         "flow_id": flow_data.get("id", "---")
     }
 
-async def source_type_getter(dialog_manager: DialogManager, **kwargs):
-    selected_channel = (dialog_manager.start_data.get("selected_channel") 
-        or dialog_manager.dialog_data.get("selected_channel")
-    )
+# async def source_type_getter(dialog_manager: DialogManager, **kwargs):
+#     selected_channel = (dialog_manager.start_data.get("selected_channel") 
+#         or dialog_manager.dialog_data.get("selected_channel")
+#     )
     
-    if selected_channel:
-        dialog_manager.dialog_data["selected_channel"] = selected_channel
+#     if selected_channel:
+#         dialog_manager.dialog_data["selected_channel"] = selected_channel
+#     return {
+#         "has_selected_sources": len(dialog_manager.dialog_data.get("sources", [])) > 0
+#     }
+
+async def source_type_getter(dialog_manager: DialogManager, **kwargs):
+    dialog_data = dialog_manager.dialog_data
+    selected_sources = dialog_data.get("sources", [])
+    sources_list = "\n".join(
+        f"▫️ {source.get('type', '')} - {source.get('link', '')}"
+        for source in selected_sources
+    ) if selected_sources else "┄ Джерела ще не додані ┄"
+    
     return {
-        "has_selected_sources": len(dialog_manager.dialog_data.get("sources", [])) > 0
+        "selected_sources": sources_list,
+        "has_selected_sources": bool(selected_sources)
     }
 
 async def source_link_getter(dialog_manager: DialogManager, **kwargs):
@@ -63,11 +77,15 @@ async def source_link_getter(dialog_manager: DialogManager, **kwargs):
     }
 
 async def source_confirmation_getter(dialog_manager: DialogManager, **kwargs):
+    dialog_data = dialog_manager.dialog_data
+    
+    source_type = dialog_data.get("source_type", "Невідомий")
+    source_link = dialog_data.get("source_link", "Не вказано")
+    
     return {
-        "source_type": dialog_manager.dialog_data.get("selected_source_type"),
-        "source_link": dialog_manager.dialog_data.get("source_link")
+        "source_type": str(source_type),
+        "source_link": str(source_link)
     }
-
 
 async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
 

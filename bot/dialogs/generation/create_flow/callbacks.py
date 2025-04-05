@@ -29,8 +29,15 @@ async def to_select_frequency(callback: CallbackQuery, button: Button, manager: 
 # ==================SOURCE======================
 
 async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
-    manager.dialog_data["selected_source_type"] = button.widget_id
-    manager.dialog_data["selected_source_name"] = button.text
+    dialog_data = manager.dialog_data
+    
+    button_text = button.text.value if hasattr(button.text, 'value') else str(button.text)
+    
+    dialog_data["selected_source_type"] = button.widget_id
+    dialog_data["selected_source_name"] = button_text
+    
+    if "sources" not in dialog_data:
+        dialog_data["sources"] = []
     
     await manager.switch_to(CreateFlowMenu.add_source_link)
     await callback.answer(f"Обрано {button.widget_id}")
@@ -50,6 +57,7 @@ async def on_source_link_entered(message: Message, widget: TextInput, manager: D
     
     manager.dialog_data["sources"].append(source)
     manager.dialog_data["source_link"] = data
+
     await manager.switch_to(CreateFlowMenu.source_confirmation)
 
 async def add_more_sources(callback: CallbackQuery, button: Button, manager: DialogManager):
