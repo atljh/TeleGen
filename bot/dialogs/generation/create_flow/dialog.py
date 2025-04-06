@@ -20,6 +20,10 @@ from .getters import (
 from .callbacks import(
     to_channel,
     to_select_frequency,
+    
+    on_channel_theme_selected,
+    on_custom_theme_entered,
+    to_custom_theme_input,
 
     on_once_a_day,
     on_once_a_12,
@@ -50,6 +54,28 @@ from .callbacks import(
 
 def create_flow_dialog():
     return Dialog(
+        Window(
+            Format("📌 <b>Оберіть тему каналу з існуючих або додайте</b>"),
+            Column(
+                Button(Const("Спортивний канал"), id="sport_channel", on_click=on_channel_theme_selected),
+                Button(Const("Кулінарний канал"), id="cooking_channel", on_click=on_channel_theme_selected),
+                Button(Const("Регіональний канал"), id="regional_channel", on_click=on_channel_theme_selected),
+                Button(Const("✏️ Задати тему самостійно"), id="custom_theme", on_click=to_custom_theme_input),
+            ),
+            state=CreateFlowMenu.select_theme,
+            parse_mode=ParseMode.HTML
+        ),
+        Window(
+            Format("✏️ <b>Введіть власну тему каналу:</b>"),
+            TextInput(
+                id="custom_theme_input",
+                on_success=on_custom_theme_entered,
+                filter=F.text & ~F.text.startswith('/')
+            ),
+            Back(Const("◀️ Назад")),
+            state=CreateFlowMenu.input_custom_theme,
+            parse_mode=ParseMode.HTML
+        ),
         Window(
             Format(
                 "📌 <b>Оберіть тип джерела</b>\n\n"

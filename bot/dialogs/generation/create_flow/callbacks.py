@@ -26,6 +26,24 @@ async def to_channel(callback: CallbackQuery, button: Button, manager: DialogMan
 async def to_select_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(CreateFlowMenu.select_frequency)
 
+
+# ==================THEME======================
+
+
+async def on_channel_theme_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
+    theme = button.widget_id  # "sport_channel", "cooking_channel"
+    manager.dialog_data["channel_theme"] = theme
+    await manager.switch_to(CreateFlowMenu.select_source)
+
+async def to_custom_theme_input(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(CreateFlowMenu.input_custom_theme)
+
+async def on_custom_theme_entered(message: Message, widget: TextInput, manager: DialogManager, text: str):
+    manager.dialog_data["channel_theme"] = text
+    await manager.switch_to(CreateFlowMenu.select_source)
+
+
+
 # ==================SOURCE======================
 
 async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
