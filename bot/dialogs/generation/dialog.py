@@ -43,7 +43,11 @@ def create_generation_dialog():
             getter=get_user_channels_data,
         ),
         Window(
-            Format("<b>Назва: {channel_name}</b>\n<b>Флоу: {channel_flow}</b>\n"),
+            Format(
+                "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
+                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
+                "<b>Флоу: {channel_flow}</b>"
+            ),
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow),
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),

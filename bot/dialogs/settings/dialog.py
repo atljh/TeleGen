@@ -8,6 +8,7 @@ from aiogram_dialog import DialogManager
 
 from bot.containers import Container
 from .states import SettingsMenu
+from bot.utils.getters import selected_channel_getter
 
 from .callbacks import (
     on_channel_selected,
@@ -29,30 +30,6 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
         "channels": channels or []
     }
 
-
-async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
-    start_data = dialog_manager.start_data or {}
-    dialog_data = dialog_manager.dialog_data or {}
-    
-    selected_channel = (
-        start_data.get("selected_channel") 
-        or dialog_data.get("selected_channel")
-    )
-    
-    if not selected_channel:
-        return {
-            "channel_name": "Канал не вибрано",
-            "channel_id": "N/A",
-            "created_at": datetime.now()
-        }
-    
-    dialog_manager.dialog_data["selected_channel"] = selected_channel
-    
-    return {
-        "channel_name": selected_channel.name,
-        "channel_id": selected_channel.channel_id,
-        "created_at": selected_channel.created_at,
-    }
 
 # ================== ГЛАВНЫЙ ДИАЛОГ ==================
 def create_settings_dialog():
@@ -80,9 +57,9 @@ def create_settings_dialog():
         Window(
             Format(
                 "⚙️ <b>Налаштування каналу:</b>\n\n"
-                "📢 <b>Назва: {channel_name}</b>\n"
-                "🆔 <b>ID:</b> <code>{channel_id}</code>\n"
-                "📅 <b>Дата додавання:</b> {created_at:%d.%m.%Y}"
+                "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
+                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
+                "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
                 SwitchTo(Const("Загальні"), id="main_settings", state=SettingsMenu.channel_main_settings),
@@ -99,7 +76,8 @@ def create_settings_dialog():
             Format(
                 "⚙️ <b>НАЛАШТУВАННЯ Загальні</b>\n\n"
                 "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
-                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}"
+                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
+                "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
                 Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings"),
@@ -113,6 +91,7 @@ def create_settings_dialog():
             ),
             state=SettingsMenu.channel_main_settings,
             parse_mode=ParseMode.HTML,
+            getter=selected_channel_getter
         ),
         Window(
             Const("⚠️ <b>Ви впевнені, що хочете видалити цей канал?</b>\n\n"
