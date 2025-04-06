@@ -18,7 +18,6 @@ from .getters import (
     source_type_getter
 )
 from .callbacks import(
-    show_my_sources,
     to_channel,
     to_select_frequency,
 
@@ -237,7 +236,7 @@ def create_flow_dialog():
                 "▪️ <b>Кількість знаків:</b> {words_limit}\n"
                 "▪️ <b>Виділення заголовка:</b> {title_highlight}\n"
                 "▪️ <b>Підпис до постів:</b> {signature}\n\n"
-                "🆔 <b>ID:</b> {flow_id}"
+                "🆔 <b>ID:</b> {flow_id}",
             ),
             Column(
                 Button(Const("Налаштування Flow"), id="to_settings", on_click=start_flow_settings),

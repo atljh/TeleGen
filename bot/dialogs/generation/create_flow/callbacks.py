@@ -175,11 +175,14 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     try:
-        manager.dialog_data["raw_signature"] = message.text
-        manager.dialog_data["signature"] = message.html_text
-        
-        manager.dialog_data["display_signature"] = message.text
-        
+        manager.dialog_data["signature_raw"] = message.html_text
+        manager.dialog_data["signature"] = message.text
+
+        logging.info(message.text)
+        logging.info(message.html_text)
+
+        # flow = await create_new_flow(manager)
+
         await manager.switch_to(CreateFlowMenu.confirmation)
         
     except Exception as e:
@@ -191,7 +194,7 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
     try:
         manager.dialog_data["signature"] = None
         
-        flow = await create_new_flow(manager)
+        # flow = await create_new_flow(manager)
         
         await manager.switch_to(CreateFlowMenu.confirmation)
         
