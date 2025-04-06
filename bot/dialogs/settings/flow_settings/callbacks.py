@@ -28,10 +28,19 @@ async def open_flow_settings(callback: CallbackQuery, button: Button, manager: D
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
 async def open_main_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+    start_data = manager.start_data or {}
+    dialog_data = manager.dialog_data or {}
     selected_channel = manager.dialog_data.get("selected_channel")
+    channel_flow = (
+        start_data.get("channel_flow", False)
+        or dialog_data.get("channel_flow", False)
+    )
     await manager.start(
         SettingsMenu.channel_settings,
-        data={"selected_channel": selected_channel},
+        data={
+            "selected_channel": selected_channel,
+            "channel_flow": channel_flow
+        },
         mode=StartMode.RESET_STACK 
     )
 

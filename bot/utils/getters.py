@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from aiogram_dialog import DialogManager
 
@@ -13,7 +14,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         start_data.get("channel_flow", False)
         or dialog_data.get("channel_flow", False)
     )
-    
+
     if not selected_channel:
         return {
             "channel_name": "Канал не вибрано",

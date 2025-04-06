@@ -17,8 +17,18 @@ async def on_channel_selected(
     item_id: str
 ):
     try:
-        data = manager.dialog_data
-        channels = data.get("channels", [])
+        start_data = manager.start_data or {}
+        dialog_data = manager.dialog_data or {}
+        
+        selected_channel = (
+            start_data.get("selected_channel") 
+            or dialog_data.get("selected_channel")
+        )
+        channels = (
+            start_data.get("channels", [])
+            or dialog_data.get("channels", [])
+        )
+        
         selected_channel = next(
             (channel for channel in channels if str(channel.id) == item_id),
             None
