@@ -7,6 +7,8 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 
+from bot.dialogs.settings.flow_settings.getters import flow_settings_getter
+
 from .states import FlowSettingsMenu
 from .callbacks import (
     set_character_limit,
@@ -30,8 +32,15 @@ from .callbacks import (
 def create_flow_settings_window():
     return Window(
         Format(
-            "🔄 <b>НАЛАШТУВАННЯ ФЛОУ</b>\n\n"
-            "📢 <b>Канал: {channel_name}</b>\n\n"
+            "<b>Налаштування флоу</b>\n\n"
+            "<b>Канал: {channel_name}</b>\n\n"
+            "<b>Параметри Flow \"{flow_name}\":</b>\n"
+            "▪️ <b>Тематика:</b> {theme}\n"
+            "▪️ <b>Джерела ({source_count}):</b>\n  {sources}\n"
+            "▪️ <b>Частота генерації:</b> {frequency}\n"
+            "▪️ <b>Кількість знаків:</b> {words_limit}\n"
+            "▪️ <b>Виділення заголовка:</b> {title_highlight}\n"
+            "▪️ <b>Підпис до постів:</b> {signature}\n\n"
         ),
         Column(
             Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),
@@ -54,19 +63,6 @@ def create_flow_settings_window():
     )
 
 
-async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
-    selected_channel = (
-        dialog_manager.start_data.get("selected_channel") 
-        or dialog_manager.dialog_data.get("selected_channel")
-    )
-    
-    if selected_channel:
-        dialog_manager.dialog_data["selected_channel"] = selected_channel
-    
-    return {
-        "channel_name": selected_channel.name,
-        "highlight_status": "✅ увімкнено" if dialog_manager.dialog_data.get("title_highlight", False) else "❌ вимкнено"
-    }
 
 async def character_limit_getter(dialog_manager: DialogManager, **kwargs):
     return {
