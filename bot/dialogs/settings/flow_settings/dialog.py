@@ -34,7 +34,7 @@ def create_flow_settings_window():
         Format(
             "<b>Налаштування флоу</b>\n\n"
             "<b>Канал: {channel_name}</b>\n\n"
-            "<b>Параметри Flow \"{flow_name}\":</b>\n"
+            "<b>Параметри Flow</b>\n"
             "▪️ <b>Тематика:</b> {theme}\n"
             "▪️ <b>Джерела ({source_count}):</b>\n  {sources}\n"
             "▪️ <b>Частота генерації:</b> {frequency}\n"
@@ -46,7 +46,7 @@ def create_flow_settings_window():
             Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),
             Button(Const("🔠 Обмеження по знакам"), id="character_limit", on_click=set_character_limit),
             Button(
-                Format("📌 Виділення заголовку: {highlight_status}"), 
+                Format("📌 Виділення заголовку: {title_highlight}"), 
                 id="title_highlight", 
                 on_click=toggle_title_highlight
             ),

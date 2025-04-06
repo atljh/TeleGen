@@ -1,12 +1,21 @@
-
+import logging
 from aiogram_dialog import DialogManager
 
 
 async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
+    start_data = dialog_manager.start_data or {}
+    dialog_data = dialog_manager.dialog_data or {}
 
-    flow_data = dialog_manager.dialog_data
-    channel_name = flow_data.get("selected_channel").name
+    flow_data = (
+        start_data.get("channel_flow", False)
+        or dialog_data.get("channel_flow", False)
+    )
 
+    channel_data = (
+        start_data.get("selected_channel", False)
+        or dialog_data.get("selected_channel", False)
+    )
+    logging.info(channel_data)
     frequency_map = {
         'daily': 'Раз на день',
         '12h': 'Раз на 12 годин',
@@ -22,25 +31,24 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
     }
     sources = "\n".join(
         f"{src['type']} - {src['link']}" 
-        for src in flow_data.get("sources", [])
+        for src in flow_data.sources
     )
     
     return {
-        "flow_name": channel_name,
-        "theme": flow_data.get("channel_theme", "не вказано"),
-        "source_count": len(flow_data.get("sources", [])),
+        "channel_name": channel_data.name,
+        "theme": flow_data.theme,
+        "source_count": len(flow_data.sources),
         "sources": sources or "немає джерел",
         'frequency': frequency_map.get(
-            flow_data.get('selected_frequency'),
-            flow_data.get('selected_frequency')
+            flow_data.frequency,
+            flow_data.frequency
         ),
         'words_limit': words_limit_map.get(
-            flow_data.get('selected_words_limit'),
-            flow_data.get('selected_words_limit')
+            flow_data.content_length,
+            flow_data.content_length
         ),
-        'title_highlight': 'Так' if flow_data.get('title_highlight') else 'Ні',
-        'ad_time': flow_data.get('ad_time', 'Не встановлено'),
-        'flow_volume': flow_data.get('flow_volume', 5),
-        'signature': flow_data.get('signature', 'Без підпису'),
-        'flow_id': 1
+        'title_highlight': 'Так' if flow_data.title_highlight else 'Ні',
+        'ad_time': flow_data.ad_time,
+        'flow_volume': flow_data.flow_volume,
+        'signature': flow_data.signature,
     }
