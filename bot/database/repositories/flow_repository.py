@@ -42,7 +42,6 @@ class FlowRepository:
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
             )
-            logging.info(f"Flow created successfully {flow.id}")
             return flow
         except Exception as e:
             logging.error(f"Error during flow creation: {e}", exc_info=True)

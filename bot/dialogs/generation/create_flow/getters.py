@@ -86,6 +86,8 @@ async def source_confirmation_getter(dialog_manager: DialogManager, **kwargs):
 async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
 
     flow_data = dialog_manager.dialog_data
+    channel_name = flow_data.get("selected_channel").name
+
     frequency_map = {
         'daily': 'Раз на день',
         '12h': 'Раз на 12 годин',
@@ -105,7 +107,7 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     )
     
     return {
-        "flow_name": flow_data.get("name", "Новий флоу"),
+        "flow_name": channel_name,
         "theme": flow_data.get("theme", "не вказано"),
         "source_count": len(flow_data.get("sources", [])),
         "sources": sources or "немає джерел",

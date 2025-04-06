@@ -178,10 +178,7 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
         manager.dialog_data["signature_raw"] = message.html_text
         manager.dialog_data["signature"] = message.text
 
-        logging.info(message.text)
-        logging.info(message.html_text)
-
-        # flow = await create_new_flow(manager)
+        flow = await create_new_flow(manager)
 
         await manager.switch_to(CreateFlowMenu.confirmation)
         
@@ -194,7 +191,7 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
     try:
         manager.dialog_data["signature"] = None
         
-        # flow = await create_new_flow(manager)
+        flow = await create_new_flow(manager)
         
         await manager.switch_to(CreateFlowMenu.confirmation)
         
@@ -212,6 +209,7 @@ async def create_new_flow(manager: DialogManager):
     flow_data = manager.dialog_data
 
     channel_id = flow_data.get("selected_channel").channel_id
+    channel_name = flow_data.get("selected_channel").name
     if not channel_id:
         raise ValueError("Channel ID not found")
 
@@ -219,7 +217,7 @@ async def create_new_flow(manager: DialogManager):
     
     new_flow = await flow_service.create_flow(
         channel_id=int(channel_id),
-        name=flow_data.get("flow_name", "Новий Flow"),
+        name=channel_name,
         theme=flow_data.get("theme", "Загальна"),
         sources=flow_data.get("sources", []),
         content_length=ContentLength(flow_data.get("words_limit", "medium")),
@@ -237,7 +235,6 @@ async def create_new_flow(manager: DialogManager):
         "flow_name": new_flow.name,
     }
     
-    logger.info(f"Created new Flow ID: {new_flow.id}")
     return new_flow
 
 async def show_my_flows(callback: CallbackQuery, button: Button, manager: DialogManager):
