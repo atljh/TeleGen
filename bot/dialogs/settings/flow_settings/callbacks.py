@@ -11,9 +11,16 @@ from dialogs.settings.states import SettingsMenu
 
 async def start_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
+    channel_flow = manager.dialog_data.get('channel_flow')
+    if not channel_flow:
+        await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
+        return
     await manager.start(
         FlowSettingsMenu.flow_settings,
-        data={"selected_channel": selected_channel},
+        data={
+            "selected_channel": selected_channel,
+            "channel_flow": channel_flow
+        },
         mode=StartMode.RESET_STACK 
     )
 
