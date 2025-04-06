@@ -108,7 +108,7 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     
     return {
         "flow_name": channel_name,
-        "theme": flow_data.get("theme", "не вказано"),
+        "theme": flow_data.get("channel_theme", "не вказано"),
         "source_count": len(flow_data.get("sources", [])),
         "sources": sources or "немає джерел",
         'frequency': frequency_map.get(

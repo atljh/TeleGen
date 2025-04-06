@@ -57,23 +57,15 @@ def create_flow_dialog():
         Window(
             Format("📌 <b>Оберіть тему каналу з існуючих або додайте</b>"),
             Column(
-                Button(Const("Спортивний канал"), id="sport_channel", on_click=on_channel_theme_selected),
-                Button(Const("Кулінарний канал"), id="cooking_channel", on_click=on_channel_theme_selected),
-                Button(Const("Регіональний канал"), id="regional_channel", on_click=on_channel_theme_selected),
+                Button(Const("Спортивний канал"), id="Sport", on_click=on_channel_theme_selected),
+                Button(Const("Кулінарний канал"), id="Cooking", on_click=on_channel_theme_selected),
+                Button(Const("Регіональний канал"), id="Regional", on_click=on_channel_theme_selected),
                 Button(Const("✏️ Задати тему самостійно"), id="custom_theme", on_click=to_custom_theme_input),
             ),
-            state=CreateFlowMenu.select_theme,
-            parse_mode=ParseMode.HTML
-        ),
-        Window(
-            Format("✏️ <b>Введіть власну тему каналу:</b>"),
-            TextInput(
-                id="custom_theme_input",
-                on_success=on_custom_theme_entered,
-                filter=F.text & ~F.text.startswith('/')
+            Row(
+                Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
             ),
-            Back(Const("◀️ Назад")),
-            state=CreateFlowMenu.input_custom_theme,
+            state=CreateFlowMenu.select_theme,
             parse_mode=ParseMode.HTML
         ),
         Window(
@@ -90,7 +82,7 @@ def create_flow_dialog():
                 Button(Const("✈️ Telegram"), id="telegram", on_click=on_source_type_selected),
             ),
             Row(
-                Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
+                Back(Const("🔙 Назад")),
                 Button(Const("🔜 Далі"), id="next", when="has_selected_sources", on_click=to_select_frequency),
             ),
             state=CreateFlowMenu.select_source,
@@ -272,5 +264,15 @@ def create_flow_dialog():
             parse_mode=ParseMode.HTML,
             getter=flow_confirmation_getter
         ),
-
+        Window(
+            Format("✏️ <b>Введіть власну тему каналу:</b>"),
+            TextInput(
+                id="custom_theme_input",
+                on_success=on_custom_theme_entered,
+                filter=F.text & ~F.text.startswith('/')
+            ),
+            Back(Const("🔙 Назад")),
+            state=CreateFlowMenu.input_custom_theme,
+            parse_mode=ParseMode.HTML
+        ),
     )

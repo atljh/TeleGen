@@ -236,7 +236,7 @@ async def create_new_flow(manager: DialogManager):
     new_flow = await flow_service.create_flow(
         channel_id=int(channel_id),
         name=channel_name,
-        theme=flow_data.get("theme", "Загальна"),
+        theme=flow_data.get("channel_theme", "Загальна"),
         sources=flow_data.get("sources", []),
         content_length=ContentLength(flow_data.get("words_limit", "medium")),
         use_emojis=flow_data.get("use_emojis", False),

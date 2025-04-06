@@ -52,7 +52,6 @@ async def add_channel(callback: CallbackQuery, button: Button, manager: DialogMa
 async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
     channel_flow = manager.dialog_data.get('channel_flow')
-    logger.info(channel_flow)
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
         return
