@@ -28,7 +28,14 @@ async def on_channel_selected(
             await callback.answer("Channel not found!")
             return
             
-        manager.dialog_data["selected_channel"] = selected_channel
+        flow_service = Container.flow_service()
+        channel_flow = await flow_service.get_flow_by_channel_id(int(item_id))
+
+        manager.dialog_data.update({
+            "selected_channel": selected_channel,
+            "channel_flow": channel_flow
+        })
+        
         
         await manager.switch_to(SettingsMenu.channel_settings)
         
