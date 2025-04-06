@@ -87,7 +87,7 @@ def create_settings_dialog():
                 Button(Const("🗑️ Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
             ),
             Row(
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
             ),
             state=SettingsMenu.channel_main_settings,
             parse_mode=ParseMode.HTML,

@@ -33,7 +33,7 @@ def create_edit_dialog():
                 Button(Const("URL-кнопки"), id="edit_buttons_btn", on_click=lambda c, b, m: m.switch_to(EditPostMenu.edit_buttons)),
             ),
             Row(
-                Button(Const("◀️ Назад"), id='go_back_to_buffer', on_click=go_back_to_buffer),
+                Button(Const("🔙 Назад"), id='go_back_to_buffer', on_click=go_back_to_buffer),
             ),
             state=EditPostMenu.edit_options,
             parse_mode=ParseMode.HTML,
@@ -47,7 +47,7 @@ def create_edit_dialog():
                 content_types=ContentType.TEXT
             ),
             Row(
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
             ),
             state=EditPostMenu.edit_text,
             parse_mode=ParseMode.HTML
@@ -61,7 +61,7 @@ def create_edit_dialog():
             ),
             Row(
                 Button(Const("Видалити медіа"), id="remove_media", on_click=remove_media),
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
             ),
             state=EditPostMenu.edit_media,
             parse_mode=ParseMode.HTML

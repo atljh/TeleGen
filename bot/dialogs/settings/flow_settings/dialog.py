@@ -46,7 +46,7 @@ def create_flow_settings_window():
             Button(Const("📚 Налаштування джерел"), id="source_settings", on_click=open_source_settings),
         ),
         Row(
-            Button(Const("◀️ Назад"), id="open_main_settings", on_click=open_main_settings),
+            Button(Const("🔙 Назад"), id="open_main_settings", on_click=open_main_settings),
         ),
         state=FlowSettingsMenu.flow_settings,
         parse_mode=ParseMode.HTML,
@@ -89,7 +89,7 @@ def create_ad_block_settings_window():
             ),
         ),
         Row(
-            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.ad_block_settings,
         parse_mode=ParseMode.HTML
@@ -107,7 +107,7 @@ def create_frequency_settings_window():
             Button(Const("✏️ Вказати власний інтервал"), id="custom_freq"),
         ),
         Row(
-            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.generation_frequency,
         parse_mode=ParseMode.HTML,
@@ -123,7 +123,7 @@ def create_exact_limit_input_window():
             filter=F.text,
         ),
         Row(
-            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.exact_limit_input,
         parse_mode=ParseMode.HTML
@@ -160,7 +160,7 @@ def create_character_limit_window():
         ),
         Row(
             Button(
-                Const("◀️ Назад"), 
+                Const("🔙 Назад"), 
                 id="open_flow_settings", 
                 on_click=open_flow_settings
             ),
@@ -184,7 +184,7 @@ def create_posts_in_flow_window():
             Button(Const("✏️ Вказати точне число"), id="set_exact_posts", on_click=set_exact_posts_count),
         ),
         Row(
-            Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),        
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),        
         ),
         state=FlowSettingsMenu.posts_in_flow,
         parse_mode=ParseMode.HTML,
@@ -198,7 +198,7 @@ def create_exact_posts_input_window():
             handle_exact_posts_input,
             filter=F.text & ~F.text.startswith('/')
         ),
-        Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         state=FlowSettingsMenu.exact_posts_input,
         parse_mode=ParseMode.HTML
     )
@@ -212,7 +212,7 @@ def create_source_settings_window():
             Button(Const("✏️ Редагувати джерела"), id="edit_sources"),
             Button(Const("🗑 Видалити джерело"), id="delete_source"),
         ),
-        Button(Const("◀️ Назад"), id="open_flow_settings", on_click=open_flow_settings),    
+        Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),    
         state=FlowSettingsMenu.source_settings,
         parse_mode=ParseMode.HTML
     )

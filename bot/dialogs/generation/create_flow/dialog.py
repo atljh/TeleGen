@@ -99,7 +99,7 @@ def create_flow_dialog():
                 filter=F.text & ~F.text.startswith('/')
             ),
             Row(
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
                 # Button(Const("📋 Мої джерела"), id="my_sources", on_click=show_my_sources),
             ),
             state=CreateFlowMenu.add_source_link,
@@ -160,7 +160,7 @@ def create_flow_dialog():
                 ),
             ),
             Row(
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.title_highlight_confirm,
             parse_mode=ParseMode.HTML,
@@ -176,7 +176,7 @@ def create_flow_dialog():
                 filter=F.text & ~F.text.startswith('/')
             ),
             Row(
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
                 Button(Const("🔄 Скинути"), id="reset_time", on_click=reset_ad_time),
             ),
             state=CreateFlowMenu.ad_time_settings,
@@ -205,7 +205,7 @@ def create_flow_dialog():
                 ),
             ),
             Row(
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.flow_volume_settings,
             parse_mode=ParseMode.HTML,
@@ -220,7 +220,7 @@ def create_flow_dialog():
                 filter=F.text & ~F.text.startswith('/')
             ),
             Row(
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.custom_volume_input,
             parse_mode=ParseMode.HTML
@@ -237,7 +237,7 @@ def create_flow_dialog():
             ),
             Row(
                 Button(Const("⏩ Пропустити"), id="skip_signature", on_click=skip_signature),
-                Back(Const("◀️ Назад")),
+                Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.signature_settings,
             parse_mode=ParseMode.HTML,
