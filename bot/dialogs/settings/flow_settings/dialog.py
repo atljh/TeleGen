@@ -39,6 +39,7 @@ def create_flow_settings_window():
             "▪️ <b>Джерела ({source_count}):</b>\n  {sources}\n"
             "▪️ <b>Частота генерації:</b> {frequency}\n"
             "▪️ <b>Кількість знаків:</b> {words_limit}\n"
+            "▪️ <b>Кількість постiв у флоу:</b> {flow_volume}\n"
             "▪️ <b>Виділення заголовка:</b> {title_highlight}\n"
             "▪️ <b>Підпис до постів:</b> {signature}\n\n"
         ),
