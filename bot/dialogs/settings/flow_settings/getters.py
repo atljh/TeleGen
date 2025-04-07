@@ -51,3 +51,17 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
         "flow_volume": getattr(flow_data, "flow_volume", 5),
         "signature": getattr(flow_data, "signature", "Немає підпису"),
     }
+
+
+async def character_limit_getter(dialog_manager: DialogManager, **kwargs):
+    limit_map = {
+        "to_100": "100",
+        "to_300": "300",
+        "to_1000": "1000"
+    }
+    if "channel_flow" not in dialog_manager.dialog_data:
+        dialog_manager.dialog_data["channel_flow"] = dialog_manager.start_data["channel_flow"]
+    return {
+        "char_limit": limit_map.get(dialog_manager.dialog_data["channel_flow"].content_length)
+    }
+

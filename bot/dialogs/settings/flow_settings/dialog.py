@@ -1,3 +1,4 @@
+import logging
 from aiogram import F
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
@@ -7,7 +8,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 
-from bot.dialogs.settings.flow_settings.getters import flow_settings_getter
+from bot.dialogs.settings.flow_settings.getters import character_limit_getter, flow_settings_getter
 
 from .states import FlowSettingsMenu
 from .callbacks import (
@@ -65,7 +66,6 @@ def create_flow_settings_window():
     )
 
 
-
 def create_ad_block_settings_window():
     return Window(
         Const("📢 <b>Налаштування рекламного блоку</b>"),
@@ -108,6 +108,7 @@ def create_character_limit_window():
     return Window(
         Format(
             "🔠 <b>Обмеження по знакам</b>\n\n"
+            "Поточний ліміт: {char_limit} знаків\n\n"
             "Оберіть дію:"
         ),
         Column(
@@ -124,6 +125,7 @@ def create_character_limit_window():
         ),
         state=FlowSettingsMenu.character_limit,
         parse_mode=ParseMode.HTML,
+        getter=character_limit_getter
     )
 
 async def posts_in_flow_getter(dialog_manager: DialogManager, **kwargs):

@@ -127,12 +127,22 @@ async def set_character_limit(callback: CallbackQuery, button: Button, manager: 
     
     new_limit = limit_map[button.widget_id]
 
-    manager.dialog_data["char_limit"] = new_limit
+    if "channel_flow" not in manager.dialog_data:
+        manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
+
+    manager.dialog_data["channel_flow"].content_length = new_limit
+
+    flow_service = Container.flow_service()
+    await flow_service.update_flow(
+        flow_id=manager.dialog_data["channel_flow"].id,
+        content_length=new_limit
+    )
+
+    manager.dialog_data["words_limit"] = new_limit
 
     await callback.answer(f"✅ Лiмiт оновлено")
     
-    await manager.show()
-
+    await manager.switch_to(FlowSettingsMenu.flow_settings)
 
 async def toggle_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
     ad_enabled = button.widget_id == "enable_ads"
