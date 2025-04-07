@@ -123,5 +123,4 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
         'ad_time': flow_data.get('ad_time', 'Не встановлено'),
         'flow_volume': flow_data.get('flow_volume', 5),
         'signature': flow_data.get('signature', 'Без підпису'),
-        'flow_id': 1
     }

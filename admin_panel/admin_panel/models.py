@@ -37,9 +37,9 @@ class Channel(models.Model):
 
 class Flow(models.Model):
     class ContentLength(models.TextChoices):
-        SHORT = "short", "Короткий (до 300 знаків)"
-        MEDIUM = "medium", "Середній (300-1000 знаків)"
-        LONG = "long", "Довгий (понад 1000 знаків)"
+        SHORT = "to_100", "Короткий (до 300 знаків)"
+        MEDIUM = "to_300", "Середній (300-1000 знаків)"
+        LONG = "to_1000", "Довгий (понад 1000 знаків)"
 
     class GenerationFrequency(models.TextChoices):
         HOURLY = "hourly", "Кожну годину"
