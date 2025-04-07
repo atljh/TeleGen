@@ -61,8 +61,20 @@ async def character_limit(callback: CallbackQuery, button: Button, manager: Dial
     await manager.switch_to(FlowSettingsMenu.character_limit)
 
 async def toggle_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
-    current = manager.dialog_data.get("title_highlight", False)
-    manager.dialog_data["title_highlight"] = not current
+
+    if "channel_flow" not in manager.dialog_data:
+        manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
+    
+    current = manager.dialog_data["channel_flow"].title_highlight
+
+    manager.dialog_data["channel_flow"].title_highlight = not current
+    
+    flow_service = Container.flow_service()
+    await flow_service.update_flow(
+        flow_id=manager.dialog_data["channel_flow"].id,
+        title_highlight=not current
+    )
+
     await callback.answer(f"Виділення заголовку {'увімкнено' if not current else 'вимкнено'}")
 
 async def configure_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
