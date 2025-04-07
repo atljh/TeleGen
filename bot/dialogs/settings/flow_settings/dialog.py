@@ -97,9 +97,9 @@ def create_frequency_settings_window():
         Const("⏱ <b>Налаштування частоти генерації</b>\n\n"
              "Оберіть як часто бот буде генерувати пости:"),
         Column(
-            Button(Const("Кожну годину"), id="freq_3h"),
-            Button(Const("Кожні 12 годин"), id="freq_12h"),
-            Button(Const("Раз на день"), id="freq_24h"),
+            Button(Const("Кожну годину"), id="freq_1h", on_click=set_frequency),
+            Button(Const("Кожні 12 годин"), id="freq_12h", on_click=set_frequency),
+            Button(Const("Раз на день"), id="freq_24h", on_click=set_frequency),
         ),
         Row(
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),

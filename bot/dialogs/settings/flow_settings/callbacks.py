@@ -75,8 +75,7 @@ async def open_source_settings(callback: CallbackQuery, button: Button, manager:
 
 async def set_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
     freq_map = {
-        "freq_3h": 3,
-        "freq_6h": 6,
+        "freq_1h": 1,
         "freq_12h": 12,
         "freq_24h": 24
     }
@@ -85,8 +84,8 @@ async def set_frequency(callback: CallbackQuery, button: Button, manager: Dialog
         manager.dialog_data["generation_freq"] = freq_map[button.widget_id]
         await callback.answer(f"Частоту встановлено: кожні {freq_map[button.widget_id]} годин")
     else:
-        await manager.switch_to(FlowSettingsMenu.custom_frequency_input)
-    
+        await callback.answer(f"Error frequency: {freq_map[button.widget_id]}. Please try again")
+
     await manager.back()
 
 async def adjust_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
