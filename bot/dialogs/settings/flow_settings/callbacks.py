@@ -4,8 +4,12 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, StartMode, Window, Dialog
 from aiogram_dialog.widgets.kbd import Button
 
+from bot.containers import Container
+
 from .states import FlowSettingsMenu
 from dialogs.settings.states import SettingsMenu
+
+logger = logging.getLogger(__name__)
 
 # ================== ОБРАБОТЧИКИ ГЛАВНОГО МЕНЮ ФЛОУ ==================
 
@@ -75,18 +79,44 @@ async def open_source_settings(callback: CallbackQuery, button: Button, manager:
 
 async def set_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
     freq_map = {
-        "freq_1h": 1,
-        "freq_12h": 12,
-        "freq_24h": 24
+        "freq_1h": 'hourly',
+        "freq_12h": '12h',
+        "freq_24h": 'daily'
     }
     
-    if button.widget_id in freq_map:
-        manager.dialog_data["generation_freq"] = freq_map[button.widget_id]
-        await callback.answer(f"Частоту встановлено: кожні {freq_map[button.widget_id]} годин")
-    else:
-        await callback.answer(f"Error frequency: {freq_map[button.widget_id]}. Please try again")
+    try:
+        if button.widget_id not in freq_map:
+            await callback.answer("Невідома частота генерації")
+            return
 
-    await manager.back()
+        hours = freq_map[button.widget_id]
+        manager.dialog_data["generation_freq"] = hours
+        
+        flow = (manager.dialog_data.get("channel_flow") or 
+                  manager.start_data.get("channel_flow"))
+
+        flow_id = flow.id
+        if not flow_id:
+            raise ValueError("Flow ID not found")
+
+        flow_service = Container.flow_service()
+        
+        updated_flow = await flow_service.update_flow(
+            flow_id=flow_id,
+            frequency=hours
+        )
+
+        await callback.answer(f"✅ Частоту генерації оновлено")
+        
+    except ValueError as e:
+        await callback.answer(f"❌ Помилка: {str(e)}")
+        logger.error(f"Frequency update error: {e}")
+    except Exception as e:
+        await callback.answer("❌ Помилка при оновленні частоти")
+        logger.error(f"Unexpected error in set_frequency: {e}")
+    finally:
+        await manager.back()
+
 
 async def adjust_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
     current = manager.dialog_data.get("char_limit", 1000)

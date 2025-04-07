@@ -42,7 +42,6 @@ class GenerationFrequency(str, Enum):
     HOURLY = "hourly"        # Кожну годину
     EVERY_12_HOURS = "12h"   # Раз на 12 годин
     DAILY = "daily"          # Раз на день
-    WEEKLY = "weekly"        # Раз на тиждень
 
 class FlowDTO(BaseModel):
     id: int

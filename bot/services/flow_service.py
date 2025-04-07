@@ -86,11 +86,19 @@ class FlowService:
     async def update_flow(self, flow_id: int, **kwargs) -> FlowDTO:
         try:
             flow = await self.flow_repository.get_flow_by_id(flow_id)
-            updated_flow = await self.flow_repository.update_flow(flow, **kwargs)
+            if not flow:
+                raise ValueError(f"Flow with ID {flow_id} not found")
+            
+            for field, value in kwargs.items():
+                setattr(flow, field, value)
+            
+            updated_flow = await self.flow_repository.update_flow(flow)
             return FlowDTO.from_orm(updated_flow)
+            
         except Exception as e:
             logger.error(f"Error updating flow {flow_id}: {e}")
             raise
+
 
     async def delete_flow(self, flow_id: int):
         try:

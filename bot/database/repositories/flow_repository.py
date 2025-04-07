@@ -46,6 +46,12 @@ class FlowRepository:
         except Exception as e:
             logging.error(f"Error during flow creation: {e}", exc_info=True)
 
+    async def get_flow_by_id(self, id: int) -> Flow:
+        try:
+            return await Flow.objects.aget(id=id)
+        except Flow.DoesNotExist:
+            raise FlowNotFoundError(f"No flow found with id {id}")
+
     async def get_flow_by_channel_id(self, channel_id: int) -> Flow:
         try:
             return await Flow.objects.aget(channel_id=channel_id)
@@ -56,8 +62,12 @@ class FlowRepository:
         return await Flow.objects.filter(channel_id=channel_id).first()
 
     async def update_flow(self, flow: Flow) -> Flow:
-        await flow.asave()
-        return flow
+        try:
+            await flow.asave()
+            return flow
+        except Exception as e:
+            logging.error(f"Error saving flow {flow.id}: {e}")
+            raise
 
     async def delete_flow(self, flow: Flow):
         await flow.adelete()
