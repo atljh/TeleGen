@@ -32,16 +32,19 @@ from .callbacks import (
 def create_flow_settings_window():
     return Window(
         Format(
-            "<b>Налаштування флоу</b>\n\n"
-            "<b>Канал: {channel_name}</b>\n\n"
-            "<b>Параметри Flow</b>\n"
-            "▪️ <b>Тематика:</b> {theme}\n"
-            "▪️ <b>Джерела ({source_count}):</b>\n  {sources}\n"
-            "▪️ <b>Частота генерації:</b> {frequency}\n"
-            "▪️ <b>Кількість знаків:</b> {words_limit}\n"
-            "▪️ <b>Кількість постiв у флоу:</b> {flow_volume}\n"
-            "▪️ <b>Виділення заголовка:</b> {title_highlight}\n"
-            "▪️ <b>Підпис до постів:</b> {signature}\n\n"
+        """
+        <b>Канал:</b> {channel_name}
+                
+        <b><u>Параметри Flow</u></b>
+        - <b>Тематика:</b> {theme}
+        - <b>Джерела ({source_count}):</b>
+            <b>{sources}</b>
+        - <b>Частота генерації:</b> {frequency}
+        - <b>Кількість знаків:</b> {words_limit}
+        - <b>Кількість постів у флоу:</b> {flow_volume}
+        - <b>Виділення заголовка:</b> {title_highlight}
+        - <b>Підпис до постів:</b> {signature}
+        """
         ),
         Column(
             Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),

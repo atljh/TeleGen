@@ -6,9 +6,8 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
 
-    # Получаем актуальные данные (из dialog_data или start_data)
     flow_data = (
-        dialog_data.get("channel_flow")  # Сначала проверяем обновленные данные
+        dialog_data.get("channel_flow")
         or start_data.get("channel_flow")
     )
     
@@ -30,7 +29,6 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
         'to_1000': 'До 1000 слів',
     }
 
-    # Форматируем источники
     sources = "\n".join(
         f"• {src['type']} - {src['link']}" 
         for src in getattr(flow_data, "sources", [])
