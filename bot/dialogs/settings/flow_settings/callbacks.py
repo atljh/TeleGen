@@ -57,7 +57,7 @@ async def open_main_settings(callback: CallbackQuery, button: Button, manager: D
 async def set_generation_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowSettingsMenu.generation_frequency)
 
-async def set_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowSettingsMenu.character_limit)
 
 async def toggle_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -106,7 +106,7 @@ async def set_frequency(
             frequency=new_frequency
         )
 
-        await callback.answer(f"✅ Частоту оновлено: {new_frequency}")
+        await callback.answer(f"✅ Частоту оновлено")
         await manager.back()
         await manager.show()
         
@@ -114,42 +114,25 @@ async def set_frequency(
         await callback.answer("❌ Помилка при оновленні частоти")
         logger.error(f"Error updating frequency: {e}")
 
-async def adjust_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
-    current = manager.dialog_data.get("char_limit", 1000)
+async def set_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
     
-    if button.widget_id == "increase_limit":
-        new_limit = current + 100
-    elif button.widget_id == "decrease_limit":
-        new_limit = max(100, current - 100)
-    elif button.widget_id == "disable_limit":
-        new_limit = 0
+    limit_map = {
+        "limit_100": "to_100",
+        "limit_300": "to_300",
+        "limit_1000": "to_1000"
+    }
+    if button.widget_id not in limit_map:
+        await callback.answer("Невідомий лiмiт символiв")
+        return
     
+    new_limit = limit_map[button.widget_id]
+
     manager.dialog_data["char_limit"] = new_limit
-    action = {
-        "increase_limit": "збільшено",
-        "decrease_limit": "зменшено",
-        "disable_limit": "вимкнено"
-    }.get(button.widget_id, "змінено")
+
+    await callback.answer(f"✅ Лiмiт оновлено")
     
-    await callback.answer(f"Ліміт {action} до {new_limit if new_limit > 0 else '∞'} знаків")
     await manager.show()
-    
 
-async def set_exact_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(FlowSettingsMenu.exact_limit_input)
-    await callback.answer("Введіть число від 100 до 10000")
-
-async def handle_exact_limit_input(message: Message, widget, dialog_manager: DialogManager):
-    try:
-        limit = int(message.text)
-        if 100 <= limit <= 10000:
-            dialog_manager.dialog_data["char_limit"] = limit
-            await dialog_manager.switch_to(FlowSettingsMenu.character_limit)
-            await message.answer(f"Ліміт оновлено до {limit} знаків")
-        else:
-            await message.answer("Будь ласка, введіть число від 100 до 10000")
-    except ValueError:
-        await message.answer("Будь ласка, введіть коректне число")
 
 async def toggle_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
     ad_enabled = button.widget_id == "enable_ads"
