@@ -30,7 +30,10 @@ async def open_flow_settings(callback: CallbackQuery, button: Button, manager: D
 async def open_main_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     start_data = manager.start_data or {}
     dialog_data = manager.dialog_data or {}
-    selected_channel = manager.dialog_data.get("selected_channel")
+    selected_channel = (
+        start_data.get("selected_channel", False)
+        or dialog_data.get('selected_channel, False')
+    )
     channel_flow = (
         start_data.get("channel_flow", False)
         or dialog_data.get("channel_flow", False)

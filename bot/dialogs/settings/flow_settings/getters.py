@@ -15,7 +15,6 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
         start_data.get("selected_channel", False)
         or dialog_data.get("selected_channel", False)
     )
-    logging.info(channel_data)
     frequency_map = {
         'daily': 'Раз на день',
         '12h': 'Раз на 12 годин',
