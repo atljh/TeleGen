@@ -43,9 +43,8 @@ class Flow(models.Model):
 
     class GenerationFrequency(models.TextChoices):
         HOURLY = "hourly", "Кожну годину"
+        TWELVEHOUR = "12h", "Раз на 12 год"
         DAILY = "daily", "Раз на день"
-        WEEKLY = "weekly", "Раз на тиждень"
-        CUSTOM = "custom", "Користувацький графік"
 
     channel = models.OneToOneField(
         Channel,

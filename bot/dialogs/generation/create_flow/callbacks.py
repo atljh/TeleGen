@@ -243,7 +243,7 @@ async def create_new_flow(manager: DialogManager):
         use_premium_emojis=flow_data.get("use_premium_emojis", False),
         title_highlight=flow_data.get("title_highlight", False),
         cta=flow_data.get("cta", False),
-        frequency=GenerationFrequency(flow_data.get("frequency", "daily")),
+        frequency=GenerationFrequency(flow_data.get("selected_frequency", "daily")),
         signature=flow_data.get("signature", ""),
         flow_volume=flow_data.get("flow_volume", 5),
         ad_time=flow_data.get("ad_time")
