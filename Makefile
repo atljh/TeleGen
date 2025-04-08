@@ -13,8 +13,9 @@ restart:
 	$(DOCKER_COMPOSE) down
 	$(DOCKER_COMPOSE) up
 
-build:
-	$(DOCKER_COMPOSE) build
+rebuild:
+	$(DOCKER_COMPOSE) down
+	$(DOCKER_COMPOSE) up --build
 
 logs:
 	$(DOCKER_COMPOSE) logs -f
