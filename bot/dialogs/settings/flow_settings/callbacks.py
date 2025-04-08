@@ -5,6 +5,7 @@ from aiogram_dialog import DialogManager, StartMode, Window, Dialog
 from aiogram_dialog.widgets.kbd import Button
 
 from bot.containers import Container
+from bot.dialogs.settings.flow_settings.getters import get_sources_data
 
 from .states import FlowSettingsMenu
 from dialogs.settings.states import SettingsMenu
@@ -189,18 +190,57 @@ async def set_flow_volume(callback: CallbackQuery, button: Button, manager: Dial
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
 
-async def set_exact_posts_count(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(FlowSettingsMenu.exact_posts_input)
-    await callback.answer("Введіть число від 1 до 10")
 
-async def handle_exact_posts_input(message: Message, widget, dialog_manager: DialogManager):
-    try:
-        count = int(message.text)
-        if 1 <= count <= 10:
-            dialog_manager.dialog_data["posts_count"] = count
-            await dialog_manager.switch_to(FlowSettingsMenu.posts_in_flow)
-            await message.answer(f"✅ Встановлено: {count} постів")
-        else:
-            await message.answer("⚠️ Введіть число від 1 до 10")
-    except ValueError:
-        await message.answer("❌ Введіть коректне число")
+async def to_add_source(c: CallbackQuery, b: Button, m: DialogManager):
+    await m.switch_to(FlowSettingsMenu.add_source)
+
+async def to_select_source_to_edit(c: CallbackQuery, b: Button, m: DialogManager):
+    data = await get_sources_data(m)
+    if not data["sources"]:
+        await c.answer("Немає джерел для редагування")
+        return
+    await m.switch_to(FlowSettingsMenu.select_source_to_edit)
+
+async def to_select_source_to_delete(c: CallbackQuery, b: Button, m: DialogManager):
+    data = await get_sources_data(m)
+    if not data["sources"]:
+        await c.answer("Немає джерел для видалення")
+        return
+    await m.switch_to(FlowSettingsMenu.select_source_to_delete)
+
+async def back_to_settings(c: CallbackQuery, b: Button, m: DialogManager):
+    await m.done()
+
+
+async def on_source_type_selected(c: CallbackQuery, b: Button, m: DialogManager):
+    source_type = b.widget_id.replace("source_", "")
+    m.dialog_data["new_source_type"] = source_type
+    await m.switch_to(FlowSettingsMenu.add_source_link)
+
+async def on_source_link_entered(message: Message, i, m: DialogManager, link: str):
+    flow_service = Container.flow_service()
+    flow_id = m.dialog_data["channel_flow"].id
+    
+    new_source = {
+        "type": m.dialog_data["new_source_type"],
+        "link": link
+    }
+    
+    await flow_service.add_source_to_flow(flow_id, new_source)
+    await m.answer(f"Джерело {new_source['type']} додано!")
+    await m.switch_to(FlowSettingsMenu.select_action)
+
+async def on_source_selected_for_edit(c: CallbackQuery, s, m: DialogManager, item_id: str):
+    m.dialog_data["editing_source_id"] = item_id
+    await m.switch_to(FlowSettingsMenu.edit_source)
+
+async def on_edit_link_clicked(c: CallbackQuery, b: Button, m: DialogManager):
+    await m.switch_to(FlowSettingsMenu.edit_source_link)
+
+async def on_source_selected_for_delete(c: CallbackQuery, s, m: DialogManager, item_id: str):
+    flow_service = Container.flow_service()
+    flow_id = m.dialog_data["channel_flow"].id
+    
+    await flow_service.remove_source_from_flow(flow_id, item_id)
+    await c.answer("Джерело видалено!")
+    await m.switch_to(FlowSettingsMenu.select_action)

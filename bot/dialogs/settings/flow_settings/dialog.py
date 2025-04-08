@@ -5,25 +5,36 @@ from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, Window, Dialog
 from aiogram_dialog.widgets.kbd import Button, Back, SwitchTo, Select
 from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
+from aiogram_dialog.widgets.kbd import Button, Column, Row, Select, ScrollingGroup
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 
-from bot.dialogs.settings.flow_settings.getters import character_limit_getter, flow_settings_getter, posts_in_flow_getter
-
+from .getters import (
+    character_limit_getter,
+    flow_settings_getter,
+    get_current_source,
+    get_source_type,
+    get_sources_data,
+    posts_in_flow_getter,
+)
 from .states import FlowSettingsMenu
 from .callbacks import (
+    back_to_settings,
     character_limit,
-    set_exact_posts_count,
+    on_source_link_entered,
+    on_source_selected_for_delete,
+    on_source_selected_for_edit,
     set_frequency,
     set_generation_frequency,
     set_posts_in_flow,
+    to_add_source,
+    to_select_source_to_delete,
+    to_select_source_to_edit,
     toggle_ad_block,
     toggle_title_highlight,
     configure_ad_block,
     open_flow_settings,
     open_main_settings,
     open_source_settings,
-    handle_exact_posts_input,
     set_character_limit,
     set_flow_volume
 )
@@ -144,17 +155,95 @@ def create_posts_in_flow_window():
         getter=posts_in_flow_getter
     )
     
-def create_source_settings_window():
-    return Window(
-        Const("📚 <b>Налаштування джерел</b>"),
-        Column(
-            Button(Const("➕ Додати джерело"), id="add_source"),
-            Button(Const("✏️ Редагувати джерела"), id="edit_sources"),
-            Button(Const("🗑 Видалити джерело"), id="delete_source"),
+def create_sources_dialog():
+    return Dialog(
+        Window(
+            Format(
+                "<b>Управління джерелами</b>\n\n"
+                "Кількість джерел: {count}\n\n"
+                "{sources_list}"
+            ),
+            Column(
+                Button(Const("➕ Додати джерело"), id="add_source", on_click=to_add_source),
+                Button(Const("✏️ Редагувати джерело"), id="edit_source", on_click=to_select_source_to_edit),
+                Button(Const("🗑 Видалити джерело"), id="delete_source", on_click=to_select_source_to_delete),
+            ),
+            Button(Const("🔙 Назад"), id="back_to_settings", on_click=back_to_settings),
+            state=FlowSettingsMenu.source_settings,
+            parse_mode=ParseMode.HTML,
+            getter=get_sources_data
         ),
-        Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),    
-        state=FlowSettingsMenu.source_settings,
-        parse_mode=ParseMode.HTML
+        
+        Window(
+            Const("Виберіть тип джерела:"),
+            Column(
+                Button(Const("📷 Instagram"), id="source_instagram"),
+                Button(Const("🌐 Веб-сайт"), id="source_web"),
+                Button(Const("📺 YouTube"), id="source_youtube"),
+            ),
+            Back(Const("◀️ Назад")),
+            state=FlowSettingsMenu.add_source,
+        ),
+        
+        Window(
+            Format("Введіть посилання для {source_type}:"),
+            TextInput(
+                id="source_link_input",
+                on_success=on_source_link_entered
+            ),
+            Back(Const("◀️ Назад")),
+            state=FlowSettingsMenu.add_source_link,
+            getter=get_source_type
+        ),
+        
+        Window(
+            Const("Оберіть джерело для редагування:"),
+            ScrollingGroup(
+                Select(
+                    Format("{item[type]} - {item[link]}"),
+                    id="sources_select",
+                    item_id_getter=lambda item: item["id"],
+                    items="sources",
+                    on_click=on_source_selected_for_edit,
+                ),
+                width=1,
+                height=5,
+                id='edit_select'
+            ),
+            Back(Const("◀️ Назад")),
+            state=FlowSettingsMenu.select_source_to_edit,
+            getter=get_sources_data
+        ),
+        
+        Window(
+            Format("Редагування джерела:\n{source[type]} - {source[link]}"),
+            Column(
+                Button(Const("✏️ Змінити посилання"), id="edit_link"),
+                Button(Const("♻️ Змінити тип"), id="edit_type"),
+            ),
+            Back(Const("◀️ Назад")),
+            state=FlowSettingsMenu.edit_source,
+            getter=get_current_source
+        ),
+        
+        Window(
+            Const("Оберіть джерело для видалення:"),
+            ScrollingGroup(
+                Select(
+                    Format("{item[type]} - {item[link]}"),
+                    id="sources_select",
+                    item_id_getter=lambda item: item["id"],
+                    items="sources",
+                    on_click=on_source_selected_for_delete,
+                ),
+                width=1,
+                height=5,
+                id='delete_select'
+            ),
+            Back(Const("◀️ Назад")),
+            state=FlowSettingsMenu.select_source_to_delete,
+            getter=get_sources_data
+        ),
     )
 
 def create_flow_settings_dialog():
@@ -164,5 +253,4 @@ def create_flow_settings_dialog():
         create_character_limit_window(),
         create_ad_block_settings_window(),
         create_posts_in_flow_window(),
-        create_source_settings_window(),
     )

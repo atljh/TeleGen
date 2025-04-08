@@ -76,3 +76,36 @@ async def posts_in_flow_getter(dialog_manager: DialogManager, **kwargs):
     return {
         "posts_count": dialog_manager.dialog_data["channel_flow"].flow_volume
     }
+
+async def get_sources_data(dialog_manager: DialogManager, **kwargs):
+    flow_data = (
+        dialog_manager.dialog_data.get("channel_flow") 
+        or dialog_manager.start_data.get("channel_flow")
+    )
+    
+    sources = getattr(flow_data, "sources", [])
+    
+    if not sources:
+        sources_text = "<i>Джерела відсутні</i>"
+    else:
+        sources_text = "\n".join(
+            f"{idx+1}. <b>{src['type']}</b>: <code>{src['link']}</code>"
+            for idx, src in enumerate(sources)
+        )
+    return {
+        "sources_list": sources_text,
+        "count": len(sources)
+    }
+
+async def get_source_type(dialog_manager: DialogManager, **kwargs):
+    return {
+        "source_type": dialog_manager.dialog_data.get("new_source_type", "джерела")
+    }
+
+async def get_current_source(m: DialogManager, **kwargs):
+    sources = (m.dialog_data.get("channel_flow") or m.start_data.get("channel_flow")).sources
+    source_id = m.dialog_data["editing_source_id"]
+    source = next(s for s in sources if s["id"] == source_id)
+    return {
+        "source": source
+    }
