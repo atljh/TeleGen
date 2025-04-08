@@ -230,9 +230,19 @@ async def on_source_link_entered(message: Message, i, m: DialogManager, link: st
     await m.answer(f"Джерело {new_source['type']} додано!")
     await m.switch_to(FlowSettingsMenu.select_action)
 
-async def on_source_selected_for_edit(c: CallbackQuery, s, m: DialogManager, item_id: str):
-    m.dialog_data["editing_source_id"] = item_id
-    await m.switch_to(FlowSettingsMenu.edit_source)
+async def on_source_selected_for_edit(
+    callback: CallbackQuery, 
+    select, 
+    manager: DialogManager, 
+    item_id: str
+):
+    try:
+        source_idx = int(item_id)
+        manager.dialog_data["editing_source_idx"] = source_idx
+        await manager.switch_to(FlowSettingsMenu.edit_source)
+    except Exception as e:
+        logger.error(f"Помилка вибору джерела: {e}")
+        await callback.answer("❌ Помилка при виборі джерела")
 
 async def on_edit_link_clicked(c: CallbackQuery, b: Button, m: DialogManager):
     await m.switch_to(FlowSettingsMenu.edit_source_link)
@@ -246,7 +256,7 @@ async def on_source_selected_for_delete(c: CallbackQuery, s, m: DialogManager, i
     await m.switch_to(FlowSettingsMenu.select_action)
 
 async def to_edit_link(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(FlowSettingsMenu.edit_link)
+    await manager.switch_to(FlowSettingsMenu.add_source_link)
 
 async def to_edit_type(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(FlowSettingsMenu.edit_source_type)
+    await manager.switch_to(FlowSettingsMenu.add_source)

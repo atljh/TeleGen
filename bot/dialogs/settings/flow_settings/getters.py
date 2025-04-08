@@ -87,7 +87,7 @@ async def get_sources_data(dialog_manager: DialogManager, **kwargs):
     
     formatted_sources = [
         {
-            "id": str(src.get("id", idx)),
+            "id": str(src.get("id", idx+1)),
             "type": src.get("type", "Невідомий тип"),
             "link": src.get("link", "Без посилання"),
             "display": f"{src.get('type')}: {src.get('link')}"
@@ -114,6 +114,7 @@ async def get_source_type(dialog_manager: DialogManager, **kwargs):
         "source_type": dialog_manager.dialog_data.get("new_source_type", "джерела")
     }
 
+
 async def get_current_source(dialog_manager: DialogManager, **kwargs):
     try:
         flow = (
@@ -121,34 +122,46 @@ async def get_current_source(dialog_manager: DialogManager, **kwargs):
             or dialog_manager.start_data.get("channel_flow")
         )
         
-        if not flow:
-            raise ValueError("Flow data not found")
+        if not flow or not hasattr(flow, "sources"):
+            raise ValueError("Дані флоу не знайдено")
             
-        source_id = dialog_manager.dialog_data.get("editing_source_id")
-        if not source_id:
-            raise ValueError("Source ID not found")
+        source_idx = dialog_manager.dialog_data.get("editing_source_idx")
+        if source_idx is None:
+            raise ValueError("Індекс джерела не вказано")
             
-        source = next(
-            (src for src in flow.sources if str(src.get("id")) == str(source_id)),
-            None
-        )
-        
-        if not source:
-            raise ValueError(f"Source with ID {source_id} not found")
+        sources = flow.sources
+        if not isinstance(sources, list) or source_idx >= len(sources):
+            raise ValueError("Невірний індекс джерела")
             
+        source = sources[source_idx]
         return {
-            "source": {
-                "id": source.get("id"),
-                "type": source.get("type", "Невідомий тип"),
-                "link": source.get("link", "Без посилання")
-            }
+            "source_type": source.get("type", "Невідомий тип"),
+            "source_link": source.get("link", "Без посилання"),
+            "source_idx": source_idx
         }
         
     except Exception as e:
-        logging.error(f"Error in get_current_source: {e}")
+        logging.error(f"Помилка при отриманні джерела: {e}")
         return {
-            "source": {
-                "type": "Помилка",
-                "link": str(e)
-            }
+            "source_type": "Помилка",
+            "source_link": str(e),
+            "source_idx": -1
         }
+
+async def get_sources_for_selection(dialog_manager: DialogManager, **kwargs):
+    flow = (
+        dialog_manager.dialog_data.get("channel_flow") 
+        or dialog_manager.start_data.get("channel_flow")
+    )
+    
+    sources = getattr(flow, "sources", [])
+    
+    formatted_sources = [
+        {"type": src.get("type", "?"), "link": src.get("link", "?"), "idx": idx}
+        for idx, src in enumerate(sources)
+    ]
+    
+    return {
+        "formatted_sources": formatted_sources,
+        "has_sources": bool(sources)
+    }
