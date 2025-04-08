@@ -193,7 +193,7 @@ async def set_flow_volume(callback: CallbackQuery, button: Button, manager: Dial
 
 
 async def to_add_source(c: CallbackQuery, b: Button, m: DialogManager):
-    await m.switch_to(FlowSettingsMenu.add_source)
+    await m.switch_to(FlowSettingsMenu.add_source_type)
 
 async def to_select_source_to_edit(c: CallbackQuery, b: Button, m: DialogManager):
     data = await get_sources_data(m)

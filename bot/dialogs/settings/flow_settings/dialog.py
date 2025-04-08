@@ -200,6 +200,39 @@ async def link_filter(message: Message):
         return False
     return True
 
+def create_add_source_type():
+    return Window(
+        Const("📋 Оберіть тип джерела:"),
+        Column(
+            Button(Const("🌐 Веб-сайт"), id="type_web", on_click=on_source_type_selected),
+            Button(Const("📷 Instagram"), id="type_instagram", on_click=on_source_type_selected),
+            Button(Const("📺 YouTube"), id="type_youtube", on_click=on_source_type_selected),
+            Button(Const("✈️ Telegram"), id="type_telegram", on_click=on_source_type_selected),
+        ),
+        Back(Const("◀️ Назад")),
+        state=FlowSettingsMenu.add_source_type,
+        parse_mode=ParseMode.HTML
+    )
+
+def create_input_source_link():
+    return Window(
+        Format(
+            "🔗 Введіть посилання для {source_type}:\n\n"
+            "Приклад: <code>{link_example}</code>"
+        ),
+        TextInput(
+            id="source_link_input",
+            on_success=on_source_link_entered,
+            filter=link_filter
+        ),
+        Back(Const("◀️ Назад")),
+        state=FlowSettingsMenu.add_source_link,
+        parse_mode=ParseMode.HTML,
+        getter=get_source_type_data
+    )
+#=======================================EDIT FLOW===========================================
+
+
 def create_input_source_link():
     return Window(
         Format(
@@ -232,6 +265,7 @@ def create_select_edit_source():
         getter=get_sources_for_selection
     )
 
+
 def create_edit_source():
     return Window(
         Format("Редагування джерела:\nТип: {source_type}\nПосилання: {source_link}"),
@@ -243,11 +277,6 @@ def create_edit_source():
         state=FlowSettingsMenu.edit_source,
         getter=get_current_source
     )
-#=======================================EDIT FLOW===========================================
-
-
-
-
 
 #=======================================DELETE FLOW===========================================
 
