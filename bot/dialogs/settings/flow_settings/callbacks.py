@@ -200,7 +200,7 @@ async def to_select_source_to_edit(c: CallbackQuery, b: Button, m: DialogManager
     if not data["sources"]:
         await c.answer("Немає джерел для редагування")
         return
-    await m.switch_to(FlowSettingsMenu.select_source_to_edit)
+    await m.switch_to(FlowSettingsMenu.edit_select_source)
 
 async def to_select_source_to_delete(c: CallbackQuery, b: Button, m: DialogManager):
     data = await get_sources_data(m)
