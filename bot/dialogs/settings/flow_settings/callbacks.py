@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 from aiogram import F
 from aiogram.types import CallbackQuery, Message
@@ -212,23 +213,81 @@ async def back_to_settings(c: CallbackQuery, b: Button, m: DialogManager):
     await m.done()
 
 
-async def on_source_type_selected(c: CallbackQuery, b: Button, m: DialogManager):
-    source_type = b.widget_id.replace("source_", "")
-    m.dialog_data["new_source_type"] = source_type
-    await m.switch_to(FlowSettingsMenu.add_source_link)
+async def on_source_type_selected(c: CallbackQuery, b: Button, manager: DialogManager):
+    try:
+        type_mapping = {
+            "source_instagram": "Instagram",
+            "source_web": "Website",
+            "source_youtube": "YouTube",
+            "source_telegram": "Telegram"
+        }
+        
+        source_type = type_mapping.get(b.widget_id, "Other")
+        manager.dialog_data["new_source_type"] = source_type
+        
+        examples = {
+            "Instagram": "https://instagram.com/username",
+            "Website": "https://example.com",
+            "YouTube": "https://youtube.com/channel/...",
+            "Telegram": "https://t.me/channelname"
+        }
+        manager.dialog_data["link_example"] = examples.get(source_type, "")
+        
+        await manager.switch_to(FlowSettingsMenu.add_source_link)
+        
+    except Exception as e:
+        logger.error(f"Error in source type selection: {e}")
+        await c.answer("❌ Помилка при виборі типу")
+        await manager.back()
 
-async def on_source_link_entered(message: Message, i, m: DialogManager, link: str):
-    flow_service = Container.flow_service()
-    flow_id = m.dialog_data["channel_flow"].id
-    
-    new_source = {
-        "type": m.dialog_data["new_source_type"],
-        "link": link
-    }
-    
-    await flow_service.add_source_to_flow(flow_id, new_source)
-    await m.answer(f"Джерело {new_source['type']} додано!")
-    await m.switch_to(FlowSettingsMenu.select_action)
+async def on_source_link_entered(message: Message, widget, manager: DialogManager, link: str):
+    try:
+        if not link.startswith(('http://', 'https://')):
+            await message.answer("❗ Посилання повинно починатись з http:// або https://")
+            return
+            
+        source_type = manager.dialog_data.get("new_source_type")
+        if not source_type:
+            raise ValueError("Тип джерела не визначено")
+        
+        new_source = {
+            "type": source_type,
+            "link": link,
+            "added_at": datetime.now().isoformat()
+        }
+        
+        flow = manager.dialog_data.get("channel_flow")
+        if not flow:
+            flow = manager.start_data.get("channel_flow")
+            manager.dialog_data["channel_flow"] = flow
+            
+        if not flow:
+            raise ValueError("Не вдалося знайти дані флоу")
+        
+        if not hasattr(flow, "sources") or not isinstance(flow.sources, list):
+            flow.sources = []
+            
+        flow.sources.append(new_source)
+        
+        flow_service = Container.flow_service()
+        updated_flow = await flow_service.update_flow(
+            flow_id=flow.id,
+            sources=flow.sources
+        )
+        
+        manager.dialog_data["channel_flow"] = updated_flow
+        
+        await message.answer(f"✅ Джерело {source_type} успішно додано!")
+        await manager.done()
+        await manager.start(FlowSettingsMenu.source_management)
+        
+    except ValueError as e:
+        await message.answer(f"❌ Помилка: {str(e)}")
+        logger.error(f"Validation error: {e}")
+    except Exception as e:
+        await message.answer("❌ Сталася помилка при додаванні джерела")
+        logger.error(f"Error adding source: {e}", exc_info=True)
+        await manager.back()
 
 async def on_source_selected_for_edit(
     callback: CallbackQuery, 
