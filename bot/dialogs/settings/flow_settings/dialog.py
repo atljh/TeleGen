@@ -8,7 +8,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 
-from bot.dialogs.settings.flow_settings.getters import character_limit_getter, flow_settings_getter
+from bot.dialogs.settings.flow_settings.getters import character_limit_getter, flow_settings_getter, posts_in_flow_getter
 
 from .states import FlowSettingsMenu
 from .callbacks import (
@@ -25,7 +25,7 @@ from .callbacks import (
     open_source_settings,
     handle_exact_posts_input,
     set_character_limit,
-    adjust_posts_count
+    set_flow_volume
 )
 
 def create_flow_settings_window():
@@ -128,18 +128,13 @@ def create_character_limit_window():
         getter=character_limit_getter
     )
 
-async def posts_in_flow_getter(dialog_manager: DialogManager, **kwargs):
-    return {
-        "posts_count": dialog_manager.dialog_data.get("posts_count", 1)
-    }
-
 def create_posts_in_flow_window():
     return Window(
         Format("📊 <b>Кількість постів у флоу</b>\n\nПоточне значення: {posts_count}"),
         Column(
-            Button(Const("➕ Збільшити"), id="increase_posts", on_click=adjust_posts_count),
-            Button(Const("➖ Зменшити"), id="decrease_posts", on_click=adjust_posts_count),
-            Button(Const("✏️ Вказати точне число"), id="set_exact_posts", on_click=set_exact_posts_count),
+            Button(Const("5"), id="volume_5", on_click=set_flow_volume),
+            Button(Const("10"), id="volume_10", on_click=set_flow_volume),
+            Button(Const("20"), id="volume_20", on_click=set_flow_volume),
         ),
         Row(
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),        
@@ -148,19 +143,6 @@ def create_posts_in_flow_window():
         parse_mode=ParseMode.HTML,
         getter=posts_in_flow_getter
     )
-
-def create_exact_posts_input_window():
-    return Window(
-        Const("✏️ <b>Введіть кількість постів</b>\n(1-10)"),
-        MessageInput(
-            handle_exact_posts_input,
-            filter=F.text & ~F.text.startswith('/')
-        ),
-        Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
-        state=FlowSettingsMenu.exact_posts_input,
-        parse_mode=ParseMode.HTML
-    )
-
     
 def create_source_settings_window():
     return Window(
@@ -183,5 +165,4 @@ def create_flow_settings_dialog():
         create_ad_block_settings_window(),
         create_posts_in_flow_window(),
         create_source_settings_window(),
-        create_exact_posts_input_window()
     )

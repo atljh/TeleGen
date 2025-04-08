@@ -162,16 +162,31 @@ async def toggle_ad_block(callback: CallbackQuery, button: Button, manager: Dial
     await callback.answer(f"Рекламний блок {'увімкнено' if ad_enabled else 'вимкнено'}")
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
-async def adjust_posts_count(callback: CallbackQuery, button: Button, manager: DialogManager):
-    current = manager.dialog_data.get("posts_count", 1)
-    if button.widget_id == "increase_posts":
-        new_count = min(10, current + 1)
-    else:
-        new_count = max(1, current - 1)
+async def set_flow_volume(callback: CallbackQuery, button: Button, manager: DialogManager):
+    volume_map = {
+        'volume_5': 5,
+        'volume_10': 10,
+        'volume_20': 20
+    }
+    if button.widget_id not in volume_map:
+        await callback.answer("Невідома кількість постів у флоу")
+        return
     
-    manager.dialog_data["posts_count"] = new_count
-    await callback.answer(f"Кількість постів: {new_count}")
-    await manager.show()
+    new_volume= volume_map[button.widget_id]
+
+    if "channel_flow" not in manager.dialog_data:
+        manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
+
+    manager.dialog_data["channel_flow"].flow_volume = new_volume
+
+    flow_service = Container.flow_service()
+    await flow_service.update_flow(
+        flow_id=manager.dialog_data["channel_flow"].id,
+        flow_volume=new_volume
+    )
+    await callback.answer(f"✅ Лiмiт оновлено")
+
+    await manager.switch_to(FlowSettingsMenu.flow_settings)
 
 
 async def set_exact_posts_count(callback: CallbackQuery, button: Button, manager: DialogManager):
