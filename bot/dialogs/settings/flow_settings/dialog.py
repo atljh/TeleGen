@@ -178,18 +178,6 @@ def create_sources_dialog():
         getter=get_sources_data
     )
 
-def create_select_source_type():
-    return Window(
-        Const("📚 Виберіть тип джерела:"),
-        Column(
-            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_source_type_selected),
-            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected),
-            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_source_type_selected),
-        ),
-        Back(Const("◀️ Назад")),
-        state=FlowSettingsMenu.add_source_type,
-        parse_mode=ParseMode.HTML
-    )
 
 #=======================================ADD FLOW===========================================
 
@@ -200,14 +188,13 @@ async def link_filter(message: Message):
         return False
     return True
 
-def create_add_source_type():
+def create_select_source_type():
     return Window(
-        Const("📋 Оберіть тип джерела:"),
+        Const("📚 Виберіть тип джерела:"),
         Column(
-            Button(Const("🌐 Веб-сайт"), id="type_web", on_click=on_source_type_selected),
-            Button(Const("📷 Instagram"), id="type_instagram", on_click=on_source_type_selected),
-            Button(Const("📺 YouTube"), id="type_youtube", on_click=on_source_type_selected),
-            Button(Const("✈️ Telegram"), id="type_telegram", on_click=on_source_type_selected),
+            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_source_type_selected),
+            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected),
+            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_source_type_selected),
         ),
         Back(Const("◀️ Назад")),
         state=FlowSettingsMenu.add_source_type,
@@ -233,6 +220,42 @@ def create_input_source_link():
 #=======================================EDIT FLOW===========================================
 
 
+# def create_select_edit_source():
+#     return Window(
+#         Const("Оберіть джерело для редагування:"),
+#         Select(
+#             Format("{item[type]} - {item[link]}"),
+#             id="sources_select",
+#             item_id_getter=lambda item: str(item["idx"]),
+#             items="formatted_sources",
+#             on_click=on_source_selected_for_edit,
+#         ),
+#         Back(Const("◀️ Назад")),
+#         state=FlowSettingsMenu.select_source_to_edit,
+#         getter=get_sources_for_selection
+#     )
+
+def create_select_edit_source():
+    return Window(
+        Const("✏️ Оберіть джерело для редагування:"),
+        ScrollingGroup(
+            Select(
+                Format("{item[type]} - {item[link]}"),
+                id="select_edit_source",
+                item_id_getter=lambda item: item["idx"],
+                items="sources",
+                on_click=on_source_selected_for_edit,
+            ),
+            id="sources_scroll",
+            width=1,  # Количество колонок
+            height=5, # Количество видимых строк
+        ),
+        Back(Const("◀️ Назад")),
+        state=FlowSettingsMenu.edit_select_source,
+        parse_mode=ParseMode.HTML,
+        getter=get_sources_for_selection
+    )
+
 def create_input_source_link():
     return Window(
         Format(
@@ -248,21 +271,6 @@ def create_input_source_link():
         state=FlowSettingsMenu.add_source_link,
         parse_mode=ParseMode.HTML,
         getter=get_source_type_data
-    )
-
-def create_select_edit_source():
-    return Window(
-        Const("Оберіть джерело для редагування:"),
-        Select(
-            Format("{item[type]} - {item[link]}"),
-            id="sources_select",
-            item_id_getter=lambda item: str(item["idx"]),
-            items="formatted_sources",
-            on_click=on_source_selected_for_edit,
-        ),
-        Back(Const("◀️ Назад")),
-        state=FlowSettingsMenu.select_source_to_edit,
-        getter=get_sources_for_selection
     )
 
 
