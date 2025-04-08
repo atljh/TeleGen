@@ -149,10 +149,12 @@ async def get_current_source(dialog_manager: DialogManager, **kwargs):
         }
 
 async def get_sources_list(dialog_manager: DialogManager, **kwargs):
-    flow = dialog_manager.dialog_data.get("current_flow")
+    flow = (
+        dialog_manager.dialog_data.get("channel_flow") 
+        or dialog_manager.start_data.get("channel_flow")
+    )
     sources = getattr(flow, "sources", [])
     
-    # Добавляем индексы и форматируем длинные ссылки
     formatted_sources = []
     for idx, src in enumerate(sources):
         link = src['link']
@@ -162,10 +164,11 @@ async def get_sources_list(dialog_manager: DialogManager, **kwargs):
             "type": src["type"],
             "link": link,
             "idx": idx,
-            "full_link": src['link']  # Оригинальная ссылка для редактирования
+            "full_link": src['link']
         })
-    
+    logging.info(formatted_sources)
     return {"sources": formatted_sources}
+
 # async def get_sources_for_selection(dialog_manager: DialogManager, **kwargs):
 #     flow = (
 #         dialog_manager.dialog_data.get("channel_flow") 

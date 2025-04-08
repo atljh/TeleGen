@@ -15,7 +15,6 @@ from .getters import (
     get_source_type,
     get_source_type_data,
     get_sources_data,
-    get_sources_for_selection,
     get_sources_list,
     posts_in_flow_getter,
 )
@@ -221,20 +220,6 @@ def create_input_source_link():
 #=======================================EDIT FLOW===========================================
 
 
-# def create_select_edit_source():
-#     return Window(
-#         Const("Оберіть джерело для редагування:"),
-#         Select(
-#             Format("{item[type]} - {item[link]}"),
-#             id="sources_select",
-#             item_id_getter=lambda item: str(item["idx"]),
-#             items="formatted_sources",
-#             on_click=on_source_selected_for_edit,
-#         ),
-#         Back(Const("◀️ Назад")),
-#         state=FlowSettingsMenu.select_source_to_edit,
-#         getter=get_sources_for_selection
-#     )
 
 def create_select_edit_source():
     return Window(
@@ -248,13 +233,26 @@ def create_select_edit_source():
                 on_click=on_source_selected_for_edit,
             ),
             id="sources_scroll",
-            width=1,  # Количество колонок
-            height=5, # Количество видимых строк
+            width=1,
+            height=5,
         ),
         Back(Const("◀️ Назад")),
         state=FlowSettingsMenu.edit_select_source,
         parse_mode=ParseMode.HTML,
         getter=get_sources_list
+    )
+
+def create_edit_source_type():
+    return Window(
+        Const("📚 Виберіть тип джерела:"),
+        Column(
+            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_source_type_selected),
+            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected),
+            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_source_type_selected),
+        ),
+        Back(Const("◀️ Назад")),
+        state=FlowSettingsMenu.edit_source_type,
+        parse_mode=ParseMode.HTML
     )
 
 def create_input_source_link():
