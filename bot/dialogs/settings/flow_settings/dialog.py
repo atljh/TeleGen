@@ -191,6 +191,8 @@ def create_select_source_type():
         parse_mode=ParseMode.HTML
     )
 
+#=======================================ADD FLOW===========================================
+
 async def link_filter(message: Message):
     text = message.text
     if not (text.startswith('http://') or text.startswith('https://')):
@@ -241,6 +243,13 @@ def create_edit_source():
         state=FlowSettingsMenu.edit_source,
         getter=get_current_source
     )
+#=======================================EDIT FLOW===========================================
+
+
+
+
+
+#=======================================DELETE FLOW===========================================
 
 def create_select_delete_source():
     return Window(
@@ -261,6 +270,7 @@ def create_select_delete_source():
             state=FlowSettingsMenu.select_source_to_delete,
             getter=get_sources_data
         )
+
 
 
 def create_flow_settings_dialog():

@@ -249,8 +249,7 @@ async def on_source_link_entered(message: Message, widget, manager: DialogManage
         )
         
         await message.answer(f"✅ Джерело {source_type} успішно додано!")
-        await manager.done()
-        await manager.start(FlowSettingsMenu.source_settings)
+        await manager.switch_to(FlowSettingsMenu.source_settings)
         
     except Exception as e:
         logger.error(f"Error adding source: {e}")
