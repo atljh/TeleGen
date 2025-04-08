@@ -244,3 +244,9 @@ async def on_source_selected_for_delete(c: CallbackQuery, s, m: DialogManager, i
     await flow_service.remove_source_from_flow(flow_id, item_id)
     await c.answer("Джерело видалено!")
     await m.switch_to(FlowSettingsMenu.select_action)
+
+async def to_edit_link(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowSettingsMenu.edit_link)
+
+async def to_edit_type(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowSettingsMenu.edit_source_type)

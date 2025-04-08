@@ -27,6 +27,8 @@ from .callbacks import (
     set_generation_frequency,
     set_posts_in_flow,
     to_add_source,
+    to_edit_link,
+    to_edit_type,
     to_select_source_to_delete,
     to_select_source_to_edit,
     toggle_ad_block,
@@ -157,21 +159,21 @@ def create_posts_in_flow_window():
     
 def create_sources_dialog():
     return Window(
-            Format(
-                "<b>Управління джерелами</b>\n\n"
-                "Кількість джерел: {count}\n\n"
-                "{sources_list}"
-            ),
-            Column(
-                Button(Const("➕ Додати джерело"), id="add_source", on_click=to_add_source),
-                Button(Const("✏️ Редагувати джерело"), id="edit_source", on_click=to_select_source_to_edit),
-                Button(Const("🗑 Видалити джерело"), id="delete_source", on_click=to_select_source_to_delete),
-            ),
-            Button(Const("🔙 Назад"), id="back_to_settings", on_click=back_to_settings),
-            state=FlowSettingsMenu.source_settings,
-            parse_mode=ParseMode.HTML,
-            getter=get_sources_data
-        )
+        Format(
+            "<b>Управління джерелами</b>\n\n"
+            "Кількість джерел: {sources_count}\n\n"
+            "{sources_list}"
+        ),
+        Column(
+            Button(Const("➕ Додати джерело"), id="add_source", on_click=to_add_source),
+            Button(Const("✏️ Редагувати джерело"), id="edit_source", on_click=to_select_source_to_edit),
+            Button(Const("🗑 Видалити джерело"), id="delete_source", on_click=to_select_source_to_delete),
+        ),
+        Button(Const("🔙 Назад"), id="back_to_settings", on_click=back_to_settings),
+        state=FlowSettingsMenu.source_settings,
+        parse_mode=ParseMode.HTML,
+        getter=get_sources_data
+    )
 
 def create_select_source():
     return Window(
@@ -199,35 +201,35 @@ def create_input_source_link():
 
 def create_select_edit_source():
     return Window(
-            Const("Оберіть джерело для редагування:"),
-            ScrollingGroup(
-                Select(
-                    Format("{item[type]} - {item[link]}"),
-                    id="sources_select",
-                    item_id_getter=lambda item: item["id"],
-                    items="sources",
-                    on_click=on_source_selected_for_edit,
-                ),
-                width=1,
-                height=5,
-                id='edit_select'
+        Const("Оберіть джерело для редагування:"),
+        ScrollingGroup(
+            Select(
+                Format("{item[type]} - {item[link]}"),
+                id="sources_select",
+                item_id_getter=lambda item: item["id"],
+                items="sources",
+                on_click=on_source_selected_for_edit,
             ),
-            Back(Const("◀️ Назад")),
-            state=FlowSettingsMenu.select_source_to_edit,
-            getter=get_sources_data
-        )
+            width=1,
+            height=5,
+            id='edit_select'
+        ),
+        Back(Const("◀️ Назад")),
+        state=FlowSettingsMenu.select_source_to_edit,
+        getter=get_sources_data
+    )
 
 def create_edit_source():
     return Window(
-            Format("Редагування джерела:\n{source[type]} - {source[link]}"),
-            Column(
-                Button(Const("✏️ Змінити посилання"), id="edit_link"),
-                Button(Const("♻️ Змінити тип"), id="edit_type"),
-            ),
-            Back(Const("◀️ Назад")),
-            state=FlowSettingsMenu.edit_source,
-            getter=get_current_source
-        )
+        Format("Редагування джерела:\n{source[type]} - {source[link]}"),
+        Column(
+            Button(Const("✏️ Змінити посилання"), id="edit_link", on_click=to_edit_link),
+            Button(Const("♻️ Змінити тип"), id="edit_type", on_click=to_edit_type),
+        ),
+        Back(Const("◀️ Назад")),
+        state=FlowSettingsMenu.edit_source,
+        getter=get_current_source
+    )
 
 def create_select_delete_source():
     return Window(
