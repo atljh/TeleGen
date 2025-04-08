@@ -156,8 +156,7 @@ def create_posts_in_flow_window():
     )
     
 def create_sources_dialog():
-    return Dialog(
-        Window(
+    return Window(
             Format(
                 "<b>Управління джерелами</b>\n\n"
                 "Кількість джерел: {count}\n\n"
@@ -172,9 +171,10 @@ def create_sources_dialog():
             state=FlowSettingsMenu.source_settings,
             parse_mode=ParseMode.HTML,
             getter=get_sources_data
-        ),
-        
-        Window(
+        )
+
+def create_select_source():
+    return Window(
             Const("Виберіть тип джерела:"),
             Column(
                 Button(Const("📷 Instagram"), id="source_instagram"),
@@ -183,9 +183,10 @@ def create_sources_dialog():
             ),
             Back(Const("◀️ Назад")),
             state=FlowSettingsMenu.add_source,
-        ),
-        
-        Window(
+        )
+
+def create_input_source_link():
+    return Window(
             Format("Введіть посилання для {source_type}:"),
             TextInput(
                 id="source_link_input",
@@ -194,9 +195,10 @@ def create_sources_dialog():
             Back(Const("◀️ Назад")),
             state=FlowSettingsMenu.add_source_link,
             getter=get_source_type
-        ),
-        
-        Window(
+        )
+
+def create_select_edit_source():
+    return Window(
             Const("Оберіть джерело для редагування:"),
             ScrollingGroup(
                 Select(
@@ -213,9 +215,10 @@ def create_sources_dialog():
             Back(Const("◀️ Назад")),
             state=FlowSettingsMenu.select_source_to_edit,
             getter=get_sources_data
-        ),
-        
-        Window(
+        )
+
+def create_edit_source():
+    return Window(
             Format("Редагування джерела:\n{source[type]} - {source[link]}"),
             Column(
                 Button(Const("✏️ Змінити посилання"), id="edit_link"),
@@ -224,9 +227,10 @@ def create_sources_dialog():
             Back(Const("◀️ Назад")),
             state=FlowSettingsMenu.edit_source,
             getter=get_current_source
-        ),
-        
-        Window(
+        )
+
+def create_select_delete_source():
+    return Window(
             Const("Оберіть джерело для видалення:"),
             ScrollingGroup(
                 Select(
@@ -243,8 +247,8 @@ def create_sources_dialog():
             Back(Const("◀️ Назад")),
             state=FlowSettingsMenu.select_source_to_delete,
             getter=get_sources_data
-        ),
-    )
+        )
+
 
 def create_flow_settings_dialog():
     return Dialog(
@@ -253,4 +257,11 @@ def create_flow_settings_dialog():
         create_character_limit_window(),
         create_ad_block_settings_window(),
         create_posts_in_flow_window(),
+
+        create_sources_dialog(),
+        create_select_source(),
+        create_input_source_link(),
+        create_select_edit_source(),
+        create_edit_source(),
+        create_select_delete_source(),
     )

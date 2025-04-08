@@ -23,7 +23,6 @@ def register_dialogs(dp: Dispatcher):
 
     settings_dialog = create_settings_dialog()
     flow_settings_dialog = create_flow_settings_dialog()
-    flow_sources_dialog = create_sources_dialog()
 
     support_dialog = create_support_dialog()
     
@@ -37,6 +36,5 @@ def register_dialogs(dp: Dispatcher):
     
     dp.include_router(settings_dialog)
     dp.include_router(flow_settings_dialog)
-    dp.include_router(flow_sources_dialog)
 
     dp.include_router(support_dialog)
