@@ -165,3 +165,15 @@ async def get_sources_for_selection(dialog_manager: DialogManager, **kwargs):
         "formatted_sources": formatted_sources,
         "has_sources": bool(sources)
     }
+
+async def get_source_type_data(dialog_manager: DialogManager, **kwargs):
+    source_type = dialog_manager.dialog_data.get("new_source_type", "джерела")
+    examples = {
+        "instagram": "https://instagram.com/username",
+        "web": "https://example.com",
+        "telegram": "https://t.me/channelname"
+    }
+    return {
+        "source_type": source_type,
+        "link_example": examples.get(source_type, "https://example.com")
+    }

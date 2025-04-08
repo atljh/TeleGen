@@ -213,80 +213,48 @@ async def back_to_settings(c: CallbackQuery, b: Button, m: DialogManager):
     await m.done()
 
 
-async def on_source_type_selected(c: CallbackQuery, b: Button, manager: DialogManager):
-    try:
-        type_mapping = {
-            "source_instagram": "Instagram",
-            "source_web": "Website",
-            "source_youtube": "YouTube",
-            "source_telegram": "Telegram"
-        }
-        
-        source_type = type_mapping.get(b.widget_id, "Other")
-        manager.dialog_data["new_source_type"] = source_type
-        
-        examples = {
-            "Instagram": "https://instagram.com/username",
-            "Website": "https://example.com",
-            "YouTube": "https://youtube.com/channel/...",
-            "Telegram": "https://t.me/channelname"
-        }
-        manager.dialog_data["link_example"] = examples.get(source_type, "")
-        
-        await manager.switch_to(FlowSettingsMenu.add_source_link)
-        
-    except Exception as e:
-        logger.error(f"Error in source type selection: {e}")
-        await c.answer("❌ Помилка при виборі типу")
-        await manager.back()
+async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
+    type_mapping = {
+        "source_instagram": "instagram",
+        "source_web": "web",
+        "source_telegram": "telegram"
+    }
+    manager.dialog_data["new_source_type"] = type_mapping[button.widget_id]
+    await manager.switch_to(FlowSettingsMenu.add_source_link)
 
 async def on_source_link_entered(message: Message, widget, manager: DialogManager, link: str):
     try:
-        if not link.startswith(('http://', 'https://')):
-            await message.answer("❗ Посилання повинно починатись з http:// або https://")
-            return
-            
-        source_type = manager.dialog_data.get("new_source_type")
-        if not source_type:
-            raise ValueError("Тип джерела не визначено")
+        flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+        source_type = manager.dialog_data["new_source_type"]
         
         new_source = {
             "type": source_type,
             "link": link,
-            "added_at": datetime.now().isoformat()
+            "added_at": datetime.now().strftime("%Y-%m-%d %H:%M")
         }
         
-        flow = manager.dialog_data.get("channel_flow")
-        if not flow:
-            flow = manager.start_data.get("channel_flow")
-            manager.dialog_data["channel_flow"] = flow
-            
-        if not flow:
-            raise ValueError("Не вдалося знайти дані флоу")
-        
-        if not hasattr(flow, "sources") or not isinstance(flow.sources, list):
+        if not hasattr(flow, "sources"):
             flow.sources = []
+        
+        if any(src['link'] == link for src in flow.sources):
+            await message.answer("⚠️ Це джерело вже додано!")
+            return
             
         flow.sources.append(new_source)
         
         flow_service = Container.flow_service()
-        updated_flow = await flow_service.update_flow(
+        await flow_service.update_flow(
             flow_id=flow.id,
             sources=flow.sources
         )
         
-        manager.dialog_data["channel_flow"] = updated_flow
-        
         await message.answer(f"✅ Джерело {source_type} успішно додано!")
         await manager.done()
-        await manager.start(FlowSettingsMenu.source_management)
+        await manager.start(FlowSettingsMenu.source_settings)
         
-    except ValueError as e:
-        await message.answer(f"❌ Помилка: {str(e)}")
-        logger.error(f"Validation error: {e}")
     except Exception as e:
-        await message.answer("❌ Сталася помилка при додаванні джерела")
-        logger.error(f"Error adding source: {e}", exc_info=True)
+        logger.error(f"Error adding source: {e}")
+        await message.answer("❌ Помилка при додаванні джерела")
         await manager.back()
 
 async def on_source_selected_for_edit(
@@ -318,4 +286,4 @@ async def to_edit_link(callback: CallbackQuery, button: Button, manager: DialogM
     await manager.switch_to(FlowSettingsMenu.add_source_link)
 
 async def to_edit_type(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(FlowSettingsMenu.add_source)
+    await manager.switch_to(FlowSettingsMenu.add_source_type)

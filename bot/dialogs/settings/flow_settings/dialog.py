@@ -13,6 +13,7 @@ from .getters import (
     flow_settings_getter,
     get_current_source,
     get_source_type,
+    get_source_type_data,
     get_sources_data,
     get_sources_for_selection,
     posts_in_flow_getter,
@@ -177,28 +178,41 @@ def create_sources_dialog():
         getter=get_sources_data
     )
 
-def create_select_source():
+def create_select_source_type():
     return Window(
-        Const("Виберіть тип джерела:"),
+        Const("📚 Виберіть тип джерела:"),
         Column(
-            Button(Const("📷 Instagram"), id="source_instagram"),
-            Button(Const("🌐 Веб-сайт"), id="source_web"),
-            Button(Const("📺 YouTube"), id="source_youtube"),
+            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_source_type_selected),
+            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected),
+            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_source_type_selected),
         ),
         Back(Const("◀️ Назад")),
-        state=FlowSettingsMenu.add_source,
+        state=FlowSettingsMenu.add_source_type,
+        parse_mode=ParseMode.HTML
     )
+
+async def link_filter(message: Message):
+    text = message.text
+    if not (text.startswith('http://') or text.startswith('https://')):
+        await message.answer("❗ Посилання має починатися з http:// або https://")
+        return False
+    return True
 
 def create_input_source_link():
     return Window(
-        Format("Введіть посилання для {source_type}:"),
+        Format(
+            "🔗 Введіть посилання для {source_type}:\n\n"
+            "Приклад: <code>{link_example}</code>"
+        ),
         TextInput(
             id="source_link_input",
-            on_success=on_source_link_entered
+            on_success=on_source_link_entered,
+            filter=link_filter
         ),
         Back(Const("◀️ Назад")),
         state=FlowSettingsMenu.add_source_link,
-        getter=get_source_type
+        parse_mode=ParseMode.HTML,
+        getter=get_source_type_data
     )
 
 def create_select_edit_source():
@@ -258,7 +272,7 @@ def create_flow_settings_dialog():
         create_posts_in_flow_window(),
 
         create_sources_dialog(),
-        create_select_source(),
+        create_select_source_type(),
         create_input_source_link(),
         create_select_edit_source(),
         create_edit_source(),

@@ -9,7 +9,8 @@ class FlowSettingsMenu(StatesGroup):
     posts_in_flow = State()
 
     source_settings = State()
-    add_source = State()             
+    add_source = State()
+    add_source_type = State()             
     add_source_link = State()        
     select_source_to_edit = State()
     edit_source = State()          
