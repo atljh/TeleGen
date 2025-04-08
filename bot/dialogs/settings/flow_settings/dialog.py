@@ -16,6 +16,7 @@ from .getters import (
     get_source_type_data,
     get_sources_data,
     get_sources_for_selection,
+    get_sources_list,
     posts_in_flow_getter,
 )
 from .states import FlowSettingsMenu
@@ -253,7 +254,7 @@ def create_select_edit_source():
         Back(Const("◀️ Назад")),
         state=FlowSettingsMenu.edit_select_source,
         parse_mode=ParseMode.HTML,
-        getter=get_sources_for_selection
+        getter=get_sources_list
     )
 
 def create_input_source_link():
