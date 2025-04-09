@@ -75,7 +75,7 @@ async def source_link_getter(dialog_manager: DialogManager, **kwargs):
 async def source_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data
     
-    source_type = dialog_data.get("source_type", "Невідомий")
+    source_type = dialog_data.get("selected_source_type", "Невідомий")
     source_link = dialog_data.get("source_link", "Не вказано")
     
     return {
