@@ -13,25 +13,47 @@ import requests
 
 from bot.containers import Container
 
-async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
+from aiogram_dialog.api.entities import MediaAttachment, MediaId
+
+from typing import Any, Dict
+import os
+from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.kbd import StubScroll
+
+from bot.database.dtos.dtos import MediaType
+
+async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+    scroll: StubScroll = dialog_manager.find("stub_scroll")
+    current_page = await scroll.get_page()
+
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
-    
+
     channel = start_data.get("selected_channel") or dialog_data.get("selected_channel")
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
-    posts = []
 
-    if flow:
+    if flow and "all_posts" not in dialog_data:
         post_service = Container.post_service()
         raw_posts = await post_service.get_posts_by_flow_id(flow.id)
+        posts = []
+
         for idx, post in enumerate(raw_posts):
             pub_time = post.publication_date.strftime("%d.%m.%Y %H:%M") if post.publication_date else "Без дати"
-            
-            media = MediaAttachment(
-                        path=post.media_path,
-                        type="photo"
-                    ),
 
+            relative_path = post.media_url.lstrip("/")
+            media_path = os.path.join(settings.BASE_DIR, relative_path) if post.media_url else None
+            media = None
+            if media_path and post.media_type:
+                if post.media_type == MediaType.IMAGE:
+                    media = MediaAttachment(
+                        path=media_path,
+                        type="photo"
+                    )
+                elif post.media_type == MediaType.VIDEO:
+                    media = MediaAttachment(
+                        path=media_path,
+                        type="video"
+                    )
             posts.append({
                 "id": str(post.id),
                 "idx": idx,
@@ -39,43 +61,28 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
                 "pub_time": pub_time,
                 "status": "✅ Опубліковано" if post.is_published else "📝 Чернетка",
                 "full_content": post.content,
-                "media": media,
-                "has_media": bool(media)
+                "media_path": media,
             })
-    
-    dialog_manager.dialog_data["all_posts"] = posts
-    dialog_manager.dialog_data["total_posts"] = len(posts)
-    
-    return {
-        "channel_name": channel.name if channel else "Канал не обрано",
-        "channel_id": getattr(channel, "channel_id", "N/A"),
-        "channel_flow": flow.name if flow else "Немає флоу",
-        "posts_count": len(posts)
-    }
 
+        dialog_manager.dialog_data["all_posts"] = posts
+        dialog_manager.dialog_data["total_posts"] = len(posts)
 
-async def get_current_post_data(dialog_manager: DialogManager, **kwargs):
     posts = dialog_manager.dialog_data.get("all_posts", [])
-    scroll = dialog_manager.find("post_scroll")
-    current_idx = await scroll.get_page()
-    
-    if not posts or current_idx >= len(posts):
+    total_pages = len(posts)
+
+    if not posts or current_page >= total_pages:
         return {
-            "current_post": {
-                "content_preview": "Немає постів",
-                "pub_time": "",
-                "status": "",
-                "full_content": "",
-                "has_media": False
-            },
-            "post_number": 0,
-            "posts_count": 0
+            "current_page": current_page + 1,
+            "pages": total_pages,
+            "day": "Немає поста",
         }
-    
-    current_post = posts[current_idx]
+
+    post = posts[current_page]
+
     return {
-        "current_post": current_post,
-        "post_number": current_idx + 1,
-        "posts_count": len(posts),
-        "media_content": current_post["media"] if current_post["has_media"] else None
+        "current_page": current_page + 1,
+        "pages": total_pages,
+        "day": f"День {current_page + 1}",
+        "media_content": post["media_path"],
+        "post": post,
     }

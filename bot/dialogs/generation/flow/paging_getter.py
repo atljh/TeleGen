@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Any
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.media import DynamicMedia
@@ -36,7 +37,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     post = posts[current_page]
     media_path = os.path.join(settings.BASE_DIR, post["image_path"])
-
+    
+    logging.info(post["image_path"])
+    logging.info(media_path)
     return {
         "current_page": current_page + 1,
         "pages": total_pages,

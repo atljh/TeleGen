@@ -9,7 +9,8 @@ from aiogram.enums import ParseMode
 from aiogram_dialog import DialogManager
 from django.conf import settings
 
-from .paging_getter import paging_getter
+from .getters import paging_getter
+# from .paging_getter import paging_getter
 
 from .states import FlowMenu
 from .callbacks import (
@@ -19,49 +20,12 @@ from .callbacks import (
     on_schedule_post
 )
 
-
-
-# def flow_dialog() -> Dialog:
-#     return Dialog(
-#         Window(
-#             DynamicMedia("media_content"),
-#             Format(
-#                 "{current_post[content_preview]}\n\n"
-#                 "<b>Дата публікації:</b> {current_post[pub_time]}\n"
-#                 "<b>Статус:</b> {current_post[status]}\n\n"
-#                 "<b>Пост {post_number}/{posts_count}</b>"
-#             ),
-#             StubScroll(
-#                 id="post_scroll",
-#                 pages="posts_count",
-#                 on_page_changed=on_post_page_changed
-#             ),
-#             Group(
-#                 Button(Const("◀️"), id="prev_post", on_click=scroll_post),
-#                 Button(Const("▶️"), id="next_post", on_click=scroll_post),
-#                 width=3
-#             ),
-#             Group(
-#                 Button(Const("✅ Опублікувати"), id="publish_post"),
-#                 Button(Const("✏️ Редагувати"), id="edit_post"),
-#                 Button(Const("📅 Запланувати"), id="schedule_post"),
-#                 width=2
-#             ),
-#             Cancel(Const("🔙 Назад")),
-#             getter=[selected_channel_getter, get_current_post_data],
-#             state=FlowMenu.posts_list,
-#             parse_mode=ParseMode.HTML
-#         )
-#     )
 def flow_dialog() -> Dialog:
     return Dialog(
         Window(
-            Const("📄 Посты для публикации:\n"),
-            DynamicMedia("media"),
-            Format("<b>{post[content_preview]}</b>\n\n"
-                   "<b>Дата:</b> {post[pub_time]}\n"
-                   "<b>Статус:</b> {post[status]}\n\n"
-                   "<i>Пост {current_page} из {pages}</i>"),
+            DynamicMedia("media_content"),
+            Format("{post[status]} | {post[pub_time]}"),
+            Format("{post[content_preview]}"),
             StubScroll(id="stub_scroll", pages="pages"),
             NumberedPager(scroll="stub_scroll"),
             Group(
@@ -76,7 +40,6 @@ def flow_dialog() -> Dialog:
             parse_mode=ParseMode.HTML,
         )
     )
-
 async def scroll_post(
     callback: CallbackQuery, 
     button: Button, 
