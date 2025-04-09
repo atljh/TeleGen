@@ -20,6 +20,30 @@ from .callbacks import (
     on_schedule_post
 )
 
+
+# def flow_dialog() -> Dialog:
+#     return Dialog(
+#         Window(
+#             Const("📄 Посты для публикации:\n"),
+#             DynamicMedia("media"),
+#             Format("<b>{post[content_preview]}</b>\n\n"
+#                    "<b>Дата:</b> {post[pub_time]}\n"
+#                    "<b>Статус:</b> {post[status]}\n\n"
+#                    "<i>Пост {current_page} из {pages}</i>"),
+#             StubScroll(id="stub_scroll", pages="pages"),
+#             NumberedPager(scroll="stub_scroll"),
+#             Group(
+#                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
+#                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
+#                 Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),
+#                 width=2
+#             ),
+#             Cancel(Const("🔙 Назад")),
+#             getter=paging_getter,
+#             state=FlowMenu.posts_list,
+#             parse_mode=ParseMode.HTML,
+#         )
+#     )
 def flow_dialog() -> Dialog:
     return Dialog(
         Window(
@@ -40,24 +64,3 @@ def flow_dialog() -> Dialog:
             parse_mode=ParseMode.HTML,
         )
     )
-async def scroll_post(
-    callback: CallbackQuery, 
-    button: Button, 
-    manager: DialogManager
-):
-    scroll = manager.find("post_scroll")
-    current = await scroll.get_page()
-    
-    if button.widget_id == "prev_post":
-        await scroll.set_page(current - 1)
-    else:
-        await scroll.set_page(current + 1)
-    
-    await manager.update()
-
-async def on_post_page_changed(
-    event, 
-    scroll: StubScroll, 
-    manager: DialogManager
-):
-    pass

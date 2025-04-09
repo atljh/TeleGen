@@ -1,25 +1,15 @@
-
-import logging
-from pathlib import Path
-from urllib.parse import urljoin
-from aiogram_dialog import DialogManager
-from aiogram.types import URLInputFile, InputMediaPhoto
-from aiogram.enums import ContentType
-from aiogram.types import InputFile
-from aiogram.types import FSInputFile
-from aiogram_dialog.api.entities import MediaAttachment, MediaId
-from django.conf import settings
-import requests
-
-from bot.containers import Container
-
-from aiogram_dialog.api.entities import MediaAttachment, MediaId
-
-from typing import Any, Dict
 import os
+import logging
+from urllib.parse import unquote
+from pathlib import Path
+from typing import Any, Dict
 from aiogram_dialog import DialogManager
+from aiogram_dialog.api.entities import MediaAttachment, MediaId
 from aiogram_dialog.widgets.kbd import StubScroll
 
+from django.conf import settings
+
+from bot.containers import Container
 from bot.database.dtos.dtos import MediaType
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
@@ -43,6 +33,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             relative_path = post.media_url.lstrip("/")
             media_path = os.path.join(settings.BASE_DIR, relative_path) if post.media_url else None
             media = None
+
             if media_path and post.media_type:
                 if post.media_type == MediaType.IMAGE:
                     media = MediaAttachment(
@@ -50,6 +41,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                         type="photo"
                     )
                 elif post.media_type == MediaType.VIDEO:
+                    decoded_path = unquote(post.media_url)
+                    relative_path = decoded_path.lstrip("/")
+                    media_path = os.path.join(settings.BASE_DIR, relative_path) if post.media_url else None
                     media = MediaAttachment(
                         path=media_path,
                         type="video"

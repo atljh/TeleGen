@@ -10,20 +10,8 @@ from django.conf import settings
 
 EXAMPLE_POSTS = [
     {
-        "image_path": "media/posts/images/photo_2025-04-02_17-44-44_wniiWc5.jpg",
+        "image_path": "media/posts/videos/Пророк_Санбою_Тяжело.mp4",
         "content_preview": "Первый пост",
-        "pub_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "status": "🕒 В черновике",
-    },
-    {
-        "image_path": "media/posts/images/Screenshot_2025-04-02_at_15.43.25.png",
-        "content_preview": "Второй пост",
-        "pub_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "status": "✅ Опубликовано",
-    },
-    {
-        "image_path": "media/posts/images/photo_2025-04-02_17-44-44_wniiWc5.jpg",
-        "content_preview": "Третий пост",
         "pub_time": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "status": "🕒 В черновике",
     },
@@ -46,7 +34,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         "day": f"День {current_page + 1}",
         "media": MediaAttachment(
             path=media_path,
-            type="photo"
+            type="video"
         ),
         "post": post
     }
