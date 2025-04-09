@@ -417,16 +417,6 @@ async def on_source_selected_for_delete(callback: CallbackQuery, select, manager
 
 
 
-async def get_source_to_delete_data(dialog_manager: DialogManager, **kwargs):
-    flow = dialog_manager.dialog_data.get("channel_flow", dialog_manager.start_data["channel_flow"])
-    item_id = dialog_manager.dialog_data["source_to_delete"]
-    idx = int(item_id) - 1
-    source_to_delete = flow.sources[idx]
-    
-    return {
-        "source_to_delete": source_to_delete
-    }
-
 async def confirm_delete_source(callback: CallbackQuery, button: Button, manager: DialogManager):
     flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
     item_id = manager.dialog_data["source_to_delete"]

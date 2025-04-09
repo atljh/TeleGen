@@ -69,7 +69,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             posts.append({
                 "id": str(post.id),
                 "idx": idx,
-                "content_preview": (post.content[:100] + "...") if len(post.content) > 100 else post.content,
+                "content_preview": (post.content[:1000] + "...") if len(post.content) > 1000 else post.content,
                 "pub_time": pub_time,
                 "status": "✅ Опубліковано" if post.is_published else "📝 Чернетка",
                 "full_content": post.content,

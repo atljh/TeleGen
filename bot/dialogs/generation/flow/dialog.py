@@ -8,8 +8,6 @@ from aiogram.enums import ParseMode
 from aiogram_dialog import DialogManager
 from django.conf import settings
 
-# from .paging_getter import paging_getter
-
 from .states import FlowMenu
 from .getters import paging_getter
 from .callbacks import (
@@ -42,29 +40,3 @@ def flow_dialog() -> Dialog:
             parse_mode=ParseMode.HTML,
         )
     )
-
-
-
-# def flow_dialog() -> Dialog:
-#     return Dialog(
-#         Window(
-#             Const("📄 Посты для публикации:\n"),
-#             DynamicMedia("media"),
-#             Format("<b>{post[content_preview]}</b>\n\n"
-#                    "<b>Дата:</b> {post[pub_time]}\n"
-#                    "<b>Статус:</b> {post[status]}\n\n"
-#                    "<i>Пост {current_page} из {pages}</i>"),
-#             StubScroll(id="stub_scroll", pages="pages"),
-#             NumberedPager(scroll="stub_scroll"),
-#             Group(
-#                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
-#                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
-#                 Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),
-#                 width=2
-#             ),
-#             Cancel(Const("🔙 Назад")),
-#             getter=paging_getter,
-#             state=FlowMenu.posts_list,
-#             parse_mode=ParseMode.HTML,
-#         )
-#     )
