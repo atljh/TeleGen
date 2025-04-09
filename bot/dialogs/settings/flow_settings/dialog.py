@@ -74,7 +74,7 @@ def create_flow_settings_window():
                 id="title_highlight", 
                 on_click=toggle_title_highlight
             ),
-            Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
+            # Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
             Button(Const("📊 Кількість постів у флоу"), id="posts_in_flow", on_click=set_posts_in_flow),
             Button(Const("📚 Налаштування джерел"), id="source_settings", on_click=open_source_settings),
         ),
@@ -343,7 +343,7 @@ def create_flow_settings_dialog():
         create_flow_settings_window(),
         create_frequency_settings_window(),
         create_character_limit_window(),
-        create_ad_block_settings_window(),
+        # create_ad_block_settings_window(),
         create_posts_in_flow_window(),
 
         create_sources_dialog(),
