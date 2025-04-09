@@ -198,7 +198,9 @@ def create_select_source_type():
             Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected),
             Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_source_type_selected),
         ),
-        Back(Const("◀️ Назад")),
+        Row(
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
         state=FlowSettingsMenu.add_source_type,
         parse_mode=ParseMode.HTML
     )
@@ -255,7 +257,9 @@ def create_edit_source():
             Button(Const("✏️ Змінити посилання"), id="edit_link", on_click=to_edit_link),
             Button(Const("♻️ Змінити тип"), id="edit_type", on_click=to_edit_type),
         ),
-        Back(Const("◀️ Назад")),
+        Row(
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
         state=FlowSettingsMenu.edit_source,
         getter=get_current_source
     )
