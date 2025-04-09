@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 from dialogs.generation.states import GenerationMenu
 
 async def to_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    selected_channel =  manager.dialog_data.get('selected_channel')
+    selected_channel = manager.dialog_data.get("selected_channel", manager.start_data["selected_channel"])
     await manager.start(
         GenerationMenu.channel_main,
         mode=StartMode.RESET_STACK,

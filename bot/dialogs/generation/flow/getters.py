@@ -27,36 +27,11 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         for idx, post in enumerate(raw_posts):
             pub_time = post.publication_date.strftime("%d.%m.%Y %H:%M") if post.publication_date else "Без дати"
             
-            media = None
-            if hasattr(post, 'media_url') and post.media_url:
-                media_url = post.media_url
-                logging.info(f"Original media URL: {media_url}")
-                
-                # Convert relative URL to absolute URL
-                if media_url.startswith('/'):
-                    # Remove leading slash if present
-                    media_url = media_url[1:] if media_url.startswith('/') else media_url
-                    # Construct full URL
-                    media_url = f"{settings.BASE_URL.rstrip('/')}/{media_url}"
-                
-                logging.info(f"Processed media URL: {media_url}")
-                
-                if not media_url.startswith(('http://', 'https://')):
-                    logging.error(f"Invalid media URL format: {media_url}")
-                else:
-                    try:
-                        media = MediaAttachment(
-                            ContentType.PHOTO,
-                            url=media_url
-                        )
-                        response = requests.head(media_url)
-                        if response.status_code != 200:
-                            logging.error(f"Media URL not accessible: {media_url}")
-                            media = None
-                    except Exception as e:
-                        logging.error(f"Error creating media attachment: {e}")
-                        media = None
-            
+            media = MediaAttachment(
+                        path=post.media_path,
+                        type="photo"
+                    ),
+
             posts.append({
                 "id": str(post.id),
                 "idx": idx,
