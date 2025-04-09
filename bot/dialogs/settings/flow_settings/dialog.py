@@ -174,7 +174,7 @@ def create_sources_dialog():
             Button(Const("✏️ Редагувати джерело"), id="edit_source", on_click=to_select_source_to_edit),
             Button(Const("🗑 Видалити джерело"), id="delete_source", on_click=to_select_source_to_delete),
         ),
-        Button(Const("🔙 Назад"), id="back_to_settings", on_click=back_to_settings),
+        Button(Const("🔙 Назад"), id="back_to_settings", on_click=open_flow_settings),
         state=FlowSettingsMenu.source_settings,
         parse_mode=ParseMode.HTML,
         getter=get_sources_data

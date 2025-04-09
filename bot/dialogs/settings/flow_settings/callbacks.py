@@ -54,6 +54,20 @@ async def open_main_settings(callback: CallbackQuery, button: Button, manager: D
         mode=StartMode.RESET_STACK 
     )
 
+async def back_to_settings(callback: CallbackQuery, b: Button, manager: DialogManager):
+    selected_channel = manager.dialog_data.get("selected_channel")
+    channel_flow = manager.dialog_data.get('channel_flow')
+    if not channel_flow:
+        await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
+        return
+    await manager.start(
+        FlowSettingsMenu.flow_settings,
+        data={
+            "selected_channel": selected_channel,
+            "channel_flow": channel_flow
+        },
+        mode=StartMode.RESET_STACK 
+    )
 
 # ================== ОСНОВНЫЕ ОБРАБОТЧИКИ ФЛОУ ==================
 
@@ -209,9 +223,6 @@ async def to_select_source_to_delete(c: CallbackQuery, b: Button, m: DialogManag
         await c.answer("Немає джерел для видалення")
         return
     await m.switch_to(FlowSettingsMenu.select_source_to_delete)
-
-async def back_to_settings(c: CallbackQuery, b: Button, m: DialogManager):
-    await m.done()
 
 
 async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
