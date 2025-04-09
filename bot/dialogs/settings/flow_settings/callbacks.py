@@ -273,6 +273,69 @@ async def on_source_selected_for_edit(
 async def on_edit_link_clicked(c: CallbackQuery, b: Button, m: DialogManager):
     await m.switch_to(FlowSettingsMenu.edit_source_link)
 
+async def on_new_type_selected(
+    callback: CallbackQuery, 
+    button: Button, 
+    manager: DialogManager
+):
+    try:
+        flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+        if not flow:
+            raise ValueError("Не знайдено дані флоу")
+        
+        source_idx = manager.dialog_data.get("editing_source_idx")
+        if source_idx is None:
+            raise ValueError("Не вказано індекс джерела")
+        
+        type_mapping = {
+            "source_web": "web",
+            "source_instagram": "instagram",
+            "source_telegram": "telegram",
+        }
+        
+        new_type = type_mapping.get(button.widget_id)
+        if not new_type:
+            raise ValueError(f"Невідомий тип джерела: {button.widget_id}")
+        
+        flow.sources[source_idx]["type"] = new_type
+        flow.sources[source_idx]["updated_at"] = datetime.now().isoformat()
+        
+        flow_service = Container.flow_service()
+        await flow_service.update_flow(
+            flow_id=flow.id,
+            sources=flow.sources
+        )
+        
+        await callback.answer(
+            f"✅ Тип змінено на: {new_type}",
+            show_alert=True
+        )
+        
+        await manager.done()
+        await manager.start(
+            FlowSettingsMenu.source_settings,
+            data={"current_flow": flow}
+        )
+        
+    except ValueError as e:
+        error_msg = f"Помилка валідації: {str(e)}"
+        logger.warning(error_msg)
+        await callback.answer(error_msg, show_alert=True)
+        await manager.back()
+        
+    except IndexError:
+        error_msg = "Джерело не знайдено (невірний індекс)"
+        logger.error(error_msg)
+        await callback.answer(error_msg, show_alert=True)
+        await manager.done()
+        
+    except Exception as e:
+        error_msg = "Критична помилка при зміні типу"
+        logger.critical(f"{error_msg}: {str(e)}", exc_info=True)
+        await callback.answer(error_msg, show_alert=True)
+        await manager.done()
+
+
 async def on_source_selected_for_delete(c: CallbackQuery, s, m: DialogManager, item_id: str):
     flow_service = Container.flow_service()
     flow_id = m.dialog_data["channel_flow"].id
@@ -282,7 +345,7 @@ async def on_source_selected_for_delete(c: CallbackQuery, s, m: DialogManager, i
     await m.switch_to(FlowSettingsMenu.select_action)
 
 async def to_edit_link(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(FlowSettingsMenu.add_source_link)
+    await manager.switch_to(FlowSettingsMenu.edit_source_link)
 
 async def to_edit_type(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(FlowSettingsMenu.add_source_type)
+    await manager.switch_to(FlowSettingsMenu.edit_source_type)

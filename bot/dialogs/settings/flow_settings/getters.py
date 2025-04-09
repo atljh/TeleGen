@@ -166,26 +166,7 @@ async def get_sources_list(dialog_manager: DialogManager, **kwargs):
             "idx": idx,
             "full_link": src['link']
         })
-    logging.info(formatted_sources)
     return {"sources": formatted_sources}
-
-# async def get_sources_for_selection(dialog_manager: DialogManager, **kwargs):
-#     flow = (
-#         dialog_manager.dialog_data.get("channel_flow") 
-#         or dialog_manager.start_data.get("channel_flow")
-#     )
-    
-#     sources = getattr(flow, "sources", [])
-    
-#     formatted_sources = [
-#         {"type": src.get("type", "?"), "link": src.get("link", "?"), "idx": idx}
-#         for idx, src in enumerate(sources)
-#     ]
-    
-#     return {
-#         "formatted_sources": formatted_sources,
-#         "has_sources": bool(sources)
-#     }
 
 async def get_source_type_data(dialog_manager: DialogManager, **kwargs):
     source_type = dialog_manager.dialog_data.get("new_source_type", "джерела")

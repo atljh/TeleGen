@@ -22,6 +22,7 @@ from .states import FlowSettingsMenu
 from .callbacks import (
     back_to_settings,
     character_limit,
+    on_new_type_selected,
     on_source_link_entered,
     on_source_selected_for_delete,
     on_source_selected_for_edit,
@@ -246,9 +247,9 @@ def create_edit_source_type():
     return Window(
         Const("📚 Виберіть тип джерела:"),
         Column(
-            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_source_type_selected),
-            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected),
-            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_source_type_selected),
+            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_new_type_selected),
+            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_new_type_selected),
+            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_new_type_selected),
         ),
         Back(Const("◀️ Назад")),
         state=FlowSettingsMenu.edit_source_type,
@@ -267,7 +268,7 @@ def create_input_source_link():
             filter=link_filter
         ),
         Back(Const("◀️ Назад")),
-        state=FlowSettingsMenu.add_source_link,
+        state=FlowSettingsMenu.edit_source_link,
         parse_mode=ParseMode.HTML,
         getter=get_source_type_data
     )
@@ -319,8 +320,9 @@ def create_flow_settings_dialog():
 
         create_sources_dialog(),
         create_select_source_type(),
-        create_input_source_link(),
         create_select_edit_source(),
         create_edit_source(),
+        create_edit_source_type(),
+        create_input_source_link(),
         create_select_delete_source(),
     )
