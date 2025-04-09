@@ -51,8 +51,8 @@ def create_generation_dialog():
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow),
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),
-                Button(Const("Буфер"), id="buffer", on_click=on_buffer),
-                Button(Const("Забронювати рекламний топ"), id="book_recall", on_click=on_book_recall),
+                # Button(Const("Буфер"), id="buffer", on_click=on_buffer),
+                # Button(Const("Забронювати рекламний топ"), id="book_recall", on_click=on_book_recall),
             ),
             Row(
                 Back(Const("🔙 Назад")),

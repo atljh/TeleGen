@@ -17,3 +17,4 @@ class FlowSettingsMenu(StatesGroup):
     edit_source_link = State()
     edit_source_type = State()          
     select_source_to_delete = State()
+    confirm_delete_source = State()

@@ -410,13 +410,29 @@ async def on_source_new_link_entered(
         await message.answer("⛔ Произошла непредвиденная ошибка")
         await manager.done()
 
-async def on_source_selected_for_delete(callback: CallbackQuery, s, manager: DialogManager, item_id: str):
-    flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
-
-    idx = int(item_id) - 1
-
-    deleted_source = flow.sources[idx]
+async def on_source_selected_for_delete(callback: CallbackQuery, select, manager: DialogManager, item_id: str):
+    manager.dialog_data["source_to_delete"] = item_id
     
+    await manager.switch_to(FlowSettingsMenu.confirm_delete_source)
+
+
+
+async def get_source_to_delete_data(dialog_manager: DialogManager, **kwargs):
+    flow = dialog_manager.dialog_data.get("channel_flow", dialog_manager.start_data["channel_flow"])
+    item_id = dialog_manager.dialog_data["source_to_delete"]
+    idx = int(item_id) - 1
+    source_to_delete = flow.sources[idx]
+    
+    return {
+        "source_to_delete": source_to_delete
+    }
+
+async def confirm_delete_source(callback: CallbackQuery, button: Button, manager: DialogManager):
+    flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+    item_id = manager.dialog_data["source_to_delete"]
+    idx = int(item_id) - 1
+    
+    deleted_source = flow.sources[idx]
     flow.sources.pop(idx)
     
     flow_service = Container.flow_service()
@@ -430,6 +446,11 @@ async def on_source_selected_for_delete(callback: CallbackQuery, s, manager: Dia
         show_alert=True
     )
     await manager.switch_to(FlowSettingsMenu.source_settings)
+
+async def cancel_delete_source(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.answer("Видалення скасовано")
+    await manager.switch_to(FlowSettingsMenu.select_source_to_delete)
+
 
 async def to_edit_link(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowSettingsMenu.edit_source_link)

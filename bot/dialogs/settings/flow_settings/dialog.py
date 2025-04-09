@@ -17,11 +17,14 @@ from .getters import (
     get_sources_data,
     get_sources_list,
     posts_in_flow_getter,
+    get_source_to_delete_data,
 )
 from .states import FlowSettingsMenu
 from .callbacks import (
     back_to_settings,
+    cancel_delete_source,
     character_limit,
+    confirm_delete_source,
     on_new_type_selected,
     on_source_link_entered,
     on_source_new_link_entered,
@@ -303,26 +306,36 @@ def create_edit_source_link():
 
 def create_select_delete_source():
     return Window(
-            Const("Оберіть джерело для видалення:"),
-            ScrollingGroup(
-                Select(
-                    Format("{item[type]} - {item[link]}"),
-                    id="sources_select",
-                    item_id_getter=lambda item: item["id"],
-                    items="sources",
-                    on_click=on_source_selected_for_delete,
-                ),
-                width=1,
-                height=5,
-                id='delete_select'
+        Const("Оберіть джерело для видалення:"),
+        ScrollingGroup(
+            Select(
+                Format("{item[type]} - {item[link]}"),
+                id="sources_select",
+                item_id_getter=lambda item: item["id"],
+                items="sources",
+                on_click=on_source_selected_for_delete,
             ),
-            Row(
-                Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
-            ),
-            state=FlowSettingsMenu.select_source_to_delete,
-            getter=get_sources_data
-        )
+            width=1,
+            height=5,
+            id='delete_select'
+        ),
+        Row(
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
+        state=FlowSettingsMenu.select_source_to_delete,
+        getter=get_sources_data
+    )
 
+def create_confirm_delete_source():
+    return Window(
+        Format("Ви впевнені, що хочете видалити джерело {source_to_delete[type]} - {source_to_delete[link]}?"),
+        Row(
+            Button(Const("✅ Так"), id="confirm_delete", on_click=confirm_delete_source),
+            Button(Const("❌ Ні"), id="cancel_delete", on_click=cancel_delete_source),
+        ),
+        state=FlowSettingsMenu.confirm_delete_source,
+        getter=get_source_to_delete_data
+    )
 
 
 def create_flow_settings_dialog():
@@ -341,4 +354,5 @@ def create_flow_settings_dialog():
         create_edit_source_type(),
         create_edit_source_link(),
         create_select_delete_source(),
+        create_confirm_delete_source(),
     )

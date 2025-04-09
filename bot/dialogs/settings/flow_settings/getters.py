@@ -178,3 +178,14 @@ async def get_source_type_data(dialog_manager: DialogManager, **kwargs):
         "source_type": source_type,
         "link_example": examples.get(source_type, "https://example.com")
     }
+
+
+async def get_source_to_delete_data(dialog_manager: DialogManager, **kwargs):
+    flow = dialog_manager.dialog_data.get("channel_flow", dialog_manager.start_data["channel_flow"])
+    item_id = dialog_manager.dialog_data["source_to_delete"]
+    idx = int(item_id) - 1
+    source_to_delete = flow.sources[idx]
+    
+    return {
+        "source_to_delete": source_to_delete
+    }
