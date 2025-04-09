@@ -8,9 +8,8 @@ from bot.containers import Container
 from .states import FlowMenu
 
 
-
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
-    post_id = manager.dialog_data.get("current_post_id")
+    post_id = manager.dialog_data.get("current_post_id") 
     # post_service = Container.post_service()
     # await post_service.publish_post(post_id)
     await callback.answer(f"Пост {post_id} опублiкован!")

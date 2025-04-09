@@ -3,15 +3,32 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
-from .states import GenerationMenu
+from dialogs.generation.states import GenerationMenu
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 
 from .flow.states import FlowMenu
+from bot.containers import Container
 
 logger = logging.getLogger(__name__)
 
-from bot.containers import Container
+
+async def go_back_to_channels(
+    callback: CallbackQuery,
+    button: Button,
+    manager: DialogManager
+):
+    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get('selected_channel')
+    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get('channel_flow')
+
+    await manager.start(
+        GenerationMenu.channel_main,
+        data={
+            "selected_channel": channel,
+            "channel_flow": channel_flow,
+            "item_id": str(channel.id)
+        },
+    )
 
 async def on_channel_selected(
     callback: CallbackQuery,
@@ -33,7 +50,8 @@ async def on_channel_selected(
         
         flow_service = Container.flow_service()
         channel_flow = await flow_service.get_flow_by_channel_id(int(item_id))
-
+        manager.dialog_data['item_id'] = item_id
+        
         manager.dialog_data.update({
             "selected_channel": selected_channel,
             "channel_flow": channel_flow
@@ -52,6 +70,8 @@ async def add_channel(callback: CallbackQuery, button: Button, manager: DialogMa
 async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
     channel_flow = manager.dialog_data.get('channel_flow')
+    item_id = manager.dialog_data.get('item_id')
+
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
         return
@@ -60,6 +80,7 @@ async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManage
         data={
             "selected_channel": selected_channel,
             "channel_flow": channel_flow,
+            "channel_id": item_id
             },
         mode=StartMode.RESET_STACK 
     )

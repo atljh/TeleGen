@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog import DialogManager
 
 from bot.containers import Container
-from .states import GenerationMenu
+from dialogs.generation.states import GenerationMenu
 from .callbacks import (
     on_channel_selected,
     add_channel,
