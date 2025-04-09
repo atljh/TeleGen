@@ -24,6 +24,7 @@ from .callbacks import (
     character_limit,
     on_new_type_selected,
     on_source_link_entered,
+    on_source_new_link_entered,
     on_source_selected_for_delete,
     on_source_selected_for_edit,
     on_source_type_selected,
@@ -213,7 +214,9 @@ def create_input_source_link():
             on_success=on_source_link_entered,
             filter=link_filter
         ),
-        Back(Const("◀️ Назад")),
+        Row(
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
         state=FlowSettingsMenu.add_source_link,
         parse_mode=ParseMode.HTML,
         getter=get_source_type_data
@@ -237,42 +240,13 @@ def create_select_edit_source():
             width=1,
             height=5,
         ),
-        Back(Const("◀️ Назад")),
+        Row(
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
         state=FlowSettingsMenu.edit_select_source,
         parse_mode=ParseMode.HTML,
         getter=get_sources_list
     )
-
-def create_edit_source_type():
-    return Window(
-        Const("📚 Виберіть тип джерела:"),
-        Column(
-            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_new_type_selected),
-            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_new_type_selected),
-            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_new_type_selected),
-        ),
-        Back(Const("◀️ Назад")),
-        state=FlowSettingsMenu.edit_source_type,
-        parse_mode=ParseMode.HTML
-    )
-
-def create_input_source_link():
-    return Window(
-        Format(
-            "🔗 Введіть посилання для {source_type}:\n\n"
-            "Приклад: <code>{link_example}</code>"
-        ),
-        TextInput(
-            id="source_link_input",
-            on_success=on_source_link_entered,
-            filter=link_filter
-        ),
-        Back(Const("◀️ Назад")),
-        state=FlowSettingsMenu.edit_source_link,
-        parse_mode=ParseMode.HTML,
-        getter=get_source_type_data
-    )
-
 
 def create_edit_source():
     return Window(
@@ -285,6 +259,41 @@ def create_edit_source():
         state=FlowSettingsMenu.edit_source,
         getter=get_current_source
     )
+
+def create_edit_source_type():
+    return Window(
+        Const("📚 Виберіть тип джерела:"),
+        Column(
+            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_new_type_selected),
+            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_new_type_selected),
+            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_new_type_selected),
+        ),
+        Row(
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
+        state=FlowSettingsMenu.edit_source_type,
+        parse_mode=ParseMode.HTML
+    )
+
+def create_edit_source_link():
+    return Window(
+        Format(
+            "🔗 Введіть посилання для {source_type}:\n\n"
+            "Приклад: <code>{link_example}</code>"
+        ),
+        TextInput(
+            id="source_link_input",
+            on_success=on_source_new_link_entered,
+            filter=link_filter
+        ),
+        Row(
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+        ),
+        state=FlowSettingsMenu.edit_source_link,
+        parse_mode=ParseMode.HTML,
+        getter=get_source_type_data
+    )
+
 
 #=======================================DELETE FLOW===========================================
 
@@ -303,7 +312,9 @@ def create_select_delete_source():
                 height=5,
                 id='delete_select'
             ),
-            Back(Const("◀️ Назад")),
+            Row(
+                Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            ),
             state=FlowSettingsMenu.select_source_to_delete,
             getter=get_sources_data
         )
@@ -320,9 +331,10 @@ def create_flow_settings_dialog():
 
         create_sources_dialog(),
         create_select_source_type(),
+        create_input_source_link(),
         create_select_edit_source(),
         create_edit_source(),
         create_edit_source_type(),
-        create_input_source_link(),
+        create_edit_source_link(),
         create_select_delete_source(),
     )

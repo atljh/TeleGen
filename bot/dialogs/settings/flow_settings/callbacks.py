@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 from aiogram import F
+from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, StartMode, Window, Dialog
 from aiogram_dialog.widgets.kbd import Button
@@ -333,6 +334,70 @@ async def on_new_type_selected(
         await callback.answer(error_msg, show_alert=True)
         await manager.done()
 
+async def validate_url(message: Message):
+    return message.text.startswith(('http://', 'https://'))
+
+async def on_source_new_link_entered(
+    message: Message, 
+    widget, 
+    manager: DialogManager, 
+    new_link: str
+):
+    try:
+        if not manager.has_context():
+            await message.answer("🚫 Спробуйте заново")
+            return
+
+        flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+
+        if not flow:
+            raise ValueError("Помилка при завантаженi флоу")
+
+        source_idx = manager.dialog_data.get("editing_source_idx")
+        if source_idx is None or not (0 <= source_idx < len(flow.sources)):
+            raise ValueError("Помилка при отриманнi джерела")
+
+        if not validate_url(new_link):
+            await message.answer("❌ Використовуйте http:// або https://")
+            return
+
+        if any(
+            i != source_idx and src["link"] == new_link 
+            for i, src in enumerate(flow.sources)
+        ):
+            await message.answer("⚠️ Це джерело вже додано!")
+            return
+
+        old_link = flow.sources[source_idx]["link"]
+        flow.sources[source_idx]["link"] = new_link
+        flow.sources[source_idx]["updated_at"] = datetime.now().isoformat()
+
+        flow_service = Container.flow_service()
+        updated_flow = await flow_service.update_flow(
+            flow_id=flow.id,
+            sources=flow.sources
+        )
+
+        await message.answer(
+            f"✅ Джерело успішно змiнено!:\n\n"
+            f"Було: <code>{old_link}</code>\n"
+            f"Стало: <code>{new_link}</code>",
+            parse_mode=ParseMode.HTML
+        )
+
+        await manager.switch_to(
+            FlowSettingsMenu.source_settings
+        )
+
+    except ValueError as e:
+        logger.warning(f"Validation error: {str(e)}")
+        await message.answer(f"❌ Ошибка: {str(e)}")
+        await manager.back()
+
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        await message.answer("⛔ Произошла непредвиденная ошибка")
+        await manager.done()
 
 async def on_source_selected_for_delete(c: CallbackQuery, s, m: DialogManager, item_id: str):
     flow_service = Container.flow_service()
