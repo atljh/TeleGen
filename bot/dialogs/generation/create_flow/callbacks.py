@@ -203,7 +203,8 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
     except Exception as e:
         logger.error(f"Signature input error: {e}")
         await message.answer("❌ Помилка збереження підпису")
-        await manager.back()
+        await manager.switch_to(CreateFlowMenu.select_source)
+
 
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
@@ -219,7 +220,8 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
     except Exception as e:
         logger.error(f"Flow creation error: {e}")
         await callback.answer("❌ Помилка створення Flow")
-        await manager.back()
+        await manager.switch_to(CreateFlowMenu.select_source)
+
 
 # ==================CONFIRMATION======================
 

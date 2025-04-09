@@ -1,5 +1,4 @@
 
-from aiogram.types import CallbackQuery
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.kbd import Select, ScrollingGroup, Button, Row, Button, Group
