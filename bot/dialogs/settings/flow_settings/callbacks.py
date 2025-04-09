@@ -357,7 +357,7 @@ async def on_source_new_link_entered(
         if source_idx is None or not (0 <= source_idx < len(flow.sources)):
             raise ValueError("Помилка при отриманнi джерела")
 
-        if not validate_url(new_link):
+        if not await validate_url(new_link):
             await message.answer("❌ Використовуйте http:// або https://")
             return
 
@@ -399,13 +399,26 @@ async def on_source_new_link_entered(
         await message.answer("⛔ Произошла непредвиденная ошибка")
         await manager.done()
 
-async def on_source_selected_for_delete(c: CallbackQuery, s, m: DialogManager, item_id: str):
-    flow_service = Container.flow_service()
-    flow_id = m.dialog_data["channel_flow"].id
+async def on_source_selected_for_delete(callback: CallbackQuery, s, manager: DialogManager, item_id: str):
+    flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+
+    idx = int(item_id) - 1
+
+    deleted_source = flow.sources[idx]
     
-    await flow_service.remove_source_from_flow(flow_id, item_id)
-    await c.answer("Джерело видалено!")
-    await m.switch_to(FlowSettingsMenu.select_action)
+    flow.sources.pop(idx)
+    
+    flow_service = Container.flow_service()
+    updated_flow = await flow_service.update_flow(
+        flow_id=flow.id,
+        sources=flow.sources
+    )
+    
+    await callback.answer(
+        f"✅ Джерело {deleted_source['type']} видалено!",
+        show_alert=True
+    )
+    await manager.switch_to(FlowSettingsMenu.source_settings)
 
 async def to_edit_link(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowSettingsMenu.edit_source_link)
