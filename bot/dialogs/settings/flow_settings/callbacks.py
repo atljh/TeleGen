@@ -311,10 +311,8 @@ async def on_new_type_selected(
             show_alert=True
         )
         
-        await manager.done()
-        await manager.start(
-            FlowSettingsMenu.source_settings,
-            data={"current_flow": flow}
+        await manager.switch_to(
+            FlowSettingsMenu.source_settings
         )
         
     except ValueError as e:

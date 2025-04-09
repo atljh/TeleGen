@@ -82,7 +82,6 @@ async def get_sources_data(dialog_manager: DialogManager, **kwargs):
         dialog_manager.dialog_data.get("channel_flow") 
         or dialog_manager.start_data.get("channel_flow")
     )
-    
     sources = getattr(flow_data, "sources", [])
     
     formatted_sources = [
