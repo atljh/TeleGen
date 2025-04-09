@@ -91,10 +91,10 @@ def validate_link(link: str, source_type: str) -> bool:
         "instagram": r"(https?:\/\/)?(www\.)?instagram\.com\/[A-Za-z0-9_\.]+",
         "facebook": r"(https?:\/\/)?(www\.)?facebook\.com\/[A-Za-z0-9_\.]+",
         "web": r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
-        "telegram": r"(https?:\/\/)?(www\.)?t\.me\/[A-Za-z0-9_\.]+"
+        "telegram": r"(https?:\/\/)?(www\.)?t\.me\/(\+)?[A-Za-z0-9_\.]+"
     }
     import re
-    return bool(re.match(patterns.get(source_type.lower(), ""), link))
+    return bool(re.fullmatch(patterns.get(source_type.lower(), ""), link))
 
 # ==================FREQUENCY======================
 
