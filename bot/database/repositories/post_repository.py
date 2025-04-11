@@ -14,7 +14,6 @@ class PostRepository:
         scheduled_time: Optional[datetime] = None,
         media_url: Optional[str] = None
     ) -> Post:
-        """Создает новый пост с валидацией"""
         if scheduled_time and scheduled_time < datetime.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
             
@@ -28,14 +27,12 @@ class PostRepository:
         )
 
     async def get(self, post_id: int) -> Post:
-        """Получает пост по ID"""
         try:
             return await Post.objects.select_related('flow').aget(id=post_id)
         except Post.DoesNotExist:
             raise PostNotFoundError(f"Post with id={post_id} not found")
 
     async def exists(self, post_id: int) -> bool:
-        """Проверяет существование поста"""
         return await Post.objects.filter(id=post_id).aexists()
 
     async def list(
@@ -47,7 +44,6 @@ class PostRepository:
         limit: int = 100,
         offset: int = 0
     ) -> List[Post]:
-        """Получает список постов с фильтрацией"""
         query = Post.objects.all()
         
         if flow_id:
@@ -72,7 +68,6 @@ class PostRepository:
         status: Optional[str] = None,
         batch_size: int = 50
     ) -> AsyncGenerator[List[Post], None]:
-        """Потоковая выгрузка постов"""
         query = Post.objects.all()
         if flow_id:
             query = query.filter(flow_id=flow_id)
@@ -97,7 +92,6 @@ class PostRepository:
         post_id: int,
         **fields
     ) -> Post:
-        """Обновляет пост"""
         post = await self.get(post_id)
         for field, value in fields.items():
             setattr(post, field, value)
@@ -105,7 +99,6 @@ class PostRepository:
         return post
 
     async def delete(self, post_id: int) -> None:
-        """Удаляет пост"""
         post = await self.get(post_id)
         await post.adelete()
 
@@ -114,7 +107,6 @@ class PostRepository:
         flow_id: Optional[int] = None,
         status: Optional[str] = None
     ) -> int:
-        """Считает количество постов"""
         query = Post.objects.all()
         if flow_id:
             query = query.filter(flow_id=flow_id)
@@ -123,7 +115,6 @@ class PostRepository:
         return await query.acount()
 
     async def get_scheduled_posts(self, before: datetime) -> List[Post]:
-        """Получает запланированные посты"""
         return await self.list(
             status='scheduled',
             scheduled_before=before

@@ -24,3 +24,6 @@ class AISettingsNotFoundError(Exception):
 
 class StatisticsNotFoundError(Exception):
     pass
+
+class InvalidOperationError(Exception):
+    pass
