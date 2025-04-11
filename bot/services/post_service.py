@@ -85,7 +85,7 @@ class PostService:
         post = await self.get_post(post_id)
         if post.status == "published":
             raise InvalidOperationError("Post is already published")
-        
+    
         return await self.update_post(
             post_id=post_id,
             status="published",
