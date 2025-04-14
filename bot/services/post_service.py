@@ -1,9 +1,16 @@
+import os
+import logging
+from django.utils import timezone
+from urllib.parse import unquote
+from aiogram.enums import ParseMode
+from aiogram.types import FSInputFile, URLInputFile
 from datetime import datetime
 from typing import Optional, List
 from aiogram import Bot
 from bot.database.dtos import PostDTO, FlowDTO
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
+from django.conf import settings
 
 class PostService:
     def __init__(
@@ -74,6 +81,7 @@ class PostService:
         status: Optional[str] = None,
         source_url: Optional[str] = None,
         scheduled_time: Optional[datetime] = None,
+        publication_date: Optional[datetime] = None,
         is_published: Optional[bool] = None
     ) -> PostDTO:
         if not await self.post_repo.exists(post_id):
@@ -88,6 +96,7 @@ class PostService:
             status=status,
             source_url=source_url,
             scheduled_time=scheduled_time,
+            publication_date=publication_date,
             is_published=is_published
         )
         return PostDTO.from_orm(updated_post)
@@ -95,36 +104,77 @@ class PostService:
 
     async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
         post = await self.get_post(post_id)
-        
+
         if post.is_published:
             raise InvalidOperationError("Пост вже опублiкований!")
         
         try:
+            caption = post.content[:1024] if len(post.content) > 1024 else post.content
+            
             if post.media_type == 'image':
-                with open(post.image.path, 'rb') as photo:
-                    message = await self.bot.send_photo(
+                if post.media_url.startswith(('http://', 'https://')):
+                    photo = URLInputFile(post.media_url)
+                    await self.bot.send_photo(
                         chat_id=channel_id,
                         photo=photo,
-                        caption=post.content
+                        caption=caption,
+                        parse_mode=ParseMode.HTML
                     )
+                else:
+                    relative_path = post.media_url.lstrip("/") if post.media_url else None
+                    media_path = os.path.join(settings.BASE_DIR, relative_path) if relative_path else None
+                    if media_path and os.path.exists(media_path):
+                        photo = FSInputFile(media_path)
+                        await self.bot.send_photo(
+                            chat_id=channel_id,
+                            photo=photo,
+                            caption=caption,
+                            parse_mode=ParseMode.HTML
+                        )
+            
             elif post.media_type == 'video':
-                with open(post.video.path, 'rb') as video:
-                    message = await self.bot.send_video(
+                if post.media_url.startswith(('http://', 'https://')):
+                    video = URLInputFile(post.media_url)
+                    await self.bot.send_video(
                         chat_id=channel_id,
                         video=video,
-                        caption=post.content
+                        caption=caption,
+                        parse_mode=ParseMode.HTML
                     )
+                else:
+                    decoded_path = unquote(post.media_url)
+                    relative_path = decoded_path.lstrip("/")
+                    media_path = os.path.join(settings.BASE_DIR, relative_path)
+                    if media_path and os.path.exists(media_path):
+                        video = FSInputFile(media_path)
+                        await self.bot.send_video(
+                            chat_id=channel_id,
+                            video=video,
+                            caption=caption,
+                            parse_mode=ParseMode.HTML
+                        )
+                    else:
+                        raise InvalidOperationError("Файл не знайден")
+            
             else:
-                message = await self.bot.send_message(
-                    chat_id=channel_id,
-                    text=post.content
-                )
+                if len(post.content) > 4096:
+                    chunks = [post.content[i:i+4096] for i in range(0, len(post.content), 4096)]
+                    for chunk in chunks:
+                        await self.bot.send_message(
+                            chat_id=channel_id,
+                            text=chunk
+                        )
+                else:
+                    await self.bot.send_message(
+                        chat_id=channel_id,
+                        text=post.content
+                    )
             
             return await self.update_post(
                 post_id=post_id,
                 is_published=True,
                 content=post.content,
-                publication_date=datetime.now(),
+                publication_date=timezone.now(),
                 scheduled_time=None
             )
             

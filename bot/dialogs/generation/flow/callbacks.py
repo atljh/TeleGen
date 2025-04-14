@@ -25,7 +25,7 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     post_service = Container.post_service()
     
     try:
-        await post_service.publish_post(post_id, channel.id)
+        await post_service.publish_post(post_id, channel.channel_id)
         await callback.answer(f"Пост {post_id} успiшно опублiковано в канал!")
     except InvalidOperationError as e:
         await callback.answer(str(e), show_alert=True)
