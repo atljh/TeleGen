@@ -1,19 +1,18 @@
-
-from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.media import DynamicMedia
-from aiogram_dialog.widgets.kbd import Select, ScrollingGroup, Button, Row, Button, Group
-from aiogram_dialog.widgets.kbd import StubScroll, NumberedPager, Cancel
-from aiogram_dialog.widgets.text import Const, Format
 from aiogram.enums import ParseMode 
 from aiogram_dialog import DialogManager
-from django.conf import settings
+from aiogram_dialog import Dialog, Window
+from aiogram_dialog.widgets.media import DynamicMedia
+from aiogram_dialog.widgets.kbd import (
+    Select, ScrollingGroup, Button, Row, Button, Group,
+    StubScroll, NumberedPager, Cancel
+)
+from aiogram_dialog.widgets.text import Const, Format
 
 from .states import FlowMenu
 from .getters import paging_getter
 from .callbacks import (
     on_edit_post,
     on_publish_post,
-    on_save_to_buffer,
     on_schedule_post
 )
 

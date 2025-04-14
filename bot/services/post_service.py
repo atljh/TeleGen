@@ -67,7 +67,7 @@ class PostService:
         status: Optional[str] = None,
         source_url: Optional[str] = None,
         scheduled_time: Optional[datetime] = None,
-        media_url: Optional[str] = None
+        is_published: Optional[bool] = None
     ) -> PostDTO:
         if not await self.post_repo.exists(post_id):
             raise PostNotFoundError(f"Post with id {post_id} not found")
@@ -81,18 +81,19 @@ class PostService:
             status=status,
             source_url=source_url,
             scheduled_time=scheduled_time,
-            media_url=media_url
+            is_published=is_published
         )
         return PostDTO.from_orm(updated_post)
     
     async def publish_post(self, post_id: int) -> PostDTO:
         post = await self.get_post(post_id)
-        if post.status == "published":
+        if post.is_published:
             raise InvalidOperationError("Post is already published")
     
         return await self.update_post(
             post_id=post_id,
-            status="published",
+            is_published=True,
+            content=post.content,
             scheduled_time=None
         )
     
@@ -107,3 +108,39 @@ class PostService:
             scheduled_time_lt=datetime.now()
         )
         return [PostDTO.from_orm(post) for post in posts]
+    
+    async def update_post_image(
+        self,
+        post_id: int,
+        image_url: str
+    ) -> PostDTO:
+        if not await self.post_repo.exists(post_id):
+            raise PostNotFoundError(f"Post with id {post_id} not found")
+
+        await self.post_repo.update_image(post_id, image_url)
+        updated_post = await self.post_repo.get(post_id)
+        return PostDTO.from_orm(updated_post)
+
+    async def update_post_video(
+        self,
+        post_id: int,
+        video_url: str
+    ) -> PostDTO:
+        if not await self.post_repo.exists(post_id):
+            raise PostNotFoundError(f"Post with id {post_id} not found")
+
+        await self.post_repo.update_video(post_id, video_url)
+        updated_post = await self.post_repo.get(post_id)
+        return PostDTO.from_orm(updated_post)
+
+    async def remove_post_media(
+        self,
+        post_id: int
+    ) -> PostDTO:
+        if not await self.post_repo.exists(post_id):
+            raise PostNotFoundError(f"Post with id {post_id} not found")
+
+        await self.post_repo.remove_media(post_id)
+        updated_post = await self.post_repo.get(post_id)
+        return PostDTO.from_orm(updated_post)
+

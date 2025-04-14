@@ -6,12 +6,15 @@ from aiogram_dialog import DialogManager, StartMode
 from bot.containers import Container
 
 from .states import FlowMenu
-
+from .getters import paging_getter
 
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
-    post_id = manager.dialog_data.get("current_post_id") 
-    # post_service = Container.post_service()
-    # await post_service.publish_post(post_id)
+    dialog_data = await paging_getter(manager)
+    current_post = dialog_data["post"]
+    logging.info(current_post)
+    post_id = current_post["id"]
+    post_service = Container.post_service()
+    await post_service.publish_post(post_id)
     await callback.answer(f"Пост {post_id} опублiкован!")
     await manager.show()
 
