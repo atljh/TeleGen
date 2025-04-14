@@ -4,6 +4,7 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
 from bot.containers import Container
+from bot.database.exceptions import InvalidOperationError
 
 from .states import FlowMenu
 from .getters import paging_getter
@@ -11,11 +12,14 @@ from .getters import paging_getter
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = await paging_getter(manager)
     current_post = dialog_data["post"]
-    logging.info(current_post)
     post_id = current_post["id"]
     post_service = Container.post_service()
-    await post_service.publish_post(post_id)
-    await callback.answer(f"Пост {post_id} опублiкован!")
+    try:
+        await post_service.publish_post(post_id)
+    except InvalidOperationError as e:
+        await callback.answer(str(e))
+    else:
+        await callback.answer(f"Пост {post_id} опублiкован!")
     await manager.show()
 
 async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):

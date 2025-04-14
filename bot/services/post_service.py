@@ -88,7 +88,7 @@ class PostService:
     async def publish_post(self, post_id: int) -> PostDTO:
         post = await self.get_post(post_id)
         if post.is_published:
-            raise InvalidOperationError("Post is already published")
+            raise InvalidOperationError("Пост вже опублiкований!")
     
         return await self.update_post(
             post_id=post_id,
