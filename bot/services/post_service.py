@@ -1,13 +1,20 @@
 from datetime import datetime
 from typing import Optional, List
+from aiogram import Bot
 from bot.database.dtos import PostDTO, FlowDTO
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 
 class PostService:
-    def __init__(self, post_repository: PostRepository, flow_repository: FlowRepository):
+    def __init__(
+        self,
+        post_repository: PostRepository,
+        flow_repository: FlowRepository,
+        bot: Bot
+        ):
         self.post_repo = post_repository
         self.flow_repo = flow_repository
+        self.bot = bot
 
     async def create_post(
         self,
@@ -85,17 +92,44 @@ class PostService:
         )
         return PostDTO.from_orm(updated_post)
     
-    async def publish_post(self, post_id: int) -> PostDTO:
+
+    async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
         post = await self.get_post(post_id)
+        
         if post.is_published:
             raise InvalidOperationError("Пост вже опублiкований!")
-    
-        return await self.update_post(
-            post_id=post_id,
-            is_published=True,
-            content=post.content,
-            scheduled_time=None
-        )
+        
+        try:
+            if post.media_type == 'image':
+                with open(post.image.path, 'rb') as photo:
+                    message = await self.bot.send_photo(
+                        chat_id=channel_id,
+                        photo=photo,
+                        caption=post.content
+                    )
+            elif post.media_type == 'video':
+                with open(post.video.path, 'rb') as video:
+                    message = await self.bot.send_video(
+                        chat_id=channel_id,
+                        video=video,
+                        caption=post.content
+                    )
+            else:
+                message = await self.bot.send_message(
+                    chat_id=channel_id,
+                    text=post.content
+                )
+            
+            return await self.update_post(
+                post_id=post_id,
+                is_published=True,
+                content=post.content,
+                publication_date=datetime.now(),
+                scheduled_time=None
+            )
+            
+        except Exception as e:
+            raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
     
     async def delete_post(self, post_id: int) -> None:
         if not await self.post_repo.exists(post_id):

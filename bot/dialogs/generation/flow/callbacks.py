@@ -11,15 +11,27 @@ from .getters import paging_getter
 
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = await paging_getter(manager)
+    start_data = manager.start_data or {}
+
     current_post = dialog_data["post"]
     post_id = current_post["id"]
+    
+    channel = start_data.get("selected_channel") or dialog_data.get("selected_channel")
+    
+    if not channel:
+        await callback.answer("Канал не вибрано!")
+        return
+    
     post_service = Container.post_service()
+    
     try:
-        await post_service.publish_post(post_id)
+        await post_service.publish_post(post_id, channel.id)
+        await callback.answer(f"Пост {post_id} успiшно опублiковано в канал!")
     except InvalidOperationError as e:
-        await callback.answer(str(e))
-    else:
-        await callback.answer(f"Пост {post_id} опублiкован!")
+        await callback.answer(str(e), show_alert=True)
+    except Exception as e:
+        await callback.answer(f"Помилка: {str(e)}", show_alert=True)
+    
     await manager.show()
 
 async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):

@@ -10,27 +10,22 @@ from bot.containers import Container
 from bot.utils.logging import setup_logging
 from dialogs import register_dialogs
 
-load_dotenv()
-
-API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
 async def main():
-    session = AiohttpSession()
-    bot = Bot(token=API_TOKEN, session=session)
+    container = Container()
+    
+    bot = container.bot()
     
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
 
     register_handlers(dp)
-    
     register_dialogs(dp)
     setup_dialogs(dp)
     
-    container = Container()
     setup_logging()
     
     await dp.start_polling(
-        bot, 
+        bot,
         allowed_updates=["my_chat_member", "message", "callback_query"],
         skip_updates=True
     )

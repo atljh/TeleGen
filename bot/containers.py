@@ -1,4 +1,6 @@
 from dependency_injector import containers, providers
+from aiogram import Bot
+from aiogram.client.session.aiohttp import AiohttpSession
 from bot.database.repositories import (
     UserRepository,
     ChannelRepository,
@@ -21,8 +23,24 @@ from bot.services import (
     AISettingsService,
     StatisticsService,
 )
+import os
 
 class Container(containers.DeclarativeContainer):
+    wiring_config = containers.WiringConfiguration(
+        modules=[
+            "handlers",
+            "dialogs",
+            "bot.services.post_service"
+        ]
+    )
+    
+    session = providers.Singleton(AiohttpSession)
+    bot = providers.Singleton(
+        Bot,
+        token=os.getenv("TELEGRAM_BOT_TOKEN"),
+        session=session
+    )
+    
     user_repository = providers.Factory(UserRepository)
     channel_repository = providers.Factory(ChannelRepository)
     flow_repository = providers.Factory(FlowRepository)
@@ -53,7 +71,8 @@ class Container(containers.DeclarativeContainer):
     post_service = providers.Factory(
         PostService,
         post_repository=post_repository,
-        flow_repository=flow_repository
+        flow_repository=flow_repository,
+        bot=bot
     )
 
     draft_service = providers.Factory(
