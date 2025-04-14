@@ -32,6 +32,10 @@ class PostRepository:
         except Post.DoesNotExist:
             raise PostNotFoundError(f"Post with id={post_id} not found")
 
+
+    async def get_posts_by_flow_id(self, flow_id: int) -> list[Post]:
+        return [post async for post in Post.objects.filter(flow_id=flow_id).order_by('-created_at')]
+    
     async def exists(self, post_id: int) -> bool:
         return await Post.objects.filter(id=post_id).aexists()
 
