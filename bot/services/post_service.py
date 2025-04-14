@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from bot.database.dtos import PostDTO, FlowDTO
 from bot.database.repositories import PostRepository, FlowRepository
-from bot.database.exceptions import NotFoundError, InvalidOperationError
+from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 
 class PostService:
     def __init__(self, post_repository: PostRepository, flow_repository: FlowRepository):
@@ -20,7 +20,7 @@ class PostService:
     ) -> PostDTO:
 
         if not await self.flow_repo.exists(flow_id):
-            raise NotFoundError(f"Flow with id {flow_id} not found")
+            raise PostNotFoundError(f"Flow with id {flow_id} not found")
         
         if scheduled_time and scheduled_time < datetime.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
@@ -38,7 +38,7 @@ class PostService:
     async def get_post(self, post_id: int) -> PostDTO:
         post = await self.post_repo.get(post_id)
         if not post:
-            raise NotFoundError(f"Post with id {post_id} not found")
+            raise PostNotFoundError(f"Post with id {post_id} not found")
         return PostDTO.from_orm(post)
     
     async def list_posts(
@@ -66,7 +66,7 @@ class PostService:
         media_url: Optional[str] = None
     ) -> PostDTO:
         if not await self.post_repo.exists(post_id):
-            raise NotFoundError(f"Post with id {post_id} not found")
+            raise PostNotFoundError(f"Post with id {post_id} not found")
 
         if scheduled_time and scheduled_time < datetime.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
@@ -94,7 +94,7 @@ class PostService:
     
     async def delete_post(self, post_id: int) -> None:
         if not await self.post_repo.exists(post_id):
-            raise NotFoundError(f"Post with id {post_id} not found")
+            raise PostNotFoundError(f"Post with id {post_id} not found")
         await self.post_repo.delete(post_id)
 
     async def get_scheduled_posts(self) -> List[PostDTO]:
