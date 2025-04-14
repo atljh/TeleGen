@@ -41,6 +41,10 @@ class PostService:
             raise PostNotFoundError(f"Post with id {post_id} not found")
         return PostDTO.from_orm(post)
     
+    async def get_posts_by_flow_id(self, flow_id: int) -> list[PostDTO]:
+        posts = await self.post_repository.get_posts_by_flow_id(flow_id=flow_id)
+        return [PostDTO.from_orm(post) for post in posts]
+
     async def list_posts(
         self, 
         flow_id: Optional[int] = None,
