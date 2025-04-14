@@ -21,7 +21,7 @@ def flow_dialog() -> Dialog:
     return Dialog(
         Window(
             DynamicMedia("media_content"),
-            Format("{post[status]} | {post[pub_time]}"),
+            Format("<b>{post[status]} | {post[created_time]}\n</b>"),
             Format("{post[content_preview]}"),
             StubScroll(id="stub_scroll", pages="pages"),
             NumberedPager(scroll="stub_scroll"),

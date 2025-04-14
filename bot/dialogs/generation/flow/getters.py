@@ -43,6 +43,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
         for idx, post in enumerate(raw_posts):
             pub_time = post.publication_date.strftime("%d.%m.%Y %H:%M") if post.publication_date else "Без дати"
+            created_time = post.created_at.strftime("%d.%m.%Y %H:%M") if post.created_at else "Без дати"
 
             relative_path = post.media_url.lstrip("/") if post.media_url else None
             media_path = os.path.join(settings.BASE_DIR, relative_path) if relative_path else None
@@ -71,6 +72,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 "idx": idx,
                 "content_preview": (post.content[:1000] + "...") if len(post.content) > 1000 else post.content,
                 "pub_time": pub_time,
+                "created_time": created_time,
                 "status": "✅ Опубліковано" if post.is_published else "📝 Чернетка",
                 "full_content": post.content,
                 "media_path": media,
@@ -94,6 +96,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 "idx": post.get("idx", 0),
                 "content_preview": post.get("content_preview", ""),
                 "pub_time": post.get("pub_time", ""),
+                "created_time": post.get("created_time", ""),
                 "status": post.get("status", ""),
                 "full_content": post.get("full_content", ""),
                 "media_path": post.get("media_path"),
