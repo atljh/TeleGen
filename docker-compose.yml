@@ -66,8 +66,11 @@ services:
       - db
       - redis
     volumes:
+      - ./admin_panel:/admin_panel
       - ./bot:/bot
-    command: ["celery", "-A", "bot.celery_app", "worker", "--loglevel=info"]
+    command: >
+      sh -c "cd /bot &&
+      celery -A bot.celery_app worker --loglevel=info"
 
 
   celery_beat:
@@ -83,8 +86,11 @@ services:
       - db
       - redis
     volumes:
+      - ./admin_panel:/admin_panel
       - ./bot:/bot
-    command: ["celery", "-A", "bot.celery_app", "beat", "--loglevel=info"]
+    command: >
+      sh -c "cd /bot &&
+      celery -A bot.celery_app beat --loglevel=info"
 
 volumes:
   postgres_data:
