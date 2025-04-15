@@ -50,6 +50,9 @@ class FlowRepository:
         except Exception as e:
             logging.error(f"Error during flow creation: {e}", exc_info=True)
 
+    async def exists(self, flow_id: int) -> bool:
+        return await Flow.objects.filter(id=flow_id).aexists()
+
     async def get_flow_by_id(self, id: int) -> Flow:
         try:
             return await Flow.objects.aget(id=id)
