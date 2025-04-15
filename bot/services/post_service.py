@@ -31,7 +31,7 @@ class PostService:
         generated_posts = []
         
         for _ in range(flow.flow_volume):
-            content = await self.userbot_service.generate_content(flow)
+            content = await self._generate_post_content(flow)
             post = await self.create(
                 flow_id=flow.id,
                 content=content,
@@ -40,17 +40,10 @@ class PostService:
             )
             generated_posts.append(post)
         
-        await self.flow_repo.update(
-            flow.id,
-            last_generated_at=timezone.now(),
-            next_generation_time=self._calculate_next_generation(flow)
-        )
-        
         return generated_posts
     
-    def _calculate_next_generation(self, flow: FlowDTO) -> datetime:
-        """Вычисляет время следующей генерации"""
-        # ... логика расчета ...
+    async def _generate_post_content(self, flow: FlowDTO) -> str:
+        return "Сгенерированный контент поста"
 
     async def create_post(
         self,
