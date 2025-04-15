@@ -17,11 +17,40 @@ class PostService:
         self,
         post_repository: PostRepository,
         flow_repository: FlowRepository,
-        bot: Bot
+        bot: Bot,
+        userbot_service
         ):
         self.post_repo = post_repository
         self.flow_repo = flow_repository
         self.bot = bot
+        self.userbot_service = userbot_service
+
+
+    async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
+        flow = await self.flow_repo.get(flow_id)
+        generated_posts = []
+        
+        for _ in range(flow.flow_volume):
+            content = await self.userbot_service.generate_content(flow)
+            post = await self.create(
+                flow_id=flow.id,
+                content=content,
+                status="draft",
+                is_auto_generated=True
+            )
+            generated_posts.append(post)
+        
+        await self.flow_repo.update(
+            flow.id,
+            last_generated_at=timezone.now(),
+            next_generation_time=self._calculate_next_generation(flow)
+        )
+        
+        return generated_posts
+    
+    def _calculate_next_generation(self, flow: FlowDTO) -> datetime:
+        """Вычисляет время следующей генерации"""
+        # ... логика расчета ...
 
     async def create_post(
         self,

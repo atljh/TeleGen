@@ -13,7 +13,8 @@ from .getters import paging_getter
 from .callbacks import (
     on_edit_post,
     on_publish_post,
-    on_schedule_post
+    on_schedule_post,
+    on_force_generate
 )
 
 def flow_dialog() -> Dialog:
@@ -29,6 +30,7 @@ def flow_dialog() -> Dialog:
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
                 Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),
+                Button(Const("Генерацiя"), id="force_generate", on_click=on_force_generate),
                 width=2
             ),
             Row(

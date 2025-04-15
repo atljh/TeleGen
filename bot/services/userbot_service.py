@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from telethon import TelegramClient
 from bot.database.dtos import FlowDTO
 
@@ -6,13 +7,10 @@ class UserbotService:
     def __init__(self, api_id: int, api_hash: str):
         self.api_id = api_id
         self.api_hash = api_hash
+        logging.info(api_hash)
         
     async def generate_content(self, flow: FlowDTO) -> str:
-        """
-        Генерирует контент на основе настроек флоу
-        """
         async with TelegramClient('userbot_session', self.api_id, self.api_hash) as client:
-            # Анализ источников
             sources_content = []
             for source in flow.sources:
                 if source['type'] == 'telegram':

@@ -22,6 +22,7 @@ from bot.services import (
     PaymentService,
     AISettingsService,
     StatisticsService,
+    UserbotService
 )
 import os
 
@@ -55,7 +56,11 @@ class Container(containers.DeclarativeContainer):
         UserService,
         user_repository=user_repository,
     )
-
+    userbot_service = providers.Singleton(
+        UserbotService,
+        api_id=os.getenv("USERBOT_API_ID"),
+        api_hash=os.getenv("USERBOT_API_HASH")
+    )
     channel_service = providers.Factory(
         ChannelService,
         channel_repository=channel_repository,
@@ -72,7 +77,8 @@ class Container(containers.DeclarativeContainer):
         PostService,
         post_repository=post_repository,
         flow_repository=flow_repository,
-        bot=bot
+        bot=bot,
+        userbot_service=userbot_service
     )
 
     draft_service = providers.Factory(

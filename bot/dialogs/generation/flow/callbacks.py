@@ -25,13 +25,20 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     post_service = Container.post_service()
     
     try:
-        await post_service.publish_post(post_id, channel.channel_id)
+        updated_post = await post_service.publish_post(post_id, channel.channel_id)
+        manager.dialog_data["post"] = {
+            **current_post,
+            "status": "✅ Опубліковано",
+            "pub_time": updated_post.publication_date.strftime("%d.%m.%Y %H:%M"),
+            "is_published": True
+        }
         await callback.answer(f"Пост {post_id} успiшно опублiковано в канал!")
     except InvalidOperationError as e:
         await callback.answer(str(e), show_alert=True)
     except Exception as e:
         await callback.answer(f"Помилка: {str(e)}", show_alert=True)
-    
+        logging.exception("Помилка при публікації посту")
+
     await manager.show()
 
 async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -47,3 +54,8 @@ async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: Di
     # post_service = Container.post_service()
     # await post_service.save_to_buffer(post_id)
     await callback.answer("Пост збережено в буфер!")
+
+async def on_force_generate(callback: CallbackQuery, button: Button, manager: DialogManager):
+    flow_id = manager.dialog_data["flow_id"]
+    # generate_flow_posts.delay(flow_id)
+    await callback.answer("Генерація постів запущена!")
