@@ -67,7 +67,8 @@ services:
       - redis
     volumes:
       - ./bot:/bot
-    command: ["celery", "-A", "bot.celery", "worker", "--loglevel=info"]
+    command: ["celery", "-A", "bot.celery_app", "worker", "--loglevel=info"]
+
 
   celery_beat:
     build:
@@ -83,7 +84,7 @@ services:
       - redis
     volumes:
       - ./bot:/bot
-    command: ["celery", "-A", "bot.celery", "beat", "--loglevel=info"]
+    command: ["celery", "-A", "bot.celery_app", "beat", "--loglevel=info"]
 
 volumes:
   postgres_data:

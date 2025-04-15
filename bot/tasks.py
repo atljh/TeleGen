@@ -1,6 +1,6 @@
 import logging
 from admin_panel.admin_panel.models import Flow
-from celery import shared_task
+from bot.celery_app import app
 from django.utils import timezone
 from bot.services import FlowService, PostService
 from bot.containers import Container
@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 
-@shared_task
+@app.task
 def generate_flow_posts(flow_id: int):
     post_service = Container.post_service()
     return post_service.generate_auto_posts(flow_id)
 
-@shared_task
+@app.task
 def check_flows_generation():
     flow_service = Container.flow_service()
     post_service = Container.post_service()
