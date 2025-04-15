@@ -21,8 +21,6 @@ services:
     restart: always
     env_file:
       - .env
-    # ports:
-    #   - "5432:5432"
     volumes:
       - ./data/postgres_data:/var/lib/postgresql/data
     environment:
@@ -54,6 +52,38 @@ services:
       - ./admin_panel:/admin_panel
       - ./staticfiles:/admin/staticfiles
     command: ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bot
+    container_name: celery_worker
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./bot:/bot
+    command: ["celery", "-A", "bot.celery", "worker", "--loglevel=info"]
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bot
+    container_name: celery_beat
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./bot:/bot
+    command: ["celery", "-A", "bot.celery", "beat", "--loglevel=info"]
 
 volumes:
   postgres_data:
