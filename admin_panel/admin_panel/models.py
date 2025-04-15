@@ -90,6 +90,10 @@ class Flow(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата оновлення")
 
+    is_auto_generated = models.BooleanField(default=False, verbose_name="Автогенерація")
+    next_generation_time = models.DateTimeField(null=True, blank=True, verbose_name="Наступна генерація")
+    last_generated_at = models.DateTimeField(null=True, blank=True, verbose_name="Остання генерація")
+
     def __str__(self):
         return f"{self.name} ({self.theme})"
 
