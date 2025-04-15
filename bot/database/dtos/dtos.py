@@ -81,7 +81,8 @@ class PostDTO(BaseModel):
     is_published: bool
     is_draft: bool
     created_at: datetime
-    
+    scheduled_time: datetime
+
     media_url: Optional[str] = None
     media_type: Optional[MediaType] = None
     

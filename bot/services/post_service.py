@@ -35,7 +35,7 @@ class PostService:
             post = await self.create_post(
                 flow_id=flow.id,
                 content=content,
-                status="draft",
+                is_draft=True,
             )
             generated_posts.append(post)
         
@@ -49,7 +49,7 @@ class PostService:
         flow_id: int,
         content: str,
         source_url: Optional[str] = None,
-        status: str = "draft",
+        is_draft: bool = True,
         scheduled_time: Optional[datetime] = None,
         media_url: Optional[str] = None
     ) -> PostDTO:
@@ -60,11 +60,13 @@ class PostService:
         if scheduled_time and scheduled_time < datetime.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
 
+        flow = await self.flow_repo.get_flow_by_id(flow_id)
+
         post = await self.post_repo.create(
-            flow_id=flow_id,
+            flow=flow,
             content=content,
             source_url=source_url,
-            status=status,
+            is_draft=is_draft,
             scheduled_time=scheduled_time,
             media_url=media_url
         )

@@ -11,7 +11,7 @@ class PostRepository:
         flow: Flow,
         content: str,
         source_url: Optional[str] = None,
-        status: str = "draft",
+        is_draft: bool = True,
         scheduled_time: Optional[datetime] = None,
         media_url: Optional[str] = None,
         media_type: Optional[MediaType] = None
@@ -23,7 +23,7 @@ class PostRepository:
             flow=flow,
             content=content,
             source_url=source_url,
-            status=status,
+            is_draft=is_draft,
             scheduled_time=scheduled_time
         )
         

@@ -113,6 +113,7 @@ class Post(models.Model):
     publication_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата публікації")
     is_published = models.BooleanField(default=False, verbose_name="Опубліковано")
     is_draft = models.BooleanField(default=False, verbose_name="Чернетка")
+    scheduled_time = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     image = models.ImageField(
         upload_to='posts/images/',
