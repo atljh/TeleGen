@@ -71,7 +71,7 @@ services:
     command: >
       sh -c "cd / && 
       PYTHONPATH=/:/admin_panel 
-      celery -A bot.celery_app worker --loglevel=info"
+      celery -A bot.celery_app worker --loglevel=info --pool=solo"
     environment:
       PYTHONPATH: /:/admin_panel
 
@@ -91,9 +91,9 @@ services:
       - ./admin_panel:/admin_panel
       - ./bot:/bot
     command: >
-      sh -c "cd / && 
+      sh -c "cd /bot &&
       PYTHONPATH=/:/admin_panel 
-      celery -A bot.celery_app beat --loglevel=info"
+      celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     environment:
       PYTHONPATH: /:/admin_panel
 

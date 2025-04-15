@@ -1,32 +1,25 @@
-import logging
-from celery.schedules import crontab
-from admin_panel.admin_panel.models import Flow
-from bot.celery_app import app
-from django.utils import timezone
-from bot.services import FlowService, PostService
+from celery import shared_task
 from bot.containers import Container
-from bot.services import PostService
+import asyncio
 
-logger = logging.getLogger(__name__)
+@shared_task(bind=True) 
+def check_flows_generation(self):
+    async def _async_wrapper():
+        flow_service = Container.flow_service()
+        post_service = Container.post_service()
 
+        flows = await flow_service.get_flows_due_for_generation()
 
+        for flow in flows:
+            try:
+                await post_service.generate_auto_posts(flow.id)
+                await flow_service.update_next_generation_time(flow.id)
+            except Exception as e:
+                self.retry(exc=e, countdown=60)
 
-
-
-@app.on_after_configure.connect
-def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(
-        crontab(minute='*/10'),
-        check_flows_generation.s(),
-        name='check-flows-generation'
-    )
-
-@app.task
-def check_flows_generation():
-    flow_service = Container.flow_service()
-    post_service = Container.post_service()
-    
-    flows = flow_service.get_flows_due_for_generation()
-    for flow in flows:
-        post_service.generate_auto_posts(flow.id)
-        flow_service.update_next_generation_time(flow)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_async_wrapper())
+    finally:
+        loop.close()

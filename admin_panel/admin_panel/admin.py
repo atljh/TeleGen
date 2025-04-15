@@ -36,9 +36,9 @@ class ChannelAdmin(admin.ModelAdmin):
 
 @admin.register(Flow)
 class FlowAdmin(admin.ModelAdmin):
-    list_display = ('name', 'channel', 'theme', 'frequency', 'created_at')
-    search_fields = ('name', 'theme', )
-    list_filter = ('frequency',)
+    list_display = ('name', 'is_auto_generated', 'frequency', 'next_generation_time')
+    list_filter = ('is_auto_generated', 'frequency')
+    search_fields = ('name', 'theme')
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):

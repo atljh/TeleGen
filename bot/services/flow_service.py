@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from typing import List
 from django.utils import timezone
 from bot.database.dtos import FlowDTO
 from bot.database.dtos import ContentLength, GenerationFrequency
@@ -110,16 +111,14 @@ class FlowService:
             logger.error(f"Error deleting flow {flow_id}: {e}")
             raise
 
-    async def get_flows_due_for_generation(self) -> list[FlowDTO]:
+    async def get_flows_due_for_generation(self) -> List[FlowDTO]:
         now = timezone.now()
-        flows = await self.flow_repo.list(
+        return await self.flow_repository.list(
             is_auto_generated=True,
             next_generation_time__lte=now
         )
-        return flows
     
     async def update_next_generation_time(self, flow: FlowDTO):
-        """Обновляет время следующей генерации"""
         if flow.frequency == "hourly":
             next_time = timezone.now() + timedelta(hours=1)
         elif flow.frequency == "12h":
@@ -129,7 +128,7 @@ class FlowService:
         else:
             next_time = None
         
-        await self.flow_repo.update(
+        await self.flow_repository.update_flow(
             flow.id,
             next_generation_time=next_time,
             last_generated_at=timezone.now()

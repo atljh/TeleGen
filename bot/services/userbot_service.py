@@ -7,7 +7,6 @@ class UserbotService:
     def __init__(self, api_id: int, api_hash: str):
         self.api_id = api_id
         self.api_hash = api_hash
-        logging.info(api_hash)
         
     async def generate_content(self, flow: FlowDTO) -> str:
         async with TelegramClient('userbot_session', self.api_id, self.api_hash) as client:

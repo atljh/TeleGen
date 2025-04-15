@@ -3,6 +3,10 @@ from datetime import datetime
 from admin_panel.admin_panel.models import Flow
 from bot.database.dtos import GenerationFrequency
 from bot.database.exceptions import FlowNotFoundError
+from typing import List, Optional
+from datetime import datetime
+from django.db.models import Q
+from bot.database.dtos.dtos import FlowDTO
 
 class FlowRepository:
     async def create_flow(
@@ -71,3 +75,47 @@ class FlowRepository:
 
     async def delete_flow(self, flow: Flow):
         await flow.adelete()
+    
+    async def list(
+        self,
+        is_auto_generated: bool | None = None,
+        next_generation_time__lte: datetime | None = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> list[FlowDTO]:
+        queryset = Flow.objects.select_related('channel')
+        
+        if is_auto_generated is not None:
+            queryset = queryset.filter(is_auto_generated=is_auto_generated)
+        
+        if next_generation_time__lte is not None:
+            queryset = queryset.filter(next_generation_time__lte=next_generation_time__lte)
+        
+        return [
+            self._to_dto(flow) async for flow in 
+            queryset
+                .order_by('-created_at')
+                [offset:offset+limit]
+        ]
+
+    def _to_dto(self, flow: Flow) -> FlowDTO:
+        return FlowDTO(
+            id=flow.id,
+            channel_id=flow.channel.id,
+            name=flow.name,
+            theme=flow.theme,
+            sources=flow.sources,
+            content_length=flow.content_length,
+            use_emojis=flow.use_emojis,
+            use_premium_emojis=flow.use_premium_emojis,
+            title_highlight=flow.title_highlight,
+            cta=flow.cta,
+            frequency=flow.frequency,
+            signature=flow.signature,
+            flow_volume=flow.flow_volume,
+            ad_time=flow.ad_time,
+            is_auto_generated=flow.is_auto_generated,
+            next_generation_time=flow.next_generation_time,
+            created_at=flow.created_at,
+            updated_at=flow.updated_at
+        )
