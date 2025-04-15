@@ -17,9 +17,7 @@ class UserbotService:
                     messages = await client.get_messages(entity, limit=10)
                     sources_content.extend([msg.text for msg in messages if msg.text])
             
-            # Генерация поста на основе полученных данных
             return self._format_post(sources_content, flow)
     
     def _format_post(self, sources: list[str], flow: FlowDTO) -> str:
         """Форматирование поста согласно настройкам флоу"""
-        # ... логика форматирования ...

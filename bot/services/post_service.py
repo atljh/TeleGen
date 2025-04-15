@@ -27,12 +27,12 @@ class PostService:
 
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
-        flow = await self.flow_repo.get(flow_id)
+        flow = await self.flow_repo.get_flow_by_id(flow_id)
         generated_posts = []
         
         for _ in range(flow.flow_volume):
             content = await self._generate_post_content(flow)
-            post = await self.create(
+            post = await self.create_post(
                 flow_id=flow.id,
                 content=content,
                 status="draft",
