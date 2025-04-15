@@ -36,7 +36,6 @@ class PostService:
                 flow_id=flow.id,
                 content=content,
                 status="draft",
-                is_auto_generated=True
             )
             generated_posts.append(post)
         

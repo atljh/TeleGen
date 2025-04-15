@@ -1,3 +1,4 @@
+import logging
 from celery import shared_task
 from bot.containers import Container
 import asyncio
@@ -9,7 +10,6 @@ def check_flows_generation(self):
         post_service = Container.post_service()
 
         flows = await flow_service.get_flows_due_for_generation()
-
         for flow in flows:
             try:
                 await post_service.generate_auto_posts(flow.id)
