@@ -118,7 +118,8 @@ class FlowService:
         )
         return flows
     
-    async def update_next_generation_time(self, flow: FlowDTO):
+    async def update_next_generation_time(self, flow_id: int):
+        flow = await self.flow_repository.get_flow_by_id(flow_id)
         if flow.frequency == "hourly":
             next_time = timezone.now() + timedelta(hours=1)
         elif flow.frequency == "12h":
@@ -128,7 +129,7 @@ class FlowService:
         else:
             next_time = None
         
-        await self.flow_repository.update_flow(
+        await self.update_flow(
             flow.id,
             next_generation_time=next_time,
             last_generated_at=timezone.now()

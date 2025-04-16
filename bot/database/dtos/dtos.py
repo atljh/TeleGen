@@ -60,6 +60,9 @@ class FlowDTO(BaseModel):
     ad_time: str | None      # Час для рекламних топів (HH:MM)
     created_at: datetime
     updated_at: datetime | None
+    next_generation_time: Optional[datetime] = None
+    last_generated_at: Optional[datetime] = None
+
 
     class Config:
         from_attributes = True

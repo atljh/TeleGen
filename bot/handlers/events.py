@@ -1,12 +1,16 @@
 import logging
-from aiogram import Router
+from aiogram import Router, types
 from aiogram.types import ChatMemberUpdated
-from aiogram.dispatcher.dispatcher import Dispatcher
+from aiogram.filters import ExceptionTypeFilter
+from aiogram_dialog.api.exceptions import UnknownIntent
 from aiogram.filters import (
     ChatMemberUpdatedFilter, IS_NOT_MEMBER,
     ADMINISTRATOR, IS_MEMBER,
     KICKED
 )
+from aiogram_dialog.api.exceptions import UnknownIntent
+from aiogram.types import Message
+
 from aiogram_dialog import DialogManager, StartMode
 from bot.containers import Container
 
@@ -65,3 +69,16 @@ async def bot_removed_from_channel(event: ChatMemberUpdated, dialog_manager: Dia
             )
         except Exception as e:
             logging.error(f"Не вдалося надіслати сповіщення: {e}")
+
+@channel_router.errors(ExceptionTypeFilter(UnknownIntent))
+async def handle_unknown_intent(event):
+    if event.update.message:
+        await event.update.message.answer("/start.")
+    return True
+
+@channel_router.errors()
+async def global_error_handler(event):
+    logging.error("Unhandled exception occurred", exc_info=event.exception)
+    if event.update.message:
+        await event.update.message.answer("Cпробуйте пiзнiше.")
+    return True 
