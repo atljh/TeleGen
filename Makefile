@@ -6,6 +6,9 @@ MANAGE = docker-compose exec admin_panel python manage.py
 up:
 	$(DOCKER_COMPOSE) up --build -d
 
+run:
+	$(DOCKER_COMPOSE) up -d --no-build
+
 down:
 	$(DOCKER_COMPOSE) down
 

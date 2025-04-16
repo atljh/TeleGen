@@ -51,3 +51,4 @@ Pillow
 telethon
 celery
 django-celery-beat
+watchdog

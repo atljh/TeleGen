@@ -4,9 +4,12 @@ from admin_panel.admin_panel.models import Flow
 from bot.database.dtos import GenerationFrequency
 from bot.database.exceptions import FlowNotFoundError
 from typing import List, Optional
+from django.db import models
 from datetime import datetime
 from django.db.models import Q
 from bot.database.dtos.dtos import FlowDTO
+from functools import reduce
+import operator
 
 class FlowRepository:
     async def create_flow(
@@ -82,20 +85,26 @@ class FlowRepository:
     async def list(
         self,
         next_generation_time__lte: datetime | None = None,
+        include_null_generation_time: bool = False,
         limit: int = 100,
         offset: int = 0
     ) -> list[FlowDTO]:
         queryset = Flow.objects.select_related('channel')
         
+        conditions = []
         if next_generation_time__lte is not None:
-            queryset = queryset.filter(next_generation_time__lte=next_generation_time__lte)
+            conditions.append(models.Q(next_generation_time__lte=next_generation_time__lte))
+        if include_null_generation_time:
+            conditions.append(models.Q(next_generation_time__isnull=True))
+        
+        if conditions:
+            queryset = queryset.filter(reduce(operator.or_, conditions))
 
-        return [
-            self._to_dto(flow) async for flow in 
-            queryset
-                .order_by('-created_at')
-                [offset:offset+limit]
-        ]
+        queryset = queryset.order_by('-created_at')
+        if limit is not None:
+            queryset = queryset[offset:offset+limit]
+
+        return [self._to_dto(flow) async for flow in queryset]
 
     def _to_dto(self, flow: Flow) -> FlowDTO:
         return FlowDTO(

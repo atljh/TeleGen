@@ -13,7 +13,8 @@ services:
       - redis
     volumes:
       - ./bot:/bot
-    command: ["python", "main.py"]
+    command: ["python", "watcher.py"]
+
 
   db:
     image: postgres:15
