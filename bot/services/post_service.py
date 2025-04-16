@@ -1,5 +1,6 @@
 import os
 import logging
+import random
 from django.utils import timezone
 from urllib.parse import unquote
 from aiogram.enums import ParseMode
@@ -8,9 +9,12 @@ from datetime import datetime
 from typing import Optional, List
 from aiogram import Bot
 from bot.database.dtos import PostDTO, FlowDTO
+from bot.database.dtos.dtos import ContentLength
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 from django.conf import settings
+
+from bot.services.userbot_service import UserbotService
 
 class PostService:
     def __init__(
@@ -18,7 +22,7 @@ class PostService:
         post_repository: PostRepository,
         flow_repository: FlowRepository,
         bot: Bot,
-        userbot_service
+        userbot_service: UserbotService
         ):
         self.post_repo = post_repository
         self.flow_repo = flow_repository
@@ -28,21 +32,123 @@ class PostService:
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
         flow = await self.flow_repo.get_flow_by_id(flow_id)
-        generated_posts = []
+        existing_count = await self.count_posts_in_flow(flow.id)
+        posts_to_generate = max(0, flow.flow_volume - existing_count)
         
-        for _ in range(flow.flow_volume):
-            content = await self._generate_post_content(flow)
-            post = await self.create_post(
-                flow_id=flow.id,
-                content=content,
-                is_draft=True,
-            )
-            generated_posts.append(post)
+        if posts_to_generate <= 0:
+            return []
+
+        generated_posts = []
+        for _ in range(posts_to_generate):
+            try:
+                content = await self._generate_post_content(flow)
+                post = await self.create_post(
+                    flow_id=flow.id,
+                    content=content,
+                    is_draft=True,
+                )
+                generated_posts.append(post)
+            except Exception as e:
+                logging.error(f"Error generating post: {e}")
+                continue
         
         return generated_posts
     
     async def _generate_post_content(self, flow: FlowDTO) -> str:
-        return "Сгенерированный контент поста"
+        raw_content = await self.userbot_service.get_raw_content(flow.sources)
+        
+        if not raw_content:
+            logging.warning(f"No content found for flow {flow.id}")
+            return "Не вдалося отримати контент з джерел"
+        
+        processed_content = self._process_content(
+            raw_content, 
+            flow.theme,
+            flow.content_length,
+            flow.use_emojis,
+            flow.use_premium_emojis,
+            flow.title_highlight,
+            flow.cta,
+            flow.signature
+        )
+        
+        return processed_content
+
+    def _process_content(
+        self,
+        raw_content: List[str],
+        theme: str,
+        content_length: ContentLength,
+        use_emojis: bool,
+        use_premium_emojis: bool,
+        title_highlight: bool,
+        cta: bool,
+        signature: Optional[str]
+    ) -> str:
+        selected_content = self._select_content_by_length(raw_content, content_length)
+        
+        formatted_content = []
+        for item in selected_content:
+            if use_emojis:
+                item = self._add_emojis(item, use_premium_emojis)
+            
+            if title_highlight:
+                item = self._highlight_titles(item)
+            
+            formatted_content.append(item)
+        
+        main_content = "\n\n".join(formatted_content)
+        
+        if theme:
+            main_content = f"Тема: {theme}\n\n{main_content}"
+        
+        if cta:
+            main_content += "\n\nЩо ви думаєте з цього приводу?"
+        
+        if signature:
+            main_content += f"\n\n{signature}"
+        
+        return main_content
+
+    def _select_content_by_length(self, content: List[str], length: ContentLength) -> List[str]:
+        if length == ContentLength.SHORT:
+            return [random.choice(content)] if content else []
+        elif length == ContentLength.MEDIUM:
+            return content[:2] if len(content) >= 2 else content
+        else:  # LONG
+            return content[:4] if len(content) >= 4 else content
+
+    def _add_emojis(self, text: str, premium: bool) -> str:
+        emoji_dict = {
+            '!': '❗',
+            '?': '❓',
+            'important': '⚠️',
+            'news': '📰',
+            'update': '🔄'
+        }
+        
+        if premium:
+            emoji_dict.update({
+                '!': '‼️',
+                '?': '❔',
+                'important': '🚨',
+                'news': '📻',
+                'update': '💫'
+            })
+        
+        for word, emoji in emoji_dict.items():
+            if word in text.lower():
+                text = f"{emoji} {text}"
+                break
+        
+        return text
+
+    def _highlight_titles(self, text: str) -> str:
+        lines = text.split('\n')
+        if len(lines) > 1:
+            lines[0] = f"<b>{lines[0]}</b>"
+        return '\n'.join(lines)
+
 
     async def create_post(
         self,

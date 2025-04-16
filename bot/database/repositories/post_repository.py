@@ -106,6 +106,9 @@ class PostRepository:
                 [offset:offset+limit]
         ]
 
+    async def count_posts_in_flow(self, flow_id: int) -> int:
+        return await Post.objects.filter(flow_id=flow_id).acount()
+
     async def update(
         self,
         post_id: int,

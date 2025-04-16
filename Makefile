@@ -7,7 +7,7 @@ up:
 	$(DOCKER_COMPOSE) up --build -d
 
 run:
-	$(DOCKER_COMPOSE) up -d --no-build
+	$(DOCKER_COMPOSE) up --no-build
 
 down:
 	$(DOCKER_COMPOSE) down

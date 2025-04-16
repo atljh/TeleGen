@@ -59,7 +59,8 @@ class Container(containers.DeclarativeContainer):
     userbot_service = providers.Singleton(
         UserbotService,
         api_id=os.getenv("USERBOT_API_ID"),
-        api_hash=os.getenv("USERBOT_API_HASH")
+        api_hash=os.getenv("USERBOT_API_HASH"),
+        phone=os.getenv("TELEGRAM_PHONE")
     )
     channel_service = providers.Factory(
         ChannelService,
