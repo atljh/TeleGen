@@ -20,8 +20,7 @@ class UserbotService:
             if self.client and self.client.is_connected():
                 return
 
-            session_path = "sessions/userbot_session.session"
-            os.makedirs(os.path.dirname(session_path), exist_ok=True)
+            session_path = "app/sessions/userbot.session"
 
             if os.path.exists(session_path):
                 logging.info("Session file exists")
@@ -106,7 +105,6 @@ class UserbotService:
     async def _get_telegram_messages(self, source_link: str) -> list:
         try:
             me = await self.client.get_me()
-            print(me)
             entity = await self.client.get_entity(source_link)
             return await self.client.get_messages(entity, limit=10)
         except Exception as e:
