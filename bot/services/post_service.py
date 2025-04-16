@@ -74,10 +74,14 @@ class PostService:
                 logging.warning(f"No content found for flow {flow.id}")
                 return "Контент не найден"
             
-            return self._format_content(
-                sources_content,
+            return self._process_content(
+                raw_content=sources_content,
                 theme=flow.theme,
+                content_length=flow.content_length,
                 use_emojis=flow.use_emojis,
+                use_premium_emojis=flow.use_premium_emojis,
+                title_highlight=flow.title_highlight,
+                cta=flow.cta,
                 signature=flow.signature
             )
         except Exception as e:
