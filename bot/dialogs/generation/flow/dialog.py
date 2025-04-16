@@ -25,7 +25,10 @@ def flow_dialog() -> Dialog:
             Format("<b>{post[status]} | {post[created_time]}\n</b>"),
             Format("{post[content_preview]}"),
             StubScroll(id="stub_scroll", pages="pages"),
-            NumberedPager(scroll="stub_scroll"),
+            Group(
+                NumberedPager(scroll="stub_scroll"),
+                width=5,
+            ),
             Group(
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
