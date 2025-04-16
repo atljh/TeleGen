@@ -9,7 +9,7 @@ from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 
 from .flow.states import FlowMenu
 from bot.containers import Container
-from bot.tasks import check_flows_generation
+from bot.tasks import force_flows_generation
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ async def on_book_recall(callback: CallbackQuery, button: Button, manager: Dialo
 async def on_force_generate(callback: CallbackQuery, button: Button, manager: DialogManager):
     
     try:
-        check_flows_generation.delay()
+        await force_flows_generation()
         await callback.answer("Генерацiя")
     except Exception as e:
         await callback.answer(f"Помилка: {str(e)}", show_alert=True)

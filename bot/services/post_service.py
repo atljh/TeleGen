@@ -32,7 +32,7 @@ class PostService:
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
         flow = await self.flow_repo.get_flow_by_id(flow_id)
-        existing_count = await self.count_posts_in_flow(flow.id)
+        existing_count = await self.post_repo.count_posts_in_flow(flow.id)
         posts_to_generate = max(0, flow.flow_volume - existing_count)
         
         if posts_to_generate <= 0:
