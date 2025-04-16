@@ -14,7 +14,8 @@ from .callbacks import (
     on_create_flow,
     on_buffer,
     on_book_recall,
-    on_flow
+    on_flow,
+    on_force_generate
 )
 from .gettets import (
     get_user_channels_data,
@@ -51,6 +52,7 @@ def create_generation_dialog():
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow),
                 Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),
+                Button(Const("Генерацiя"), id="force_generate", on_click=on_force_generate),
                 # Button(Const("Буфер"), id="buffer", on_click=on_buffer),
                 # Button(Const("Забронювати рекламний топ"), id="book_recall", on_click=on_book_recall),
             ),
