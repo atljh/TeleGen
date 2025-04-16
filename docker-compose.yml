@@ -67,6 +67,7 @@ services:
       - db
       - redis
     volumes:
+      - ./sessions:/app/sessions
       - ./admin_panel:/admin_panel
       - ./bot:/bot
     command: >

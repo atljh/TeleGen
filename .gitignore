@@ -178,3 +178,4 @@ staticfiles
 *.jpg
 *.png
 *.mp4
+*.session

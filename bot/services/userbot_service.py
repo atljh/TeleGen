@@ -1,36 +1,70 @@
+import os
 import asyncio
 import logging
 from telethon import TelegramClient
 from bot.database.dtos import FlowDTO
 
+
 class UserbotService:
-    def __init__(self, api_id: int, api_hash: str, phone: str = None, bot_token: str = None):
+    def __init__(self, api_id: int, api_hash: str, phone: str = None, session_dir: str = "sessions"):
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone = phone
-        self.bot_token = bot_token
+        self.session_dir = session_dir
         self.client = None
-        
+        self.lock = asyncio.Lock()
+        os.makedirs(self.session_dir, exist_ok=True)
+
     async def initialize(self):
-        session_name = 'userbot_session'
-        self.client = TelegramClient(session_name, self.api_id, self.api_hash)
-        
-        try:
-            if not await self.client.is_user_authorized():
-                if self.bot_token:
-                    await self.client.start(bot_token=self.bot_token)
-                elif self.phone:
-                    await self.client.start(phone=self.phone)
-                else:
-                    raise ValueError("Either phone or bot_token must be provided")
-        except Exception as e:
-            logging.error(f"Telegram auth error: {e}")
-            raise
+        async with self.lock:
+            if self.client and self.client.is_connected():
+                return
+
+            session_path = "sessions/userbot_session.session"
+            os.makedirs(os.path.dirname(session_path), exist_ok=True)
+
+            if os.path.exists(session_path):
+                logging.info("Session file exists")
+            else:
+                logging.info("Session file doesnt exists")
+
+            self.client = TelegramClient(
+                session=session_path,
+                api_id=self.api_id,
+                api_hash=self.api_hash,
+                connection_retries=5,
+                auto_reconnect=True
+            )
+            
+            try:
+                await self.client.connect()
+                
+                if not await self.client.is_user_authorized():
+                    logging.info("Starting authorization...")
+                    if self.phone:
+                        await self.client.start(phone=self.phone)
+                    else:
+                        raise ValueError("Phone number required")
+                        
+                logging.info("Telegram client ready")
+            except Exception as e:
+                logging.error(f"Initialization failed: {str(e)}")
+                await self.disconnect()
+                raise
+
+    async def disconnect(self):
+        async with self.lock:
+            if self.client and self.client.is_connected():
+                await self.client.disconnect()
+            self.client = None
+
+    async def _ensure_client(self):
+        if not self.client or not self.client.is_connected():
+            await self.initialize()
 
     async def generate_content(self, flow: FlowDTO) -> str:
-        if not self.client:
-            await self.initialize()
-            
+        await self._ensure_client()
+
         try:
             sources_content = []
             for source in flow.sources:
@@ -38,7 +72,7 @@ class UserbotService:
                     entity = await self.client.get_entity(source['link'])
                     messages = await self.client.get_messages(entity, limit=10)
                     sources_content.extend([msg.text for msg in messages if msg.text])
-            
+
             return self._format_post(sources_content, flow)
         except Exception as e:
             logging.error(f"Error generating content: {e}")
@@ -54,7 +88,9 @@ class UserbotService:
     async def get_content_from_sources(self, sources: list[dict]) -> list[str]:
         if not sources:
             return []
-            
+
+        await self.initialize()
+        
         content = []
         for source in sources:
             try:
@@ -65,29 +101,15 @@ class UserbotService:
                 logging.error(f"Error processing source {source.get('link')}: {str(e)}")
                 continue
                 
-        return content or ["Нет доступного контента"]
-    
-    async def _get_telegram_messages(self, source_link: str, limit: int = 10) -> list[str]:
-        if not self.client:
-            await self.initialize()
+        return content or ["No content available"]
 
+    async def _get_telegram_messages(self, source_link: str) -> list:
         try:
-            # Извлекаем username из ссылки (https://t.me/odessa_infonews -> odessa_infonews)
-            username = source_link.split('/')[-1]
-            
-            entity = await self.client.get_entity(username)
-            
-            messages = await self.client.get_messages(
-                entity,
-                limit=limit,
-                wait_time=2
-            )
-            
-            return [msg.text for msg in messages if hasattr(msg, 'text') and msg.text]
-            
-        except ValueError as e:
-            logging.error(f"Invalid source link {source_link}: {str(e)}")
-            return []
+            me = await self.client.get_me()
+            print(me)
+            entity = await self.client.get_entity(source_link)
+            return await self.client.get_messages(entity, limit=10)
         except Exception as e:
-            logging.error(f"Error fetching messages from {source_link}: {str(e)}")
+            logging.error(f"Error getting messages from {source_link}: {str(e)}")
             return []
+    
