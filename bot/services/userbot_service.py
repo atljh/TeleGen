@@ -110,4 +110,27 @@ class UserbotService:
         except Exception as e:
             logging.error(f"Error getting messages from {source_link}: {str(e)}")
             return []
-    
+
+    async def get_last_posts(self, sources: list[dict], posts_limit: int = 10) -> list[str]:
+        if not sources:
+            return []
+
+        await self._ensure_client()
+        
+        last_posts = []
+        for source in sources:
+            if source['type'] != 'telegram':
+                continue
+                
+            try:
+                entity = await self.client.get_entity(source['link'])
+                messages = await self.client.get_messages(
+                    entity,
+                    limit=posts_limit
+                )
+                last_posts.extend(msg.text for msg in messages if msg.text)
+            except Exception as e:
+                logging.error(f"Error processing source {source['link']}: {str(e)}")
+                continue
+        
+        return last_posts

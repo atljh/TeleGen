@@ -45,37 +45,62 @@ class PostService:
             logging.info(f"Flow {flow_id} already has {existing_count} posts (max {flow.flow_volume})")
             return []
 
-        generated_posts = []
-        for _ in range(posts_to_generate):
-            try:
-                content = await self._generate_post_content(flow)
-                if not content:
-                    logging.warning(f"Empty content generated for flow {flow_id}")
+        try:
+            last_posts_content = await self._get_last_posts_content(flow, posts_to_generate)
+            
+            generated_posts = []
+            for content in last_posts_content[:posts_to_generate]:  # Берем только нужное количество
+                try:
+                    post = await self.create_post(
+                        flow_id=flow.id,
+                        content=content,
+                        is_draft=True,
+                    )
+                    generated_posts.append(post)
+                except Exception as e:
+                    logging.error(f"Error creating post for flow {flow_id}: {str(e)}")
                     continue
-                    
-                post = await self.create_post(
-                    flow_id=flow.id,
-                    content=content,
-                    is_draft=True,
-                )
-                generated_posts.append(post)
-            except Exception as e:
-                logging.error(f"Error generating post for flow {flow_id}: {str(e)}")
-                continue
-        
-        logging.info(f"Successfully generated {len(generated_posts)} posts for flow {flow_id}")
-        return generated_posts
+            
+            logging.info(f"Successfully generated {len(generated_posts)} posts for flow {flow_id}")
+            return generated_posts
+        except Exception as e:
+            logging.error(f"Error generating posts for flow {flow_id}: {str(e)}")
+            return []
     
+
+    async def _get_last_posts_content(self, flow: FlowDTO, needed_count: int) -> list[str]:
+        try:
+            posts_limit = needed_count * 2
+            
+            sources_content = await self.userbot_service.get_last_posts(
+                flow.sources,
+                posts_limit=posts_limit
+            )
+            
+            if not sources_content:
+                logging.warning(f"No content found for flow {flow.id}")
+                return []
+                
+            return sources_content
+        except Exception as e:
+            logging.error(f"Error getting last posts for flow {flow.id}: {str(e)}")
+            return []
+
     async def _generate_post_content(self, flow: FlowDTO) -> str:
         try:
-            sources_content = await self.userbot_service.get_content_from_sources(flow.sources)
+            sources_content = await self.userbot_service.get_last_posts(
+                flow.sources,
+                posts_limit=10 
+            )
             
             if not sources_content:
                 logging.warning(f"No content found for flow {flow.id}")
                 return "Контент не найден"
             
+            selected_content = sources_content[:flow.flow_volume]
+            
             return self._process_content(
-                raw_content=sources_content,
+                raw_content=selected_content,
                 theme=flow.theme,
                 content_length=flow.content_length,
                 use_emojis=flow.use_emojis,

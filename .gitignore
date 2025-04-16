@@ -179,3 +179,4 @@ staticfiles
 *.png
 *.mp4
 *.session
+*.session-journal
