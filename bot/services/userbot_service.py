@@ -51,5 +51,43 @@ class UserbotService:
                 content.extend(await self._get_telegram_content(source['link']))
         return content
     
-    async def _get_telegram_content(self, source_link: str) -> list[str]:
-        ...
+    async def get_content_from_sources(self, sources: list[dict]) -> list[str]:
+        if not sources:
+            return []
+            
+        content = []
+        for source in sources:
+            try:
+                if source['type'] == 'telegram':
+                    messages = await self._get_telegram_messages(source['link'])
+                    content.extend(msg.text for msg in messages if msg.text)
+            except Exception as e:
+                logging.error(f"Error processing source {source.get('link')}: {str(e)}")
+                continue
+                
+        return content or ["Нет доступного контента"]
+    
+    async def _get_telegram_messages(self, source_link: str, limit: int = 10) -> list[str]:
+        if not self.client:
+            await self.initialize()
+
+        try:
+            # Извлекаем username из ссылки (https://t.me/odessa_infonews -> odessa_infonews)
+            username = source_link.split('/')[-1]
+            
+            entity = await self.client.get_entity(username)
+            
+            messages = await self.client.get_messages(
+                entity,
+                limit=limit,
+                wait_time=2
+            )
+            
+            return [msg.text for msg in messages if hasattr(msg, 'text') and msg.text]
+            
+        except ValueError as e:
+            logging.error(f"Invalid source link {source_link}: {str(e)}")
+            return []
+        except Exception as e:
+            logging.error(f"Error fetching messages from {source_link}: {str(e)}")
+            return []

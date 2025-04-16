@@ -29,19 +29,30 @@ class PostService:
         self.bot = bot
         self.userbot_service = userbot_service
 
+    async def count_posts_in_flow(self, flow_id: int) -> int:
+        return await self.post_repo.count_posts_in_flow(flow_id=flow_id)
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
         flow = await self.flow_repo.get_flow_by_id(flow_id)
-        existing_count = await self.post_repo.count_posts_in_flow(flow.id)
+        if not flow:
+            logging.error(f"Flow with id {flow_id} not found")
+            return []
+
+        existing_count = await self.count_posts_in_flow(flow.id)
         posts_to_generate = max(0, flow.flow_volume - existing_count)
         
         if posts_to_generate <= 0:
+            logging.info(f"Flow {flow_id} already has {existing_count} posts (max {flow.flow_volume})")
             return []
 
         generated_posts = []
         for _ in range(posts_to_generate):
             try:
                 content = await self._generate_post_content(flow)
+                if not content:
+                    logging.warning(f"Empty content generated for flow {flow_id}")
+                    continue
+                    
                 post = await self.create_post(
                     flow_id=flow.id,
                     content=content,
@@ -49,30 +60,29 @@ class PostService:
                 )
                 generated_posts.append(post)
             except Exception as e:
-                logging.error(f"Error generating post: {e}")
+                logging.error(f"Error generating post for flow {flow_id}: {str(e)}")
                 continue
         
+        logging.info(f"Successfully generated {len(generated_posts)} posts for flow {flow_id}")
         return generated_posts
     
     async def _generate_post_content(self, flow: FlowDTO) -> str:
-        raw_content = await self.userbot_service.get_raw_content(flow.sources)
-        
-        if not raw_content:
-            logging.warning(f"No content found for flow {flow.id}")
-            return "Не вдалося отримати контент з джерел"
-        
-        processed_content = self._process_content(
-            raw_content, 
-            flow.theme,
-            flow.content_length,
-            flow.use_emojis,
-            flow.use_premium_emojis,
-            flow.title_highlight,
-            flow.cta,
-            flow.signature
-        )
-        
-        return processed_content
+        try:
+            sources_content = await self.userbot_service.get_content_from_sources(flow.sources)
+            
+            if not sources_content:
+                logging.warning(f"No content found for flow {flow.id}")
+                return "Контент не найден"
+            
+            return self._format_content(
+                sources_content,
+                theme=flow.theme,
+                use_emojis=flow.use_emojis,
+                signature=flow.signature
+            )
+        except Exception as e:
+            logging.error(f"Content generation error for flow {flow.id}: {str(e)}")
+            return "Ошибка генерации контента"
 
     def _process_content(
         self,
@@ -115,7 +125,7 @@ class PostService:
             return [random.choice(content)] if content else []
         elif length == ContentLength.MEDIUM:
             return content[:2] if len(content) >= 2 else content
-        else:  # LONG
+        else:
             return content[:4] if len(content) >= 4 else content
 
     def _add_emojis(self, text: str, premium: bool) -> str:

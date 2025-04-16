@@ -121,11 +121,7 @@ class FlowService:
         return flows
 
     async def force_flows_due_for_generation(self) -> List[FlowDTO]:
-        now = timezone.now()
-        flows = await self.flow_repository.list(
-            include_null_generation_time=True,
-            limit=None
-        )
+        flows = await self.flow_repository.list()
         return flows
     
     async def update_next_generation_time(self, flow_id: int):
