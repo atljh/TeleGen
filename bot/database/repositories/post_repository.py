@@ -1,4 +1,10 @@
+import os
+import logging
+import requests
 from datetime import datetime
+from urllib.parse import urlparse
+from django.core.files import File
+from tempfile import NamedTemporaryFile
 from typing import Optional, List, AsyncGenerator
 from admin_panel.admin_panel.models import Post, Flow
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
@@ -14,20 +20,68 @@ class PostRepository:
         is_draft: bool = True,
         scheduled_time: Optional[datetime] = None,
         media_url: Optional[str] = None,
-        media_type: Optional[MediaType] = None
+        media_type: Optional[str] = None
     ) -> Post:
         if scheduled_time and scheduled_time < datetime.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
         
-        post = await Post.objects.acreate(
+        post = Post(
             flow=flow,
             content=content,
             source_url=source_url,
             is_draft=is_draft,
             scheduled_time=scheduled_time
         )
-        
+
+        if media_url and media_type:
+            try:
+                if media_type == 'image':
+                    await self._save_image(post, media_url)
+                elif media_type == 'video':
+                    await self._save_video(post, media_url)
+            except Exception as e:
+                logging.error(f"Error saving media: {str(e)}")
+                await post.asave()
+                return post
+
+        await post.asave()
         return post
+
+
+    async def _save_image(self, post: Post, image_url: str):
+        if image_url.startswith(('http://', 'https://')):
+            response = requests.get(image_url, stream=True)
+            response.raise_for_status()
+
+            ext = os.path.splitext(urlparse(image_url).path)[1] or '.jpg'
+            with NamedTemporaryFile(delete=True, suffix=ext) as tmp_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    tmp_file.write(chunk)
+                
+                post.image.save(
+                    os.path.basename(image_url),
+                    File(tmp_file)
+                )
+        else:
+            post.image = image_url
+
+
+    async def _save_video(self, post: Post, video_url: str):
+        if video_url.startswith(('http://', 'https://')):
+            response = requests.get(video_url, stream=True)
+            response.raise_for_status()
+
+            ext = os.path.splitext(urlparse(video_url).path)[1] or '.mp4'
+            with NamedTemporaryFile(delete=True, suffix=ext) as tmp_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    tmp_file.write(chunk)
+                
+                post.video.save(
+                    os.path.basename(video_url),
+                    File(tmp_file)
+                )
+        else:
+            post.video = video_url
 
     async def get(self, post_id: int) -> Post:
         try:
