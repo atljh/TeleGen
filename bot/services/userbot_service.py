@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 from telethon import TelegramClient
+from aiogram.types import MessageMediaPhoto
 from bot.database.dtos import FlowDTO
 
 
@@ -110,6 +111,48 @@ class UserbotService:
         except Exception as e:
             logging.error(f"Error getting messages from {source_link}: {str(e)}")
             return []
+
+    async def get_last_posts_with_media(self, sources: list[dict], limit: int = 10) -> list[dict]:
+        if not sources:
+            return []
+
+        await self.ensure_connection()
+        
+        result = []
+        for source in sources:
+            if source['type'] != 'telegram':
+                continue
+                
+            try:
+                entity = await self.client.get_entity(source['link'])
+                messages = await self.client.get_messages(
+                    entity,
+                    limit=limit
+                )
+                
+                for msg in messages:
+                    post_data = {
+                        'text': msg.text or '',
+                        'media_url': None,
+                        'media_type': None
+                    }
+                    
+                    if msg.media:
+                        media_path = await self.client.download_media(
+                            msg.media,
+                            file=bytes
+                        )
+                        if media_path:
+                            post_data['media_url'] = media_path
+                            post_data['media_type'] = 'image' if isinstance(msg.media, MessageMediaPhoto) else 'video'
+                    
+                    result.append(post_data)
+                    
+            except Exception as e:
+                logging.error(f"Error processing source {source['link']}: {str(e)}")
+                continue
+        
+        return result
 
     async def get_last_posts(self, sources: list[dict], posts_limit: int = 10) -> list[str]:
         if not sources:
