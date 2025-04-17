@@ -1,13 +1,12 @@
 import os
-import logging
 import random
-from django.utils import timezone
+import logging
 from urllib.parse import unquote
+from typing import Optional, List
+from django.utils import timezone
+from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import FSInputFile, URLInputFile
-from datetime import datetime
-from typing import Optional, List
-from aiogram import Bot
 from bot.database.dtos import PostDTO, FlowDTO
 from bot.database.dtos.dtos import ContentLength
 from bot.database.repositories import PostRepository, FlowRepository
@@ -46,25 +45,29 @@ class PostService:
             return []
 
         try:
-            last_posts_content = await self._get_last_posts_content(flow, posts_to_generate)
+            last_posts = await self.userbot_service.get_last_posts_with_media(
+                flow.sources,
+                limit=posts_to_generate * 2
+            )
             
             generated_posts = []
-            for content in last_posts_content[:posts_to_generate]:  # Берем только нужное количество
+            for post_data in last_posts[:posts_to_generate]:
                 try:
-                    post = await self.create_post(
-                        flow_id=flow.id,
-                        content=content,
+                    post = await self.post_repo.create(
+                        flow=flow,
+                        content=post_data['text'],
                         is_draft=True,
+                        media_url=post_data.get('media_url'),
+                        media_type=post_data.get('media_type')
                     )
-                    generated_posts.append(post)
+                    generated_posts.append(PostDTO.from_orm(post))
                 except Exception as e:
-                    logging.error(f"Error creating post for flow {flow_id}: {str(e)}")
+                    logging.error(f"Error creating post: {str(e)}")
                     continue
             
-            logging.info(f"Successfully generated {len(generated_posts)} posts for flow {flow_id}")
             return generated_posts
         except Exception as e:
-            logging.error(f"Error generating posts for flow {flow_id}: {str(e)}")
+            logging.error(f"Error generating posts: {str(e)}")
             return []
     
 
