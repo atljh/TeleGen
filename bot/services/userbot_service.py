@@ -5,6 +5,7 @@ import logging
 from typing import Optional, AsyncGenerator
 from contextlib import asynccontextmanager
 
+from django.conf import settings
 from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto
 from tempfile import NamedTemporaryFile
@@ -96,4 +97,26 @@ class UserbotService:
             return None
         except Exception as e:
             logging.error(f"Error downloading Telegram media: {str(e)}")
+            return None
+
+    async def download_media_to_storage(self, media, media_type: str) -> Optional[str]:
+        try:
+            media_dir = 'posts/images' if media_type == 'image' else 'posts/videos'
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
+            
+            filename = f"{uuid.uuid4()}.{'jpg' if media_type == 'image' else 'mp4'}"
+            storage_path = os.path.join(media_dir, filename)
+            full_path = os.path.join(settings.MEDIA_ROOT, storage_path)
+            
+            await self.client.download_media(
+                media,
+                file=full_path
+            )
+            
+            if os.path.exists(full_path) and os.path.getsize(full_path) > 0:
+                return storage_path
+            
+            return None
+        except Exception as e:
+            logging.error(f"Error downloading media: {str(e)}")
             return None
