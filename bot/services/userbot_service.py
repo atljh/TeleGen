@@ -59,7 +59,11 @@ class UserbotService:
 
                         if msg.media:
                             if hasattr(msg.media, 'photo'):
-                                media_path = await self.download_telegram_media(client, msg.media.photo, 'image')
+                                media_path = await self.download_media_to_storage(
+                                    client,
+                                    msg.media.photo,
+                                    'image'
+                                )
                                 if media_path:
                                     post_data['media'].append({
                                         'type': 'image',
@@ -67,7 +71,11 @@ class UserbotService:
                                     })
                             elif hasattr(msg.media, 'document'):
                                 if msg.media.document.mime_type.startswith('video/'):
-                                    media_path = await self.download_telegram_media(client, msg.media.document, 'video')
+                                    media_path = await self.download_media_to_storage(
+                                        client,
+                                        msg.media.document,
+                                        'video'
+                                    )
                                     if media_path:
                                         post_data['media'].append({
                                             'type': 'video',
@@ -99,7 +107,7 @@ class UserbotService:
             logging.error(f"Error downloading Telegram media: {str(e)}")
             return None
 
-    async def download_media_to_storage(self, media, media_type: str) -> Optional[str]:
+    async def download_media_to_storage(self, client: TelegramClient, media, media_type: str) -> Optional[str]:
         try:
             media_dir = 'posts/images' if media_type == 'image' else 'posts/videos'
             os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
@@ -108,7 +116,7 @@ class UserbotService:
             storage_path = os.path.join(media_dir, filename)
             full_path = os.path.join(settings.MEDIA_ROOT, storage_path)
             
-            await self.client.download_media(
+            await client.download_media(
                 media,
                 file=full_path
             )
