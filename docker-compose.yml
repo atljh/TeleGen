@@ -12,7 +12,10 @@ services:
       - db
       - redis
     volumes:
+      - ./media:/app/media
       - ./bot:/bot
+    environment:
+      - MEDIA_ROOT=/app/media
     command: ["python", "watcher.py"]
 
 

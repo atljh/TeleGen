@@ -36,7 +36,7 @@ class PostRepository:
         )
 
         await post.asave()
-        print(media_type, media_url)
+
         if media_url and media_type:
             success = False
             if media_type == 'image':
