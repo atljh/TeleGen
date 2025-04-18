@@ -49,7 +49,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             relative_path = post.media_url.lstrip("/") if post.media_url else None
             media_path = os.path.join(settings.BASE_DIR, relative_path) if relative_path else None
             media = None
-
+            print(media_path)
             if media_path and post.media_type:
                 try:
                     if post.media_type == MediaType.IMAGE:

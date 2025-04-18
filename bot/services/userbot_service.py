@@ -11,19 +11,33 @@ from bot.database.dtos import FlowDTO
 
 
 class UserbotService:
+    _instance = None
+    _lock = asyncio.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, api_id: int, api_hash: str, phone: str = None, session_dir: str = "sessions"):
+        if hasattr(self, 'client'):
+            return
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone = phone
         self.session_dir = session_dir
         self.client = None
-        self.lock = asyncio.Lock()
+        self.is_initialized = False
         os.makedirs(self.session_dir, exist_ok=True)
 
+
     async def initialize(self):
-        async with self.lock:
-            if self.client and self.client.is_connected():
+        async with self._lock:
+            if self.is_initialized:
                 return
+        # async with self.lock:
+        #     if self.client and self.client.is_connected():
+        #         return
 
             session_path = "app/sessions/userbot.session"
 
@@ -37,27 +51,21 @@ class UserbotService:
                 api_id=self.api_id,
                 api_hash=self.api_hash,
                 connection_retries=5,
-                auto_reconnect=True
+                auto_reconnect=True,
             )
             
             try:
                 await self.client.connect()
-                
                 if not await self.client.is_user_authorized():
-                    logging.info("Starting authorization...")
-                    if self.phone:
-                        await self.client.start(phone=self.phone)
-                    else:
-                        raise ValueError("Phone number required")
-                        
-                logging.info("Telegram client ready")
+                    await self.client.start(phone=self.phone)
+                self.is_initialized = True
             except Exception as e:
-                logging.error(f"Initialization failed: {str(e)}")
                 await self.disconnect()
                 raise
 
+
     async def disconnect(self):
-        async with self.lock:
+        async with self._lock:
             if self.client and self.client.is_connected():
                 await self.client.disconnect()
             self.client = None
@@ -66,6 +74,11 @@ class UserbotService:
         if not self.client or not self.client.is_connected():
             await self.initialize()
 
+    async def reconnect(self):
+        async with self._lock:
+            await self.disconnect()
+            self.is_initialized = False
+            await self.initialize()
 
     async def get_last_posts_with_media(self, sources: list[dict], limit: int = 10) -> list[dict]:
         await self._ensure_client()
@@ -107,6 +120,8 @@ class UserbotService:
                         
             except Exception as e:
                 logging.error(f"Error processing source {source['link']}: {str(e)}")
+                await self.reconnect()
+                return await self.client.get_messages(entity, limit=limit)
         
         return result
 
