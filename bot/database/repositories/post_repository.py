@@ -2,6 +2,8 @@ import os
 import logging
 import requests
 from datetime import datetime
+import aiofiles
+import aiohttp
 from urllib.parse import urlparse
 from django.core.files import File
 from tempfile import NamedTemporaryFile
@@ -14,6 +16,7 @@ from bot.database.dtos.dtos import MediaType
 
 
 class PostRepository:
+
     async def create(
         self,
         flow: Flow,
@@ -24,9 +27,6 @@ class PostRepository:
         media_url: Optional[str] = None,
         media_type: Optional[str] = None
     ) -> Post:
-        if scheduled_time and scheduled_time < datetime.now():
-            raise InvalidOperationError("Scheduled time cannot be in the past")
-        
         post = Post(
             flow=flow,
             content=content,
@@ -35,50 +35,52 @@ class PostRepository:
             scheduled_time=scheduled_time
         )
 
-        if media_url and media_type:
-            try:
-                if media_type == 'image':
-                    await self._save_image(post, media_url)
-                elif media_type == 'video':
-                    await self._save_video(post, media_url)
-            except Exception as e:
-                logging.error(f"Error saving media: {str(e)}")
-                await post.asave()
-                return post
-
         await post.asave()
+        print(media_type, media_url)
+        if media_url and media_type:
+            success = False
+            if media_type == 'image':
+                success = await self._download_and_save_media(
+                    media_url,
+                    post.image.save
+                )
+            elif media_type == 'video':
+                success = await self._download_and_save_media(
+                    media_url,
+                    post.video.save
+                )
+
+            if success:
+                await post.asave()
+            else:
+                logging.warning(f"Failed to save media for post {post.id}")
+
+
         return post
 
-
-    async def _save_image(self, post: Post, image_url: str):
-        content = await self._download_file(image_url)
-        if content:
-            filename = os.path.basename(urlparse(image_url).path)
-            await sync_to_async(post.image.save)(filename, ContentFile(content))
-
-    async def _save_video(self, post: Post, video_url: str):
-        content = await self._download_file(video_url)
-        if content:
-            filename = os.path.basename(urlparse(video_url).path)
-            await sync_to_async(post.video.save)(filename, ContentFile(content))
-
-    async def _download_file(self, url: str) -> Optional[bytes]:
-        if url.startswith(('http://', 'https://')):
-            try:
-                response = await sync_to_async(requests.get)(url, stream=True)
-                response.raise_for_status()
-                return await sync_to_async(response.content)()
-            except Exception as e:
-                logging.error(f"Error downloading file {url}: {str(e)}")
-                return None
-        else:
-            try:
-                with open(url, 'rb') as f:
-                    return await sync_to_async(f.read)()
-            except Exception as e:
-                logging.error(f"Error reading local file {url}: {str(e)}")
-                return None
-
+    async def _download_and_save_media(self, url: str, save_func) -> bool:
+        try:
+            if url.startswith(('http://', 'https://')):
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url) as response:
+                        if response.status == 200:
+                            content = await response.read()
+                            await sync_to_async(save_func)(
+                                os.path.basename(url),
+                                ContentFile(content)
+                            )
+                            return True
+            else:
+                async with aiofiles.open(url, mode='rb') as f:
+                    content = await f.read()
+                    await sync_to_async(save_func)(
+                        os.path.basename(url),
+                        ContentFile(content)
+                    )
+                    return True
+        except Exception as e:
+            logging.error(f"Error downloading/saving media: {str(e)}")
+            return False
 
     async def get(self, post_id: int) -> Post:
         try:

@@ -36,46 +36,47 @@ class PostService:
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
         flow = await self.flow_repo.get_flow_by_id(flow_id)
         if not flow:
-            logging.error(f"Flow with id {flow_id} not found")
             return []
 
         existing_count = await self.count_posts_in_flow(flow.id)
         posts_to_generate = max(0, flow.flow_volume - existing_count)
         
         if posts_to_generate <= 0:
-            logging.info(f"Flow {flow_id} already has {existing_count} posts (max {flow.flow_volume})")
             return []
 
         try:
             last_posts = await self.userbot_service.get_last_posts_with_media(
                 flow.sources,
-                limit=posts_to_generate * 2
+                limit=posts_to_generate
             )
             
             generated_posts = []
             temp_files = []
             
             for post_data in last_posts[:posts_to_generate]:
+                print(post_data)
                 try:
                     post = await self.post_repo.create(
                         flow=flow,
                         content=post_data['text'],
-                        is_draft=True,
                         media_url=post_data.get('media_url'),
-                        media_type=post_data.get('media_type')
+                        media_type=post_data.get('media_type'),
+                        is_draft=True
                     )
                     generated_posts.append(PostDTO.from_orm(post))
+                    
                     if post_data.get('media_url'):
                         temp_files.append(post_data['media_url'])
                 except Exception as e:
                     logging.error(f"Error creating post: {str(e)}")
                     continue
             
-            await self.cleanup_temp_files(temp_files)
+            await self._cleanup_temp_files(temp_files)
             
+            logging.info(f"Generated {len(generated_posts)} posts with media")
             return generated_posts
         except Exception as e:
-            logging.error(f"Error generating posts: {str(e)}")
+            logging.error(f"Error in post generation: {str(e)}")
             return []
         
 
@@ -408,10 +409,10 @@ class PostService:
         return PostDTO.from_orm(updated_post)
 
 
-    async def cleanup_temp_files(self, media_urls: list[str]):
-        for url in media_urls:
-            if url and url.startswith('/tmp/'):
+    async def _cleanup_temp_files(self, file_paths: list[str]):
+        for path in file_paths:
+            if path and os.path.exists(path):
                 try:
-                    await sync_to_async(os.unlink)(url)
+                    os.unlink(path)
                 except Exception as e:
-                    logging.warning(f"Error deleting temp file {url}: {str(e)}")
+                    logging.warning(f"Could not delete temp file {path}: {str(e)}")

@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+from typing import Optional
 import uuid
 from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto
@@ -65,53 +66,10 @@ class UserbotService:
         if not self.client or not self.client.is_connected():
             await self.initialize()
 
-    async def generate_content(self, flow: FlowDTO) -> str:
-        await self._ensure_client()
-
-        try:
-            sources_content = []
-            for source in flow.sources:
-                if source['type'] == 'telegram':
-                    entity = await self.client.get_entity(source['link'])
-                    messages = await self.client.get_messages(entity, limit=10)
-                    sources_content.extend([msg.text for msg in messages if msg.text])
-
-            return self._format_post(sources_content, flow)
-        except Exception as e:
-            logging.error(f"Error generating content: {e}")
-            return "Не удалось сгенерировать контент"
-    
-    async def get_raw_content(self, sources: list[dict]) -> list[str]:
-        content = []
-        for source in sources:
-            if source['type'] == 'telegram':
-                content.extend(await self._get_telegram_content(source['link']))
-        return content
-    
-    async def get_content_from_sources(self, sources: list[dict]) -> list[str]:
-        if not sources:
-            return []
-
-        await self.initialize()
-        
-        content = []
-        for source in sources:
-            try:
-                if source['type'] == 'telegram':
-                    messages = await self._get_telegram_messages(source['link'])
-                    content.extend(msg.text for msg in messages if msg.text)
-            except Exception as e:
-                    logging.error(f"Error processing source {source.get('link')}: {str(e)}")
-                    continue
-                    
-            return content or ["No content available"]
 
     async def get_last_posts_with_media(self, sources: list[dict], limit: int = 10) -> list[dict]:
-        if not sources:
-            return []
-
         await self._ensure_client()
-        
+
         result = []
         for source in sources:
             if source['type'] != 'telegram':
@@ -119,10 +77,7 @@ class UserbotService:
                 
             try:
                 entity = await self.client.get_entity(source['link'])
-                messages = await self.client.get_messages(
-                    entity,
-                    limit=limit
-                )
+                messages = await self.client.get_messages(entity, limit=limit)
                 
                 for msg in messages:
                     post_data = {
@@ -131,21 +86,43 @@ class UserbotService:
                         'media_type': None
                     }
                     
-                    if msg.media:
-                        tmp_path = f"/tmp/{uuid.uuid4()}"
-                        await self.client.download_media(
-                            msg.media,
-                            file=tmp_path
-                        )
-                        if os.path.exists(tmp_path):
-                            post_data['media_url'] = tmp_path
-                            post_data['media_type'] = 'image' if isinstance(msg.media, MessageMediaPhoto) else 'video'
+                    if hasattr(msg, 'photo'):
+                        tmp_path = await self.download_telegram_media(msg.photo, 'image')
+                        if tmp_path:
+                            post_data.update({
+                                'media_url': tmp_path,
+                                'media_type': 'image'
+                            })
+                    elif hasattr(msg, 'video'):
+                        tmp_path = await self.download_telegram_media(msg.video, 'video')
+                        if tmp_path:
+                            post_data.update({
+                                'media_url': tmp_path,
+                                'media_type': 'video'
+                            })
                     
                     result.append(post_data)
                     
             except Exception as e:
                 logging.error(f"Error processing source {source['link']}: {str(e)}")
-                continue
         
         return result
     
+    async def download_telegram_media(self, media, media_type: str) -> Optional[str]:
+        try:
+            ext = '.jpg' if media_type == 'image' else '.mp4'
+            with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                tmp_path = tmp.name
+            
+            await self.client.download_media(
+                media,
+                file=tmp_path
+            )
+            
+            if os.path.getsize(tmp_path) > 0:
+                return tmp_path
+            os.unlink(tmp_path)
+            return None
+        except Exception as e:
+            logging.error(f"Error downloading Telegram media: {str(e)}")
+            return None
