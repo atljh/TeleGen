@@ -1,5 +1,8 @@
 import os
 import logging
+import shutil
+import uuid
+from django.conf import settings
 import requests
 from datetime import datetime
 import aiofiles
@@ -72,7 +75,6 @@ class PostRepository:
             is_draft=True
         )
         
-        # Сохраняем пост сначала без медиа
         await sync_to_async(post.save)()
         
         if media_path and media_type:
@@ -92,6 +94,15 @@ class PostRepository:
         
         return post
 
+    async def _store_media_permanently(self, temp_path: str, media_type: str) -> str:
+        media_dir = 'posts/images' if media_type == 'image' else 'posts/videos'
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
+        
+        filename = f"{uuid.uuid4()}{os.path.splitext(temp_path)[1]}"
+        permanent_path = os.path.join(media_dir, filename)
+        
+        shutil.copy2(temp_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
+        return permanent_path
 
     async def _download_and_save_media(self, url: str, save_func) -> bool:
         try:
