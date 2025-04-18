@@ -45,40 +45,29 @@ class PostService:
             return []
 
         try:
-            last_posts = await self.userbot_service.get_last_posts_with_media(
+            posts_data = await self.userbot_service.get_last_posts_with_media(
                 flow.sources,
                 limit=posts_to_generate
             )
             
             generated_posts = []
-            temp_files = []
-            
-            for post_data in last_posts[:posts_to_generate]:
-                print(post_data)
+            for post_data in posts_data[:posts_to_generate]:
                 try:
-                    post = await self.post_repo.create(
+                    post = await self.post_repo.create_with_media(
                         flow=flow,
                         content=post_data['text'],
-                        media_url=post_data.get('media_url'),
-                        media_type=post_data.get('media_type'),
+                        media_list=post_data['media'],
                         is_draft=True
                     )
                     generated_posts.append(PostDTO.from_orm(post))
-                    
-                    if post_data.get('media_url'):
-                        temp_files.append(post_data['media_url'])
                 except Exception as e:
                     logging.error(f"Error creating post: {str(e)}")
-                    continue
             
-            await self._cleanup_temp_files(temp_files)
-            
-            logging.info(f"Generated {len(generated_posts)} posts with media")
             return generated_posts
         except Exception as e:
             logging.error(f"Error in post generation: {str(e)}")
             return []
-        
+            
 
     async def _get_last_posts_content(self, flow: FlowDTO, needed_count: int) -> list[str]:
         try:

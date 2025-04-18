@@ -69,7 +69,7 @@ class UserbotService:
 
     async def get_last_posts_with_media(self, sources: list[dict], limit: int = 10) -> list[dict]:
         await self._ensure_client()
-
+        
         result = []
         for source in sources:
             if source['type'] != 'telegram':
@@ -82,32 +82,35 @@ class UserbotService:
                 for msg in messages:
                     post_data = {
                         'text': msg.text or '',
-                        'media_url': None,
-                        'media_type': None
+                        'media': []
                     }
                     
-                    if hasattr(msg, 'photo'):
-                        tmp_path = await self.download_telegram_media(msg.photo, 'image')
-                        if tmp_path:
-                            post_data.update({
-                                'media_url': tmp_path,
-                                'media_type': 'image'
-                            })
-                    elif hasattr(msg, 'video'):
-                        tmp_path = await self.download_telegram_media(msg.video, 'video')
-                        if tmp_path:
-                            post_data.update({
-                                'media_url': tmp_path,
-                                'media_type': 'video'
-                            })
+                    if msg.media:
+                        if hasattr(msg.media, 'photo'):
+                            media_path = await self.download_telegram_media(msg.media.photo, 'image')
+                            if media_path:
+                                post_data['media'].append({
+                                    'type': 'image',
+                                    'path': media_path
+                                })
+                        elif hasattr(msg.media, 'document'):
+                            if msg.media.document.mime_type.startswith('video/'):
+                                media_path = await self.download_telegram_media(msg.media.document, 'video')
+                                if media_path:
+                                    post_data['media'].append({
+                                        'type': 'video', 
+                                        'path': media_path
+                                    })
                     
-                    result.append(post_data)
-                    
+                    if post_data['text'] or post_data['media']:
+                        result.append(post_data)
+                        
             except Exception as e:
                 logging.error(f"Error processing source {source['link']}: {str(e)}")
         
         return result
-    
+
+
     async def download_telegram_media(self, media, media_type: str) -> Optional[str]:
         try:
             ext = '.jpg' if media_type == 'image' else '.mp4'

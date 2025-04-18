@@ -58,6 +58,42 @@ class PostRepository:
 
         return post
 
+
+    async def create_with_media(
+        self,
+        flow: Flow,
+        content: str,
+        media_list: list[dict],
+        **kwargs
+    ) -> Post:
+        post = Post(flow=flow, content=content, **kwargs)
+        await sync_to_async(post.save)()
+        
+        for media in media_list[:1]:
+            try:
+                with open(media['path'], 'rb') as f:
+                    file_obj = File(f)
+                    
+                    if media['type'] == 'image':
+                        await sync_to_async(post.image.save)(
+                            os.path.basename(media['path']),
+                            file_obj
+                        )
+                    elif media['type'] == 'video':
+                        await sync_to_async(post.video.save)(
+                            os.path.basename(media['path']),
+                            file_obj
+                        )
+                    
+                    await sync_to_async(post.save)()
+            except Exception as e:
+                logging.error(f"Failed to save media: {str(e)}")
+            finally:
+                if os.path.exists(media['path']):
+                    os.unlink(media['path'])
+        
+        return post
+
     async def _download_and_save_media(self, url: str, save_func) -> bool:
         try:
             if url.startswith(('http://', 'https://')):
