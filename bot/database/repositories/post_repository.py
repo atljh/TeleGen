@@ -6,6 +6,8 @@ from urllib.parse import urlparse
 from django.core.files import File
 from tempfile import NamedTemporaryFile
 from typing import Optional, List, AsyncGenerator
+from asgiref.sync import sync_to_async
+from django.core.files.base import ContentFile
 from admin_panel.admin_panel.models import Post, Flow
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 from bot.database.dtos.dtos import MediaType
@@ -49,39 +51,34 @@ class PostRepository:
 
 
     async def _save_image(self, post: Post, image_url: str):
-        if image_url.startswith(('http://', 'https://')):
-            response = requests.get(image_url, stream=True)
-            response.raise_for_status()
-
-            ext = os.path.splitext(urlparse(image_url).path)[1] or '.jpg'
-            with NamedTemporaryFile(delete=True, suffix=ext) as tmp_file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    tmp_file.write(chunk)
-                
-                post.image.save(
-                    os.path.basename(image_url),
-                    File(tmp_file)
-                )
-        else:
-            post.image = image_url
-
+        content = await self._download_file(image_url)
+        if content:
+            filename = os.path.basename(urlparse(image_url).path)
+            await sync_to_async(post.image.save)(filename, ContentFile(content))
 
     async def _save_video(self, post: Post, video_url: str):
-        if video_url.startswith(('http://', 'https://')):
-            response = requests.get(video_url, stream=True)
-            response.raise_for_status()
+        content = await self._download_file(video_url)
+        if content:
+            filename = os.path.basename(urlparse(video_url).path)
+            await sync_to_async(post.video.save)(filename, ContentFile(content))
 
-            ext = os.path.splitext(urlparse(video_url).path)[1] or '.mp4'
-            with NamedTemporaryFile(delete=True, suffix=ext) as tmp_file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    tmp_file.write(chunk)
-                
-                post.video.save(
-                    os.path.basename(video_url),
-                    File(tmp_file)
-                )
+    async def _download_file(self, url: str) -> Optional[bytes]:
+        if url.startswith(('http://', 'https://')):
+            try:
+                response = await sync_to_async(requests.get)(url, stream=True)
+                response.raise_for_status()
+                return await sync_to_async(response.content)()
+            except Exception as e:
+                logging.error(f"Error downloading file {url}: {str(e)}")
+                return None
         else:
-            post.video = video_url
+            try:
+                with open(url, 'rb') as f:
+                    return await sync_to_async(f.read)()
+            except Exception as e:
+                logging.error(f"Error reading local file {url}: {str(e)}")
+                return None
+
 
     async def get(self, post_id: int) -> Post:
         try:

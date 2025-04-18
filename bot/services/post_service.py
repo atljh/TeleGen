@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import random
 import logging
@@ -6,6 +7,7 @@ from typing import Optional, List
 from django.utils import timezone
 from aiogram import Bot
 from aiogram.enums import ParseMode
+from asgiref.sync import sync_to_async
 from aiogram.types import FSInputFile, URLInputFile
 from bot.database.dtos import PostDTO, FlowDTO
 from bot.database.dtos.dtos import ContentLength
@@ -51,6 +53,8 @@ class PostService:
             )
             
             generated_posts = []
+            temp_files = []
+            
             for post_data in last_posts[:posts_to_generate]:
                 try:
                     post = await self.post_repo.create(
@@ -61,15 +65,19 @@ class PostService:
                         media_type=post_data.get('media_type')
                     )
                     generated_posts.append(PostDTO.from_orm(post))
+                    if post_data.get('media_url'):
+                        temp_files.append(post_data['media_url'])
                 except Exception as e:
                     logging.error(f"Error creating post: {str(e)}")
                     continue
+            
+            await self.cleanup_temp_files(temp_files)
             
             return generated_posts
         except Exception as e:
             logging.error(f"Error generating posts: {str(e)}")
             return []
-    
+        
 
     async def _get_last_posts_content(self, flow: FlowDTO, needed_count: int) -> list[str]:
         try:
@@ -399,3 +407,11 @@ class PostService:
         updated_post = await self.post_repo.get(post_id)
         return PostDTO.from_orm(updated_post)
 
+
+    async def cleanup_temp_files(self, media_urls: list[str]):
+        for url in media_urls:
+            if url and url.startswith('/tmp/'):
+                try:
+                    await sync_to_async(os.unlink)(url)
+                except Exception as e:
+                    logging.warning(f"Error deleting temp file {url}: {str(e)}")

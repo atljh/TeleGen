@@ -1,8 +1,11 @@
 import os
 import asyncio
 import logging
+import uuid
 from telethon import TelegramClient
-from aiogram.types import MessageMediaPhoto
+from telethon.tl.types import MessageMediaPhoto
+from tempfile import NamedTemporaryFile
+
 from bot.database.dtos import FlowDTO
 
 
@@ -98,25 +101,16 @@ class UserbotService:
                     messages = await self._get_telegram_messages(source['link'])
                     content.extend(msg.text for msg in messages if msg.text)
             except Exception as e:
-                logging.error(f"Error processing source {source.get('link')}: {str(e)}")
-                continue
-                
-        return content or ["No content available"]
-
-    async def _get_telegram_messages(self, source_link: str) -> list:
-        try:
-            me = await self.client.get_me()
-            entity = await self.client.get_entity(source_link)
-            return await self.client.get_messages(entity, limit=10)
-        except Exception as e:
-            logging.error(f"Error getting messages from {source_link}: {str(e)}")
-            return []
+                    logging.error(f"Error processing source {source.get('link')}: {str(e)}")
+                    continue
+                    
+            return content or ["No content available"]
 
     async def get_last_posts_with_media(self, sources: list[dict], limit: int = 10) -> list[dict]:
         if not sources:
             return []
 
-        await self.ensure_connection()
+        await self._ensure_client()
         
         result = []
         for source in sources:
@@ -138,12 +132,13 @@ class UserbotService:
                     }
                     
                     if msg.media:
-                        media_path = await self.client.download_media(
+                        tmp_path = f"/tmp/{uuid.uuid4()}"
+                        await self.client.download_media(
                             msg.media,
-                            file=bytes
+                            file=tmp_path
                         )
-                        if media_path:
-                            post_data['media_url'] = media_path
+                        if os.path.exists(tmp_path):
+                            post_data['media_url'] = tmp_path
                             post_data['media_type'] = 'image' if isinstance(msg.media, MessageMediaPhoto) else 'video'
                     
                     result.append(post_data)
@@ -153,27 +148,4 @@ class UserbotService:
                 continue
         
         return result
-
-    async def get_last_posts(self, sources: list[dict], posts_limit: int = 10) -> list[str]:
-        if not sources:
-            return []
-
-        await self._ensure_client()
-        
-        last_posts = []
-        for source in sources:
-            if source['type'] != 'telegram':
-                continue
-                
-            try:
-                entity = await self.client.get_entity(source['link'])
-                messages = await self.client.get_messages(
-                    entity,
-                    limit=posts_limit
-                )
-                last_posts.extend(msg.text for msg in messages if msg.text)
-            except Exception as e:
-                logging.error(f"Error processing source {source['link']}: {str(e)}")
-                continue
-        
-        return last_posts
+    

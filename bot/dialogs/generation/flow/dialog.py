@@ -14,7 +14,6 @@ from .callbacks import (
     on_edit_post,
     on_publish_post,
     on_schedule_post,
-    on_force_generate
 )
 
 def flow_dialog() -> Dialog:

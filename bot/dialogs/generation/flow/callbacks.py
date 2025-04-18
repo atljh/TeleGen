@@ -8,7 +8,6 @@ from bot.database.exceptions import InvalidOperationError
 
 from .states import FlowMenu
 from .getters import paging_getter
-from bot.tasks import check_flows_generation
 
 
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -56,11 +55,3 @@ async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: Di
     # post_service = Container.post_service()
     # await post_service.save_to_buffer(post_id)
     await callback.answer("Пост збережено в буфер!")
-
-async def on_force_generate(callback: CallbackQuery, button: Button, manager: DialogManager):
-    
-    try:
-        check_flows_generation.delay()
-        await callback.answer("Генерацiя")
-    except Exception as e:
-        await callback.answer(f"Помилка: {str(e)}", show_alert=True)
