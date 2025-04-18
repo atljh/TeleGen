@@ -1,3 +1,5 @@
+import asyncio
+import time
 import logging
 from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row
@@ -107,8 +109,26 @@ async def on_book_recall(callback: CallbackQuery, button: Button, manager: Dialo
 
 async def on_force_generate(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
-        task = force_flows_generation_task.delay()
         await callback.answer("Генерація запущена!")
+        task = force_flows_generation_task.delay()
+        
+        max_wait_time = 300
+        start_time = time.time()
+        
+        while not task.ready() and (time.time() - start_time) < max_wait_time:
+            await asyncio.sleep(1)
+        
+        if task.successful():
+            await callback.message.answer(
+                "✅ Генерація завершена успішно!",
+                reply_markup=None
+            )
+        else:
+            raise Exception("Задача завершилась с ошибкой")
+            
     except Exception as e:
-        logging.error(f"Error starting generation: {str(e)}")
-        await callback.answer(f"Помилка: {str(e)}", show_alert=True)
+        await callback.answer(
+            f"Помилка: {str(e)}",
+            show_alert=True
+        )
+        logging.error(f"Generation error: {str(e)}")
