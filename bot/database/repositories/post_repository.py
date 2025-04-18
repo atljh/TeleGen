@@ -63,36 +63,35 @@ class PostRepository:
         self,
         flow: Flow,
         content: str,
-        media_list: list[dict],
-        **kwargs
+        media_path: Optional[str] = None,
+        media_type: Optional[str] = None
     ) -> Post:
-        post = Post(flow=flow, content=content, **kwargs)
+        post = Post(
+            flow=flow,
+            content=content,
+            is_draft=True
+        )
+        
+        # Сохраняем пост сначала без медиа
         await sync_to_async(post.save)()
         
-        for media in media_list[:1]:
+        if media_path and media_type:
             try:
-                with open(media['path'], 'rb') as f:
-                    file_obj = File(f)
-                    
-                    if media['type'] == 'image':
-                        await sync_to_async(post.image.save)(
-                            os.path.basename(media['path']),
-                            file_obj
-                        )
-                    elif media['type'] == 'video':
-                        await sync_to_async(post.video.save)(
-                            os.path.basename(media['path']),
-                            file_obj
-                        )
-                    
-                    await sync_to_async(post.save)()
-            except Exception as e:
-                logging.error(f"Failed to save media: {str(e)}")
+                permanent_path = await self._store_media_permanently(media_path, media_type)
+                
+                if media_type == 'image':
+                    post.image.name = permanent_path
+                elif media_type == 'video':
+                    post.video.name = permanent_path
+                
+                await sync_to_async(post.save)()
             finally:
-                if os.path.exists(media['path']):
-                    os.unlink(media['path'])
+
+                if os.path.exists(media_path):
+                    os.unlink(media_path)
         
         return post
+
 
     async def _download_and_save_media(self, url: str, save_func) -> bool:
         try:
