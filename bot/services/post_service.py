@@ -45,16 +45,14 @@ class PostService:
             logging.info(post_data)
             try:
                 media_list = []
-                if post_data.get('media'):
-                    # Скачиваем медиа во временный файл
+                for media in post_data.get('media', []):
                     media_info = await self.userbot_service.download_media(
-                        post_data['media'],
-                        post_data['media_type']
+                        media['path'],
+                        media['type']
                     )
                     if media_info:
                         media_list.append(media_info)
-                
-                # Создаем пост (файл будет перемещен в постоянное хранилище)
+
                 post = await self.post_repo.create_with_media(
                     flow=flow,
                     content=post_data['text'],
