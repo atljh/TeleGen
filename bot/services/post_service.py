@@ -39,19 +39,11 @@ class PostService:
             return []
 
         posts_data = await self.userbot_service.get_last_posts(flow.sources)
-        
+
         generated_posts = []
         for post_data in posts_data:
-            logging.info(post_data)
             try:
-                media_list = []
-                for media in post_data.get('media', []):
-                    media_info = await self.userbot_service.download_media(
-                        media['path'],
-                        media['type']
-                    )
-                    if media_info:
-                        media_list.append(media_info)
+                media_list = post_data.get('media', [])
 
                 post = await self.post_repo.create_with_media(
                     flow=flow,
@@ -60,12 +52,12 @@ class PostService:
                     is_draft=True
                 )
                 generated_posts.append(PostDTO.from_orm(post))
-                
+
             except Exception as e:
                 logging.error(f"Post creation failed: {str(e)}")
-        
+
         return generated_posts
-                
+
 
     async def _get_last_posts_content(self, flow: FlowDTO, needed_count: int) -> list[str]:
         try:
@@ -186,7 +178,6 @@ class PostService:
         if len(lines) > 1:
             lines[0] = f"<b>{lines[0]}</b>"
         return '\n'.join(lines)
-
 
     async def create_post(
         self,

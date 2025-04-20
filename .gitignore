@@ -180,3 +180,4 @@ staticfiles
 *.mp4
 *.session
 *.session-journal
+*.tmp
