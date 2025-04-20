@@ -41,7 +41,7 @@ class UserbotService:
         finally:
             await client.disconnect()
 
-    async def get_last_posts_with_media(self, sources: list[dict], limit: int = 10) -> list[dict]:
+    async def get_last_posts(self, sources: list[dict], limit: int = 10) -> list[dict]:
         result = []
         async with self.get_client() as client:
             for source in sources:
