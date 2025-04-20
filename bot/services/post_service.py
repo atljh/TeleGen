@@ -38,36 +38,35 @@ class PostService:
         if not flow:
             return []
 
-        existing_count = await self.count_posts_in_flow(flow.id)
-        posts_to_generate = max(0, flow.flow_volume - existing_count)
+        posts_data = await self.userbot_service.get_last_posts(flow.sources)
         
-        if posts_to_generate <= 0:
-            return []
-
-        try:
-            posts_data = await self.userbot_service.get_last_posts_with_media(
-                flow.sources,
-                limit=posts_to_generate
-            )
-            
-            generated_posts = []
-            for post_data in posts_data[:posts_to_generate]:
-                try:
-                    post = await self.post_repo.create_with_media(
-                        flow=flow,
-                        content=post_data['text'],
-                        media_list=post_data['media'],
-                        is_draft=True
+        generated_posts = []
+        for post_data in posts_data:
+            try:
+                media_list = []
+                if post_data.get('media'):
+                    # Скачиваем медиа во временный файл
+                    media_info = await self.userbot_service.download_media(
+                        post_data['media'],
+                        post_data['media_type']
                     )
-                    generated_posts.append(PostDTO.from_orm(post))
-                except Exception as e:
-                    logging.error(f"Error creating post: {str(e)}")
-            
-            return generated_posts
-        except Exception as e:
-            logging.error(f"Error in post generation: {str(e)}")
-            return []
-            
+                    if media_info:
+                        media_list.append(media_info)
+                
+                # Создаем пост (файл будет перемещен в постоянное хранилище)
+                post = await self.post_repo.create_with_media(
+                    flow=flow,
+                    content=post_data['text'],
+                    media_list=media_list,
+                    is_draft=True
+                )
+                generated_posts.append(PostDTO.from_orm(post))
+                
+            except Exception as e:
+                logging.error(f"Post creation failed: {str(e)}")
+        
+        return generated_posts
+                
 
     async def _get_last_posts_content(self, flow: FlowDTO, needed_count: int) -> list[str]:
         try:

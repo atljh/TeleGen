@@ -1,4 +1,5 @@
 import os
+import tempfile
 import uuid
 import asyncio
 import logging
@@ -59,7 +60,7 @@ class UserbotService:
 
                         if msg.media:
                             if hasattr(msg.media, 'photo'):
-                                media_path = await self.download_media_to_storage(
+                                media_path = await self.download_media(
                                     client,
                                     msg.media.photo,
                                     'image'
@@ -71,7 +72,7 @@ class UserbotService:
                                     })
                             elif hasattr(msg.media, 'document'):
                                 if msg.media.document.mime_type.startswith('video/'):
-                                    media_path = await self.download_media_to_storage(
+                                    media_path = await self.download_media(
                                         client,
                                         msg.media.document,
                                         'video'
@@ -91,40 +92,26 @@ class UserbotService:
 
         return result
 
-    async def download_telegram_media(self, client: TelegramClient, media, media_type: str) -> Optional[str]:
+    async def download_media(self, media, media_type: str) -> Optional[dict]:
+        """Скачивает медиафайл и возвращает информацию о нем"""
         try:
-            ext = '.jpg' if media_type == 'image' else '.mp4'
-            with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-                tmp_path = tmp.name
-
-            await client.download_media(media, file=tmp_path)
-
-            if os.path.getsize(tmp_path) > 0:
-                return tmp_path
-            os.unlink(tmp_path)
-            return None
+            # Создаем временный файл
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.tmp') as tmp_file:
+                tmp_path = tmp_file.name
+            
+            # Скачиваем медиа
+            await self.client.download_media(media, file=tmp_path)
+            
+            # Проверяем что файл скачался
+            if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
+                raise ValueError("Downloaded file is empty")
+            
+            return {
+                'path': tmp_path,
+                'type': media_type
+            }
         except Exception as e:
-            logging.error(f"Error downloading Telegram media: {str(e)}")
-            return None
-
-    async def download_media_to_storage(self, client: TelegramClient, media, media_type: str) -> Optional[str]:
-        try:
-            media_dir = 'posts/images' if media_type == 'image' else 'posts/videos'
-            os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
-            
-            filename = f"{uuid.uuid4()}.{'jpg' if media_type == 'image' else 'mp4'}"
-            storage_path = os.path.join(media_dir, filename)
-            full_path = os.path.join(settings.MEDIA_ROOT, storage_path)
-            
-            await client.download_media(
-                media,
-                file=full_path
-            )
-            
-            if os.path.exists(full_path) and os.path.getsize(full_path) > 0:
-                return storage_path
-            
-            return None
-        except Exception as e:
-            logging.error(f"Error downloading media: {str(e)}")
+            logging.error(f"Media download failed: {str(e)}")
+            if 'tmp_path' in locals() and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
             return None
