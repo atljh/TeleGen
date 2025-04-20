@@ -62,36 +62,78 @@ class PostRepository:
         return post
 
 
+    # async def create_with_media(
+    #     self,
+    #     flow: Flow,
+    #     content: str,
+    #     media_list: list[dict],
+    #     **kwargs
+    # ) -> Post:
+    #     post = Post(flow=flow, content=content, **kwargs)
+    #     await sync_to_async(post.save)()
+        
+    #     for media in media_list[:1]:
+    #         try:
+    #             with open(media['path'], 'rb') as f:
+    #                 file_obj = File(f)
+                    
+    #                 if media['type'] == 'image':
+    #                     await sync_to_async(post.image.save)(
+    #                         os.path.basename(media['path']),
+    #                         file_obj
+    #                     )
+    #                 elif media['type'] == 'video':
+    #                     await sync_to_async(post.video.save)(
+    #                         os.path.basename(media['path']),
+    #                         file_obj
+    #                     )
+                    
+    #                 await sync_to_async(post.save)()
+    #         except Exception as e:
+    #             logging.error(f"Failed to save media: {str(e)}")
+    #         finally:
+    #             if os.path.exists(media['path']):
+    #                 os.unlink(media['path'])
+        
+    #     return post
+
     async def create_with_media(
         self,
         flow: Flow,
         content: str,
-        media_path: Optional[str] = None,
-        media_type: Optional[str] = None
+        media_list: list[dict],
+        **kwargs
     ) -> Post:
-        post = Post(
-            flow=flow,
-            content=content,
-            is_draft=True
-        )
-        
+        post = Post(flow=flow, content=content, **kwargs)
         await sync_to_async(post.save)()
-        
-        if media_path and media_type:
-            try:
-                permanent_path = await self._store_media_permanently(media_path, media_type)
-                
-                if media_type == 'image':
-                    post.image.name = permanent_path
-                elif media_type == 'video':
-                    post.video.name = permanent_path
-                
-                await sync_to_async(post.save)()
-            finally:
 
-                if os.path.exists(media_path):
-                    os.unlink(media_path)
-        
+        for media in media_list[:1]:
+            try:
+                if not media.get('path') or not media.get('type'):
+                    continue
+
+                ext = os.path.splitext(media['path'])[1] or ('.jpg' if media['type'] == 'image' else '.mp4')
+                filename = f"{uuid.uuid4()}{ext}"
+                
+                media_dir = 'posts/images' if media['type'] == 'image' else 'posts/videos'
+                os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
+                permanent_path = os.path.join(media_dir, filename)
+
+                shutil.copy2(media['path'], os.path.join(settings.MEDIA_ROOT, permanent_path))
+
+                if media['type'] == 'image':
+                    post.image.name = permanent_path
+                elif media['type'] == 'video':
+                    post.video.name = permanent_path
+
+                await sync_to_async(post.save)()
+                
+            except Exception as e:
+                logging.error(f"Failed to save media: {str(e)}")
+            finally:
+                if media.get('path') and os.path.exists(media['path']):
+                    os.unlink(media['path'])
+
         return post
 
     async def _store_media_permanently(self, temp_path: str, media_type: str) -> str:
