@@ -92,17 +92,18 @@ class UserbotService:
 
         return result
 
-    async def download_media(self, media, media_type: str) -> Optional[dict]:
-        """Скачивает медиафайл и возвращает информацию о нем"""
+    async def download_media(
+        self,
+        client: TelegramClient,
+        media,
+        media_type: str
+        ) -> Optional[dict]:
         try:
-            # Создаем временный файл
             with tempfile.NamedTemporaryFile(delete=False, suffix='.tmp') as tmp_file:
                 tmp_path = tmp_file.name
             
-            # Скачиваем медиа
             await self.client.download_media(media, file=tmp_path)
             
-            # Проверяем что файл скачался
             if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
                 raise ValueError("Downloaded file is empty")
             
