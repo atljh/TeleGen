@@ -104,36 +104,58 @@ class PostRepository:
         media_list: list[dict],
         **kwargs
     ) -> Post:
+        """Создает пост с медиа, гарантируя сохранность файлов"""
         post = Post(flow=flow, content=content, **kwargs)
-        await sync_to_async(post.save)()
+        await sync_to_async(post.save)()  # Сначала сохраняем пост
 
-        for media in media_list[:1]:
-            try:
-                if not media.get('path') or not media.get('type'):
-                    continue
+        if not media_list:
+            return post
 
-                ext = os.path.splitext(media['path'])[1] or ('.jpg' if media['type'] == 'image' else '.mp4')
-                filename = f"{uuid.uuid4()}{ext}"
+        # Обрабатываем только первый медиафайл (как в вашем оригинальном коде)
+        media = media_list[0]
+        if not media.get('path') or not os.path.exists(media['path']):
+            logging.warning(f"Media file not found: {media.get('path')}")
+            return post
+
+        try:
+            # Генерируем уникальное имя файла
+            ext = os.path.splitext(media['path'])[1] or ('.jpg' if media['type'] == 'image' else '.mp4')
+            filename = f"{uuid.uuid4()}{ext}"
+            
+            # Определяем конечный путь
+            media_type_dir = 'images' if media['type'] == 'image' else 'videos'
+            media_dir = os.path.join(settings.MEDIA_ROOT, 'posts', media_type_dir)
+            
+            # Создаем директорию, если не существует
+            os.makedirs(media_dir, exist_ok=True)
+            
+            # Полный путь к новому файлу
+            new_path = os.path.join(media_dir, filename)
+            
+            # Копируем файл (атомарная операция)
+            shutil.copy2(media['path'], new_path)
+            
+            # Проверяем, что файл скопировался
+            if not os.path.exists(new_path):
+                raise FileNotFoundError(f"Failed to copy file to {new_path}")
+            
+            # Сохраняем относительный путь в БД
+            relative_path = os.path.join('posts', media_type_dir, filename)
+            if media['type'] == 'image':
+                post.image.name = relative_path
+            else:
+                post.video.name = relative_path
                 
-                media_dir = 'posts/images' if media['type'] == 'image' else 'posts/videos'
-                os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
-                permanent_path = os.path.join(media_dir, filename)
-                logging.info(f'{settings.MEDIA_ROOT} | {permanent_path}')
-                shutil.copy2(media['path'], os.path.join(settings.MEDIA_ROOT, permanent_path))
-
-                if media['type'] == 'image':
-                    post.image.name = permanent_path
-                elif media['type'] == 'video':
-                    post.video.name = permanent_path
-
-                await sync_to_async(post.save)()
-                
-            except Exception as e:
-                logging.error(f"Failed to save media: {str(e)}")
-            finally:
-                if media.get('path') and os.path.exists(media['path']):
-                    os.unlink(media['path'])
-
+            await sync_to_async(post.save)()
+            
+        except Exception as e:
+            logging.error(f"Media processing failed: {str(e)}")
+            if 'new_path' in locals() and os.path.exists(new_path):
+                os.unlink(new_path)
+        finally:
+            if os.path.exists(media['path']):
+                os.unlink(media['path'])
+        
         return post
 
     async def _store_media_permanently(self, temp_path: str, media_type: str) -> str:
