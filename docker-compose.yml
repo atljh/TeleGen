@@ -12,8 +12,9 @@ services:
       - db
       - redis
     volumes:
-      - ./media:/app/media
       - ./bot:/bot
+      - ./media:/app/media
+      - ./admin_panel/media:/app/admin_panel/media
     environment:
       - MEDIA_ROOT=/app/media
     command: ["python", "watcher.py"]
