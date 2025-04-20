@@ -42,6 +42,7 @@ class PostService:
         
         generated_posts = []
         for post_data in posts_data:
+            logging.info(post_data)
             try:
                 media_list = []
                 if post_data.get('media'):

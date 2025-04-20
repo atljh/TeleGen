@@ -65,6 +65,8 @@ class UserbotService:
                                     msg.media.photo,
                                     'image'
                                 )
+                                logging.info(f'download photo {media_path}')
+
                                 if media_path:
                                     post_data['media'].append({
                                         'type': 'image',
@@ -102,7 +104,7 @@ class UserbotService:
             with tempfile.NamedTemporaryFile(delete=False, suffix='.tmp') as tmp_file:
                 tmp_path = tmp_file.name
             
-            await self.client.download_media(media, file=tmp_path)
+            await client.download_media(media, file=tmp_path)
             
             if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
                 raise ValueError("Downloaded file is empty")
