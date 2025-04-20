@@ -118,7 +118,7 @@ class PostRepository:
                 media_dir = 'posts/images' if media['type'] == 'image' else 'posts/videos'
                 os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
                 permanent_path = os.path.join(media_dir, filename)
-
+                logging.info(f'{settings.MEDIA_ROOT} | {permanent_path}')
                 shutil.copy2(media['path'], os.path.join(settings.MEDIA_ROOT, permanent_path))
 
                 if media['type'] == 'image':
