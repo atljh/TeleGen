@@ -65,13 +65,14 @@ class UserbotService:
                                     msg.media.photo,
                                     'image'
                                 )
-                                logging.info(f'download photo {media_path}')
-
                                 if media_path:
                                     post_data['media'].append({
                                         'type': 'image',
-                                        'path': media_path
+                                        'path': media_path['path'],
+                                        'extension': media_path.get('extension'),
+                                        'file_id': media_path.get('file_id'),
                                     })
+
                             elif hasattr(msg.media, 'document'):
                                 if msg.media.document.mime_type.startswith('video/'):
                                     media_path = await self.download_media(
@@ -82,7 +83,9 @@ class UserbotService:
                                     if media_path:
                                         post_data['media'].append({
                                             'type': 'video',
-                                            'path': media_path
+                                            'path': media_path['path'],
+                                            'extension': media_path.get('extension'),
+                                            'file_id': media_path.get('file_id'),
                                         })
 
                         if post_data['text'] or post_data['media']:
