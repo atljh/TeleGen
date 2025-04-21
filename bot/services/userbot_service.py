@@ -101,7 +101,7 @@ class UserbotService:
                     logging.error(f"Error processing source {source['link']}: {str(e)}")
                     continue
 
-        return result
+        return result[::-1]
 
     async def download_media(
         self,
