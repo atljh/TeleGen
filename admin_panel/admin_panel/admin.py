@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics
+    User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics, PostImage
 )
 
 
@@ -40,11 +40,16 @@ class FlowAdmin(admin.ModelAdmin):
     list_filter = ('frequency',)
     search_fields = ('name', 'theme')
 
+class PostImageInline(admin.TabularInline):
+    model = PostImage
+    extra = 1
+
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ('flow', 'publication_date', 'is_published', 'is_draft', 'created_at')
     search_fields = ('content', 'source_url')
     list_filter = ('is_published', 'is_draft', 'created_at')
+    inlines = [PostImageInline]
 
 @admin.register(Draft)
 class DraftAdmin(admin.ModelAdmin):
