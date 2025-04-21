@@ -6,9 +6,11 @@ from django.conf import settings
 from datetime import datetime
 from typing import Optional, List
 from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async
+from django.db.models import Prefetch
 from admin_panel.admin_panel.models import Post, Flow, PostImage
 from bot.database.exceptions import PostNotFoundError
-from bot.database.dtos.dtos import MediaType
+from bot.database.dtos.dtos import MediaType, PostDTO, PostImageDTO
 
 
 class PostRepository:
@@ -151,12 +153,35 @@ class PostRepository:
         await post.asave()
         return post
 
-    async def get_posts_by_flow_id(self, flow_id: int) -> List[Post]:
+    @sync_to_async
+    def get_posts_by_flow_id(self, flow_id: int) -> List[PostDTO]:
+        posts = Post.objects.filter(flow_id=flow_id)\
+            .select_related('flow')\
+            .prefetch_related(
+                Prefetch('images', queryset=PostImage.objects.order_by('order'))
+            )\
+            .order_by('-created_at')
+        
         return [
-            post async for post in 
-            Post.objects.filter(flow_id=flow_id)
-                .select_related('flow')
-                .order_by('-created_at')
+            PostDTO(
+                id=post.id,
+                flow_id=post.flow_id,
+                content=post.content,
+                source_url=post.source_url,
+                publication_date=post.publication_date,
+                is_published=post.is_published,
+                is_draft=post.is_draft,
+                created_at=post.created_at,
+                scheduled_time=post.scheduled_time,
+                images=[
+                    PostImageDTO(
+                        url=image.image.url,
+                        order=image.order
+                    ) for image in post.images.all()
+                ],
+                video_url=post.video.url if post.video else None
+            )
+            for post in posts
         ]
 
     async def exists(self, post_id: int) -> bool:

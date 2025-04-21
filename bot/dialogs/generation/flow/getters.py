@@ -1,18 +1,19 @@
 import os
 import logging
 from urllib.parse import unquote
-from pathlib import Path
 from typing import Any, Dict
 from aiogram_dialog import DialogManager
-from aiogram_dialog.api.entities import MediaAttachment, MediaId
+from aiogram_dialog.api.entities import MediaAttachment
 from aiogram_dialog.widgets.kbd import StubScroll
 from django.conf import settings
 from bot.containers import Container
 from bot.database.dtos.dtos import MediaType
+from asgiref.sync import sync_to_async
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
     current_page = await scroll.get_page() if scroll else 0
+
 
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
@@ -37,7 +38,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         }
     }
 
-    if flow and "all_posts" not in dialog_data:
+    if flow and "all_posts" not in dialog_manager.dialog_data:
         post_service = Container.post_service()
         raw_posts = await post_service.get_posts_by_flow_id(flow.id)
         posts = []
@@ -46,37 +47,31 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             pub_time = post.publication_date.strftime("%d.%m.%Y %H:%M") if post.publication_date else "Без дати"
             created_time = post.created_at.strftime("%d.%m.%Y %H:%M") if post.created_at else "Без дати"
 
-            relative_path = post.media_url.lstrip("/") if post.media_url else None
-            media_path = os.path.join(settings.BASE_DIR, relative_path) if relative_path else None
             media = None
-            print(media_path)
-            if media_path and post.media_type:
-                try:
-                    if post.media_type == MediaType.IMAGE:
-                        media = MediaAttachment(
-                            path=media_path,
-                            type="photo"
-                        )
-                    elif post.media_type == MediaType.VIDEO:
-                        decoded_path = unquote(post.media_url)
-                        relative_path = decoded_path.lstrip("/")
-                        media_path = os.path.join(settings.BASE_DIR, relative_path)
-                        media = MediaAttachment(
-                            path=media_path,
-                            type="video"
-                        )
-                except Exception as e:
-                    logging.error(f"Error creating media attachment: {e}")
+            if post.images:
+                media = {
+                    'type': 'photo',
+                    'url': post.first_image_url,
+                    'path': os.path.join(settings.MEDIA_ROOT, post.first_image_url.split('/media/')[-1])
+                }
+            elif post.video_url:
+                media = {
+                    'type': 'video', 
+                    'url': post.video_url,
+                    'path': os.path.join(settings.MEDIA_ROOT, post.video_url.split('/media/')[-1])
+                }
 
             posts.append({
                 "id": str(post.id),
                 "idx": idx,
                 "content_preview": (post.content[:1000] + "...") if len(post.content) > 1000 else post.content,
                 "pub_time": pub_time,
-                "created_time": created_time if created_time else "",
+                "created_time": created_time,
                 "status": "✅ Опубліковано" if post.is_published else "📝 Чернетка",
                 "full_content": post.content,
                 "media_path": media,
+                "has_media": bool(post.images or post.video_url),
+                "images_count": len(post.images),
             })
 
         dialog_manager.dialog_data["all_posts"] = posts
@@ -85,23 +80,22 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
     posts = dialog_manager.dialog_data.get("all_posts", [])
     total_pages = len(posts)
 
-    if posts and current_page < total_pages:
+    if posts and current_page < len(posts):
         post = posts[current_page]
+        if post['media_info'] and os.path.exists(post['media_info']['path']):
+            media = MediaAttachment(
+                path=post['media_info']['path'],
+                type=post['media_info']['type']
+            )
+        else:
+            media = None
+        
         data = {
             "current_page": current_page + 1,
             "pages": total_pages,
             "day": f"День {current_page + 1}",
-            "media_content": post.get("media_path"),
-            "post": {
-                "id": post.get("id", ""),
-                "idx": post.get("idx", 0),
-                "content_preview": post.get("content_preview", ""),
-                "pub_time": post.get("pub_time", ""),
-                "created_time": post.get("created_time", ""),
-                "status": post.get("status", ""),
-                "full_content": post.get("full_content", ""),
-                "media_path": post.get("media_path"),
-            }
+            "media_content": media,
+            "post": post
         }
 
     return data
