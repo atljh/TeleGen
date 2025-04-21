@@ -8,6 +8,7 @@ from typing import Optional, List
 from asgiref.sync import sync_to_async
 from asgiref.sync import sync_to_async
 from django.db.models import Prefetch
+from aiogram_dialog.api.entities import MediaAttachment
 from admin_panel.admin_panel.models import Post, Flow, PostImage
 from bot.database.exceptions import PostNotFoundError
 from bot.database.dtos.dtos import MediaType, PostDTO, PostImageDTO
