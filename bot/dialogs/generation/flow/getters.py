@@ -53,7 +53,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 media = {
                     'type': 'photo',
                     'url': first_image,
-                    'path': os.path.join(settings.MEDIA_ROOT, first_image.split('/media/')[-1])
+                    'path': os.path.join(settings.MEDIA_ROOT, first_image.url.split('/media/')[-1])
                 }
             elif post.video_url:
                 media = {
@@ -70,7 +70,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 "created_time": created_time,
                 "status": "✅ Опубліковано" if post.is_published else "📝 Чернетка",
                 "full_content": post.content,
-                "media_path": media,
+                "media_info": media,
                 "has_media": bool(post.images or post.video_url),
                 "images_count": len(post.images),
             })
