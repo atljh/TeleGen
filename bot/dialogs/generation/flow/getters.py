@@ -5,6 +5,7 @@ import asyncio
 from typing import Any, Dict, Optional
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
+from aiogram.types import InputMediaPhoto, InputMediaVideo
 from aiogram_dialog.widgets.kbd import StubScroll
 from django.conf import settings
 from bot.containers import Container
@@ -44,6 +45,45 @@ async def background_preload(posts: list, current_index: int):
                 asyncio.create_task(try_load_media(post['media_info']))
     except Exception as e:
         logging.debug(f"Background preload error: {str(e)}")
+
+
+async def send_media_album(dialog_manager: DialogManager, post_data: Dict[str, Any]):
+    media_group = []
+    chat_id = dialog_manager.middleware_data['event_chat'].id
+    
+    for i, image in enumerate(post_data.get('images', [])[:10]):
+        media_path = os.path.join(settings.MEDIA_ROOT, image.url.split('/media/')[-1])
+        
+        if i == 0:
+            media = InputMediaPhoto(
+                media=open(media_path, 'rb'),
+                caption=post_data['content'][:1024],
+                parse_mode='HTML'
+            )
+        else:
+            media = InputMediaPhoto(
+                media=open(media_path, 'rb')
+            )
+        media_group.append(media)
+    
+    if not media_group and post_data.get('video_url'):
+        video_path = os.path.join(settings.MEDIA_ROOT, post_data['video_url'].split('/media/')[-1])
+        media_group.append(InputMediaVideo(
+            media=open(video_path, 'rb'),
+            caption=post_data['content'][:1024],
+            parse_mode='HTML'
+        ))
+    
+    if media_group:
+        bot = dialog_manager.middleware_data['bot']
+        await bot.send_media_group(
+            chat_id=chat_id,
+            media=media_group
+        )
+        
+        for media in media_group:
+            media.media.close()
+
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
