@@ -181,3 +181,5 @@ staticfiles
 *.session
 *.session-journal
 *.tmp
+*.image
+*.video
