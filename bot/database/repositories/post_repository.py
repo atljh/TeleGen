@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 import shutil
@@ -154,12 +155,22 @@ class PostRepository:
         await post.asave()
         return post
 
+    async def get_posts_by_flow_id(self, flow_id: int) -> List[PostDTO]:
+        posts = await self._fetch_posts_from_db(flow_id)
+        await self._preload_media_for_posts(posts)
+        return posts
+    
     @sync_to_async
-    def get_posts_by_flow_id(self, flow_id: int) -> List[PostDTO]:
+    def _fetch_posts_from_db(self, flow_id: int) -> List[PostDTO]:
         posts = Post.objects.filter(flow_id=flow_id)\
             .select_related('flow')\
             .prefetch_related(
-                Prefetch('images', queryset=PostImage.objects.order_by('order'))
+                Prefetch('images', queryset=PostImage.objects.only('image', 'order').order_by('order'))
+            )\
+            .only(
+                'id', 'content', 'source_url', 'publication_date',
+                'is_published', 'is_draft', 'created_at', 'scheduled_time',
+                'video', 'flow__id', 'flow__name'
             )\
             .order_by('-created_at')
         
@@ -184,6 +195,36 @@ class PostRepository:
             )
             for post in posts
         ]
+    
+    async def _preload_media_for_posts(self, posts: List[PostDTO]):
+        tasks = []
+        
+        for post in posts[:3]:
+            if post.images:
+                tasks.append(self._preload_media(post.images[0].url, 'image'))
+            elif post.video_url:
+                tasks.append(self._preload_media(post.video_url, 'video'))
+        
+        if tasks:
+            await asyncio.gather(*tasks)
+    
+    async def _preload_media(self, media_url: str, media_type: str) -> bool:
+        try:
+            if not media_url:
+                return False
+                
+            media_path = os.path.join(
+                settings.MEDIA_ROOT, 
+                media_url.replace(settings.MEDIA_URL, '').lstrip('/')
+            )
+            
+            if os.path.exists(media_path):
+                return True
+            return False
+            
+        except Exception as e:
+            logging.error(f"Error preloading media {media_url}: {str(e)}")
+            return False
 
     async def exists(self, post_id: int) -> bool:
         return await Post.objects.filter(id=post_id).aexists()
