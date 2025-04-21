@@ -219,7 +219,7 @@ class PostService:
     
     async def get_posts_by_flow_id(self, flow_id: int) -> list[PostDTO]:
         posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id)
-        return [PostDTO.from_orm(post) for post in posts]
+        return posts
 
     async def list_posts(
         self, 

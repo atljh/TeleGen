@@ -1,19 +1,15 @@
 import os
 import tempfile
-import uuid
 import asyncio
 import logging
-from typing import Optional, AsyncGenerator
+from typing import Optional, List, Dict, AsyncGenerator
 from contextlib import asynccontextmanager
-
-from django.conf import settings
 from telethon import TelegramClient
-from telethon.tl.types import MessageMediaPhoto
-from tempfile import NamedTemporaryFile
-
+from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 
 class UserbotService:
-    def __init__(self, api_id: int, api_hash: str, phone: str = None, session_path: str = "app/sessions/userbot.session"):
+    def __init__(self, api_id: int, api_hash: str, phone: str = None, 
+                 session_path: str = "app/sessions/userbot.session"):
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone = phone
@@ -29,19 +25,16 @@ class UserbotService:
             connection_retries=5,
             auto_reconnect=True,
         )
-        client._loop = asyncio.get_event_loop()
         try:
             await client.connect()
             if not await client.is_user_authorized():
                 await client.start(phone=self.phone)
             yield client
-        except Exception as e:
-            logging.error(f"Failed to connect/start client: {e}")
-            raise
         finally:
             await client.disconnect()
 
-    async def get_last_posts(self, sources: list[dict], limit: int = 10) -> list[dict]:
+    async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[Dict]:
+        """Возвращает посты с поддержкой нескольких медиафайлов"""
         result = []
         async with self.get_client() as client:
             for source in sources:
@@ -57,42 +50,8 @@ class UserbotService:
                     messages = await client.get_messages(entity, limit=remaining_limit)
 
                     for msg in messages:
-                        post_data = {
-                            'text': msg.text or '',
-                            'media': []
-                        }
-
-                        if msg.media:
-                            if hasattr(msg.media, 'photo'):
-                                media_path = await self.download_media(
-                                    client,
-                                    msg.media.photo,
-                                    'image'
-                                )
-                                if media_path:
-                                    post_data['media'].append({
-                                        'type': 'image',
-                                        'path': media_path['path'],
-                                        'extension': media_path.get('extension'),
-                                        'file_id': media_path.get('file_id'),
-                                    })
-
-                            elif hasattr(msg.media, 'document'):
-                                if msg.media.document.mime_type.startswith('video/'):
-                                    media_path = await self.download_media(
-                                        client,
-                                        msg.media.document,
-                                        'video'
-                                    )
-                                    if media_path:
-                                        post_data['media'].append({
-                                            'type': 'video',
-                                            'path': media_path['path'],
-                                            'extension': media_path.get('extension'),
-                                            'file_id': media_path.get('file_id'),
-                                        })
-
-                        if post_data['text'] or post_data['media']:
+                        post_data = await self._process_message(client, msg)
+                        if post_data:
                             result.append(post_data)
                             if len(result) >= limit:
                                 break
@@ -101,27 +60,63 @@ class UserbotService:
                     logging.error(f"Error processing source {source['link']}: {str(e)}")
                     continue
 
-        return result[::-1]
+        return result[::-1]  # Возвращаем в хронологическом порядке
 
-    async def download_media(
-        self,
-        client: TelegramClient,
-        media,
-        media_type: str
-        ) -> Optional[dict]:
+    async def _process_message(self, client: TelegramClient, msg) -> Optional[Dict]:
+        """Обрабатывает одно сообщение и извлекает данные"""
+        if not msg.text and not msg.media:
+            return None
+
+        post_data = {
+            'text': msg.text or '',
+            'media': []
+        }
+
+        if msg.media:
+            media_items = await self._extract_media(client, msg.media)
+            post_data['media'].extend(media_items)
+
+        return post_data
+
+    async def _extract_media(self, client: TelegramClient, media) -> List[Dict]:
+        """Извлекает медиафайлы из сообщения"""
+        media_items = []
+        
+        if hasattr(media, 'photo'):
+            media_path = await self._download_media_file(client, media.photo, 'image')
+            if media_path:
+                media_items.append({
+                    'type': 'image',
+                    'path': media_path,
+                    'file_id': getattr(media.photo, 'id', None)
+                })
+        
+        elif hasattr(media, 'document'):
+            if media.document.mime_type.startswith('video/'):
+                media_path = await self._download_media_file(client, media.document, 'video')
+                if media_path:
+                    media_items.append({
+                        'type': 'video',
+                        'path': media_path,
+                        'file_id': media.document.id
+                    })
+        
+        return media_items
+
+    async def _download_media_file(self, client: TelegramClient, media, media_type: str) -> Optional[str]:
+        """Скачивает медиафайл и возвращает временный путь"""
         try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.tmp') as tmp_file:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{media_type}') as tmp_file:
                 tmp_path = tmp_file.name
             
             await client.download_media(media, file=tmp_path)
             
-            if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
-                raise ValueError("Downloaded file is empty")
+            if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
+                return tmp_path
             
-            return {
-                'path': tmp_path,
-                'type': media_type
-            }
+            os.unlink(tmp_path)
+            return None
+            
         except Exception as e:
             logging.error(f"Media download failed: {str(e)}")
             if 'tmp_path' in locals() and os.path.exists(tmp_path):
