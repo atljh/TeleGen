@@ -29,6 +29,11 @@ def flow_dialog() -> Dialog:
                 width=5,
             ),
             Group(
+                Button(
+                    Const("📷 Показать альбом"),
+                    id="show_album",
+                    when="show_album_btn"
+                ),
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
                 Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),

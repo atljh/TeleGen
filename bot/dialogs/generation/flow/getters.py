@@ -2,93 +2,77 @@ import os
 import logging
 import aiohttp
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
-from aiogram.types import InputMediaPhoto, InputMediaVideo
+from aiogram.types import InputMediaPhoto, InputMediaVideo, Message
 from aiogram_dialog.widgets.kbd import StubScroll
 from django.conf import settings
 from bot.containers import Container
 from asgiref.sync import sync_to_async
 from functools import lru_cache
 
+MAX_ALBUM_SIZE = 10
+MAX_CAPTION_LENGTH = 1024
+
 @lru_cache(maxsize=100)
 def get_media_path(media_url: str) -> str:
     return os.path.join(settings.MEDIA_ROOT, media_url.split('/media/')[-1])
 
-async def try_load_media(media_info: dict) -> Optional[MediaAttachment]:
-    try:
-        if not os.path.exists(media_info['path']):
-            if media_info['url'].startswith(('http', 'https')):
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(media_info['url']) as resp:
-                        if resp.status == 200:
-                            os.makedirs(os.path.dirname(media_info['path']), exist_ok=True)
-                            with open(media_info['path'], 'wb') as f:
-                                f.write(await resp.read())
-                            logging.debug(f"Downloaded media: {media_info['path']}")
-        
-        if os.path.exists(media_info['path']):
-            return MediaAttachment(
-                path=media_info['path'],
-                type=media_info['type']
-            )
-    except Exception as e:
-        logging.debug(f"Media load failed: {str(e)}")
-    return None
+async def prepare_media_attachment(media_info: dict) -> Optional[MediaAttachment]:
+    if not media_info or not os.path.exists(media_info['path']):
+        return None
+    return MediaAttachment(path=media_info['path'], type=media_info['type'])
 
-async def background_preload(posts: list, current_index: int):
-    try:
-        for i in range(current_index + 1, min(current_index + 4, len(posts))):
-            post = posts[i]
-            if post.get('media_info'):
-                asyncio.create_task(try_load_media(post['media_info']))
-    except Exception as e:
-        logging.debug(f"Background preload error: {str(e)}")
-
-
-async def send_media_album(dialog_manager: DialogManager, post_data: Dict[str, Any]):
-    media_group = []
+async def send_media_album(
+    dialog_manager: DialogManager, 
+    post_data: Dict[str, Any]
+) -> Optional[Message]:
+    bot = dialog_manager.middleware_data['bot']
     chat_id = dialog_manager.middleware_data['event_chat'].id
+    media_group = []
     
-    for i, image in enumerate(post_data.get('images', [])[:10]):
-        media_path = os.path.join(settings.MEDIA_ROOT, image.url.split('/media/')[-1])
+    try:
+        images = post_data.get('images', [])[:MAX_ALBUM_SIZE]
+        for i, image in enumerate(images):
+            media_path = get_media_path(image.url)
+            
+            if not os.path.exists(media_path):
+                continue
+                
+            with open(media_path, 'rb') as file:
+                media = InputMediaPhoto(
+                    media=file,
+                    caption=post_data['content'][:MAX_CAPTION_LENGTH] if i == 0 else None,
+                    parse_mode='HTML'
+                )
+                media_group.append(media)
         
-        if i == 0:
-            media = InputMediaPhoto(
-                media=open(media_path, 'rb'),
-                caption=post_data['content'][:1024],
-                parse_mode='HTML'
-            )
-        else:
-            media = InputMediaPhoto(
-                media=open(media_path, 'rb')
-            )
-        media_group.append(media)
-    
-    if not media_group and post_data.get('video_url'):
-        video_path = os.path.join(settings.MEDIA_ROOT, post_data['video_url'].split('/media/')[-1])
-        media_group.append(InputMediaVideo(
-            media=open(video_path, 'rb'),
-            caption=post_data['content'][:1024],
-            parse_mode='HTML'
-        ))
-    
-    if media_group:
-        bot = dialog_manager.middleware_data['bot']
-        await bot.send_media_group(
-            chat_id=chat_id,
-            media=media_group
-        )
+        if not media_group and post_data.get('video_url'):
+            video_path = get_media_path(post_data['video_url'])
+            if os.path.exists(video_path):
+                with open(video_path, 'rb') as file:
+                    media_group.append(InputMediaVideo(
+                        media=file,
+                        caption=post_data['content'][:MAX_CAPTION_LENGTH],
+                        parse_mode='HTML'
+                    ))
         
-        for media in media_group:
-            media.media.close()
-
+        if media_group:
+            return await bot.send_media_group(
+                chat_id=chat_id,
+                media=media_group
+            )
+            
+    except Exception as e:
+        logging.error(f"Error sending media album: {str(e)}")
+        await dialog_manager.event.answer("⚠️ Не удалось отправить альбом")
+    
+    return None
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
     current_page = await scroll.get_page() if scroll else 0
-
     dialog_data = dialog_manager.dialog_data or {}
     start_data = dialog_manager.start_data or {}
 
@@ -99,6 +83,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         "pages": 0,
         "day": "Немає постів",
         "media_content": None,
+        "show_album_btn": False,
         "post": {
             "id": "",
             "idx": 0,
@@ -117,7 +102,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         try:
             raw_posts = await post_service.get_posts_by_flow_id(flow.id)
             posts = []
-
+            
             for idx, post in enumerate(raw_posts):
                 pub_time = await sync_to_async(
                     lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") if post.publication_date else "Без дати"
@@ -152,6 +137,8 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "media_info": media_info,
                     "has_media": bool(post.images or post.video_url),
                     "images_count": len(post.images),
+                    "images": post.images,
+                    "video_url": post.video_url,
                 })
 
             dialog_data["all_posts"] = posts
@@ -166,28 +153,25 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
     if posts and current_page < total_pages:
         post = posts[current_page]
         
-        media = None
-        if post.get('media_info'):
-            media = await try_load_media(post['media_info'])
-
-        await background_preload(posts, current_page)
-
-        data = {
-            "current_page": current_page + 1,
-            "pages": total_pages,
-            "day": f"День {current_page + 1}",
-            "media_content": media,
-            "post": {
-                "id": post["id"],
-                "idx": post["idx"],
-                "content_preview": post["content_preview"],
-                "pub_time": post["pub_time"],
-                "created_time": post["created_time"],
-                "status": post["status"],
-                "full_content": post["full_content"],
-                "has_media": post["has_media"],
-                "images_count": post["images_count"],
-            }
-        }
+        if post['images_count'] > 1:
+            data.update({
+                "current_page": current_page + 1,
+                "pages": total_pages,
+                "day": f"День {current_page + 1}",
+                "show_album_btn": True,
+                "post": {
+                    **post,
+                    "content_preview": f"📷 Альбом ({post['images_count']} фото)\n{post['content_preview'][:300]}...",
+                }
+            })
+        else:
+            media = await prepare_media_attachment(post.get('media_info'))
+            data.update({
+                "current_page": current_page + 1,
+                "pages": total_pages,
+                "day": f"День {current_page + 1}",
+                "media_content": media,
+                "post": post
+            })
 
     return data
