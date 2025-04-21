@@ -213,9 +213,13 @@ class PostService:
 
     async def get_post(self, post_id: int) -> PostDTO:
         post = await self.post_repo.get(post_id)
+
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
-        return PostDTO.from_orm(post)
+        
+        images_qs = await sync_to_async(lambda: list(post.images.all().order_by('order')))()
+        return PostDTO.from_orm(post, images=images_qs)
+
     
     async def get_posts_by_flow_id(self, flow_id: int) -> list[PostDTO]:
         posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id)

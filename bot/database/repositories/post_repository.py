@@ -118,7 +118,8 @@ class PostRepository:
 
     async def get(self, post_id: int) -> Post:
         try:
-            return await Post.objects.select_related('flow').aget(id=post_id)
+            query = Post.objects.select_related('flow').prefetch_related('images')
+            return await query.aget(id=post_id)
         except Post.DoesNotExist:
             raise PostNotFoundError(f"Post with id={post_id} not found")
 

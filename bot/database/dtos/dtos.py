@@ -96,24 +96,24 @@ class PostDTO(BaseModel):
     video_url: Optional[str] = None
     
     class Config:
-        from_attributes = True
+        # from_attributes = True
         json_encoders = {
             datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
         }
 
     @classmethod
-    def from_orm(cls, post):
-        images = [
-            PostImageDTO(url=img.image.url, order=img.order)
-            for img in post.images.all().order_by('order')
-        ]
+    def from_orm(cls, post, images=None):
+        if images is None:
+            images = list(post.images.all().order_by('order'))
         
+        image_dtos = [PostImageDTO(url=img.image.url, order=img.order) for img in images]
+
         media_type = None
-        if images:
+        if image_dtos:
             media_type = MediaType.IMAGE
         elif post.video:
             media_type = MediaType.VIDEO
-        
+
         return cls(
             id=post.id,
             flow_id=post.flow_id,
@@ -124,9 +124,9 @@ class PostDTO(BaseModel):
             is_draft=post.is_draft,
             created_at=post.created_at,
             scheduled_time=post.scheduled_time,
-            media_url=images[0].url if images else None,
+            media_url=image_dtos[0].url if image_dtos else None,
             media_type=media_type,
-            images=images,
+            images=image_dtos,
             video_url=post.video.url if post.video else None
         )
 
