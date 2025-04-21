@@ -106,6 +106,30 @@ class Flow(models.Model):
         ]
 
 
+class PostImage(models.Model):
+    post = models.ForeignKey(
+        'Post', 
+        on_delete=models.CASCADE, 
+        related_name='images',
+        verbose_name="Пост"
+    )
+    image = models.ImageField(
+        upload_to='posts/images/',
+        verbose_name="Зображення"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок сортування"
+    )
+
+    class Meta:
+        verbose_name = "Зображення поста"
+        verbose_name_plural = "Зображення постів"
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Зображення для поста {self.post.id}"
+
 class Post(models.Model):
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE, related_name='posts', verbose_name="Флоу")
     content = models.TextField(verbose_name="Контент")
@@ -115,33 +139,31 @@ class Post(models.Model):
     is_draft = models.BooleanField(default=False, verbose_name="Чернетка")
     scheduled_time = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
-    image = models.ImageField(
-        upload_to='posts/images/',
-        blank=True,
-        null=True,
-        verbose_name="Зображення"
-    )
     video = models.FileField(
         upload_to='posts/videos/',
         blank=True,
         null=True,
         verbose_name="Відео"
     )
+    
     @property
     def media_type(self):
-        if self.image:
+        if self.images.exists():
             return 'image'
         elif self.video:
             return 'video'
         return None
     
     @property
-    def media_url(self):
-        if self.image:
-            return self.image.url
-        elif self.video:
-            return self.video.url
+    def first_image_url(self):
+        first_image = self.images.first()
+        if first_image:
+            return first_image.image.url
         return None
+
+    @property
+    def image_urls(self):
+        return [img.image.url for img in self.images.all()]
 
     def __str__(self):
         return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"
