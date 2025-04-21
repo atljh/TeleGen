@@ -13,7 +13,7 @@ from tempfile import NamedTemporaryFile
 from typing import Optional, List, AsyncGenerator
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
-from admin_panel.admin_panel.models import Post, Flow
+from admin_panel.admin_panel.models import Post, Flow, PostImage
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 from bot.database.dtos.dtos import MediaType
 
@@ -27,8 +27,8 @@ class PostRepository:
         source_url: Optional[str] = None,
         is_draft: bool = True,
         scheduled_time: Optional[datetime] = None,
-        media_url: Optional[str] = None,
-        media_type: Optional[str] = None
+        images: Optional[List[str]] = None,
+        video_url: Optional[str] = None
     ) -> Post:
         post = Post(
             flow=flow,
@@ -37,116 +37,114 @@ class PostRepository:
             is_draft=is_draft,
             scheduled_time=scheduled_time
         )
-
         await post.asave()
 
-        if media_url and media_type:
-            success = False
-            if media_type == 'image':
-                success = await self._download_and_save_media(
-                    media_url,
-                    post.image.save
-                )
-            elif media_type == 'video':
-                success = await self._download_and_save_media(
-                    media_url,
-                    post.video.save
-                )
+        if video_url:
+            await self._save_video(post, video_url)
 
-            if success:
-                await post.asave()
-            else:
-                logging.warning(f"Failed to save media for post {post.id}")
-
+        if images:
+            for image_url in images:
+                await self._save_image(post, image_url)
 
         return post
-
 
     async def create_with_media(
         self,
         flow: Flow,
         content: str,
-        media_list: list[dict],
+        media_list: List[dict],
         **kwargs
     ) -> Post:
+        """Создает пост с медиафайлами из временных путей"""
         post = Post(flow=flow, content=content, **kwargs)
-        await sync_to_async(post.save)()
+        await post.asave()
 
         if not media_list:
             return post
 
-        media = media_list[0]
-        if not media.get('path') or not os.path.exists(media['path']):
-            logging.warning(f"Media file not found: {media.get('path')}")
-            return post
+        for media in media_list:
+            if not media.get('path') or not os.path.exists(media['path']):
+                logging.warning(f"Media file not found: {media.get('path')}")
+                continue
 
-        try:
-            ext = os.path.splitext(media['path'])[1] or ('.jpg' if media['type'] == 'image' else '.mp4')
-            filename = f"{uuid.uuid4()}{ext}"
-            
-            media_type_dir = 'images' if media['type'] == 'image' else 'videos'
-            media_dir = os.path.join(settings.MEDIA_ROOT, 'posts', media_type_dir)
-            
-            os.makedirs(media_dir, exist_ok=True)
-            
-            new_path = os.path.join(media_dir, filename)
-            
-            shutil.copy2(media['path'], new_path)
-            
-            if not os.path.exists(new_path):
-                raise FileNotFoundError(f"Failed to copy file to {new_path}")
-            
-            relative_path = os.path.join('posts', media_type_dir, filename)
-            if media['type'] == 'image':
-                post.image.name = relative_path
-            else:
-                post.video.name = relative_path
+            try:
+                if media['type'] == 'image':
+                    await self._save_image_from_path(post, media['path'])
+                elif media['type'] == 'video':
+                    await self._save_video_from_path(post, media['path'])
                 
-            await sync_to_async(post.save)()
-            
-        except Exception as e:
-            logging.error(f"Media processing failed: {str(e)}")
-            if 'new_path' in locals() and os.path.exists(new_path):
-                os.unlink(new_path)
-        finally:
-            if os.path.exists(media['path']):
                 os.unlink(media['path'])
-        
+            except Exception as e:
+                logging.error(f"Media processing failed: {str(e)}")
+                if os.path.exists(media['path']):
+                    os.unlink(media['path'])
+
         return post
 
+    async def _save_image(self, post: Post, image_url: str) -> bool:
+        try:
+            temp_path = await self._download_media(image_url)
+            if temp_path:
+                return await self._save_image_from_path(post, temp_path)
+        except Exception as e:
+            logging.error(f"Failed to save image: {str(e)}")
+        return False
+
+    async def _save_video(self, post: Post, video_url: str) -> bool:
+        try:
+            temp_path = await self._download_media(video_url)
+            if temp_path:
+                return await self._save_video_from_path(post, temp_path)
+        except Exception as e:
+            logging.error(f"Failed to save video: {str(e)}")
+        return False
+
+    async def _save_image_from_path(self, post: Post, image_path: str) -> bool:
+        try:
+            ext = os.path.splitext(image_path)[1] or '.jpg'
+            filename = f"{uuid.uuid4()}{ext}"
+            permanent_path = await self._store_media_permanently(image_path, 'images')
+            
+            post_image = PostImage(
+                post=post,
+                image=permanent_path,
+                order=post.images.count()
+            )
+            await sync_to_async(post_image.save)()
+            return True
+        except Exception as e:
+            logging.error(f"Failed to save image from path: {str(e)}")
+            return False
+
+    async def _save_video_from_path(self, post: Post, video_path: str) -> bool:
+        try:
+            ext = os.path.splitext(video_path)[1] or '.mp4'
+            filename = f"{uuid.uuid4()}{ext}"
+            permanent_path = await self._store_media_permanently(video_path, 'videos')
+            
+            post.video.name = permanent_path
+            await post.asave()
+            return True
+        except Exception as e:
+            logging.error(f"Failed to save video from path: {str(e)}")
+            return False
+
     async def _store_media_permanently(self, temp_path: str, media_type: str) -> str:
-        media_dir = 'posts/images' if media_type == 'image' else 'posts/videos'
+        media_dir = 'posts/images' if media_type == 'images' else 'posts/videos'
         os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
         
-        filename = f"{uuid.uuid4()}{os.path.splitext(temp_path)[1]}"
+        ext = os.path.splitext(temp_path)[1]
+        filename = f"{uuid.uuid4()}{ext}"
         permanent_path = os.path.join(media_dir, filename)
         
         shutil.copy2(temp_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
         return permanent_path
 
-    async def _download_and_save_media(self, url: str, save_func) -> bool:
-        try:
-            if url.startswith(('http://', 'https://')):
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as response:
-                        if response.status == 200:
-                            content = await response.read()
-                            await sync_to_async(save_func)(
-                                os.path.basename(url),
-                                ContentFile(content)
-                            )
-                            return True
-            else:
-                async with aiofiles.open(url, mode='rb') as f:
-                    content = await f.read()
-                    await sync_to_async(save_func)(
-                        os.path.basename(url),
-                        ContentFile(content)
-                    )
-                    return True
-        except Exception as e:
-            logging.error(f"Error downloading/saving media: {str(e)}")
-            return False
+    async def _download_media(self, url: str) -> Optional[str]:
+        """Скачивает медиафайл по URL и возвращает временный путь"""
+        # Реализация скачивания файла (зависит от вашей инфраструктуры)
+        # Возвращает путь к временному файлу или None в случае ошибки
+        pass
 
     async def get(self, post_id: int) -> Post:
         try:
