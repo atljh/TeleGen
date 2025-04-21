@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, validator
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
@@ -71,9 +71,12 @@ class FlowDTO(BaseModel):
         }
 
 class MediaType(str, Enum):
-    IMAGE = 'image'
-    VIDEO = 'video'
+    IMAGE = "image"
+    VIDEO = "video"
 
+class PostImageDTO(BaseModel):
+    url: str
+    order: int
 
 class PostDTO(BaseModel):
     id: int
@@ -89,6 +92,9 @@ class PostDTO(BaseModel):
     media_url: Optional[str] = None
     media_type: Optional[MediaType] = None
     
+    images: List[PostImageDTO] = []
+    video_url: Optional[str] = None
+    
     class Config:
         from_attributes = True
         json_encoders = {
@@ -97,15 +103,15 @@ class PostDTO(BaseModel):
 
     @classmethod
     def from_orm(cls, post):
-        media_url = None
-        media_type = None
-        thumbnail_url = None
+        images = [
+            PostImageDTO(url=img.image.url, order=img.order)
+            for img in post.images.all().order_by('order')
+        ]
         
-        if post.image:
-            media_url = post.image.url
+        media_type = None
+        if images:
             media_type = MediaType.IMAGE
         elif post.video:
-            media_url = post.video.url
             media_type = MediaType.VIDEO
         
         return cls(
@@ -118,9 +124,10 @@ class PostDTO(BaseModel):
             is_draft=post.is_draft,
             created_at=post.created_at,
             scheduled_time=post.scheduled_time,
-            media_url=media_url,
+            media_url=images[0].url if images else None,
             media_type=media_type,
-            thumbnail_url=thumbnail_url
+            images=images,
+            video_url=post.video.url if post.video else None
         )
 
 class DraftDTO(BaseModel):
