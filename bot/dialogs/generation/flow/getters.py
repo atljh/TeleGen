@@ -49,10 +49,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
             media = None
             if post.images:
+                first_image = post.images[0]
                 media = {
                     'type': 'photo',
-                    'url': post.first_image_url,
-                    'path': os.path.join(settings.MEDIA_ROOT, post.first_image_url.split('/media/')[-1])
+                    'url': first_image,
+                    'path': os.path.join(settings.MEDIA_ROOT, first_image.split('/media/')[-1])
                 }
             elif post.video_url:
                 media = {
