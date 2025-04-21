@@ -33,11 +33,13 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
             "pub_time": updated_post.publication_date.strftime("%d.%m.%Y %H:%M"),
             "is_published": True
         }
-        await callback.answer(f"Пост {post_id} успiшно опублiковано в канал!")
+        await callback.answer(f"Пост успiшно опублiковано в канал!")
     except InvalidOperationError as e:
-        await callback.answer(str(e), show_alert=True)
+        logging.error(e)
+        await callback.answer(str(e))
     except Exception as e:
-        await callback.answer(f"Помилка: {str(e)}", show_alert=True)
+        logging.error(e)
+        await callback.answer(f"Помилка: {str(e)}")
         logging.exception("Помилка при публікації посту")
 
     await manager.show()
