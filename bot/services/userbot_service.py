@@ -45,12 +45,16 @@ class UserbotService:
         result = []
         async with self.get_client() as client:
             for source in sources:
+                if len(result) >= limit:
+                    break
+                    
                 if source['type'] != 'telegram':
                     continue
 
                 try:
+                    remaining_limit = limit - len(result)
                     entity = await client.get_entity(source['link'])
-                    messages = await client.get_messages(entity, limit=limit)
+                    messages = await client.get_messages(entity, limit=remaining_limit)
 
                     for msg in messages:
                         post_data = {
@@ -90,6 +94,8 @@ class UserbotService:
 
                         if post_data['text'] or post_data['media']:
                             result.append(post_data)
+                            if len(result) >= limit:
+                                break
 
                 except Exception as e:
                     logging.error(f"Error processing source {source['link']}: {str(e)}")
