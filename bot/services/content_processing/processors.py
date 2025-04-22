@@ -1,0 +1,9 @@
+from abc import ABC, abstractmethod
+
+
+class ContentProcessor(ABC):
+    @abstractmethod
+    async def process(self, content: str) -> str: ...
+
+class TextCleaner(ContentProcessor): ...
+class ChatGPTEnhancer(ContentProcessor): ...
