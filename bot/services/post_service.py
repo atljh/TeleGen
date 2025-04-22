@@ -44,14 +44,16 @@ class PostService:
         for post_data in posts_data:
             try:
                 media_list = post_data.get('media', [])
-
+                
                 post = await self.post_repo.create_with_media(
                     flow=flow,
                     content=post_data['text'],
                     media_list=media_list,
                     is_draft=True
                 )
-                generated_posts.append(PostDTO.from_orm(post))
+                
+                post_dto = await sync_to_async(PostDTO.from_orm)(post)
+                generated_posts.append(post_dto)
 
             except Exception as e:
                 logging.error(f"Post creation failed: {str(e)}")
