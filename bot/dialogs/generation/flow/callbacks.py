@@ -7,7 +7,7 @@ from bot.containers import Container
 from bot.database.exceptions import InvalidOperationError
 
 from .states import FlowMenu
-from .getters import paging_getter
+from .getters import paging_getter, send_media_album
 
 
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -57,3 +57,8 @@ async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: Di
     # post_service = Container.post_service()
     # await post_service.save_to_buffer(post_id)
     await callback.answer("Пост збережено в буфер!")
+
+async def on_show_album(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    post_data = dialog_manager.dialog_data['all_posts'][dialog_manager.dialog_data['current_page'] - 1]
+    await send_media_album(dialog_manager, post_data)
+    await callback.answer()

@@ -14,6 +14,7 @@ from .callbacks import (
     on_edit_post,
     on_publish_post,
     on_schedule_post,
+    on_show_album
 )
 
 def flow_dialog() -> Dialog:
@@ -32,7 +33,8 @@ def flow_dialog() -> Dialog:
                 Button(
                     Const("📷 Показать альбом"),
                     id="show_album",
-                    when="show_album_btn"
+                    when="show_album_btn",
+                    on_click=on_show_album
                 ),
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
