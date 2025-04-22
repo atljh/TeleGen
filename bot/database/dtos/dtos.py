@@ -1,8 +1,9 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, validator
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
+from bot.services.content_processing.processors import ContentProcessor
 
 
 class UserDTO(BaseModel):
@@ -96,7 +97,6 @@ class PostDTO(BaseModel):
     video_url: Optional[str] = None
     
     class Config:
-        # from_attributes = True
         json_encoders = {
             datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
         }
@@ -113,6 +113,20 @@ class PostDTO(BaseModel):
             return {"type": MediaType.VIDEO, "url": self.video_url}
         return None
     
+    async def process_content(self, processors: List[ContentProcessor]) -> "PostDTO":
+        processed_text = self.content
+        for processor in processors:
+            processed_text = await processor.process_text(processed_text)
+        
+        return self.copy(update={"content": processed_text})
+    
+    def to_telegram_dict(self) -> Dict[str, Any]:
+        return {
+            "text": self.content,
+            "images": [{"url": img.url, "order": img.order} for img in self.images],
+            "video_url": self.video_url,
+            "is_album": len(self.images) > 1
+        }
 
     @classmethod
     def from_orm(cls, post, images=None):

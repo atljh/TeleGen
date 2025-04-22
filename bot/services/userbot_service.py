@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 
+from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor, PostProcessingPipeline
+
 class UserbotService:
     def __init__(self, api_id: int, api_hash: str, phone: str = None, 
                  session_path: str = "app/sessions/userbot.session"):
@@ -169,3 +171,28 @@ class UserbotService:
             if 'tmp_path' in locals() and os.path.exists(tmp_path):
                 os.unlink(tmp_path)
             return None
+        
+
+class EnhancedUserbotService(UserbotService):
+    def __init__(self, api_id: int, api_hash: str, openai_key: str = None, **kwargs):
+        super().__init__(api_id, api_hash, **kwargs)
+        
+        processors = [DefaultContentProcessor()]
+        if openai_key:
+            processors.append(ChatGPTContentProcessor(openai_key))
+            
+        self.pipeline = PostProcessingPipeline(processors)
+
+    async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[ProcessedPost]:
+        raw_posts = await super().get_last_posts(sources, limit)
+        
+        processed_posts = []
+        for raw_post in raw_posts:
+            try:
+                processed_post = await self.pipeline.process_post(raw_post)
+                processed_posts.append(processed_post)
+            except Exception as e:
+                logging.error(f"Error processing post: {str(e)}")
+                continue
+                
+        return processed_posts
