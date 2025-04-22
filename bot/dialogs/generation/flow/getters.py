@@ -5,7 +5,7 @@ import asyncio
 from typing import Any, Dict, Optional, List
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
-from aiogram.types import InputMediaPhoto, InputMediaVideo, Message
+from aiogram.types import InputMediaPhoto, InputMediaVideo, Message, FSInputFile
 from aiogram_dialog.widgets.kbd import StubScroll
 from django.conf import settings
 from bot.containers import Container
@@ -40,24 +40,22 @@ async def send_media_album(
             if not os.path.exists(media_path):
                 continue
                 
-            with open(media_path, 'rb') as file:
-                media = InputMediaPhoto(
-                    media=file,
-                    caption=post_data['content'][:MAX_CAPTION_LENGTH] if i == 0 else None,
-                    parse_mode='HTML'
-                )
-                media_group.append(media)
+            media = InputMediaPhoto(
+                media=FSInputFile(media_path),
+                caption=post_data['content_preview'][:MAX_CAPTION_LENGTH] if i == 0 else None,
+                parse_mode='HTML'
+            )
+            media_group.append(media)
         
         if not media_group and post_data.get('video_url'):
             video_path = get_media_path(post_data['video_url'])
             if os.path.exists(video_path):
-                with open(video_path, 'rb') as file:
-                    media_group.append(InputMediaVideo(
-                        media=file,
-                        caption=post_data['content'][:MAX_CAPTION_LENGTH],
-                        parse_mode='HTML'
-                    ))
-        
+                media_group.append(InputMediaVideo(
+                    media=FSInputFile(video_path),
+                    caption=post_data['content_preview'][:MAX_CAPTION_LENGTH],
+                    parse_mode='HTML'
+                ))
+    
         if media_group:
             return await bot.send_media_group(
                 chat_id=chat_id,
@@ -148,7 +146,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             logging.error(f"Error loading posts: {str(e)}")
 
     posts = dialog_manager.dialog_data.get("all_posts", [])
-    dialog_manager.dialog_data["current_page"] = current_page
+    dialog_manager.dialog_data["current_page"] = current_page + 1
 
     total_pages = len(posts)
 

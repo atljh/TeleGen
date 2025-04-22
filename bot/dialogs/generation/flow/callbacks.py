@@ -103,7 +103,7 @@ async def on_show_album(callback: CallbackQuery, button: Button, dialog_manager:
             return
             
         post_data = all_posts[current_page - 1]
-        
+
         if not isinstance(post_data, dict):
             await callback.answer("❌ Помилка: Невірний формат поста")
             logging.error(f"Пост має тип {type(post_data)}, очікувався dict")
@@ -127,7 +127,6 @@ async def on_show_album(callback: CallbackQuery, button: Button, dialog_manager:
             
         try:
             await send_media_album(dialog_manager, post_data)
-            await callback.answer(f"✅ Відправлено альбом з {len(images)} зображень")
         except Exception as e:
             logging.error(f"Помилка відправки альбому: {str(e)}", exc_info=True)
             await callback.answer("⚠️ Помилка відправки альбому")
