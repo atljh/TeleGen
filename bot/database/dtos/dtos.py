@@ -95,7 +95,6 @@ class PostDTO(BaseModel):
     
     images: List[PostImageDTO] = []
     video_url: Optional[str] = None
-    
     class Config:
         json_encoders = {
             datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
@@ -127,6 +126,31 @@ class PostDTO(BaseModel):
             "video_url": self.video_url,
             "is_album": len(self.images) > 1
         }
+
+    @property
+    def has_media(self) -> bool:
+        return len(self.images) > 0 or self.video_url is not None
+
+    @classmethod
+    def from_raw_post(cls, raw_post: Dict) -> 'PostDTO':
+        images = [
+            PostImageDTO(url=media['path'], order=i)
+            for i, media in enumerate(raw_post.get('media', []))
+            if media['type'] == 'image'
+        ]
+        
+        video_url = next(
+            (media['path'] for media in raw_post.get('media', [])
+            if media['type'] == 'video'
+        ), None)
+
+        return cls(
+            content=raw_post.get('text', ''),
+            is_album=raw_post.get('is_album', False),
+            images=images,
+            video_url=video_url
+        )
+
 
     @classmethod
     def from_orm(cls, post, images=None):

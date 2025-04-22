@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import tempfile
 import asyncio
@@ -7,6 +8,7 @@ from contextlib import asynccontextmanager
 from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 
+from bot.database.dtos.dtos import PostDTO
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor, PostProcessingPipeline
 
 class UserbotService:
@@ -177,20 +179,28 @@ class EnhancedUserbotService(UserbotService):
     def __init__(self, api_id: int, api_hash: str, openai_key: str = None, **kwargs):
         super().__init__(api_id, api_hash, **kwargs)
         
-        processors = [DefaultContentProcessor()]
+        self.processors = [DefaultContentProcessor()]
         if openai_key:
-            processors.append(ChatGPTContentProcessor(openai_key))
-            
-        self.pipeline = PostProcessingPipeline(processors)
+            self.processors.append(ChatGPTContentProcessor(openai_key))
 
-    async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[ProcessedPost]:
+    async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[PostDTO]:
         raw_posts = await super().get_last_posts(sources, limit)
         
         processed_posts = []
         for raw_post in raw_posts:
             try:
-                processed_post = await self.pipeline.process_post(raw_post)
-                processed_posts.append(processed_post)
+                # Конвертируем raw_post в PostDTO
+                post_dto = PostDTO.from_raw_post(raw_post)
+                
+                # Обрабатываем контент через все процессоры
+                processed_text = post_dto.content
+                for processor in self.processors:
+                    processed_text = await processor.process_text(processed_text)
+                
+                # Создаем новый DTO с обработанным текстом
+                processed_posts.append(
+                    post_dto.copy(update={'content': processed_text})
+                )
             except Exception as e:
                 logging.error(f"Error processing post: {str(e)}")
                 continue
