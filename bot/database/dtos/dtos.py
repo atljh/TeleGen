@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, validator
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
@@ -100,6 +100,19 @@ class PostDTO(BaseModel):
         json_encoders = {
             datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
         }
+
+    @property
+    def is_album(self) -> bool:
+        return len(self.images) > 1
+    
+    @property
+    def main_media(self) -> Optional[Dict]:
+        if self.images:
+            return {"type": MediaType.IMAGE, "url": self.images[0].url}
+        elif self.video_url:
+            return {"type": MediaType.VIDEO, "url": self.video_url}
+        return None
+    
 
     @classmethod
     def from_orm(cls, post, images=None):
