@@ -95,52 +95,38 @@ class PostService:
         if post.is_published:
             raise InvalidOperationError("Пост вже опублiкований!")
         
-        # try:
-        caption = post.content[:1024] if len(post.content) > 1024 else post.content
-        
-        if post.images:
-            media_group = []
-            for i, image in enumerate(post.images):
-                if i == 0:
-                    # Первое изображение с подписью
-                    if image.url.startswith(('http://', 'https://')):
-                        media = InputMediaPhoto(media=image.url, caption=caption, parse_mode=ParseMode.HTML)
-                    else:
-                        media_path = os.path.join(settings.BASE_DIR, image.url.lstrip("/"))
-                        if os.path.exists(media_path):
-                            media = InputMediaPhoto(media=FSInputFile(media_path), caption=caption, parse_mode=ParseMode.HTML)
-                        else:
-                            raise InvalidOperationError(f"Файл изображения не найден: {image.url}")
-                else:
-                    # Остальные изображения без подписи
-                    if image.url.startswith(('http://', 'https://')):
-                        media = InputMediaPhoto(media=image.url)
-                    else:
-                        media_path = os.path.join(settings.BASE_DIR, image.url.lstrip("/"))
-                        if os.path.exists(media_path):
-                            media = InputMediaPhoto(media=FSInputFile(media_path))
-                        else:
-                            raise InvalidOperationError(f"Файл изображения не найден: {image.url}")
-                
-                media_group.append(media)
+        try:
+            caption = post.content[:1024] if len(post.content) > 1024 else post.content
             
-            await self.bot.send_media_group(chat_id=channel_id, media=media_group)
-        
-        elif post.video_url:
-            if post.video_url.startswith(('http://', 'https://')):
-                video = URLInputFile(post.video_url)
-                await self.bot.send_video(
-                    chat_id=channel_id,
-                    video=video,
-                    caption=caption,
-                    parse_mode=ParseMode.HTML
-                )
-            else:
-                decoded_path = unquote(post.video_url)
-                relative_path = decoded_path.lstrip("/")
-                media_path = os.path.join(settings.BASE_DIR, relative_path)
-                if media_path and os.path.exists(media_path):
-                    video = FSInputFile(media_path)
+            if post.images:
+                media_group = []
+                for i, image in enumerate(post.images):
+                    if i == 0:
+                        if image.url.startswith(('http://', 'https://')):
+                            media = InputMediaPhoto(media=image.url, caption=caption, parse_mode=ParseMode.HTML)
+                        else:
+                            media_path = os.path.join(settings.BASE_DIR, image.url.lstrip("/"))
+                            if os.path.exists(media_path):
+                                media = InputMediaPhoto(media=FSInputFile(media_path), caption=caption, parse_mode=ParseMode.HTML)
+                            else:
+                                raise InvalidOperationError(f"Файл изображения не найден: {image.url}")
+                    else:
+                        if image.url.startswith(('http://', 'https://')):
+                            media = InputMediaPhoto(media=image.url)
+                        else:
+                            media_path = os.path.join(settings.BASE_DIR, image.url.lstrip("/"))
+                            if os.path.exists(media_path):
+                                media = InputMediaPhoto(media=FSInputFile(media_path))
+                            else:
+                                raise InvalidOperationError(f"Файл изображения не найден: {image.url}")
+                    
+                    media_group.append(media)
+                
+                await self.bot.send_media_group(chat_id=channel_id, media=media_group)
+            
+            elif post.video_url:
+                if post.video_url.startswith(('http://', 'https://')):
+                    video = URLInputFile(post.video_url)
                     await self.bot.send_video(
                         chat_id=channel_id,
                         video=video,
@@ -148,34 +134,46 @@ class PostService:
                         parse_mode=ParseMode.HTML
                     )
                 else:
-                    raise InvalidOperationError("Файл видео не найден")
-        
-        else:
-            if len(post.content) > 4096:
-                chunks = [post.content[i:i+4096] for i in range(0, len(post.content), 4096)]
-                for chunk in chunks:
+                    decoded_path = unquote(post.video_url)
+                    relative_path = decoded_path.lstrip("/")
+                    media_path = os.path.join(settings.BASE_DIR, relative_path)
+                    if media_path and os.path.exists(media_path):
+                        video = FSInputFile(media_path)
+                        await self.bot.send_video(
+                            chat_id=channel_id,
+                            video=video,
+                            caption=caption,
+                            parse_mode=ParseMode.HTML
+                        )
+                    else:
+                        raise InvalidOperationError("Файл видео не найден")
+            
+            else:
+                if len(post.content) > 4096:
+                    chunks = [post.content[i:i+4096] for i in range(0, len(post.content), 4096)]
+                    for chunk in chunks:
+                        await self.bot.send_message(
+                            chat_id=channel_id,
+                            text=chunk,
+                            parse_mode=ParseMode.HTML
+                        )
+                else:
                     await self.bot.send_message(
                         chat_id=channel_id,
-                        text=chunk,
+                        text=post.content,
                         parse_mode=ParseMode.HTML
                     )
-            else:
-                await self.bot.send_message(
-                    chat_id=channel_id,
-                    text=post.content,
-                    parse_mode=ParseMode.HTML
-                )
-        
-        return await self.update_post(
-            post_id=post_id,
-            is_published=True,
-            content=post.content,
-            publication_date=timezone.now(),
-            scheduled_time=None
-        )
             
-        # except Exception as e:
-            # raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
+            return await self.update_post(
+                post_id=post_id,
+                is_published=True,
+                content=post.content,
+                publication_date=timezone.now(),
+                scheduled_time=None
+            )
+            
+        except Exception as e:
+            raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
 
     async def update_post_images(
         self,
@@ -221,7 +219,6 @@ class PostService:
         
         images_qs = await sync_to_async(lambda: list(post.images.all().order_by('order')))()
         return PostDTO.from_orm(post, images=images_qs)
-
     
     async def get_posts_by_flow_id(self, flow_id: int) -> list[PostDTO]:
         posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id)
