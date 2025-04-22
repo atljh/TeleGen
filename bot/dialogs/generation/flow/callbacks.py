@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode

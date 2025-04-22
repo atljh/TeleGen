@@ -8,13 +8,12 @@ from aiogram_dialog.widgets.kbd import (
 )
 from aiogram_dialog.widgets.text import Const, Format
 
-from .states import FlowMenu
+from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import paging_getter
 from .callbacks import (
     on_edit_post,
     on_publish_post,
     on_schedule_post,
-    on_show_album
 )
 
 def flow_dialog() -> Dialog:
@@ -30,12 +29,6 @@ def flow_dialog() -> Dialog:
                 width=5,
             ),
             Group(
-                Button(
-                    Const("📷 Показать альбом"),
-                    id="show_album",
-                    when="show_album_btn",
-                    on_click=on_show_album
-                ),
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
                 Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),
@@ -47,5 +40,5 @@ def flow_dialog() -> Dialog:
             getter=paging_getter,
             state=FlowMenu.posts_list,
             parse_mode=ParseMode.HTML,
-        )
+        ),
     )

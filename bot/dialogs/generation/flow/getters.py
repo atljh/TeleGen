@@ -12,6 +12,7 @@ from bot.containers import Container
 from asgiref.sync import sync_to_async
 from functools import lru_cache
 
+
 MAX_ALBUM_SIZE = 10
 MAX_CAPTION_LENGTH = 1024
 
@@ -76,12 +77,13 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
+    # Базова структура даних
     data = {
         "current_page": 1,
         "pages": 0,
         "day": "Немає постів",
         "media_content": None,
-        "show_album_btn": False,
+        "auto_sent_album": False,
         "post": {
             "id": "",
             "idx": 0,
@@ -102,76 +104,94 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             posts = []
             
             for idx, post in enumerate(raw_posts):
+                # Безпечне отримання даних через атрибути DTO
+                images = post.images if hasattr(post, 'images') else []
+                video_url = post.video_url if hasattr(post, 'video_url') else None
+                content = post.content if hasattr(post, 'content') else ''
+                
                 pub_time = await sync_to_async(
-                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") if post.publication_date else "Без дати"
+                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
+                    if hasattr(post, 'publication_date') and post.publication_date 
+                    else "Без дати"
                 )()
                 created_time = await sync_to_async(
-                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M") if post.created_at else "Без дати"
+                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M") 
+                    if hasattr(post, 'created_at') and post.created_at 
+                    else "Без дати"
                 )()
 
-                media_info = None
-                if post.images:
-                    first_image = post.images[0]
-                    media_info = {
-                        'type': 'photo',
-                        'url': first_image.url,
-                        'path': get_media_path(first_image.url)
-                    }
-                elif post.video_url:
-                    media_info = {
-                        'type': 'video',
-                        'url': post.video_url,
-                        'path': get_media_path(post.video_url)
-                    }
-
-                posts.append({
-                    "id": str(post.id),
+                post_dict = {
+                    "id": str(post.id) if hasattr(post, 'id') else "",
                     "idx": idx,
-                    "content_preview": (post.content[:1000] + "...") if len(post.content) > 1000 else post.content,
+                    "content": content,
                     "pub_time": pub_time,
                     "created_time": created_time,
-                    "status": "✅ Опубліковано" if post.is_published else "📝 Чернетка",
-                    "full_content": post.content,
-                    "media_info": media_info,
-                    "has_media": bool(post.images or post.video_url),
-                    "images_count": len(post.images),
-                    "images": post.images,
-                    "video_url": post.video_url,
-                })
+                    "status": "✅ Опубліковано" if getattr(post, 'is_published', False) else "📝 Чернетка",
+                    "full_content": content,
+                    "has_media": bool(images or video_url),
+                    "images_count": len(images),
+                    "images": images,
+                    "video_url": video_url,
+                }
 
-            dialog_manager.dialog_data["all_posts"] = posts
+                # Формуємо прев'ю
+                if len(images) > 1:
+                    post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)\n{content[:300]}..."
+                else:
+                    post_dict["content_preview"] = content[:1000] + ("..." if len(content) > 1000 else "")
+
+                posts.append(post_dict)
+
+            dialog_data["all_posts"] = posts
             dialog_data["total_posts"] = len(posts)
 
         except Exception as e:
-            logging.error(f"Error loading posts: {str(e)}")
+            logging.error(f"Помилка завантаження постів: {str(e)}")
 
-    posts = dialog_manager.dialog_data.get("all_posts", [])
-    dialog_manager.dialog_data["current_page"] = current_page + 1
-
+    posts = dialog_data.get("all_posts", [])
     total_pages = len(posts)
 
     if posts and current_page < total_pages:
         post = posts[current_page]
         
-        if post['images_count'] > 1:
-            data.update({
-                "current_page": current_page + 1,
-                "pages": total_pages,
-                "day": f"День {current_page + 1}",
-                "show_album_btn": True,
-                "post": {
-                    **post,
-                    "content_preview": f"📷 Альбом ({post['images_count']} фото)\n{post['content_preview'][:300]}...",
+        if post.get('images_count', 0) > 1:
+            try:
+                await send_media_album(dialog_manager, post)
+                data["auto_sent_album"] = True
+            except Exception as e:
+                logging.error(f"Помилка відправки альбому: {str(e)}")
+                data["auto_sent_album"] = False
+
+        data.update({
+            "current_page": current_page + 1,
+            "pages": total_pages,
+            "day": f"День {current_page + 1}",
+            "post": post
+        })
+
+        if post.get('images_count', 0) <= 1:
+            media_info = None
+            images = post.get('images', [])
+            
+            if images and len(images) == 1:
+                first_image = images[0]
+                if hasattr(first_image, 'url'):
+                    media_info = {
+                        'type': 'photo',
+                        'url': first_image.url,
+                        'path': get_media_path(first_image.url) if first_image.url else None
+                    }
+            elif post.get('video_url'):
+                media_info = {
+                    'type': 'video',
+                    'url': post['video_url'],
+                    'path': get_media_path(post['video_url'])
                 }
-            })
-        else:
-            media = await prepare_media_attachment(post.get('media_info'))
-            data.update({
-                "current_page": current_page + 1,
-                "pages": total_pages,
-                "day": f"День {current_page + 1}",
-                "media_content": media,
-                "post": post
-            })
+            
+            if media_info and media_info.get('path') and os.path.exists(media_info['path']):
+                data["media_content"] = MediaAttachment(
+                    path=media_info['path'],
+                    type=media_info['type']
+                )
 
     return data
