@@ -35,6 +35,8 @@ class UserbotService:
 
     async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[Dict]:
         result = []
+        processed_albums = set()
+        
         async with self.get_client() as client:
             for source in sources:
                 if len(result) >= limit:
@@ -46,10 +48,18 @@ class UserbotService:
                 try:
                     remaining_limit = limit - len(result)
                     entity = await client.get_entity(source['link'])
-                    messages = await client.get_messages(entity, limit=remaining_limit)
+                    messages = await client.get_messages(entity, limit=remaining_limit * 2)
 
                     for msg in messages:
-                        post_data = await self._process_message(client, msg)
+                        if hasattr(msg, 'grouped_id') and msg.grouped_id in processed_albums:
+                            continue
+                            
+                        if hasattr(msg, 'grouped_id') and msg.grouped_id:
+                            processed_albums.add(msg.grouped_id)
+                            post_data = await self._process_album(client, entity, msg)
+                        else:
+                            post_data = await self._process_message(client, msg)
+                        
                         if post_data:
                             result.append(post_data)
                             if len(result) >= limit:
@@ -61,13 +71,54 @@ class UserbotService:
 
         return result[::-1]
 
+    async def _process_album(self, client: TelegramClient, entity, initial_msg) -> Optional[Dict]:
+        try:
+            messages = await client.get_messages(
+                entity,
+                min_id=initial_msg.id - 10,
+                max_id=initial_msg.id + 10,
+                limit=20
+            )
+            
+            album_messages = [
+                msg for msg in messages
+                if hasattr(msg, 'grouped_id') and msg.grouped_id == initial_msg.grouped_id
+            ]
+            
+            if not album_messages:
+                return None
+
+            texts = []
+            media_items = []
+            
+            for msg in album_messages:
+                if msg.text:
+                    texts.append(msg.text)
+                if msg.media:
+                    media_items.extend(await self._extract_media(client, msg.media))
+            
+            post_data = {
+                'text': "\n\n".join(texts) if texts else "",
+                'media': media_items,
+                'is_album': True,
+                'album_size': len(album_messages)
+            }
+            
+            return post_data
+            
+        except Exception as e:
+            logging.error(f"Error processing album: {str(e)}")
+            return None
+
     async def _process_message(self, client: TelegramClient, msg) -> Optional[Dict]:
         if not msg.text and not msg.media:
             return None
 
         post_data = {
             'text': msg.text or '',
-            'media': []
+            'media': [],
+            'is_album': False,
+            'album_size': 0
         }
 
         if msg.media:
