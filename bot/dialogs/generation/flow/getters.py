@@ -141,13 +141,15 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "video_url": post.video_url,
                 })
 
-            dialog_data["all_posts"] = posts
+            dialog_manager.dialog_data["all_posts"] = posts
             dialog_data["total_posts"] = len(posts)
 
         except Exception as e:
             logging.error(f"Error loading posts: {str(e)}")
 
-    posts = dialog_data.get("all_posts", [])
+    posts = dialog_manager.dialog_data.get("all_posts", [])
+    dialog_manager.dialog_data["current_page"] = current_page
+
     total_pages = len(posts)
 
     if posts and current_page < total_pages:
