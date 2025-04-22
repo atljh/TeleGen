@@ -31,7 +31,7 @@ def flow_dialog() -> Dialog:
             Group(
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
-                Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),
+                # Button(Const("📅 Запланувати"), id="schedule_post", on_click=on_schedule_post),
                 width=2
             ),
             Row(

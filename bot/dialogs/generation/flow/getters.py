@@ -65,7 +65,7 @@ async def send_media_album(
             
     except Exception as e:
         logging.error(f"Error sending media album: {str(e)}")
-        await dialog_manager.event.answer("⚠️ Не удалось отправить альбом")
+        await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
     
     return None
 
@@ -150,6 +150,15 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     if posts and current_page < total_pages:
         post = posts[current_page]
+        
+        if post.get('images_count', 0) > 1:
+            try:
+                await send_media_album(dialog_manager, post)
+                data["auto_sent_album"] = True
+            except Exception as e:
+                logging.error(f"Помилка відправки альбому: {str(e)}")
+                data["auto_sent_album"] = False
+
         data.update({
             "current_page": current_page + 1,
             "pages": total_pages,
@@ -157,38 +166,29 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             "post": post
         })
 
-        if post.get('images_count', 0) > 1:
-            try:
-                await send_media_album(dialog_manager, post)
-                data["auto_sent_album"] = True
-                return data
-            except Exception as e:
-                logging.error(f"Помилка відправки альбому: {str(e)}")
-                data["auto_sent_album"] = False
-
-        media_info = None
-        images = post.get('images', [])
-        
-        if images and len(images) == 1:
-            first_image = images[0]
-            if hasattr(first_image, 'url'):
+        if post.get('images_count', 0) <= 1:
+            media_info = None
+            images = post.get('images', [])
+            
+            if images and len(images) == 1:
+                first_image = images[0]
+                if hasattr(first_image, 'url'):
+                    media_info = {
+                        'type': 'photo',
+                        'url': first_image.url,
+                        'path': get_media_path(first_image.url) if first_image.url else None
+                    }
+            elif post.get('video_url'):
                 media_info = {
-                    'type': 'photo',
-                    'url': first_image.url,
-                    'path': get_media_path(first_image.url) if first_image.url else None
+                    'type': 'video',
+                    'url': post['video_url'],
+                    'path': get_media_path(post['video_url'])
                 }
-        elif post.get('video_url'):
-            media_info = {
-                'type': 'video',
-                'url': post['video_url'],
-                'path': get_media_path(post['video_url'])
-            }
-        
-        if media_info and media_info.get('path') and os.path.exists(media_info['path']):
-            data["media_content"] = MediaAttachment(
-                path=media_info['path'],
-                type=media_info['type']
-            )
-            data["auto_sent_album"] = False
+            
+            if media_info and media_info.get('path') and os.path.exists(media_info['path']):
+                data["media_content"] = MediaAttachment(
+                    path=media_info['path'],
+                    type=media_info['type']
+                )
 
     return data

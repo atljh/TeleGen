@@ -25,16 +25,21 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
         return
     
     post_service = Container.post_service()
+    is_album = False
     
     try:
         updated_post = await post_service.publish_post(post_id, channel.channel_id)
+        is_album = len(updated_post.images) > 1
+        
         manager.dialog_data["post"] = {
             **current_post,
             "status": "✅ Опубліковано",
             "pub_time": updated_post.publication_date.strftime("%d.%m.%Y %H:%M"),
             "is_published": True
         }
+        
         await callback.answer(f"Пост успiшно опублiковано в канал!")
+        
     except InvalidOperationError as e:
         logging.error(e)
         await callback.answer(str(e))
@@ -42,8 +47,8 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
         logging.error(e)
         await callback.answer(f"Помилка: {str(e)}")
         logging.exception("Помилка при публікації посту")
-
-    await manager.show()
+    finally:
+        await manager.show()
 
 async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     post_id = manager.dialog_data.get("current_post_id")
