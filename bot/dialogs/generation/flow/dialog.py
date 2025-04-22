@@ -20,9 +20,9 @@ def flow_dialog() -> Dialog:
     from bot.dialogs.generation.callbacks import go_back_to_channels
     return Dialog(
         Window(
-            DynamicMedia("media_content"),
+            DynamicMedia("media_content", when=lambda data, widget, manager: not data.get("auto_sent_album", False)),
             Format("<b>{post[status]} | {post[created_time]}\n</b>"),
-            Format("{post[content_preview]}"),
+            Format("{post[content_preview]}", when=lambda data, widget, manager: not data.get("auto_sent_album", False)),
             StubScroll(id="stub_scroll", pages="pages"),
             Group(
                 NumberedPager(scroll="stub_scroll"),

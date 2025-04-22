@@ -34,7 +34,6 @@ class UserbotService:
             await client.disconnect()
 
     async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[Dict]:
-        """Возвращает посты с поддержкой нескольких медиафайлов"""
         result = []
         async with self.get_client() as client:
             for source in sources:
@@ -60,10 +59,9 @@ class UserbotService:
                     logging.error(f"Error processing source {source['link']}: {str(e)}")
                     continue
 
-        return result[::-1]  # Возвращаем в хронологическом порядке
+        return result[::-1]
 
     async def _process_message(self, client: TelegramClient, msg) -> Optional[Dict]:
-        """Обрабатывает одно сообщение и извлекает данные"""
         if not msg.text and not msg.media:
             return None
 
@@ -79,7 +77,6 @@ class UserbotService:
         return post_data
 
     async def _extract_media(self, client: TelegramClient, media) -> List[Dict]:
-        """Извлекает медиафайлы из сообщения"""
         media_items = []
         
         if hasattr(media, 'photo'):
@@ -104,7 +101,6 @@ class UserbotService:
         return media_items
 
     async def _download_media_file(self, client: TelegramClient, media, media_type: str) -> Optional[str]:
-        """Скачивает медиафайл и возвращает временный путь"""
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{media_type}') as tmp_file:
                 tmp_path = tmp_file.name
