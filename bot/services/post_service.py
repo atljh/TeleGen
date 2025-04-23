@@ -38,7 +38,7 @@ class PostService:
         if not flow:
             return []
 
-        posts_dto = await self.userbot_service.get_last_posts(flow.sources)
+        posts_dto = await self.userbot_service.get_last_posts(flow)
 
         generated_posts = []
         for post_dto in posts_dto:

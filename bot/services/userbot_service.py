@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
 
-from bot.database.dtos.dtos import PostDTO
+from bot.database.dtos.dtos import FlowDTO, PostDTO
 from bot.services.content_processing.processors import ChatGPTContentProcessor, ContentProcessor, DefaultContentProcessor
 from  bot.services.content_processing.pipeline import PostProcessingPipeline
 
@@ -200,56 +200,74 @@ class EnhancedUserbotService(UserbotService):
     def __init__(self, api_id: int, api_hash: str, openai_key: str = None, **kwargs):
         super().__init__(api_id, api_hash, **kwargs)
         self.logger = logging.getLogger(__name__)
-        
-        self.processors = self._init_processors(openai_key)
+        self.openai_key = openai_key
 
-    def _init_processors(self, openai_key: Optional[str]) -> List[ContentProcessor]:
-        processors = [DefaultContentProcessor()]
-        if openai_key:
-            try:
-                processors.append(ChatGPTContentProcessor(openai_key))
-            except Exception as e:
-                self.logger.error(f"Failed to init ChatGPT processor: {str(e)}")
-        return processors
-
-    async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[PostDTO]:
+    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
         try:
-            raw_posts = await super().get_last_posts(sources, limit)
-            return await self._process_posts(raw_posts)
+            raw_posts = await super().get_last_posts(flow.sources, limit)
+            return await self._process_posts(raw_posts, flow)
         except Exception as e:
-            self.logger.error(f"Error getting posts: {str(e)}")
+            self.logger.error(f"Error getting posts for flow {flow.id}: {str(e)}", exc_info=True)
             return []
 
-    async def _process_posts(self, raw_posts: List[Dict]) -> List[PostDTO]:
+    async def _process_posts(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
         processed_posts = []
         
         for raw_post in raw_posts:
             try:
-                post_dto = await self._process_single_post(raw_post)
+                post_dto = await self._process_single_post(raw_post, flow)
                 if post_dto:
                     processed_posts.append(post_dto)
             except Exception as e:
-                self.logger.warning(f"Skipping post due to error: {str(e)}")
+                self.logger.warning(f"Skipping post in flow {flow.id}: {str(e)}")
                 continue
                 
         return processed_posts
 
-    async def _process_single_post(self, raw_post: Dict) -> Optional[PostDTO]:
+    async def _process_single_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:
         post_dto = PostDTO.from_raw_post(raw_post)
         
         if not post_dto.content:
-            self.logger.warning("Empty post content, skipping")
             return None
+
+        processed_text = await DefaultContentProcessor().process(post_dto.content)
         
-        processed_text = post_dto.content
-        for processor in self.processors:
+        if self.openai_key and getattr(flow, 'use_ai', False):
             try:
+                processor = ChatGPTContentProcessor(
+                    api_key=self.openai_key,
+                    flow=flow
+                )
                 processed_text = await processor.process(processed_text)
-                if not processed_text:
-                    self.logger.warning(f"Empty result from {type(processor).__name__}")
-                    break
             except Exception as e:
-                self.logger.warning(f"Processor {type(processor).__name__} failed: {str(e)}")
-                continue
-        
+                self.logger.error(f"ChatGPT processing failed for flow {flow.id}: {str(e)}")
+
+        else:
+            if flow.signature:
+                processed_text = f"{processed_text}\n\n{flow.signature}"
+                
+            if flow.use_emojis:
+                processed_text = await self._apply_emoji(processed_text, flow)
+                
+            if flow.cta:
+                processed_text = await self._apply_cta(processed_text, flow.theme)
+
         return post_dto.copy(update={'content': processed_text})
+
+    async def _apply_emoji(self, text: str, flow: FlowDTO) -> str:
+        emoji_map = {
+            'tech': ['⚙️', '🔧', '💻'],
+            'news': ['📰', '🗞️', '🌐'],
+            'fun': ['😂', '🤣', '🎉']
+        }
+        
+        emojis = emoji_map.get(flow.theme, ['✨', '🌟'])
+        return f"{emojis[0]} {text} {emojis[-1]}"
+
+    async def _apply_cta(self, text: str, theme: str) -> str:
+        cta_phrases = {
+            'tech': "💬 Обсудим в комментариях!",
+            'news': "📌 Подпишитесь для свежих новостей!",
+            'fun': "😂 Нравится? Ставь лайк!"
+        }
+        return f"{text}\n\n{cta_phrases.get(theme, 'Подпишитесь для новых обновлений!')}"
