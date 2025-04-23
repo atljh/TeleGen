@@ -64,7 +64,7 @@ class ChatGPTContentProcessor(ContentProcessor):
                         {"role": "user", "content": text}
                     ],
                     temperature=0.5,
-                    max_tokens=self._get_max_tokens(),
+                    # max_tokens=self._get_max_tokens(),
                     top_p=0.9
                 )
                 return response.choices[0].message.content.strip()
@@ -80,7 +80,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             "Ты профессиональный редактор постов. Обработай текст согласно правилам:",
             "1. Сохрани основной смысл, но сделай текст более читаемым",
             "2. Удали лишние ссылки и спецсимволы",
-            f"3. Длина текста: {self._get_length_instruction()}",
+            # f"3. Длина текста: {self._get_length_instruction()}",
             f"4. Стиль: {self.flow.theme}",
         ]
         
@@ -100,17 +100,17 @@ class ChatGPTContentProcessor(ContentProcessor):
         rules.append("Не добавляй свои комментарии, только обработанный текст")
         return "\n".join(rules)
 
-    def _get_length_instruction(self) -> str:
-        lengths = {
-            "short": "короткий (1-2 предложения)",
-            "medium": "средний (3-5 предложений)", 
-            "long": "полный текст (без сокращений)"
-        }
-        return lengths.get(self.flow.content_length, "средний (3-5 предложений)")
+    # def _get_length_instruction(self) -> str:
+    #     lengths = {
+    #         "short": "короткий (1-2 предложения)",
+    #         "medium": "средний (3-5 предложений)", 
+    #         "long": "полный текст (без сокращений)"
+    #     }
+    #     return lengths.get(self.flow.content_length, "средний (3-5 предложений)")
 
-    def _get_max_tokens(self) -> int:
-        return {
-            "short": 500,
-            "medium": 1000,
-            "long": 2000
-        }.get(self.flow.content_length, 1000)
+    # def _get_max_tokens(self) -> int:
+    #     return {
+    #         "short": 500,
+    #         "medium": 1000,
+    #         "long": 2000
+    #     }.get(self.flow.content_length, 1000)
