@@ -80,21 +80,20 @@ class PostImageDTO(BaseModel):
     order: int
 
 class PostDTO(BaseModel):
-    id: int
+    id: Optional[int] = None
     flow_id: int
     content: str
     source_url: Optional[str] = None
     publication_date: Optional[datetime] = None
-    is_published: bool
-    is_draft: bool
+    is_published: bool = False
+    is_draft: bool = False
     created_at: datetime
     scheduled_time: Optional[datetime] = None
-
-    media_url: Optional[str] = None
     media_type: Optional[MediaType] = None
-    
+    media_url: Optional[str] = None
     images: List[PostImageDTO] = []
     video_url: Optional[str] = None
+
     class Config:
         json_encoders = {
             datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
@@ -146,11 +145,13 @@ class PostDTO(BaseModel):
 
         return cls(
             content=raw_post.get('text', ''),
-            is_album=raw_post.get('is_album', False),
+            source_url=raw_post.get('source', {}).get('link'),
             images=images,
-            video_url=video_url
+            video_url=video_url,
+            is_album=raw_post.get('is_album', False),
+            flow_id=0,
+            created_at=datetime.now()
         )
-
 
     @classmethod
     def from_orm(cls, post, images=None):

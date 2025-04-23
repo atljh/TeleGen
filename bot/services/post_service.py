@@ -38,25 +38,35 @@ class PostService:
         if not flow:
             return []
 
-        posts_data = await self.userbot_service.get_last_posts(flow.sources)
+        posts_dto = await self.userbot_service.get_last_posts(flow.sources)
 
         generated_posts = []
-        for post_data in posts_data:
+        for post_dto in posts_dto:
             try:
-                media_list = post_data.get('media', [])
-                
+                media_list = [
+                    {'url': img.url, 'type': 'image', 'order': img.order}
+                    for img in post_dto.images
+                ]
+                if post_dto.video_url:
+                    media_list.append({
+                        'url': post_dto.video_url,
+                        'type': 'video',
+                        'order': len(post_dto.images)
+                    })
+
                 post = await self.post_repo.create_with_media(
                     flow=flow,
-                    content=post_data['text'],
+                    content=post_dto.content,
                     media_list=media_list,
                     is_draft=True
                 )
                 
-                post_dto = await sync_to_async(PostDTO.from_orm)(post)
-                generated_posts.append(post_dto)
+                db_post_dto = await sync_to_async(PostDTO.from_orm)(post)
+                generated_posts.append(db_post_dto)
 
             except Exception as e:
                 logging.error(f"Post creation failed: {str(e)}")
+                continue
 
         return generated_posts
 

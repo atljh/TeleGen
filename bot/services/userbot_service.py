@@ -9,7 +9,8 @@ from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 
 from bot.database.dtos.dtos import PostDTO
-from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor, PostProcessingPipeline
+from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
+from  bot.services.content_processing.pipeline import PostProcessingPipeline
 
 class UserbotService:
     def __init__(self, api_id: int, api_hash: str, phone: str = None, 
@@ -190,7 +191,6 @@ class EnhancedUserbotService(UserbotService):
         for raw_post in raw_posts:
             try:
                 post_dto = PostDTO.from_raw_post(raw_post)
-                
                 processed_text = post_dto.content
                 for processor in self.processors:
                     processed_text = await processor.process_text(processed_text)
