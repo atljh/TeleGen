@@ -44,16 +44,15 @@ class PostService:
         for post_dto in posts_dto:
             try:
                 media_list = [
-                    {'url': img.url, 'type': 'image', 'order': img.order}
+                    {'path': img.url, 'type': 'image', 'order': img.order}
                     for img in post_dto.images
                 ]
                 if post_dto.video_url:
                     media_list.append({
-                        'url': post_dto.video_url,
+                        'path': post_dto.video_url,
                         'type': 'video',
                         'order': len(post_dto.images)
                     })
-
                 post = await self.post_repo.create_with_media(
                     flow=flow,
                     content=post_dto.content,
