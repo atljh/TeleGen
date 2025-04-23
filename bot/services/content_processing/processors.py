@@ -18,19 +18,28 @@ class ContentProcessor(ABC):
 
 class DefaultContentProcessor(ContentProcessor):
     def __init__(self):
-        self.link_regex = re.compile(r'https?://\S+|www\.\S+')
-        self.special_chars_regex = re.compile(r'[\u200B-\u200D\uFEFF]')
+        self.patterns = {
+            'url': re.compile(r'https?://\S+|www\.\S+'),
+            'username': re.compile(r'@\w+'),
+            'bold_asterisks': re.compile(r'\*\*([^*]+)\*\*'),
+            'hidden_chars': re.compile(r'[\u200B-\u200D\uFEFF]'),
+            'emoji': re.compile(r'[^\w\s,.!?;:@#%&*+-=]'),
+            'markdown_links': re.compile(r'\[([^\]]+)\]\([^)]+\)'),
+            'telegram_commands': re.compile(r'/\w+')
+        }
 
     async def process(self, text: str) -> str:
-        if not text.strip():
+        if not text:
             return ""
-        
-        text = self.special_chars_regex.sub('', text)
-        
-        text = self.link_regex.sub('', text)
-        
-        return ' '.join(text.split()).strip()
 
+        for pattern_name, pattern in self.patterns.items():
+            if pattern_name == 'markdown_links':
+                text = pattern.sub(r'\1', text)
+            else:
+                text = pattern.sub('', text)
+
+        text = ' '.join(text.split())
+        return text.strip()
 
 class ChatGPTContentProcessor(ContentProcessor):
     def __init__(self, api_key: str, flow: FlowDTO, model: str = "gpt-4-turbo"):
@@ -92,7 +101,6 @@ class ChatGPTContentProcessor(ContentProcessor):
         return "\n".join(rules)
 
     def _get_length_instruction(self) -> str:
-        """Возвращает инструкцию по длине текста"""
         lengths = {
             "short": "короткий (1-2 предложения)",
             "medium": "средний (3-5 предложений)", 
