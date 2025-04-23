@@ -54,23 +54,23 @@ class ChatGPTContentProcessor(ContentProcessor):
             logging.error(f"ChatGPT processing error: {str(e)}")
             return text
         
-class PostProcessingPipeline:
-    def __init__(self, processors: List[ContentProcessor]):
-        self.processors = processors
+# class PostProcessingPipeline:
+#     def __init__(self, processors: List[ContentProcessor]):
+#         self.processors = processors
 
-    async def process_post(self, raw_post: Dict) -> ProcessedPost:
-        text = raw_post.get('text', '')
+#     async def process_post(self, raw_post: Dict) -> ProcessedPost:
+#         text = raw_post.get('text', '')
         
-        for processor in self.processors:
-            text = await processor.process_text(text)
+#         for processor in self.processors:
+#             text = await processor.process_text(text)
         
-        return ProcessedPost(
-            text=text,
-            media=raw_post.get('media', []),
-            is_album=raw_post.get('is_album', False),
-            source=raw_post.get('source', {}),
-            metadata={
-                'original_text': raw_post.get('text', ''),
-                'processed_at': datetime.now().isoformat()
-            }
-        )
+#         return ProcessedPost(
+#             text=text,
+#             media=raw_post.get('media', []),
+#             is_album=raw_post.get('is_album', False),
+#             source=raw_post.get('source', {}),
+#             metadata={
+#                 'original_text': raw_post.get('text', ''),
+#                 'processed_at': datetime.now().isoformat()
+#             }
+#         )

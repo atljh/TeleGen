@@ -6,9 +6,8 @@ import asyncio
 @shared_task(bind=True) 
 def check_flows_generation(self):
     async def _async_wrapper():
-        container = Container()
-        flow_service = container.flow_service()
-        post_service = container.post_service()
+        flow_service = Container.flow_service()
+        post_service = Container.post_service()
 
         flows = await flow_service.get_flows_due_for_generation()
         for flow in flows:

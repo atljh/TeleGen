@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, validator
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
-from bot.services.content_processing.processors import ContentProcessor
+# from bot.services.content_processing.processors import ContentProcessor
 
 
 class UserDTO(BaseModel):
@@ -112,12 +112,12 @@ class PostDTO(BaseModel):
             return {"type": MediaType.VIDEO, "url": self.video_url}
         return None
     
-    async def process_content(self, processors: List[ContentProcessor]) -> "PostDTO":
-        processed_text = self.content
-        for processor in processors:
-            processed_text = await processor.process_text(processed_text)
+    # async def process_content(self, processors: List[ContentProcessor]) -> "PostDTO":
+    #     processed_text = self.content
+    #     for processor in processors:
+    #         processed_text = await processor.process_text(processed_text)
         
-        return self.copy(update={"content": processed_text})
+    #     return self.copy(update={"content": processed_text})
     
     def to_telegram_dict(self) -> Dict[str, Any]:
         return {
