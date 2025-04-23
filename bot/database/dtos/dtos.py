@@ -35,9 +35,9 @@ class ChannelDTO(BaseModel):
         arbitrary_types_allowed = True
 
 class ContentLength(str, Enum):
-    SHORT = "to_100"      # До 100 знаків
-    MEDIUM = "to_300"     # До 300 знаків
-    LONG = "to_1000"      # До 1000 знаків
+    to_100 = 'to_100'
+    to_300 = 'to_300'
+    to_1000 = 'to_1000'
 
 class GenerationFrequency(str, Enum):
     HOURLY = "hourly"        # Кожну годину
