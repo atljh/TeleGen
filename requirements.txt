@@ -53,4 +53,4 @@ celery
 django-celery-beat
 watchdog
 asgiref
-opanai
+openai
