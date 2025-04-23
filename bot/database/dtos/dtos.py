@@ -111,13 +111,7 @@ class PostDTO(BaseModel):
             return {"type": MediaType.VIDEO, "url": self.video_url}
         return None
     
-    # async def process_content(self, processors: List[ContentProcessor]) -> "PostDTO":
-    #     processed_text = self.content
-    #     for processor in processors:
-    #         processed_text = await processor.process_text(processed_text)
-        
-    #     return self.copy(update={"content": processed_text})
-    
+
     def to_telegram_dict(self) -> Dict[str, Any]:
         return {
             "text": self.content,

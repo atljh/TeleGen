@@ -346,7 +346,7 @@ async def on_new_type_selected(
         await manager.done()
 
 async def validate_url(message: Message):
-    return message.text.startswith(('http://', 'https://'))
+    return message.startswith(('http://', 'https://'))
 
 async def on_source_new_link_entered(
     message: Message, 

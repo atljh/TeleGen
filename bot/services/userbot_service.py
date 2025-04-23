@@ -6,7 +6,7 @@ import logging
 from typing import Optional, List, Dict, AsyncGenerator
 from contextlib import asynccontextmanager
 from telethon import TelegramClient
-from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
+from telethon.tl.functions.messages import ImportChatInviteRequest
 
 from bot.database.dtos.dtos import PostDTO
 from bot.services.content_processing.processors import ChatGPTContentProcessor, ContentProcessor, DefaultContentProcessor
@@ -38,33 +38,52 @@ class UserbotService:
         finally:
             await client.disconnect()
 
+
     async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[Dict]:
         result = []
         processed_albums = set()
-        
+
         async with self.get_client() as client:
             for source in sources:
                 if len(result) >= limit:
                     break
-                    
+
                 if source['type'] != 'telegram':
                     continue
 
                 try:
                     remaining_limit = limit - len(result)
-                    entity = await client.get_entity(source['link'])
+                    entity = None
+
+                    try:
+                        entity = await client.get_entity(source['link'])
+                    except Exception as e:
+                        if 't.me/+' in source['link']:
+                            invite_hash = source['link'].split('+')[-1]
+                            try:
+                                await client(ImportChatInviteRequest(invite_hash))
+                                entity = await client.get_entity(source['link'])
+                            except Exception as join_err:
+                                logging.error(f"Failed to join private chat {source['link']}: {join_err}")
+                                continue
+                            else:
+                                logging.info(f"Joined private channel {source['link']}")
+                        else:
+                            logging.error(f"Failed to get entity for {source['link']}: {e}")
+                            continue
+
                     messages = await client.get_messages(entity, limit=remaining_limit * 2)
 
                     for msg in messages:
                         if hasattr(msg, 'grouped_id') and msg.grouped_id in processed_albums:
                             continue
-                            
+
                         if hasattr(msg, 'grouped_id') and msg.grouped_id:
                             processed_albums.add(msg.grouped_id)
                             post_data = await self._process_album(client, entity, msg)
                         else:
                             post_data = await self._process_message(client, msg)
-                        
+
                         if post_data:
                             result.append(post_data)
                             if len(result) >= limit:
@@ -75,6 +94,7 @@ class UserbotService:
                     continue
 
         return result[::-1]
+
 
     async def _process_album(self, client: TelegramClient, entity, initial_msg) -> Optional[Dict]:
         try:
