@@ -22,7 +22,8 @@ from bot.services import (
     PaymentService,
     AISettingsService,
     StatisticsService,
-    UserbotService
+    UserbotService,
+    EnhancedUserbotService
 )
 import os
 
@@ -57,10 +58,12 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
     )
     userbot_service = providers.Singleton(
-        UserbotService,
+        EnhancedUserbotService,
         api_id=os.getenv("USERBOT_API_ID"),
         api_hash=os.getenv("USERBOT_API_HASH"),
-        phone=os.getenv("TELEGRAM_PHONE")
+        phone=os.getenv("TELEGRAM_PHONE"),
+        openai_key=os.getenv("OPENAI_API_KEY"),
+    
     )
     channel_service = providers.Factory(
         ChannelService,

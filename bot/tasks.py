@@ -25,9 +25,8 @@ def check_flows_generation(self):
 @shared_task(bind=True, name="force_flows_generation_task")
 def force_flows_generation_task(self):
     async def _async_wrapper():
-        container = Container()
-        flow_service = container.flow_service()
-        post_service = container.post_service()
+        flow_service = Container.flow_service()
+        post_service = Container.post_service()
 
         flows = await flow_service.force_flows_due_for_generation()
         logging.info(f"Flows for force generation: {len(flows)}")

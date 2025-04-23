@@ -19,4 +19,4 @@ from bot.services.aisettings_service import AISettingsService
 from bot.services.subscription_service import SubscriptionService
 from bot.services.payment_service import PaymentService
 from bot.services.statistics_service import StatisticsService
-from bot.services.userbot_service import UserbotService
+from bot.services.userbot_service import UserbotService, EnhancedUserbotService
