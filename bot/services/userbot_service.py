@@ -9,7 +9,7 @@ from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 
 from bot.database.dtos.dtos import PostDTO
-from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
+from bot.services.content_processing.processors import ChatGPTContentProcessor, ContentProcessor, DefaultContentProcessor
 from  bot.services.content_processing.pipeline import PostProcessingPipeline
 
 class UserbotService:
@@ -179,27 +179,57 @@ class UserbotService:
 class EnhancedUserbotService(UserbotService):
     def __init__(self, api_id: int, api_hash: str, openai_key: str = None, **kwargs):
         super().__init__(api_id, api_hash, **kwargs)
+        self.logger = logging.getLogger(__name__)
         
-        self.processors = [DefaultContentProcessor()]
+        self.processors = self._init_processors(openai_key)
+
+    def _init_processors(self, openai_key: Optional[str]) -> List[ContentProcessor]:
+        processors = [DefaultContentProcessor()]
         if openai_key:
-            self.processors.append(ChatGPTContentProcessor(openai_key))
+            try:
+                processors.append(ChatGPTContentProcessor(openai_key))
+            except Exception as e:
+                self.logger.error(f"Failed to init ChatGPT processor: {str(e)}")
+        return processors
 
     async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[PostDTO]:
-        raw_posts = await super().get_last_posts(sources, limit)
-        
+        try:
+            raw_posts = await super().get_last_posts(sources, limit)
+            return await self._process_posts(raw_posts)
+        except Exception as e:
+            self.logger.error(f"Error getting posts: {str(e)}")
+            return []
+
+    async def _process_posts(self, raw_posts: List[Dict]) -> List[PostDTO]:
         processed_posts = []
+        
         for raw_post in raw_posts:
             try:
-                post_dto = PostDTO.from_raw_post(raw_post)
-                processed_text = post_dto.content
-                for processor in self.processors:
-                    processed_text = await processor.process_text(processed_text)
-                
-                processed_posts.append(
-                    post_dto.copy(update={'content': processed_text})
-                )
+                post_dto = await self._process_single_post(raw_post)
+                if post_dto:
+                    processed_posts.append(post_dto)
             except Exception as e:
-                logging.error(f"Error processing post: {str(e)}")
+                self.logger.warning(f"Skipping post due to error: {str(e)}")
                 continue
                 
         return processed_posts
+
+    async def _process_single_post(self, raw_post: Dict) -> Optional[PostDTO]:
+        post_dto = PostDTO.from_raw_post(raw_post)
+        
+        if not post_dto.content:
+            self.logger.warning("Empty post content, skipping")
+            return None
+        
+        processed_text = post_dto.content
+        for processor in self.processors:
+            try:
+                processed_text = await processor.process(processed_text)
+                if not processed_text:
+                    self.logger.warning(f"Empty result from {type(processor).__name__}")
+                    break
+            except Exception as e:
+                self.logger.warning(f"Processor {type(processor).__name__} failed: {str(e)}")
+                continue
+        
+        return post_dto.copy(update={'content': processed_text})

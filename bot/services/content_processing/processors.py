@@ -11,7 +11,6 @@ import openai
 class ContentProcessor(ABC):
     @abstractmethod
     async def process(self, text: str) -> str:
-        """Основной метод обработки текста"""
         pass
 
 
