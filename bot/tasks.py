@@ -32,6 +32,7 @@ def force_flows_generation_task(self):
         logging.info(f"Flows for force generation: {len(flows)}")
         
         for flow in flows:
+            logging.info(flow.content_length)
             try:
                 existing_count = await post_service.count_posts_in_flow(flow.id)
                 if existing_count >= flow.flow_volume:
