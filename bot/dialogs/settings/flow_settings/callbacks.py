@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 # ================== ОБРАБОТЧИКИ ГЛАВНОГО МЕНЮ ФЛОУ ==================
 
 async def start_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+    flow_service = Container.flow_service()
+
     selected_channel = manager.dialog_data.get("selected_channel")
-    channel_flow = manager.dialog_data.get('channel_flow')
+    channel_flow = await flow_service.get_flow_by_channel_id(selected_channel.id)
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
         return
