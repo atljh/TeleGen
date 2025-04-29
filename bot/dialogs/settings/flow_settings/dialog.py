@@ -83,7 +83,8 @@ def create_flow_settings_window():
         ),
         state=FlowSettingsMenu.flow_settings,
         parse_mode=ParseMode.HTML,
-        getter=flow_settings_getter
+        getter=flow_settings_getter,
+        disable_web_page_preview=True
     )
 
 
