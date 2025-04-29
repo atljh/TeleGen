@@ -53,18 +53,19 @@ async def send_media_album(
             except:
                 pass
                 
-            await bot.send_media_group(
+            new_messages = await bot.send_media_group(
                 chat_id=chat_id,
                 media=media_group
             )
+            message_ids = [msg.message_id for msg in new_messages]
+
+            # new_message = await bot.send_message(
+            #     chat_id=chat_id,
+            #     text=f"📷 Альбом ({len(images)} фото)\nУправление:",
+            #     reply_markup=build_album_keyboard(post_data)
+            # )
             
-            new_message = await bot.send_message(
-                chat_id=chat_id,
-                text=f"📷 Альбом ({len(images)} фото)\nУправление:",
-                reply_markup=build_album_keyboard(post_data)
-            )
-            
-            dialog_manager.dialog_data["last_message_id"] = new_message.message_id
+            dialog_manager.dialog_data["message_ids"] = message_ids
             
     except Exception as e:
         logging.error(f"Error sending media album: {str(e)}")
@@ -89,6 +90,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
     current_page = await scroll.get_page() if scroll else 0
     dialog_data = dialog_manager.dialog_data or {}
     start_data = dialog_manager.start_data or {}
+
 
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
@@ -173,6 +175,14 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             "day": f"День {current_page + 1}",
             "post": post
         })
+
+        messages = dialog_manager.dialog_data.get("message_ids")
+        if messages and not post.get('is_album'):
+            for message_id in messages:
+                bot = dialog_manager.middleware_data['bot']
+                chat_id = dialog_manager.middleware_data['event_chat'].id
+                await bot.delete_message(chat_id=chat_id, message_id=message_id)
+                dialog_manager.dialog_data["message_ids"] = []
 
         if not post.get('is_album'):
             media_info = None

@@ -33,6 +33,7 @@ def flow_dialog() -> Dialog:
         data = await paging_getter(manager)
         if data["post"].get("is_album"):
             await send_media_album(manager, data["post"])
+            return
         await manager.show()
     
     return Dialog(
