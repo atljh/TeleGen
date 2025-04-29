@@ -6,6 +6,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram.enums import ParseMode
 
+from bot.dialogs.generation.callbacks import on_force_generate
 from dialogs.settings.flow_settings.callbacks import start_flow_settings
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from .getters import (
@@ -276,7 +277,7 @@ def create_flow_dialog():
             ),
             Column(
                 Button(Const("Налаштування Flow"), id="to_settings", on_click=start_flow_settings),
-                Button(Const("Почати генерацiю"), id="start_generation"),
+                Button(Const("Почати генерацiю"), id="start_generation", on_click=on_force_generate),
             ),
             state=CreateFlowMenu.confirmation,
             parse_mode=ParseMode.HTML,
