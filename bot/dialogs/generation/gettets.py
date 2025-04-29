@@ -30,15 +30,21 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
             "channel_name": "Канал не вибрано",
             "channel_id": "N/A",
             "created_at": datetime.now(),
-            "channel_flow": "Вiдсутнiй"
+            "channel_flow": "Вiдсутнiй",
+            "has_flow": False,
+            "no_flow": True
         }
     
     dialog_manager.dialog_data["selected_channel"] = selected_channel
     dialog_manager.dialog_data["channel_flow"] = channel_flow
 
+    has_flow = bool(channel_flow)
+    
     return {
         "channel_name": selected_channel.name,
         "channel_id": selected_channel.channel_id,
         "created_at": selected_channel.created_at,
-        "channel_flow": "Присутнiй" if channel_flow else 'Вiдсутнiй'
+        "channel_flow": "Присутнiй" if has_flow else 'Вiдсутнiй',
+        "has_flow": has_flow,
+        "no_flow": not has_flow
     }

@@ -50,11 +50,23 @@ def create_generation_dialog():
                 "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
-                Button(Const("Флоу"), id="flow", on_click=on_flow),
-                Button(Const("Створити флоу"), id="create_flow", on_click=on_create_flow),
-                Button(Const("Генерацiя"), id="force_generate", on_click=on_force_generate),
-                # Button(Const("Буфер"), id="buffer", on_click=on_buffer),
-                # Button(Const("Забронювати рекламний топ"), id="book_recall", on_click=on_book_recall),
+                Button(
+                    Const("Флоу"), 
+                    id="flow", 
+                    on_click=on_flow,
+                    when="has_flow"
+                ),
+                Button(
+                    Const("Створити флоу"), 
+                    id="create_flow", 
+                    on_click=on_create_flow,
+                    when="no_flow"
+                ),
+                Button(
+                    Const("Генерацiя"), 
+                    id="force_generate", 
+                    on_click=on_force_generate
+                ),
             ),
             Row(
                 Back(Const("🔙 Назад")),
