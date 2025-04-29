@@ -55,7 +55,10 @@ from .callbacks import(
 def create_flow_dialog():
     return Dialog(
         Window(
-            Format("📌 <b>Оберіть тему каналу з існуючих або додайте</b>"),
+            Format(
+                "<b>Етап 1 из 7</b>\n\n"
+                "<b>Оберіть тему каналу з існуючих або додайте</b>"
+            ),
             Column(
                 Button(Const("Спортивний канал"), id="Sport", on_click=on_channel_theme_selected),
                 Button(Const("Кулінарний канал"), id="Cooking", on_click=on_channel_theme_selected),
@@ -70,6 +73,7 @@ def create_flow_dialog():
         ),
         Window(
             Format(
+                "<b>Етап 2 из 7</b>\n\n"
                 "📌 <b>Оберіть тип джерела</b>\n\n"
                 "Доступні варіанти:\n\n"
                 "🛒 <b>Вже обрані джерела:</b>\n"
@@ -120,7 +124,10 @@ def create_flow_dialog():
             getter=source_confirmation_getter
         ),
         Window(
-            Const("Оберіть частоту генерацii"),
+            Const(
+                "<b>Етап 3 из 7</b>\n\n"
+                "<b>Оберіть частоту генерацii</b>"
+            ),
             Column(
                 Button(Const("Раз на день"), id="daily", on_click=on_once_a_day),
                 Button(Const("Раз на 12 годин"), id="12h", on_click=on_once_a_12),
@@ -133,7 +140,10 @@ def create_flow_dialog():
             parse_mode=ParseMode.HTML,
         ),
         Window(
-            Const("Оберіть обмеження по кiлькостi знакiв в постах"),
+            Const(
+                "<b>Етап 4 из 7</b>\n\n"
+                "<b>Оберіть обмеження по кiлькостi знакiв в постах</b>"
+            ),
             Column(
                 Button(Const("До 100"), id="to_100", on_click=on_to_100),
                 Button(Const("До 300"), id="to_300", on_click=on_to_300),
@@ -146,7 +156,10 @@ def create_flow_dialog():
             parse_mode=ParseMode.HTML,
         ),
         Window(
-            Const("✏️ <b>Чи потрібно виділяти заголовок?</b>\n\n"),
+            Const(
+                "<b>Етап 5 из 7</b>\n\n"
+                "✏️ <b>Чи потрібно виділяти заголовок?</b>\n\n"
+            ),
             Column(
                 Button(
                     Const("✅ Так"),
@@ -165,26 +178,28 @@ def create_flow_dialog():
             state=CreateFlowMenu.title_highlight_confirm,
             parse_mode=ParseMode.HTML,
         ),
+        # Window(
+        #     Format("⏰ <b>Налаштування рекламного топу</b>\n\n"
+        #       "Введіть час рекламного топу в форматі\n"
+        #       "<code>hh:mm</code>\n\n"
+        #       "Поточне повідомлення:\n"
+        #       "{message}"),
+        #     MessageInput(
+        #         handle_time_input,
+        #         filter=F.text & ~F.text.startswith('/')
+        #     ),
+        #     Row(
+        #         Back(Const("🔙 Назад")),
+        #         Button(Const("🔄 Скинути"), id="reset_time", on_click=reset_ad_time),
+        #     ),
+        #     state=CreateFlowMenu.ad_time_settings,
+        #     parse_mode=ParseMode.HTML,
+        #     getter=ad_time_getter
+        # ),
         Window(
-            Format("⏰ <b>Налаштування рекламного топу</b>\n\n"
-              "Введіть час рекламного топу в форматі\n"
-              "<code>hh:mm</code>\n\n"
-              "Поточне повідомлення:\n"
-              "{message}"),
-            MessageInput(
-                handle_time_input,
-                filter=F.text & ~F.text.startswith('/')
-            ),
-            Row(
-                Back(Const("🔙 Назад")),
-                Button(Const("🔄 Скинути"), id="reset_time", on_click=reset_ad_time),
-            ),
-            state=CreateFlowMenu.ad_time_settings,
-            parse_mode=ParseMode.HTML,
-            getter=ad_time_getter
-        ),
-        Window(
-            Format("📊 <b>Налаштування об'єму флоу</b>\n\n"
+            Format(
+                "<b>Етап 6 из 7</b>\n\n"
+                "📊 <b>Налаштування об'єму флоу</b>\n\n"
                 "Оберіть кількість останніх постів,\n"
                 "яку треба зберігати у флоу:\n\n"
                 "Поточне значення: {current_value}"),
@@ -212,7 +227,8 @@ def create_flow_dialog():
             getter=flow_volume_getter
         ),
         Window(
-            Const("✏️ <b>Введіть власне число</b>\n\n"
+            Const(
+                "✏️ <b>Введіть власне число</b>\n\n"
                 "Діапазон: 1-50\n\n"
                 "Або натисніть 'Назад'"),
             MessageInput(
@@ -226,7 +242,9 @@ def create_flow_dialog():
             parse_mode=ParseMode.HTML
         ),
         Window(
-            Format("✍️ <b>Налаштування підпису до постів</b>\n\n"
+            Format(
+                "<b>Етап 7 из 7</b>\n\n"
+                "✍️ <b>Налаштування підпису до постів</b>\n\n"
                 "Поточний підпис:\n"
                 "<code>{current_signature}</code>\n\n"
                 "Відправте новий підпис або натисніть 'Пропустити'\n"

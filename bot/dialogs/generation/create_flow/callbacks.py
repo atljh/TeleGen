@@ -135,12 +135,12 @@ async def on_to_1000(callback: CallbackQuery, button: Button, manager: DialogMan
 
 async def confirm_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data["title_highlight"] = True
-    await manager.switch_to(CreateFlowMenu.ad_time_settings)
+    await manager.switch_to(CreateFlowMenu.flow_volume_settings)
     await callback.answer("Заголовок буде виділено")
 
 async def reject_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data["title_highlight"] = False
-    await manager.switch_to(CreateFlowMenu.ad_time_settings)
+    await manager.switch_to(CreateFlowMenu.flow_volume_settings)
     await callback.answer("Заголовок не буде виділено")
 
 
