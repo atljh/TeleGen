@@ -1,73 +1,48 @@
 import os
 import logging
-import aiohttp
-import asyncio
-from typing import Any, Dict, Optional, List
+from typing import Dict, Any, Optional
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
-from aiogram.types import InputMediaPhoto, InputMediaVideo, Message, FSInputFile
+from aiogram.types import InputMediaPhoto, FSInputFile
 from aiogram_dialog.widgets.kbd import StubScroll
 from django.conf import settings
 from bot.containers import Container
 from asgiref.sync import sync_to_async
 from functools import lru_cache
 
-
-MAX_ALBUM_SIZE = 10
-MAX_CAPTION_LENGTH = 1024
-
 @lru_cache(maxsize=100)
 def get_media_path(media_url: str) -> str:
     return os.path.join(settings.MEDIA_ROOT, media_url.split('/media/')[-1])
 
-async def prepare_media_attachment(media_info: dict) -> Optional[MediaAttachment]:
-    if not media_info or not os.path.exists(media_info['path']):
-        return None
-    return MediaAttachment(path=media_info['path'], type=media_info['type'])
-
-async def send_media_album(
-    dialog_manager: DialogManager, 
-    post_data: Dict[str, Any]
-) -> Optional[Message]:
+async def send_media_album(dialog_manager: DialogManager, post_data: Dict[str, Any]) -> None:
     bot = dialog_manager.middleware_data['bot']
     chat_id = dialog_manager.middleware_data['event_chat'].id
-    media_group = []
     
     try:
-        images = post_data.get('images', [])[:MAX_ALBUM_SIZE]
+        images = post_data.get('images', [])[:10]
+        if not images:
+            return
+            
+        media_group = []
         for i, image in enumerate(images):
             media_path = get_media_path(image.url)
-            
             if not os.path.exists(media_path):
                 continue
                 
             media = InputMediaPhoto(
                 media=FSInputFile(media_path),
-                caption=post_data['content_preview'][:MAX_CAPTION_LENGTH] if i == 0 else None,
+                caption=post_data['content'] if i == 0 else None,
                 parse_mode='HTML'
             )
             media_group.append(media)
         
-        if not media_group and post_data.get('video_url'):
-            video_path = get_media_path(post_data['video_url'])
-            if os.path.exists(video_path):
-                media_group.append(InputMediaVideo(
-                    media=FSInputFile(video_path),
-                    caption=post_data['content_preview'][:MAX_CAPTION_LENGTH],
-                    parse_mode='HTML'
-                ))
-    
         if media_group:
-            return await bot.send_media_group(
-                chat_id=chat_id,
-                media=media_group
-            )
+            await bot.send_media_group(chat_id=chat_id, media=media_group)
             
     except Exception as e:
         logging.error(f"Error sending media album: {str(e)}")
-        await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
-    
-    return None
+        await dialog_manager.event.answer("⚠️ Не вдалось відправити альбом")
+
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
@@ -82,7 +57,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         "pages": 0,
         "day": "Немає постів",
         "media_content": None,
-        "auto_sent_album": False,
         "post": {
             "id": "",
             "idx": 0,
@@ -93,6 +67,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             "full_content": "",
             "has_media": False,
             "images_count": 0,
+            "is_album": False
         }
     }
 
@@ -118,6 +93,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     else "Без дати"
                 )()
 
+                is_album = len(images) > 1
                 post_dict = {
                     "id": str(post.id) if hasattr(post, 'id') else "",
                     "idx": idx,
@@ -130,10 +106,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "images_count": len(images),
                     "images": images,
                     "video_url": video_url,
+                    "is_album": is_album
                 }
 
-                if len(images) > 1:
-                    post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)\n{content[:1000]}..."
+                if is_album:
+                    post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
                 else:
                     post_dict["content_preview"] = content[:1000] + ("..." if len(content) > 1000 else "")
 
@@ -150,15 +127,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     if posts and current_page < total_pages:
         post = posts[current_page]
-        
-        if post.get('images_count', 0) > 1:
-            try:
-                await send_media_album(dialog_manager, post)
-                data["auto_sent_album"] = True
-            except Exception as e:
-                logging.error(f"Помилка відправки альбому: {str(e)}")
-                data["auto_sent_album"] = False
-
         data.update({
             "current_page": current_page + 1,
             "pages": total_pages,
@@ -166,7 +134,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             "post": post
         })
 
-        if post.get('images_count', 0) <= 1:
+        if not post.get('is_album'):
             media_info = None
             images = post.get('images', [])
             
