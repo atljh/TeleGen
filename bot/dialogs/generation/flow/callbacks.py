@@ -63,22 +63,3 @@ async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: Di
     # post_service = Container.post_service()
     # await post_service.save_to_buffer(post_id)
     await callback.answer("Пост збережено в буфер!")
-
-
-async def on_page_changed(
-    callback: CallbackQuery, 
-    button: Button, 
-    manager: DialogManager
-):
-    # Получаем текущие данные
-    data = await paging_getter(manager)
-    
-    # Если это альбом - отправляем его
-    if data["post"].get("is_album"):
-        await send_media_album(manager, data["post"])
-    
-    # Обновляем диалог (кнопки пагинации и другую информацию)
-    await manager.dialog().update(manager)
-    
-    # Подтверждаем обработку callback
-    await callback.answer()

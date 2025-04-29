@@ -1,27 +1,38 @@
 import os
 import logging
 from typing import Dict, Any, Optional
+
+from aiogram.types import (
+    InputMediaPhoto, FSInputFile, Message,
+    InlineKeyboardMarkup, InlineKeyboardButton
+)
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
-from aiogram.types import InputMediaPhoto, FSInputFile
 from aiogram_dialog.widgets.kbd import StubScroll
+
 from django.conf import settings
-from bot.containers import Container
 from asgiref.sync import sync_to_async
 from functools import lru_cache
+
+from bot.containers import Container
+
 
 @lru_cache(maxsize=100)
 def get_media_path(media_url: str) -> str:
     return os.path.join(settings.MEDIA_ROOT, media_url.split('/media/')[-1])
 
-async def send_media_album(dialog_manager: DialogManager, post_data: Dict[str, Any]) -> None:
+async def send_media_album(
+    dialog_manager: DialogManager, 
+    post_data: Dict[str, Any]
+) -> Optional[Message]:
     bot = dialog_manager.middleware_data['bot']
     chat_id = dialog_manager.middleware_data['event_chat'].id
+    message = dialog_manager.event.message
     
     try:
         images = post_data.get('images', [])[:10]
         if not images:
-            return
+            return None
             
         media_group = []
         for i, image in enumerate(images):
@@ -37,12 +48,41 @@ async def send_media_album(dialog_manager: DialogManager, post_data: Dict[str, A
             media_group.append(media)
         
         if media_group:
-            await bot.send_media_group(chat_id=chat_id, media=media_group)
+            try:
+                await message.delete()
+            except:
+                pass
+                
+            await bot.send_media_group(
+                chat_id=chat_id,
+                media=media_group
+            )
+            
+            new_message = await bot.send_message(
+                chat_id=chat_id,
+                text=f"📷 Альбом ({len(images)} фото)\nУправление:",
+                reply_markup=build_album_keyboard(post_data)
+            )
+            
+            dialog_manager.dialog_data["last_message_id"] = new_message.message_id
             
     except Exception as e:
         logging.error(f"Error sending media album: {str(e)}")
-        await dialog_manager.event.answer("⚠️ Не вдалось відправити альбом")
+        await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
+    
+    return None
 
+def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Опублікувати", callback_data=f"publish_{post_data['id']}"),
+            InlineKeyboardButton(text="✏️ Редагувати", callback_data=f"edit_{post_data['id']}"),
+        ],
+        [
+            InlineKeyboardButton(text="🔙 Назад", callback_data="go_back"),
+        ]
+    ])
+    return keyboard
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
