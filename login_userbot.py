@@ -11,7 +11,7 @@ PHONE = os.getenv("TELEGRAM_PHONE")
 
 async def main():
     print(PHONE, API_ID, API_HASH)
-    client = TelegramClient('userbot_session', API_ID, API_HASH)
+    client = TelegramClient('userbot', API_ID, API_HASH)
     await client.start(phone=PHONE)
     print("Авторизацiя пройшла успiшно.")
     await client.disconnect()
