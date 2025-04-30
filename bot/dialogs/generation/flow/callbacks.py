@@ -1,6 +1,6 @@
 import logging
 from typing import Dict
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ForceReply, ContentType
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
@@ -60,17 +60,58 @@ async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogM
     
     await manager.switch_to(FlowMenu.edit_post)
 
+async def on_edit_text(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.answer(
+        "Надішліть новий текст для поста:",
+        reply_markup=ForceReply(selective=True)
+    )
+    manager.dialog_data["awaiting_input"] = "text"
+
+async def on_edit_media(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.answer(
+        "Надішліть нове фото або відео для поста:",
+        reply_markup=ForceReply(selective=True)
+    )
+    manager.dialog_data["awaiting_input"] = "media"
+
 
 async def process_edit_input(message: Message, widget, manager: DialogManager):
-    manager.dialog_data["edited_content"] = message.text
-    await message.delete()
-
-async def on_save_edited_post(callback: CallbackQuery, button: Button, manager: DialogManager):
-    edited_content = manager.dialog_data.get("edited_content")
+    input_type = manager.dialog_data.get("awaiting_input")
     
-    await manager.switch_to(FlowMenu.posts_list)
-
-
+    if input_type == "text":
+        manager.dialog_data["edited_content"] = message.text
+        await message.answer("Текст успішно змінено!")
+        
+    elif input_type == "media":
+        if message.content_type == ContentType.PHOTO:
+            file_id = message.photo[-1].file_id
+            manager.dialog_data["edited_media"] = {
+                "type": "photo",
+                "file_id": file_id
+            }
+            await message.answer("Фото успішно змінено!")
+            
+        elif message.content_type == ContentType.VIDEO:
+            file_id = message.video.file_id
+            manager.dialog_data["edited_media"] = {
+                "type": "video",
+                "file_id": file_id
+            }
+            await message.answer("Відео успішно змінено!")
+        else:
+            await message.answer("Будь ласка, надішліть фото або відео")
+            return
+    
+    try:
+        await message.bot.delete_message(
+            chat_id=message.chat.id,
+            message_id=message.message_id - 1
+        )
+    except:
+        pass
+    
+    manager.dialog_data.pop("awaiting_input", None)
+    await manager.show()
 
 async def on_schedule_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     post_id = manager.dialog_data.get("current_post_id")

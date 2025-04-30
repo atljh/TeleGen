@@ -14,9 +14,10 @@ from aiogram_dialog.widgets.text import Const, Format
 from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import edit_post_getter, paging_getter, send_media_album
 from .callbacks import (
+    on_edit_media,
     on_edit_post,
+    on_edit_text,
     on_publish_post,
-    on_save_edited_post,
     on_schedule_post,
     process_edit_input,
 )
@@ -63,18 +64,19 @@ def flow_dialog() -> Dialog:
         ),
         Window(
             Format("<b>✏️ Редагування поста</b>\n\n"
-                  "\n{content}\n\n"
-                  ),
+                "\n{content}\n\n"
+                "<i>Поточне медіа:</i>"),
             DynamicMedia("media"),
             
             Row(
-                Button(Const("📝 Змінити текст"), id="edit_text"),
-                Button(Const("🖼️ Змінити медіа"), id="edit_media"),
+                Button(Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text),
+                Button(Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media),
             ),
             Row(
-                Button(Const("✅ Застосувати зміни"), id="apply_edit", on_click=on_apply_edit),
                 Back(Const("❌ Скасувати"))
             ),
+            
+            MessageInput(process_edit_input),
             
             getter=edit_post_getter,
             state=FlowMenu.edit_post,
@@ -83,33 +85,4 @@ def flow_dialog() -> Dialog:
     )
 
 
-
-async def on_apply_edit(callback: CallbackQuery, button: Button, manager: DialogManager):
-    edited_post = {
-        "content": manager.dialog_data.get("edited_content", manager.dialog_data["original_content"]),
-        "media_url": manager.dialog_data.get("edited_media", manager.dialog_data["original_media"])
-    }
-    
-    # save_post_changes(edited_post)
-    
-    await show_post_preview(manager, edited_post)
-    await manager.dialog().switch_to(FlowMenu.posts_list)
-
-async def show_post_preview(manager: DialogManager, post_data: dict):
-    bot = manager.middleware_data['bot']
-    chat_id = manager.middleware_data['event_chat'].id
-    
-    if post_data.get("media_url"):
-        await bot.send_photo(
-            chat_id=chat_id,
-            photo=post_data["media_url"],
-            caption=post_data["content"],
-            parse_mode="HTML"
-        )
-    else:
-        await bot.send_message(
-            chat_id=chat_id,
-            text=post_data["content"],
-            parse_mode="HTML"
-        )
 
