@@ -1,8 +1,10 @@
+import os
 import logging
 from typing import Dict
 from aiogram.types import CallbackQuery, Message, ForceReply, ContentType
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
+from django.conf import settings
 
 from bot.containers import Container
 from bot.database.dtos.dtos import MediaType, PostImageDTO
@@ -98,52 +100,66 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             
         elif input_type == "media":
             if message.content_type == ContentType.PHOTO:
-                file = await message.bot.get_file(message.photo[-1].file_id)
-                file_url = f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
+                # Завантажуємо фото на сервер
+                file_id = message.photo[-1].file_id
+                file = await message.bot.get_file(file_id)
+                file_path = f"posts/images/{file_id}.jpg"
+                
+                # Зберігаємо файл локально
+                destination = os.path.join(settings.MEDIA_ROOT, file_path)
+                os.makedirs(os.path.dirname(destination), exist_ok=True)
+                await message.bot.download_file(file.file_path, destination)
                 
                 updated_post = await post_service.update_post(
                     post_id=post_id,
-                    images=[PostImageDTO(url=file_url, order=0)],
+                    images=[{"file_path": file_path, "order": 0}],
                     video_url=None
                 )
                 
                 manager.dialog_data["edited_media"] = {
                     "type": MediaType.IMAGE,
-                    "url": file_url
+                    "url": os.path.join(settings.MEDIA_URL, file_path)
                 }
                 await message.answer("Фото успішно збережено!")
                 
             elif message.content_type == ContentType.VIDEO:
-                file = await message.bot.get_file(message.video.file_id)
-                file_url = f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
+                file_id = message.video.file_id
+                file = await message.bot.get_file(file_id)
+                file_path = f"posts/videos/{file_id}.mp4"
+                
+                destination = os.path.join(settings.MEDIA_ROOT, file_path)
+                os.makedirs(os.path.dirname(destination), exist_ok=True)
+                await message.bot.download_file(file.file_path, destination)
                 
                 await post_service.update_post(
                     post_id=post_id,
-                    video_url=file_url,
+                    video_url=os.path.join(settings.MEDIA_URL, file_path),
                     images=[]
                 )
                 
                 manager.dialog_data["edited_media"] = {
                     "type": MediaType.VIDEO,
-                    "url": file_url
+                    "url": os.path.join(settings.MEDIA_URL, file_path)
                 }
                 await message.answer("Відео успішно збережено!")
             else:
                 await message.answer("Будь ласка, надішліть фото або відео")
                 return
     
+        # Оновлюємо локальні дані
         if input_type == "text":
             manager.dialog_data["editing_post"]["content"] = new_text
         elif input_type == "media":
             if message.content_type == ContentType.PHOTO:
                 manager.dialog_data["editing_post"]["images"] = [
-                    PostImageDTO(url=file_url, order=0)
+                    {"url": os.path.join(settings.MEDIA_URL, file_path), "order": 0}
                 ]
                 manager.dialog_data["editing_post"]["video_url"] = None
             else:
-                manager.dialog_data["editing_post"]["video_url"] = file_url
+                manager.dialog_data["editing_post"]["video_url"] = os.path.join(settings.MEDIA_URL, file_path)
                 manager.dialog_data["editing_post"]["images"] = []
         
+        # Видаляємо повідомлення-запит
         try:
             await message.bot.delete_message(
                 chat_id=message.chat.id,

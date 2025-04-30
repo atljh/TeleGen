@@ -238,7 +238,7 @@ class PostService:
         self,
         post_id: int,
         content: Optional[str] = None,
-        images: Optional[List[PostImageDTO]] = None,
+        images: Optional[List[dict]] = None,
         video_url: Optional[str] = None,
         **kwargs
     ) -> PostDTO:
@@ -248,13 +248,15 @@ class PostService:
             post.content = content
         
         if images is not None:
+            # Видаляємо старі зображення
             await sync_to_async(lambda: post.images.all().delete())()
             
-            for img_dto in images:
+            # Додаємо нові зображення
+            for img_data in images:
                 await sync_to_async(PostImage.objects.create)(
                     post=post,
-                    url=img_dto.url,
-                    order=img_dto.order
+                    image=img_data["file_path"],  # Використовуємо ImageField
+                    order=img_data["order"]
                 )
         
         if video_url is not None:
