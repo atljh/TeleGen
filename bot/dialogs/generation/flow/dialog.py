@@ -65,7 +65,7 @@ def flow_dialog() -> Dialog:
         Window(
             Format("<b>✏️ Редагування поста</b>\n\n"
                 "\n{content}\n\n"
-                "<i>Поточне медіа:</i>"),
+                ),
             DynamicMedia("media"),
             
             Row(

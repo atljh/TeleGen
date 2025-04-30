@@ -261,6 +261,23 @@ class PostService:
         images_qs = await sync_to_async(lambda: list(updated_post.images.all().order_by('order')))()
         return PostDTO.from_orm(updated_post, images=images_qs)
 
+    async def replace_post_media(self, post_id: int, media_file_id: str, media_type: str):
+        post = await self.post_repo.get(post_id)
+        
+        await sync_to_async(lambda: post.images.all().delete())()
+        
+        if media_type == "photo":
+            new_image = await self.image_repo.create(
+                url=media_file_id,
+                post=post,
+                order=0
+            )
+            return new_image
+        elif media_type == "video":
+            post.video_url = media_file_id
+            await post.asave()
+            return None
+        
     async def delete_post(self, post_id: int) -> None:
         if not await self.post_repo.exists(post_id):
             raise PostNotFoundError(f"Post with id {post_id} not found")
