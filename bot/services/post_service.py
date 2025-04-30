@@ -9,7 +9,7 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 from aiogram.types import FSInputFile, URLInputFile, InputMediaPhoto, InputMediaVideo
-from admin_panel.admin_panel.models import PostImage
+from admin_panel.admin_panel.models import PostImage, Post
 from bot.database.dtos import PostDTO, FlowDTO, PostImageDTO
 from bot.database.dtos.dtos import ContentLength
 from bot.database.repositories import PostRepository, FlowRepository
@@ -30,6 +30,42 @@ class PostService:
         self.flow_repo = flow_repository
         self.bot = bot
         self.userbot_service = userbot_service
+
+
+    async def get_oldest_posts(self, flow_id: int, limit: int) -> List[Post]:
+        return await sync_to_async(list)(
+            Post.objects.filter(flow_id=flow_id)
+            .order_by('created_at')[:limit]
+        )
+
+    async def update_post_with_media(
+        self,
+        post_id: int,
+        content: str,
+        media_list: List[dict]
+    ) -> PostDTO:
+        post = await self.post_repo.get(post_id)
+        
+        # Оновлюємо контент
+        post.content = content
+        await sync_to_async(post.save)()
+        
+        # Видаляємо старі медіа
+        await sync_to_async(lambda: post.images.all().delete())()
+        
+        # Додаємо нові медіа
+        for media in media_list:
+            if media['type'] == 'image':
+                await sync_to_async(PostImage.objects.create)(
+                    post=post,
+                    image=media['path'],
+                    order=media['order']
+                )
+            elif media['type'] == 'video':
+                post.video_url = media['path']
+                await sync_to_async(post.save)()
+        
+        return await self.get_post(post_id)
 
     async def count_posts_in_flow(self, flow_id: int) -> int:
         return await self.post_repo.count_posts_in_flow(flow_id=flow_id)
@@ -248,14 +284,12 @@ class PostService:
             post.content = content
         
         if images is not None:
-            # Видаляємо старі зображення
             await sync_to_async(lambda: post.images.all().delete())()
             
-            # Додаємо нові зображення
             for img_data in images:
                 await sync_to_async(PostImage.objects.create)(
                     post=post,
-                    image=img_data["file_path"],  # Використовуємо ImageField
+                    image=img_data["file_path"],
                     order=img_data["order"]
                 )
         

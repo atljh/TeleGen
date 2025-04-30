@@ -146,7 +146,6 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 await message.answer("Будь ласка, надішліть фото або відео")
                 return
     
-        # Оновлюємо локальні дані
         if input_type == "text":
             manager.dialog_data["editing_post"]["content"] = new_text
         elif input_type == "media":
@@ -159,7 +158,6 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 manager.dialog_data["editing_post"]["video_url"] = os.path.join(settings.MEDIA_URL, file_path)
                 manager.dialog_data["editing_post"]["images"] = []
         
-        # Видаляємо повідомлення-запит
         try:
             await message.bot.delete_message(
                 chat_id=message.chat.id,
