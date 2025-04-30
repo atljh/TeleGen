@@ -12,7 +12,7 @@ from aiogram_dialog.widgets.kbd import (
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.flow.states import FlowMenu
-from .getters import paging_getter, send_media_album
+from .getters import edit_post_getter, paging_getter, send_media_album
 from .callbacks import (
     on_edit_post,
     on_publish_post,
@@ -62,22 +62,54 @@ def flow_dialog() -> Dialog:
             parse_mode=ParseMode.HTML,
         ),
         Window(
-            Format("<b>Редактирование поста:</b>\n\n{editing_post[content_preview]}\n\n"
-                  "<i>Отправьте новый текст сообщения...</i>"),
-            MessageInput(process_edit_input),
+            Format("<b>✏️ Редагування поста</b>\n\n"
+                  "\n{content}\n\n"
+                  ),
+            DynamicMedia("media"),
+            
             Row(
-                Button(Const("💾 Сохранить"), id="save_edit", on_click=on_save_edited_post),
-                Button(Const("❌ Отмена"), id="cancel_edit", on_click=lambda c, b, m: m.switch_to(FlowMenu.posts_list))
+                Button(Const("📝 Змінити текст"), id="edit_text"),
+                Button(Const("🖼️ Змінити медіа"), id="edit_media"),
             ),
-            state=FlowMenu.edit_post,
+            Row(
+                Button(Const("✅ Застосувати зміни"), id="apply_edit", on_click=on_apply_edit),
+                Back(Const("❌ Скасувати"))
+            ),
+            
             getter=edit_post_getter,
-            parse_mode=ParseMode.HTML
+            state=FlowMenu.edit_post,
+            parse_mode="HTML"
         )
     )
 
 
 
-async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
-    return {
-        "editing_post": dialog_manager.dialog_data.get("editing_post", {})
+async def on_apply_edit(callback: CallbackQuery, button: Button, manager: DialogManager):
+    edited_post = {
+        "content": manager.dialog_data.get("edited_content", manager.dialog_data["original_content"]),
+        "media_url": manager.dialog_data.get("edited_media", manager.dialog_data["original_media"])
     }
+    
+    # save_post_changes(edited_post)
+    
+    await show_post_preview(manager, edited_post)
+    await manager.dialog().switch_to(FlowMenu.posts_list)
+
+async def show_post_preview(manager: DialogManager, post_data: dict):
+    bot = manager.middleware_data['bot']
+    chat_id = manager.middleware_data['event_chat'].id
+    
+    if post_data.get("media_url"):
+        await bot.send_photo(
+            chat_id=chat_id,
+            photo=post_data["media_url"],
+            caption=post_data["content"],
+            parse_mode="HTML"
+        )
+    else:
+        await bot.send_message(
+            chat_id=chat_id,
+            text=post_data["content"],
+            parse_mode="HTML"
+        )
+
