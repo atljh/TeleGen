@@ -46,14 +46,11 @@ class PostService:
     ) -> PostDTO:
         post = await self.post_repo.get(post_id)
         
-        # Оновлюємо контент
         post.content = content
         await sync_to_async(post.save)()
         
-        # Видаляємо старі медіа
         await sync_to_async(lambda: post.images.all().delete())()
         
-        # Додаємо нові медіа
         for media in media_list:
             if media['type'] == 'image':
                 await sync_to_async(PostImage.objects.create)(

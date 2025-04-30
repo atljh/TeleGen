@@ -100,12 +100,10 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             
         elif input_type == "media":
             if message.content_type == ContentType.PHOTO:
-                # Завантажуємо фото на сервер
                 file_id = message.photo[-1].file_id
                 file = await message.bot.get_file(file_id)
                 file_path = f"posts/images/{file_id}.jpg"
                 
-                # Зберігаємо файл локально
                 destination = os.path.join(settings.MEDIA_ROOT, file_path)
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 await message.bot.download_file(file.file_path, destination)
@@ -117,7 +115,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 )
                 
                 manager.dialog_data["edited_media"] = {
-                    "type": MediaType.IMAGE,
+                    "type": 'photo',
                     "url": os.path.join(settings.MEDIA_URL, file_path)
                 }
                 await message.answer("Фото успішно збережено!")
@@ -138,7 +136,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 )
                 
                 manager.dialog_data["edited_media"] = {
-                    "type": MediaType.VIDEO,
+                    "type": 'video',
                     "url": os.path.join(settings.MEDIA_URL, file_path)
                 }
                 await message.answer("Відео успішно збережено!")

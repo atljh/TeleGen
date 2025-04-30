@@ -76,7 +76,7 @@ def flow_dialog() -> Dialog:
                 Button(Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media),
             ),
             Row(
-                Back(Const("❌ Скасувати"))
+                Back(Const("🔙 Назад"))
             ),
             
             MessageInput(process_edit_input),

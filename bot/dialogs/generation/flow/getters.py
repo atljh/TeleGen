@@ -214,7 +214,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
     post = dialog_manager.dialog_data.get("editing_post", {})
     content = dialog_manager.dialog_data.get("edited_content", post.get("content", ""))
-    media_url = dialog_manager.dialog_data.get("edited_media", post.get("media_url", ""))
+    edited_media = dialog_manager.dialog_data.get("edited_media")
     media_info = None
     images = post.get('images', [])
     video_url = post.get('video_url')
@@ -240,10 +240,14 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
             path=media_info['path'],
             type=media_info['type']
         )
-    
+    elif edited_media:
+        media_path = get_media_path(edited_media['url'])
+        media = MediaAttachment(
+            path=media_path,
+            type=edited_media['type']
+        )
     return {
         "post": post,
         "content": content,
-        "media_url": media_url,
         "media": media
     }
