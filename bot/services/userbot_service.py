@@ -38,7 +38,6 @@ class UserbotService:
         finally:
             await client.disconnect()
 
-
     async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[Dict]:
         result = []
         processed_albums = set()
@@ -94,7 +93,6 @@ class UserbotService:
                     continue
 
         return result[::-1]
-
 
     async def _process_album(self, client: TelegramClient, entity, initial_msg) -> Optional[Dict]:
         try:

@@ -1,13 +1,13 @@
 import logging
 from typing import Dict
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
 from bot.containers import Container
 from bot.database.exceptions import InvalidOperationError
 
-from .states import FlowMenu
+from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import paging_getter, send_media_album
 
 
@@ -50,9 +50,27 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     finally:
         await manager.show()
 
+
+#===========================================EDIT===========================================
 async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
-    post_id = manager.dialog_data.get("current_post_id")
-    await callback.answer(f"Редагування поста {post_id}")
+    data = await paging_getter(manager)
+    post_data = data["post"]
+    
+    manager.dialog_data["editing_post"] = post_data
+    
+    await manager.switch_to(FlowMenu.edit_post)
+
+
+async def process_edit_input(message: Message, widget, manager: DialogManager):
+    manager.dialog_data["edited_content"] = message.text
+    await message.delete()
+
+async def on_save_edited_post(callback: CallbackQuery, button: Button, manager: DialogManager):
+    edited_content = manager.dialog_data.get("edited_content")
+    
+    await manager.switch_to(FlowMenu.posts_list)
+
+
 
 async def on_schedule_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     post_id = manager.dialog_data.get("current_post_id")
