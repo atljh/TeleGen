@@ -5,6 +5,7 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
 from bot.containers import Container
+from bot.database.dtos.dtos import MediaType, PostImageDTO
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 
 from bot.dialogs.generation.flow.states import FlowMenu
@@ -75,63 +76,74 @@ async def on_edit_media(callback: CallbackQuery, button: Button, manager: Dialog
 
 async def process_edit_input(message: Message, widget, manager: DialogManager):
     input_type = manager.dialog_data.get("awaiting_input")
-    post = manager.dialog_data.get("editing_post", {})
-    post_id = post.get("id")
-
+    post_data = manager.dialog_data.get("editing_post", {})
+    post_id = post_data.get("id")
+    
     if not post_id:
         await message.answer("Помилка: ID поста не знайдено")
         return
 
     post_service = Container.post_service()
-    updates = {}
 
     try:
         if input_type == "text":
             new_text = message.text
             manager.dialog_data["edited_content"] = new_text
-            updates["content"] = new_text
-            is_published = True if post.get('status') == '✅ Опубліковано' else False
+            
             await post_service.update_post(
                 post_id=post_id,
-                content=new_text,
-                is_published=is_published
+                content=new_text
             )
-            await message.answer("Текст успішно змінено та збережено!")
+            await message.answer("Текст успішно оновлено!")
             
         elif input_type == "media":
             if message.content_type == ContentType.PHOTO:
-                file_id = message.photo[-1].file_id
-                media_data = {
-                    "type": "photo",
-                    "file_id": file_id
-                }
-                manager.dialog_data["edited_media"] = media_data
+                file = await message.bot.get_file(message.photo[-1].file_id)
+                file_url = f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
                 
-                await post_service.replace_post_media(
+                updated_post = await post_service.update_post(
                     post_id=post_id,
-                    media_file_id=file_id,
-                    media_type="photo",
+                    images=[PostImageDTO(url=file_url, order=0)],
+                    video_url=None
                 )
-                await message.answer("Фото успішно змінено та збережено!")
+                
+                manager.dialog_data["edited_media"] = {
+                    "type": MediaType.IMAGE,
+                    "url": file_url
+                }
+                await message.answer("Фото успішно збережено!")
                 
             elif message.content_type == ContentType.VIDEO:
-                file_id = message.video.file_id
-                media_data = {
-                    "type": "video",
-                    "file_id": file_id
-                }
-                manager.dialog_data["edited_media"] = media_data
+                file = await message.bot.get_file(message.video.file_id)
+                file_url = f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
                 
-                await post_service.replace_post_media(
+                await post_service.update_post(
                     post_id=post_id,
-                    media_file_id=file_id,
-                    media_type="video"
+                    video_url=file_url,
+                    images=[]
                 )
-                await message.answer("Відео успішно змінено та збережено!")
+                
+                manager.dialog_data["edited_media"] = {
+                    "type": MediaType.VIDEO,
+                    "url": file_url
+                }
+                await message.answer("Відео успішно збережено!")
             else:
                 await message.answer("Будь ласка, надішліть фото або відео")
                 return
     
+        if input_type == "text":
+            manager.dialog_data["editing_post"]["content"] = new_text
+        elif input_type == "media":
+            if message.content_type == ContentType.PHOTO:
+                manager.dialog_data["editing_post"]["images"] = [
+                    PostImageDTO(url=file_url, order=0)
+                ]
+                manager.dialog_data["editing_post"]["video_url"] = None
+            else:
+                manager.dialog_data["editing_post"]["video_url"] = file_url
+                manager.dialog_data["editing_post"]["images"] = []
+        
         try:
             await message.bot.delete_message(
                 chat_id=message.chat.id,
@@ -144,10 +156,10 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
         # await manager.show()
         
     except PostNotFoundError:
-        await message.answer("Помилка: пост не знайдено в базі даних")
+        await message.answer("Помилка: пост не знайдено")
     except Exception as e:
-        logging.error(f"Помилка збереження змін: {str(e)}")
-        await message.answer("Сталася помилка при збереженні змін")
+        logging.error(f"Помилка збереження: {str(e)}")
+        await message.answer("Помилка при збереженні змін")
 
 
 async def on_schedule_post(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -159,3 +171,12 @@ async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: Di
     # post_service = Container.post_service()
     # await post_service.save_to_buffer(post_id)
     await callback.answer("Пост збережено в буфер!")
+
+
+
+async def open_calendar(callback: CallbackQuery, widget, dialog_manager: DialogManager):
+    await dialog_manager.switch_to(FlowMenu.schedule)
+
+async def schedule_post(callback: CallbackQuery, widget, manager: DialogManager, selected_date):
+    await callback.answer(f"Заплановано на {selected_date.strftime('%d.%m.%Y')}")
+    await manager.switch_to(FlowMenu.posts_list)

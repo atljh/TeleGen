@@ -7,6 +7,4 @@ class FlowMenu(StatesGroup):
     edit_post = State()
     publish_now = State()
     schedule = State()
-    edit = State()
     save_to_buffer = State()
-    post_detail = State()

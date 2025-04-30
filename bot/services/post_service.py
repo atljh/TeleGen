@@ -9,6 +9,7 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 from aiogram.types import FSInputFile, URLInputFile, InputMediaPhoto, InputMediaVideo
+from admin_panel.admin_panel.models import PostImage
 from bot.database.dtos import PostDTO, FlowDTO, PostImageDTO
 from bot.database.dtos.dtos import ContentLength
 from bot.database.repositories import PostRepository, FlowRepository
@@ -237,46 +238,32 @@ class PostService:
         self,
         post_id: int,
         content: Optional[str] = None,
-        status: Optional[str] = None,
-        source_url: Optional[str] = None,
-        scheduled_time: Optional[datetime] = None,
-        publication_date: Optional[datetime] = None,
-        is_published: Optional[bool] = None
+        images: Optional[List[PostImageDTO]] = None,
+        video_url: Optional[str] = None,
+        **kwargs
     ) -> PostDTO:
-        if not await self.post_repo.exists(post_id):
-            raise PostNotFoundError(f"Post with id {post_id} not found")
-
-        if scheduled_time and scheduled_time < datetime.now():
-            raise InvalidOperationError("Scheduled time cannot be in the past")
-
-        updated_post = await self.post_repo.update(
-            post_id=post_id,
-            content=content,
-            status=status,
-            source_url=source_url,
-            scheduled_time=scheduled_time,
-            publication_date=publication_date,
-            is_published=is_published
-        )
-        images_qs = await sync_to_async(lambda: list(updated_post.images.all().order_by('order')))()
-        return PostDTO.from_orm(updated_post, images=images_qs)
-
-    async def replace_post_media(self, post_id: int, media_file_id: str, media_type: str):
         post = await self.post_repo.get(post_id)
         
-        await sync_to_async(lambda: post.images.all().delete())()
+        if content is not None:
+            post.content = content
         
-        if media_type == "photo":
-            new_image = await self.image_repo.create(
-                url=media_file_id,
-                post=post,
-                order=0
-            )
-            return new_image
-        elif media_type == "video":
-            post.video_url = media_file_id
-            await post.asave()
-            return None
+        if images is not None:
+            await sync_to_async(lambda: post.images.all().delete())()
+            
+            for img_dto in images:
+                await sync_to_async(PostImage.objects.create)(
+                    post=post,
+                    url=img_dto.url,
+                    order=img_dto.order
+                )
+        
+        if video_url is not None:
+            post.video_url = video_url
+        
+        await sync_to_async(post.save)()
+        
+        return await self.get_post(post_id)
+
         
     async def delete_post(self, post_id: int) -> None:
         if not await self.post_repo.exists(post_id):

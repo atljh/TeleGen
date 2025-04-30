@@ -7,7 +7,7 @@ from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Select, ScrollingGroup, Button, Row, Button, Group,
-    StubScroll, NumberedPager, Cancel, Back
+    StubScroll, NumberedPager, Cancel, Back, Calendar
 )
 from aiogram_dialog.widgets.text import Const, Format
 
@@ -19,7 +19,9 @@ from .callbacks import (
     on_edit_text,
     on_publish_post,
     on_schedule_post,
+    open_calendar,
     process_edit_input,
+    schedule_post,
 )
 
 from aiogram_dialog.widgets.kbd import NumberedPager
@@ -53,6 +55,7 @@ def flow_dialog() -> Dialog:
             Group(
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
+                Button(Const("📅 Запланувати"), id="schedule_publish", on_click=open_calendar),
                 width=2
             ),
             Row(
@@ -81,7 +84,15 @@ def flow_dialog() -> Dialog:
             getter=edit_post_getter,
             state=FlowMenu.edit_post,
             parse_mode="HTML"
-        )
+        ),
+        Window(
+            Const("📅 Виберіть дату публікації:"),
+            Calendar(id="calendar", on_click=schedule_post),
+            Row(
+                Back(Const("◀️ Скасувати")),
+            ),
+            state=FlowMenu.schedule,
+        ),
     )
 
 
