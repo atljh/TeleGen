@@ -14,6 +14,24 @@ from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import paging_getter, send_media_album
 
 
+async def on_back_to_posts(callback: CallbackQuery, button: Button, manager: DialogManager):
+    selected_channel = manager.dialog_data.get("selected_channel")
+    channel_flow = manager.dialog_data.get('channel_flow')
+    item_id = manager.dialog_data.get('item_id')
+
+    if not channel_flow:
+        await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
+        return
+    await manager.start(
+        FlowMenu.posts_list,
+        data={
+            "selected_channel": selected_channel,
+            "channel_flow": channel_flow,
+            "channel_id": item_id
+            },
+        mode=StartMode.RESET_STACK 
+    )
+
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = await paging_getter(manager)
     start_data = manager.start_data or {}

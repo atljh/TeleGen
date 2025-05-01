@@ -94,6 +94,10 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
+    dialog_manager.dialog_data['channel_flow'] = start_data.get("channel_flow")
+    dialog_manager.dialog_data['selected_channel'] = start_data.get("selected_channel")
+
+
     data = {
         "current_page": 1,
         "pages": 0,
@@ -184,6 +188,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 await bot.delete_message(chat_id=chat_id, message_id=message_id)
                 dialog_manager.dialog_data["message_ids"] = []
 
+        logging.info(post.get('images'))
         if not post.get('is_album'):
             media_info = None
             images = post.get('images', [])

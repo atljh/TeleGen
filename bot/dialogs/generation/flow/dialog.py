@@ -14,6 +14,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import edit_post_getter, paging_getter, send_media_album
 from .callbacks import (
+    on_back_to_posts,
     on_edit_media,
     on_edit_post,
     on_edit_text,
@@ -39,7 +40,7 @@ def flow_dialog() -> Dialog:
         if data["post"].get("is_album"):
             await send_media_album(manager, data["post"])
             return
-        await manager.show()
+        # await manager.show()
     
     return Dialog(
         Window(
@@ -75,7 +76,7 @@ def flow_dialog() -> Dialog:
                 Button(Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media),
             ),
             Row(
-                Back(Const("🔙 Назад"))
+                Button(Const("🔙 Назад"), id='on_back_to_posts', on_click=on_back_to_posts)
             ),
             
             MessageInput(process_edit_input),
