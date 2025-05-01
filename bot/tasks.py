@@ -41,11 +41,9 @@ def force_flows_generation_task(self):
                     continue
                 
                 if existing_count >= flow.flow_volume:
-                    # Отримуємо старі пости для оновлення
                     old_posts = await post_service.get_oldest_posts(flow.id, len(posts_dto))
                     logging.info(f"Updating {len(old_posts)} old posts for flow {flow.id}")
                     
-                    # Оновлюємо старі пости
                     for i, post in enumerate(old_posts):
                         if i >= len(posts_dto):
                             break
@@ -61,12 +59,10 @@ def force_flows_generation_task(self):
                             )
                         )
                 else:
-                    # Створюємо нові пости
                     generated_posts = await post_service.generate_auto_posts(flow.id)
                     if generated_posts:
                         logging.info(f"Generated {len(generated_posts)} new posts for flow {flow.id}")
                 
-                # Оновлюємо час наступної генерації
                 await flow_service.update_next_generation_time(flow.id)
                 
             except Exception as e:

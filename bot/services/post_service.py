@@ -218,18 +218,6 @@ class PostService:
         except Exception as e:
             raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
 
-    async def update_post_images(
-        self,
-        post_id: int,
-        image_urls: List[str]
-    ) -> PostDTO:
-        if not await self.post_repo.exists(post_id):
-            raise PostNotFoundError(f"Post with id {post_id} not found")
-
-        await self.post_repo.update_images(post_id, image_urls)
-        updated_post = await self.post_repo.get(post_id)
-        return PostDTO.from_orm(updated_post)
-
     async def add_post_image(
         self,
         post_id: int,
@@ -272,6 +260,8 @@ class PostService:
         post_id: int,
         content: Optional[str] = None,
         images: Optional[List[dict]] = None,
+        publication_date: Optional[datetime] = None,
+        is_published: Optional[bool] = False,
         video_url: Optional[str] = None,
         **kwargs
     ) -> PostDTO:
@@ -279,7 +269,10 @@ class PostService:
         
         if content is not None:
             post.content = content
-        
+        if publication_date:
+            post.publication_date = publication_date
+        if is_published:
+            post.is_published = is_published
         if images is not None:
             await sync_to_async(lambda: post.images.all().delete())()
             

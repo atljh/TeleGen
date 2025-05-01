@@ -32,6 +32,7 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     
     try:
         updated_post = await post_service.publish_post(post_id, channel.channel_id)
+
         is_album = len(updated_post.images) > 1
         
         manager.dialog_data["post"] = {
