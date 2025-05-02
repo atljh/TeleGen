@@ -49,10 +49,10 @@ class ChatGPTContentProcessor(ContentProcessor):
         self.max_retries = 3
 
     async def process(self, text: str) -> str:
+        logging.info('=======================PROCESS===================')
         if not text.strip():
             return ""
 
-        # Формируем динамический промпт на основе настроек flow
         system_prompt = self._build_system_prompt()
         
         for attempt in range(self.max_retries):
@@ -89,6 +89,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             rules.append(f"5. Добавь {emoji_type} emoji (1-2 в начале и 1-2 в конце)")
         
         if self.flow.title_highlight:
+            logging.info("6. Выделяю заголовок")
             rules.append("6. Выдели заголовок с помощью emoji или форматирования")
         
         if self.flow.cta:

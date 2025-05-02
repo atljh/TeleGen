@@ -64,41 +64,29 @@ def force_flows_generation_task(self):
 
         flows = await flow_service.force_flows_due_for_generation()
         logging.info(f"Flows for force generation: {len(flows)}")
-        
+
         for flow in flows:
-            logging.info(flow.content_length)
+            logging.info(f"Processing flow {flow.id} (content length: {flow.content_length})")
             try:
-                existing_count = await post_service.count_posts_in_flow(flow.id)
-                posts_dto = await post_service.userbot_service.get_last_posts(flow)
+                generated_posts = await post_service.generate_auto_posts(flow.id)
                 
-                if not posts_dto:
+                if not generated_posts:
+                    logging.info(f"No posts generated for flow {flow.id}")
                     continue
                 
-                if existing_count >= flow.flow_volume:
-                    old_posts = await post_service.get_oldest_posts(flow.id, len(posts_dto))
-                    logging.info(f"Updating {len(old_posts)} old posts for flow {flow.id}")
+                posts_to_delete = len(generated_posts)
+                existing_count = await post_service.count_posts_in_flow(flow.id)
+                
+                if existing_count > 0:
+                    old_posts = await post_service.get_oldest_posts(flow.id, posts_to_delete)
+                    logging.info(f"Deleting {len(old_posts)} oldest posts from flow {flow.id}")
                     
-                    for i, post in enumerate(old_posts):
-                        if i >= len(posts_dto):
-                            break
-                        await post_service.update_post_with_media(
-                            post_id=post.id,
-                            content=posts_dto[i].content,
-                            media_list=[
-                                {'path': img.url, 'type': 'image', 'order': img.order}
-                                for img in posts_dto[i].images
-                            ] + (
-                                [{'path': posts_dto[i].video_url, 'type': 'video', 'order': len(posts_dto[i].images)}]
-                                if posts_dto[i].video_url else []
-                            )
-                        )
-                else:
-                    generated_posts = await post_service.generate_auto_posts(flow.id)
-                    if generated_posts:
-                        logging.info(f"Generated {len(generated_posts)} new posts for flow {flow.id}")
+                    for post in old_posts:
+                        await post_service.delete_post(post.id)
                 
                 await flow_service.update_next_generation_time(flow.id)
-                
+                logging.info(f"Successfully updated flow {flow.id} with {len(generated_posts)} new posts")
+
             except Exception as e:
                 logging.error(f"Error processing flow {flow.id}: {str(e)}")
                 self.retry(exc=e, countdown=60)

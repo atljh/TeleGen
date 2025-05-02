@@ -289,7 +289,6 @@ class PostService:
         await sync_to_async(post.save)()
         
         return await self.get_post(post_id)
-
         
     async def delete_post(self, post_id: int) -> None:
         if not await self.post_repo.exists(post_id):
@@ -302,3 +301,12 @@ class PostService:
             scheduled_time_lt=datetime.now()
         )
         return [PostDTO.from_orm(post) for post in posts]
+    
+    async def delete_all_posts_in_flow(self, flow_id: int) -> None:
+        if not await self.flow_repo.exists(flow_id):
+            raise PostNotFoundError(f"Flow with id {flow_id} not found")
+
+        posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id)
+
+        for post in posts:
+            await self.post_repo.delete(post.id)
