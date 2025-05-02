@@ -110,7 +110,7 @@ async def on_book_recall(callback: CallbackQuery, button: Button, manager: Dialo
 
 async def on_force_generate(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
-        await callback.answer("Генерація запущена!")
+        await callback.message.answer("Генерація запущена!")
         task = force_flows_generation_task.delay()
         
         max_wait_time = 300
@@ -125,7 +125,7 @@ async def on_force_generate(callback: CallbackQuery, button: Button, manager: Di
                 reply_markup=None
             )
         else:
-            raise Exception("Задача завершилась с ошибкой")
+            raise Exception("Задача завершена с помилкою")
             
     except Exception as e:
         await callback.answer(
