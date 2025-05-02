@@ -110,6 +110,7 @@ async def on_book_recall(callback: CallbackQuery, button: Button, manager: Dialo
 
 async def on_force_generate(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
+        await callback.answer()
         await callback.message.answer("Генерація запущена!")
         task = force_flows_generation_task.delay()
         
