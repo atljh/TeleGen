@@ -27,6 +27,15 @@ from .callbacks import (
 
 from aiogram_dialog.widgets.kbd import NumberedPager
 
+async def on_dialog_result(
+    event, 
+    manager: DialogManager, 
+    result
+):
+    if manager.current_state() == FlowMenu.posts_list:
+        if manager.dialog_data.pop("needs_refresh", False):
+            manager.dialog_data.pop("all_posts", None)
+            await manager.show()
 
 def flow_dialog() -> Dialog:
     from bot.dialogs.generation.callbacks import go_back_to_channels
@@ -93,6 +102,7 @@ def flow_dialog() -> Dialog:
             ),
             state=FlowMenu.schedule,
         ),
+        on_process_result=on_dialog_result 
     )
 
 

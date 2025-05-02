@@ -88,9 +88,9 @@ def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
     current_page = await scroll.get_page() if scroll else 0
+
     dialog_data = dialog_manager.dialog_data or {}
     start_data = dialog_manager.start_data or {}
-
 
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
@@ -117,7 +117,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         }
     }
 
-    if flow and "all_posts" not in dialog_data:
+    if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
         post_service = Container.post_service()
         try:
             raw_posts = await post_service.get_posts_by_flow_id(flow.id)
@@ -167,9 +167,13 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
         except Exception as e:
             logging.error(f"Помилка завантаження постів: {str(e)}")
+    else:
+        posts = dialog_data.get("all_posts", [])
 
-    posts = dialog_data.get("all_posts", [])
+    # posts = dialog_data.get("all_posts", [])
     total_pages = len(posts)
+    
+    dialog_manager.dialog_data['current_page'] = current_page
 
     if posts and current_page < total_pages:
         post = posts[current_page]
@@ -188,7 +192,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 await bot.delete_message(chat_id=chat_id, message_id=message_id)
                 dialog_manager.dialog_data["message_ids"] = []
 
-        logging.info(post.get('images'))
         if not post.get('is_album'):
             media_info = None
             images = post.get('images', [])

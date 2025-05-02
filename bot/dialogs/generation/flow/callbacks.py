@@ -14,23 +14,40 @@ from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import paging_getter, send_media_album
 
 
-async def on_back_to_posts(callback: CallbackQuery, button: Button, manager: DialogManager):
-    selected_channel = manager.dialog_data.get("selected_channel")
-    channel_flow = manager.dialog_data.get('channel_flow')
-    item_id = manager.dialog_data.get('item_id')
+async def on_back_to_posts(
+    callback: CallbackQuery, 
+    button: Button, 
+    manager: DialogManager
+):
+    manager.dialog_data["needs_refresh"] = True
+    original_page = manager.dialog_data.get("original_page", 0)
+    
+    message_ids = manager.dialog_data.get("message_ids", [])
+    if message_ids:
+        bot = manager.middleware_data['bot']
+        chat_id = manager.middleware_data['event_chat'].id
+        for msg_id in message_ids:
+            try:
+                await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            except:
+                pass
+        manager.dialog_data["message_ids"] = []
+    
+    manager.dialog_data.pop("all_posts", None)
+    await paging_getter(manager)
+    
+    await manager.switch_to(FlowMenu.posts_list)
+    
+    scroll = manager.find("stub_scroll")
+    if scroll:
+        await scroll.set_page(original_page)
+    
+    data = await paging_getter(manager)
+    # if data["post"].get("is_album"):
+    #     await send_media_album(manager, data["post"])
+    # else:
+    #     await manager.show()
 
-    if not channel_flow:
-        await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
-        return
-    await manager.start(
-        FlowMenu.posts_list,
-        data={
-            "selected_channel": selected_channel,
-            "channel_flow": channel_flow,
-            "channel_id": item_id
-            },
-        mode=StartMode.RESET_STACK 
-    )
 
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = await paging_getter(manager)
@@ -74,12 +91,18 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
 
 
 #===========================================EDIT===========================================
-async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def on_edit_post(
+    callback: CallbackQuery, 
+    button: Button, 
+    manager: DialogManager
+):
     data = await paging_getter(manager)
-    post_data = data["post"]
+    current_page = data["current_page"] - 1
+    posts = manager.dialog_data.get("all_posts", [])
     
-    manager.dialog_data["editing_post"] = post_data
-    
+    if current_page < len(posts):
+        manager.dialog_data["editing_post"] = posts[current_page]
+        manager.dialog_data["original_page"] = current_page
     await manager.switch_to(FlowMenu.edit_post)
 
 async def on_edit_text(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -110,7 +133,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
         if input_type == "text":
             new_text = message.text
             manager.dialog_data["edited_content"] = new_text
-            
+            manager.dialog_data["needs_refresh"] = True
             await post_service.update_post(
                 post_id=post_id,
                 content=new_text
@@ -137,6 +160,8 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                     "type": 'photo',
                     "url": os.path.join(settings.MEDIA_URL, file_path)
                 }
+                manager.dialog_data["needs_refresh"] = True
+
                 await message.answer("Фото успішно збережено!")
                 
             elif message.content_type == ContentType.VIDEO:
@@ -158,6 +183,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                     "type": 'video',
                     "url": os.path.join(settings.MEDIA_URL, file_path)
                 }
+                manager.dialog_data["needs_refresh"] = True
                 await message.answer("Відео успішно збережено!")
             else:
                 await message.answer("Будь ласка, надішліть фото або відео")
