@@ -65,7 +65,6 @@ class ChatGPTContentProcessor(ContentProcessor):
                         {"role": "user", "content": text}
                     ],
                     temperature=0.5,
-                    # max_tokens=self._get_max_tokens(),
                     top_p=0.9
                 )
                 return response.choices[0].message.content.strip()
@@ -74,7 +73,7 @@ class ChatGPTContentProcessor(ContentProcessor):
                 if attempt == self.max_retries - 1:
                     logging.error(f"ChatGPT processing failed: {str(e)}")
                     return text
-                await asyncio.sleep(1.5 * (attempt + 1))  # Exponential backoff
+                await asyncio.sleep(1.5 * (attempt + 1))
 
     def _build_system_prompt(self) -> str:
         rules = [

@@ -230,7 +230,7 @@ class EnhancedUserbotService(UserbotService):
 
         processed_text = await DefaultContentProcessor().process(post_dto.content)
         
-        if self.openai_key and getattr(flow, 'use_ai', False):
+        if self.openai_key:
             try:
                 processor = ChatGPTContentProcessor(
                     api_key=self.openai_key,
@@ -244,28 +244,10 @@ class EnhancedUserbotService(UserbotService):
             if flow.signature:
                 processed_text = f"{processed_text}\n\n{flow.signature}"
                 
-            if flow.use_emojis:
-                processed_text = await self._apply_emoji(processed_text, flow)
+            # if flow.use_emojis:
+            #     processed_text = await self._apply_emoji(processed_text, flow)
                 
-            if flow.cta:
-                processed_text = await self._apply_cta(processed_text, flow.theme)
+            # if flow.cta:
+            #     processed_text = await self._apply_cta(processed_text, flow.theme)
 
         return post_dto.copy(update={'content': processed_text})
-
-    async def _apply_emoji(self, text: str, flow: FlowDTO) -> str:
-        emoji_map = {
-            'tech': ['⚙️', '🔧', '💻'],
-            'news': ['📰', '🗞️', '🌐'],
-            'fun': ['😂', '🤣', '🎉']
-        }
-        
-        emojis = emoji_map.get(flow.theme, ['✨', '🌟'])
-        return f"{emojis[0]} {text} {emojis[-1]}"
-
-    async def _apply_cta(self, text: str, theme: str) -> str:
-        cta_phrases = {
-            'tech': "💬 Обсудим в комментариях!",
-            'news': "📌 Подпишитесь для свежих новостей!",
-            'fun': "😂 Нравится? Ставь лайк!"
-        }
-        return f"{text}\n\n{cta_phrases.get(theme, 'Подпишитесь для новых обновлений!')}"
