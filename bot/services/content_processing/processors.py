@@ -31,6 +31,7 @@ class DefaultContentProcessor(ContentProcessor):
     async def process(self, text: str) -> str:
         if not text:
             return ""
+        text = text.replace('_', '')
 
         for pattern_name, pattern in self.patterns.items():
             if pattern_name == 'markdown_links':

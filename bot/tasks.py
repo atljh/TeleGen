@@ -66,26 +66,30 @@ def force_flows_generation_task(self):
         logging.info(f"Flows for force generation: {len(flows)}")
 
         for flow in flows:
-            logging.info(f"Processing flow {flow.id} (content length: {flow.content_length})")
+            logging.info(f"Processing flow {flow.id} (volume: {flow.flow_volume})")
             try:
-                generated_posts = await post_service.generate_auto_posts(flow.id)
+                existing_posts = await post_service.get_all_posts_in_flow(flow.id)
+                existing_count = len(existing_posts)
                 
+                generated_posts = await post_service.generate_auto_posts(flow.id)
                 if not generated_posts:
                     logging.info(f"No posts generated for flow {flow.id}")
                     continue
                 
-                posts_to_delete = len(generated_posts)
-                existing_count = await post_service.count_posts_in_flow(flow.id)
+                total_after_generation = existing_count + len(generated_posts)
+                overflow = total_after_generation - flow.flow_volume
                 
-                if existing_count > 0:
-                    old_posts = await post_service.get_oldest_posts(flow.id, posts_to_delete)
-                    logging.info(f"Deleting {len(old_posts)} oldest posts from flow {flow.id}")
-                    
-                    for post in old_posts:
-                        await post_service.delete_post(post.id)
+                if overflow > 0:
+                    posts_to_delete = min(overflow, existing_count)
+                    if posts_to_delete > 0:
+                        old_posts = existing_posts[:posts_to_delete]
+                        logging.info(f"Deleting {len(old_posts)} oldest posts from flow {flow.id}")
+                        
+                        for post in old_posts:
+                            await post_service.delete_post(post.id)
                 
                 await flow_service.update_next_generation_time(flow.id)
-                logging.info(f"Successfully updated flow {flow.id} with {len(generated_posts)} new posts")
+                logging.info(f"Flow {flow.id} updated. Current posts: {existing_count - (overflow if overflow > 0 else 0) + len(generated_posts)}")
 
             except Exception as e:
                 logging.error(f"Error processing flow {flow.id}: {str(e)}")

@@ -31,6 +31,11 @@ class PostService:
         self.bot = bot
         self.userbot_service = userbot_service
 
+    async def get_all_posts_in_flow(self, flow_id: int) -> List[Post]:
+        return await sync_to_async(list)(
+            Post.objects.filter(flow_id=flow_id)
+            .order_by('created_at')
+        )
 
     async def get_oldest_posts(self, flow_id: int, limit: int) -> List[Post]:
         return await sync_to_async(list)(

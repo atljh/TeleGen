@@ -115,7 +115,8 @@ class PostImage(models.Model):
     )
     image = models.ImageField(
         upload_to='posts/images/',
-        verbose_name="Зображення"
+        verbose_name="Зображення",
+        max_length=255
     )
     order = models.PositiveIntegerField(
         default=0,
