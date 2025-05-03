@@ -86,16 +86,18 @@ class ChatGPTContentProcessor(ContentProcessor):
         
         if self.flow.use_emojis:
             emoji_type = "премиум" if self.flow.use_premium_emojis else "обычные"
-            rules.append(f"5. Добавь {emoji_type} emoji (1-2 в начале и 1-2 в конце)")
+            rules.append(f"5. Добавь {emoji_type} emoji в текст")
         
         if self.flow.title_highlight:
             logging.info("6. Выделяю заголовок")
-            rules.append("6. Выдели заголовок с помощью emoji или форматирования")
+            rules.append("6. Выдели заголовок с помощью html заколовка <b>")
         
         if self.flow.cta:
+            logging.info("7. Добавляю призыв к действию")
             rules.append("7. Добавь призыв к действию в конце")
         
         if self.flow.signature:
+            logging.info("8. Добавляю подпись: '{self.flow.signature}'")
             rules.append(f"8. В конце добавь подпись: '{self.flow.signature}'")
         
         rules.append("Не добавляй свои комментарии, только обработанный текст")

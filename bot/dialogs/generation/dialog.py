@@ -40,7 +40,7 @@ def create_generation_dialog():
                 Button(Const("Додати канал"), id="add_channel", on_click=add_channel),
             ),
             state=GenerationMenu.main,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=get_user_channels_data,
         ),
         Window(
