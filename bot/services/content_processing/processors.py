@@ -97,7 +97,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             rules.append("7. Добавь призыв к действию в конце")
         
         if self.flow.signature:
-            logging.info("8. Добавляю подпись: '{self.flow.signature}'")
+            logging.info(f"8. Добавляю подпись: '{self.flow.signature}'")
             rules.append(f"8. В конце добавь подпись: '{self.flow.signature}'")
         
         rules.append("Не добавляй свои комментарии, только обработанный текст")
