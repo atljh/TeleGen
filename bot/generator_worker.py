@@ -2,6 +2,7 @@ import os
 import sys
 import asyncio
 import logging
+import time
 from typing import List
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
@@ -59,18 +60,19 @@ async def generate_flow(
                 f"❌ Флоу з ID {flow_id} не знайдено"
             )
             return
-
+        start_time = time.time()
         posts = await _start_telegram_generations(
             flow,
             flow_service,
             post_service
         )
-            
+        posts_count = len(posts) if posts else 0
+        logging.info(f"Генерация заняла {time.time() - start_time:.2f} сек")
         await send_telegram_notification(
             bot_token,
             chat_id,
             f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n"
-            f"• Створено постів: {len(posts)}\n"
+            f"• Створено постів: {posts_count}\n"
             f"• Обсяг флоу: {flow.flow_volume}",
             parse_mode="Markdown"
         )

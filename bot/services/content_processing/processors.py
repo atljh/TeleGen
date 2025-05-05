@@ -3,6 +3,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
+import time
 from typing import Dict, List
 
 import openai
@@ -44,21 +45,31 @@ class DefaultContentProcessor(ContentProcessor):
         return text.strip()
 
 class ChatGPTContentProcessor(ContentProcessor):
-    def __init__(self, api_key: str, flow: FlowDTO, model: str = "gpt-4-turbo"):
-        self.client = openai.AsyncOpenAI(api_key=api_key)
+    def __init__(self, api_key: str, flow: FlowDTO, model: str = "gpt-4-turbo", 
+                 max_retries: int = 2, timeout: float = 15.0):
+        self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
         self.flow = flow
         self.model = model
-        self.max_retries = 3
+        self.max_retries = max_retries
+        self.cache = {} 
 
     async def process(self, text: str) -> str:
-        logging.info('=======================PROCESS===================')
+        if isinstance(text, list):
+            text = " ".join([str(item) for item in text if item])
+            
         if not text.strip():
             return ""
-
+            
+        cache_key = hash(f"{text}_{self.flow.id}")
+        
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+        
         system_prompt = self._build_system_prompt(text)
         
-        for attempt in range(self.max_retries):
+        for attempt in range(self.max_retries + 1):
             try:
+                start_time = time.time()
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=[
@@ -66,15 +77,19 @@ class ChatGPTContentProcessor(ContentProcessor):
                         {"role": "user", "content": text}
                     ],
                     temperature=0.5,
-                    top_p=0.9
+                    top_p=0.9,
+                    max_tokens=2000
                 )
-                return response.choices[0].message.content.strip()
-            
+                result = response.choices[0].message.content.strip()
+                self.cache[cache_key] = result
+                logging.debug(f"OpenAI request took {time.time() - start_time:.2f}s")
+                return result
             except Exception as e:
-                if attempt == self.max_retries - 1:
-                    logging.error(f"ChatGPT processing failed: {str(e)}")
+                if attempt == self.max_retries:
+                    logging.warning(f"OpenAI failed after {self.max_retries} attempts: {str(e)}")
                     return text
-                await asyncio.sleep(1.5 * (attempt + 1))
+                await asyncio.sleep(1 * (attempt + 1))
+
 
     def _build_system_prompt(self, text: str) -> str:
         detected_language = detect(text)
@@ -99,16 +114,10 @@ class ChatGPTContentProcessor(ContentProcessor):
             rules.append(f"5. Insert appropriate {emoji_type} emojis into the text where relevant.")
         
         if self.flow.title_highlight:
-            logging.info("6. Highlighting the title")
             rules.append("6. Highlight the title using the <b> HTML tag.")
         
         if self.flow.cta:
-            logging.info("7. Adding call to action")
             rules.append("7. Add a concise and relevant call to action at the end of the post.")
-        
-        if self.flow.signature:
-            logging.info(f"8. Adding signature: '{self.flow.signature}'")
-            rules.append(f"8. Append the following signature at the end of the post: '{self.flow.signature}'.")
         
         rules.append("Return only the edited post. Do not include any explanations or extra commentary.")
         return "\n".join(rules)
@@ -119,5 +128,4 @@ class ChatGPTContentProcessor(ContentProcessor):
             "medium": "300", 
             "long": "1000"
         }
-        logging.info(self.flow.content_length)
         return lengths.get(self.flow.content_length, "300")
