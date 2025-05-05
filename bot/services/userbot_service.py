@@ -1,9 +1,10 @@
-from datetime import datetime
 import os
-import tempfile
+import time
 import asyncio
 import logging
-import time
+import tempfile
+from datetime import datetime
+from tqdm.asyncio import tqdm_asyncio
 from typing import Optional, List, Dict, AsyncGenerator
 from contextlib import asynccontextmanager
 import openai
@@ -21,6 +22,7 @@ class UserbotService:
         self.api_hash = api_hash
         self.phone = phone
         self.session_path = session_path or os.getenv("SESSION_PATH", "userbot.session")
+        self.download_semaphore = asyncio.Semaphore(10)
         
         if not os.path.isabs(self.session_path):
             self.session_path = os.path.join('/app/sessions', self.session_path)
@@ -119,18 +121,20 @@ class UserbotService:
             if not album_messages:
                 return None
 
+            all_media = []
             texts = []
-            media_items = []
             
             for msg in album_messages:
                 if msg.text:
                     texts.append(msg.text)
                 if msg.media:
-                    media_items.extend(await self._extract_media(client, msg.media))
+                    all_media.extend(await self._extract_media(client, msg.media))
+            
+            downloaded_media = await self._download_media_batch(client, all_media)
             
             post_data = {
                 'text': "\n\n".join(texts) if texts else "",
-                'media': media_items,
+                'media': downloaded_media,
                 'is_album': True,
                 'album_size': len(album_messages)
             }
@@ -154,7 +158,7 @@ class UserbotService:
 
         if msg.media:
             media_items = await self._extract_media(client, msg.media)
-            post_data['media'].extend(media_items)
+            post_data['media'] = await self._download_media_batch(client, media_items)
 
         return post_data
 
@@ -162,44 +166,69 @@ class UserbotService:
         media_items = []
         
         if hasattr(media, 'photo'):
-            media_path = await self._download_media_file(client, media.photo, 'image')
-            if media_path:
-                media_items.append({
-                    'type': 'image',
-                    'path': media_path,
-                    'file_id': getattr(media.photo, 'id', None)
-                })
-        
-        elif hasattr(media, 'document'):
-            if media.document.mime_type.startswith('video/'):
-                media_path = await self._download_media_file(client, media.document, 'video')
-                if media_path:
-                    media_items.append({
-                        'type': 'video',
-                        'path': media_path,
-                        'file_id': media.document.id
-                    })
+            media_items.append({
+                'type': 'image',
+                'media_obj': media.photo,
+                'file_id': getattr(media.photo, 'id', None)
+            })
+        elif hasattr(media, 'document') and media.document.mime_type.startswith('video/'):
+            media_items.append({
+                'type': 'video',
+                'media_obj': media.document,
+                'file_id': media.document.id
+            })
         
         return media_items
 
+    async def _download_media_batch(self, client: TelegramClient, media_items: List[Dict]) -> List[Dict]:
+        self.logger.info(f"Starting download of {len(media_items)} media files...")
+        start_time = time.time()
+        downloaded = 0
+        
+        async def _download_with_progress(item):
+            nonlocal downloaded
+            try:
+                path = await self._download_media_file(client, item['media_obj'], item['type'])
+                downloaded += 1
+                progress = downloaded / len(media_items) * 100
+                elapsed = time.time() - start_time
+                self.logger.info(
+                    f"Download progress: {downloaded}/{len(media_items)} "
+                    f"({progress:.1f}%) | Elapsed: {elapsed:.1f}s"
+                )
+                return path
+            except Exception as e:
+                self.logger.error(f"Error downloading {item['type']}: {str(e)}")
+                return e
+        
+        tasks = [_download_with_progress(item) for item in media_items]
+        downloaded_paths = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        return [
+            {**item, 'path': path} 
+            for item, path in zip(media_items, downloaded_paths)
+            if not isinstance(path, Exception) and path
+        ]
+
     async def _download_media_file(self, client: TelegramClient, media, media_type: str) -> Optional[str]:
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{media_type}') as tmp_file:
-                tmp_path = tmp_file.name
-            
-            await client.download_media(media, file=tmp_path)
-            
-            if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
-                return tmp_path
-            
-            os.unlink(tmp_path)
-            return None
-            
-        except Exception as e:
-            logging.error(f"Media download failed: {str(e)}")
-            if 'tmp_path' in locals() and os.path.exists(tmp_path):
+        async with self.download_semaphore:
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{media_type}') as tmp_file:
+                    tmp_path = tmp_file.name
+                
+                await client.download_media(media, file=tmp_path)
+                
+                if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
+                    return tmp_path
+                
                 os.unlink(tmp_path)
-            return None
+                return None
+                
+            except Exception as e:
+                logging.error(f"Media download failed: {str(e)}")
+                if 'tmp_path' in locals() and os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                return None
 
                 
 
