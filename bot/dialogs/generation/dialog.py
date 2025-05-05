@@ -65,7 +65,8 @@ def create_generation_dialog():
                 Button(
                     Const("Генерацiя"), 
                     id="force_generate", 
-                    on_click=on_force_generate
+                    on_click=on_force_generate,
+                    when="has_flow" 
                 ),
             ),
             Row(

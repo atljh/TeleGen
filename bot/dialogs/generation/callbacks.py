@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 import time
 import logging
 from aiogram.types import CallbackQuery
@@ -118,31 +119,28 @@ async def on_force_generate(
         flow = dialog_data.get("channel_flow")
         
         if not flow:
-            raise Exception("Не выбран флоу для генерации")
-        
-        flow_id = flow.id
-        await callback.answer()
-        await callback.message.answer(f"Генерація для флоу {flow_id} запущена!")
-        
-        task = force_flows_generation_task.delay(flow_id)
-        
-        max_wait_time = 300
-        start_time = time.time()
-        
-        while not task.ready() and (time.time() - start_time) < max_wait_time:
-            await asyncio.sleep(1)
-        
-        if task.successful():
-            await callback.message.answer(
-                f"✅ Генерація для флоу {flow_id} завершена успішно!",
-                reply_markup=None
+            await callback.answer(
+                "⚠️ Не обрано флоу для генерації",
+                show_alert=True
             )
-        else:
-            raise Exception("Задача завершена с помилкою")
-            
+            return
+
+        await callback.answer()
+        
+        await callback.message.answer(
+            f"⚡ Розпочато генерацію контенту для флоу *{flow.name}*...",
+            parse_mode="Markdown"
+        )
+
+        subprocess.Popen([
+            "python", "generator_worker.py",
+            str(flow.id),
+            str(callback.message.chat.id),
+        ])
+
     except Exception as e:
+        logging.error(f"Помилка запуску генерації: {str(e)}", exc_info=True)
         await callback.answer(
-            f"Помилка: {str(e)}",
+            "⚠️ Сталася помилка під час запуску генерації",
             show_alert=True
         )
-        logging.error(f"Generation error: {str(e)}")

@@ -192,7 +192,10 @@ class UserbotService:
             if 'tmp_path' in locals() and os.path.exists(tmp_path):
                 os.unlink(tmp_path)
             return None
-        
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+                
 
 class EnhancedUserbotService(UserbotService):
     def __init__(self, api_id: int, api_hash: str, openai_key: str = None, **kwargs):
