@@ -219,7 +219,12 @@ class Payment(models.Model):
 
 
 class AISettings(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_settings', verbose_name="Користувач")
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_settings',
+        verbose_name="Користувач"
+    )
     prompt = models.TextField(verbose_name="Промпт")
     style = models.CharField(max_length=100, verbose_name="Стиль")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
@@ -230,6 +235,7 @@ class AISettings(models.Model):
     class Meta:
         verbose_name = "Налаштування AI"
         verbose_name_plural = "Налаштування AI"
+
 
 
 class Statistics(models.Model):

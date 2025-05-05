@@ -1,13 +1,17 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth import get_user_model
 from .models import (
     User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics, PostImage
 )
 
 
-class AISettingsInline(admin.TabularInline):
+class AISettingsInline(admin.StackedInline):
     model = AISettings
-    extra = 0 
-    fields = ('prompt', 'style')
+    extra = 0
+    max_num = 1  # Только одно
+    can_delete = False
 
 class SubscriptionInline(admin.TabularInline):
     model = Subscription
@@ -20,12 +24,17 @@ class ChannelInline(admin.TabularInline):
     fields = ('name', 'created_at',)
     readonly_fields = ('created_at',)
 
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'telegram_id', 'subscription_type', 'subscription_end_date')
-    search_fields = ('username', 'telegram_id')
-    list_filter = ('subscription_type', )
-    inlines = [ChannelInline, AISettingsInline, SubscriptionInline]
+    list_display = ("telegram_id", "username", "subscription_status",)
+    readonly_fields = ("created_at", )
+    fields = ("telegram_id", "username", "first_name", "last_name",
+              "subscription_status", "subscription_end_date", "subscription_type",
+              "payment_method",)
+
+    inlines = [AISettingsInline, ChannelInline, SubscriptionInline]
+
 
 @admin.register(Channel)
 class ChannelAdmin(admin.ModelAdmin):
