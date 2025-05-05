@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Dict, List
 
 import openai
+from langdetect import detect
 
 from bot.database.dtos.dtos import FlowDTO
 
@@ -54,7 +55,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         if not text.strip():
             return ""
 
-        system_prompt = self._build_system_prompt()
+        system_prompt = self._build_system_prompt(text)
         
         for attempt in range(self.max_retries):
             try:
@@ -75,36 +76,42 @@ class ChatGPTContentProcessor(ContentProcessor):
                     return text
                 await asyncio.sleep(1.5 * (attempt + 1))
 
-    def _build_system_prompt(self) -> str:
+    def _build_system_prompt(self, text: str) -> str:
+        detected_language = detect(text)
+        language_name = {
+            'uk': 'Ukrainian',
+            'ru': 'Russian',
+            'en': 'English'
+        }.get(detected_language, 'the original language')
+
         rules = [
-            "You are a professional post editor."
-            "Preserve the original language of the pos."
-            "Process the text according to the following rules:",
-            "1. Keep the main idea, but make the text more readable",
-            # "2. Remove unnecessary links and special characters",
-            f"3. Text length has to be up to: {self._get_length_instruction()} symbols",
-            f"4. Rewrite in style: {self.flow.theme}",
+            "You are a professional post editor.",
+            f"Do not change the language — keep it in {language_name}. No translation.",
+            f"Edit the text according to the following rules:",
+            f"1. Keep the original meaning, but improve readability and clarity.",
+            f"2. Remove unnecessary links, formatting artifacts, and special characters.",
+            f"3. The total text length must not exceed {self._get_length_instruction()} characters.",
+            f"4. Rewrite the text in the following style: {self.flow.theme}.",
         ]
 
         if self.flow.use_emojis:
             emoji_type = "premium" if self.flow.use_premium_emojis else "regular"
-            rules.append(f"5. Add {emoji_type} emojis to the text")
+            rules.append(f"5. Insert appropriate {emoji_type} emojis into the text where relevant.")
         
         if self.flow.title_highlight:
             logging.info("6. Highlighting the title")
-            rules.append("6. Highlight the title using the <b> HTML tag")
+            rules.append("6. Highlight the title using the <b> HTML tag.")
         
         if self.flow.cta:
             logging.info("7. Adding call to action")
-            rules.append("7. Add a call to action at the end")
+            rules.append("7. Add a concise and relevant call to action at the end of the post.")
         
         if self.flow.signature:
             logging.info(f"8. Adding signature: '{self.flow.signature}'")
-            rules.append(f"8. Add the following signature at the end: '{self.flow.signature}'")
+            rules.append(f"8. Append the following signature at the end of the post: '{self.flow.signature}'.")
         
-        rules.append("Do not add any comments, only return the processed text")
+        rules.append("Return only the edited post. Do not include any explanations or extra commentary.")
         return "\n".join(rules)
-
 
     def _get_length_instruction(self) -> str:
         lengths = {

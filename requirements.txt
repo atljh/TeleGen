@@ -54,3 +54,4 @@ django-celery-beat
 watchdog
 asgiref
 openai
+langdetect
