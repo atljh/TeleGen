@@ -1,7 +1,4 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth import get_user_model
 from .models import (
     User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics, PostImage
 )
@@ -10,7 +7,7 @@ from .models import (
 class AISettingsInline(admin.StackedInline):
     model = AISettings
     extra = 0
-    max_num = 1  # Только одно
+    max_num = 1
     can_delete = False
 
 class SubscriptionInline(admin.TabularInline):
