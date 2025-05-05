@@ -15,9 +15,13 @@ services:
       - ./bot:/bot
       - ./media:/app/media
       - ./admin_panel/media:/app/admin_panel/media
+      - ./sessions:/app/sessions 
+      - ./tmp:/tmp
     environment:
       - MEDIA_ROOT=/app/media
+      - SESSION_PATH=/app/sessions/userbot.session
     command: ["python", "watcher.py"]
+
 
 
   db:
@@ -73,6 +77,7 @@ services:
       - redis
     volumes:
       - ./sessions:/app/sessions
+      - ./tmp:/tmp
       - ./admin_panel:/admin_panel
       - ./bot:/bot
     command: >
@@ -81,6 +86,7 @@ services:
       celery -A bot.celery_app worker --loglevel=info --pool=solo"
     environment:
       PYTHONPATH: /:/admin_panel
+      SESSION_PATH: /app/sessions/userbot.session
 
   celery_beat:
     build:

@@ -13,12 +13,16 @@ from bot.services.content_processing.processors import ChatGPTContentProcessor, 
 from  bot.services.content_processing.pipeline import PostProcessingPipeline
 
 class UserbotService:
-    def __init__(self, api_id: int, api_hash: str, phone: str = None, 
-                 session_path: str = "app/sessions/userbot.session"):
+    def __init__(self, api_id: int, api_hash: str, phone: str = None,
+                 session_path: Optional[str] = None):
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone = phone
-        self.session_path = session_path
+        self.session_path = session_path or os.getenv("SESSION_PATH", "userbot.session")
+        
+        if not os.path.isabs(self.session_path):
+            self.session_path = os.path.join('/app/sessions', self.session_path)
+        
         os.makedirs(os.path.dirname(self.session_path), exist_ok=True)
 
     @asynccontextmanager
@@ -192,9 +196,7 @@ class UserbotService:
             if 'tmp_path' in locals() and os.path.exists(tmp_path):
                 os.unlink(tmp_path)
             return None
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+
                 
 
 class EnhancedUserbotService(UserbotService):
