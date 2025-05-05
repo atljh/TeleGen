@@ -11,7 +11,7 @@ from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO
-from bot.services.content_processing.processors import ChatGPTContentProcessor, ContentProcessor, DefaultContentProcessor
+from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from  bot.services.content_processing.pipeline import PostProcessingPipeline
 
 class UserbotService:
@@ -209,7 +209,7 @@ class EnhancedUserbotService(UserbotService):
         self.logger = logging.getLogger(__name__)
         self.openai_key = openai_key
         self._openai_client = None
-        self._semaphore = asyncio.Semaphore(5)
+        self._semaphore = asyncio.Semaphore(10)
 
     @property
     def openai_client(self):
