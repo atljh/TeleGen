@@ -243,11 +243,5 @@ class EnhancedUserbotService(UserbotService):
         else:
             if flow.signature:
                 processed_text = f"{processed_text}\n\n{flow.signature}"
-                
-            # if flow.use_emojis:
-            #     processed_text = await self._apply_emoji(processed_text, flow)
-                
-            # if flow.cta:
-            #     processed_text = await self._apply_cta(processed_text, flow.theme)
 
         return post_dto.copy(update={'content': processed_text})

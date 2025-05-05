@@ -77,43 +77,40 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     def _build_system_prompt(self) -> str:
         rules = [
-            "Ты профессиональный редактор постов. Обработай текст согласно правилам:",
-            "1. Сохрани основной смысл, но сделай текст более читаемым",
-            "2. Удали лишние ссылки и спецсимволы",
-            # f"3. Длина текста: {self._get_length_instruction()}",
-            f"4. Стиль: {self.flow.theme}",
+            "You are a professional post editor."
+            "Preserve the original language of the pos."
+            "Process the text according to the following rules:",
+            "1. Keep the main idea, but make the text more readable",
+            # "2. Remove unnecessary links and special characters",
+            f"3. Text length has to be up to: {self._get_length_instruction()} symbols",
+            f"4. Rewrite in style: {self.flow.theme}",
         ]
-        
+
         if self.flow.use_emojis:
-            emoji_type = "премиум" if self.flow.use_premium_emojis else "обычные"
-            rules.append(f"5. Добавь {emoji_type} emoji в текст")
+            emoji_type = "premium" if self.flow.use_premium_emojis else "regular"
+            rules.append(f"5. Add {emoji_type} emojis to the text")
         
         if self.flow.title_highlight:
-            logging.info("6. Выделяю заголовок")
-            rules.append("6. Выдели заголовок с помощью html заколовка <b>")
+            logging.info("6. Highlighting the title")
+            rules.append("6. Highlight the title using the <b> HTML tag")
         
         if self.flow.cta:
-            logging.info("7. Добавляю призыв к действию")
-            rules.append("7. Добавь призыв к действию в конце")
+            logging.info("7. Adding call to action")
+            rules.append("7. Add a call to action at the end")
         
         if self.flow.signature:
-            logging.info(f"8. Добавляю подпись: '{self.flow.signature}'")
-            rules.append(f"8. В конце добавь подпись: '{self.flow.signature}'")
+            logging.info(f"8. Adding signature: '{self.flow.signature}'")
+            rules.append(f"8. Add the following signature at the end: '{self.flow.signature}'")
         
-        rules.append("Не добавляй свои комментарии, только обработанный текст")
+        rules.append("Do not add any comments, only return the processed text")
         return "\n".join(rules)
 
-    # def _get_length_instruction(self) -> str:
-    #     lengths = {
-    #         "short": "короткий (1-2 предложения)",
-    #         "medium": "средний (3-5 предложений)", 
-    #         "long": "полный текст (без сокращений)"
-    #     }
-    #     return lengths.get(self.flow.content_length, "средний (3-5 предложений)")
 
-    # def _get_max_tokens(self) -> int:
-    #     return {
-    #         "short": 500,
-    #         "medium": 1000,
-    #         "long": 2000
-    #     }.get(self.flow.content_length, 1000)
+    def _get_length_instruction(self) -> str:
+        lengths = {
+            "short": "100",
+            "medium": "300", 
+            "long": "1000"
+        }
+        logging.info(self.flow.content_length)
+        return lengths.get(self.flow.content_length, "300")
