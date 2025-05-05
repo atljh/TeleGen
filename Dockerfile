@@ -15,6 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 ENV PYTHONPATH="${PYTHONPATH}:/app"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
 
 FROM base as admin_panel
 

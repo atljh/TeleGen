@@ -17,6 +17,7 @@ services:
       - ./admin_panel/media:/app/admin_panel/media
       - ./sessions:/app/sessions 
       - ./tmp:/tmp
+      - ./logs:/app/logs
     environment:
       - MEDIA_ROOT=/app/media
       - SESSION_PATH=/app/sessions/userbot.session
@@ -80,6 +81,7 @@ services:
       - ./tmp:/tmp
       - ./admin_panel:/admin_panel
       - ./bot:/bot
+      - ./logs:/app/logs
     command: >
       sh -c "cd / && 
       PYTHONPATH=/:/admin_panel 

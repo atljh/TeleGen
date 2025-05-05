@@ -1,5 +1,6 @@
 import asyncio
 import subprocess
+import sys
 import time
 import logging
 from aiogram.types import CallbackQuery
@@ -136,7 +137,11 @@ async def on_force_generate(
             "python", "generator_worker.py",
             str(flow.id),
             str(callback.message.chat.id),
-        ])
+        ],
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        )
+
 
     except Exception as e:
         logging.error(f"Помилка запуску генерації: {str(e)}", exc_info=True)

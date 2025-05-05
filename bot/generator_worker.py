@@ -3,21 +3,55 @@ import sys
 import asyncio
 import logging
 from typing import List
+from pathlib import Path
+from logging.handlers import RotatingFileHandler
 
 from bot.containers import Container
 from bot.utils.notifications import send_telegram_notification
+
+def setup_logging(flow_id: int):
+    log_dir = Path("/app/logs/generation")
+    log_dir.mkdir(exist_ok=True)
+    
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    file_handler = RotatingFileHandler(
+        log_dir / f"flow_{flow_id}.log",
+        maxBytes=5*1024*1024,
+        backupCount=3
+    )
+    
+    class FlushingStreamHandler(logging.StreamHandler):
+        def emit(self, record):
+            super().emit(record)
+            self.flush()
+    
+    console_handler = FlushingStreamHandler(sys.stdout)
+    
+    formatter = logging.Formatter(
+        '[%(asctime)s] %(message)s',
+        datefmt='%d.%m.%Y %H:%M:%S'
+    )
+    
+    for handler in [file_handler, console_handler]:
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
 
 async def generate_flow(
     flow_id: int,
     chat_id: int,
 ) -> None:
     try:
+        setup_logging(flow_id)
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-        
         flow_service = Container.flow_service()
         post_service = Container.post_service()
         flow = await flow_service.get_flow_by_id(flow_id)
-        
+        logging.info(f"[Генерация] Начало обработки флоу {flow_id}")
         if not flow:
             await send_telegram_notification(
                 bot_token,
