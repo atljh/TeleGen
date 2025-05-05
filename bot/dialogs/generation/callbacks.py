@@ -108,11 +108,23 @@ async def on_book_recall(callback: CallbackQuery, button: Button, manager: Dialo
     await manager.switch_to(GenerationMenu.book_recall)
 
 
-async def on_force_generate(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def on_force_generate(
+    callback: CallbackQuery,
+    button: Button,
+    manager: DialogManager
+):
     try:
+        dialog_data = manager.dialog_data
+        flow = dialog_data.get("channel_flow")
+        
+        if not flow:
+            raise Exception("Не выбран флоу для генерации")
+        
+        flow_id = flow.id
         await callback.answer()
-        await callback.message.answer("Генерація запущена!")
-        task = force_flows_generation_task.delay()
+        await callback.message.answer(f"Генерація для флоу {flow_id} запущена!")
+        
+        task = force_flows_generation_task.delay(flow_id)
         
         max_wait_time = 300
         start_time = time.time()
@@ -122,7 +134,7 @@ async def on_force_generate(callback: CallbackQuery, button: Button, manager: Di
         
         if task.successful():
             await callback.message.answer(
-                "✅ Генерація завершена успішно!",
+                f"✅ Генерація для флоу {flow_id} завершена успішно!",
                 reply_markup=None
             )
         else:
