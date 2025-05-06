@@ -26,6 +26,15 @@ async def go_back_to_channels(
 ):
     channel = manager.dialog_data.get("selected_channel") or manager.start_data.get('selected_channel')
     channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get('channel_flow')
+    messages = manager.dialog_data.get("message_ids")
+    bot = manager.middleware_data['bot']
+
+    if messages:
+        for message_id in messages:
+            bot = manager.middleware_data['bot']
+            chat_id = manager.middleware_data['event_chat'].id
+            await bot.delete_message(chat_id=chat_id, message_id=message_id)
+            manager.dialog_data["message_ids"] = []
 
     await manager.start(
         GenerationMenu.channel_main,
