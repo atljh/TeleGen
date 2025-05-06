@@ -27,6 +27,13 @@ class ChannelRepository:
     ) -> List[Channel]:
         return [channel async for channel in Channel.objects.filter(user=user).order_by('-created_at')]
 
+    async def get_channel(self, id: int) -> Channel:
+        try:
+            return await Channel.objects.aget(id=id)
+        except Channel.DoesNotExist:
+            raise ChannelNotFoundError(f"Channel with id={id} not found.")
+
+
     async def get_channel_by_id(self, channel_id: str) -> Channel:
         try:
             return await Channel.objects.aget(channel_id=channel_id)

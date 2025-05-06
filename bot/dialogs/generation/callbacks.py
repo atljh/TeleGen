@@ -3,6 +3,7 @@ import subprocess
 import sys
 import time
 import logging
+from aiogram import Bot
 from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
@@ -14,7 +15,6 @@ from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from bot.dialogs.generation.flow.states import FlowMenu
 
 from bot.containers import Container
-from bot.tasks import force_flows_generation_task
 
 logger = logging.getLogger(__name__)
 
@@ -118,34 +118,107 @@ async def on_force_generate(
     try:
         dialog_data = manager.dialog_data
         flow = dialog_data.get("channel_flow")
-        
+        channel = dialog_data.get("selected_channel")
+
         if not flow:
-            await callback.answer(
-                "⚠️ Не обрано флоу для генерації",
-                show_alert=True
-            )
+            await callback.answer("⚠️ Не обрано флоу для генерації", show_alert=True)
             return
 
-        await callback.answer()
-        
-        await callback.message.answer(
-            f"⚡ Розпочато генерацію контенту для флоу *{flow.name}*...",
+        await callback.answer("🔄 Запускаю генерацію...")
+
+        bot = manager.middleware_data["bot"]
+        status_msg = await bot.send_message(
+            chat_id=callback.message.chat.id,
+            text=f"⚡ Генерація для флоу *{flow.name}*...",
             parse_mode="Markdown"
         )
 
-        subprocess.Popen([
-            "python", "generator_worker.py",
-            str(flow.id),
-            str(callback.message.chat.id),
-        ],
+        process = subprocess.Popen(
+            [
+                "python", "generator_worker.py",
+                str(flow.id),
+                str(callback.message.chat.id),
+                str(status_msg.message_id)
+            ],
             stdout=sys.stdout,
-            stderr=sys.stderr
+            stderr=sys.stderr,
+            text=True,
+            bufsize=1
         )
 
+        asyncio.create_task(
+            show_generated_posts(
+                process=process,
+                flow_id=flow.id,
+                chat_id=callback.message.chat.id,
+                status_msg_id=status_msg.message_id,
+                bot=bot,
+                flow=flow,
+                channel=channel
+            )
+        )
 
     except Exception as e:
-        logging.error(f"Помилка запуску генерації: {str(e)}", exc_info=True)
-        await callback.answer(
-            "⚠️ Сталася помилка під час запуску генерації",
-            show_alert=True
+        logging.error(f"Помилка запуску генерації: {str(e)}")
+        await callback.message.answer(
+            f"❌ Помилка: {str(e)}",
+            parse_mode="Markdown"
+        )
+
+async def show_generated_posts(
+    process: subprocess.Popen,
+    flow_id: int,
+    chat_id: int,
+    status_msg_id: int,
+    bot: Bot,
+    flow,
+    channel
+):
+    try:
+        while process.poll() is None:
+            await asyncio.sleep(1)
+
+        stdout, stderr = process.communicate()
+        if process.returncode != 0:
+            error_msg = stderr.strip() if stderr else "Невідома помилка"
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=status_msg_id,
+                text=f"❌ Помилка генерації: {error_msg}"
+            )
+            return
+
+        post_service = Container.post_service()
+        posts = await post_service.get_all_posts_in_flow(flow_id)
+        
+        if not posts:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=status_msg_id,
+                text="ℹ️ Не знайдено згенерованих постів"
+            )
+            return
+
+        await bot.delete_message(chat_id, status_msg_id)
+
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(
+                text="Переглянути згенеровані пости",
+                callback_data=f"view_generated_{flow.id}"
+            )]
+        ])
+        
+        await bot.send_message(
+            chat_id=chat_id,
+            text=f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n",
+            parse_mode="Markdown",
+            reply_markup=keyboard
+        )
+
+    except Exception as e:
+        logging.error(f"Помилка показу постів: {str(e)}")
+        await bot.send_message(
+            chat_id=chat_id,
+            text=f"❌ Не вдалося показати пости: {str(e)}"
         )

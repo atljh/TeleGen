@@ -45,7 +45,7 @@ def setup_logging(flow_id: int):
 async def generate_flow(
     flow_id: int,
     chat_id: int,
-) -> None:
+) -> List:
     try:
         setup_logging(flow_id)
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -68,14 +68,15 @@ async def generate_flow(
         )
         posts_count = len(posts) if posts else 0
         logging.info(f"Генерация заняла {time.time() - start_time:.2f} сек")
-        await send_telegram_notification(
-            bot_token,
-            chat_id,
-            f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n"
-            f"• Створено постів: {posts_count}\n"
-            f"• Обсяг флоу: {flow.flow_volume}",
-            parse_mode="Markdown"
-        )
+        # await send_telegram_notification(
+        #     bot_token,
+        #     chat_id,
+        #     f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n"
+        #     f"• Створено постів: {posts_count}\n"
+        #     f"• Обсяг флоу: {flow.flow_volume}",
+        #     parse_mode="Markdown"
+        # )
+        # return posts
 
     except Exception as e:
         logging.error(f"Помилка генерації: {str(e)}", exc_info=True)

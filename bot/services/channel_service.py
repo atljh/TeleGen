@@ -51,6 +51,9 @@ class ChannelService:
         channels = await self.channel_repository.get_user_channels(user)
         return [ChannelDTO.from_orm(channel) for channel in channels]
     
+    async def get_channel_by_id(self, channel_id: int) -> ChannelDTO:
+        return await self.channel_repository.get_channel(channel_id)
+
     async def get_channel(self, channel_id: str) -> ChannelDTO:
         channel = await self.channel_repository.get_channel_by_id(channel_id)
         return ChannelDTO.from_orm(channel)
