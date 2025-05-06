@@ -5,6 +5,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
+
+from bot.utils.middlaware import MainMiddleware
 from handlers import register_handlers
 from bot.containers import Container
 from bot.utils.logging import setup_logging
@@ -18,6 +20,7 @@ async def main():
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
 
+    dp.update.middleware.register(MainMiddleware(bot))
     register_handlers(dp)
     register_dialogs(dp)
     setup_dialogs(dp)
