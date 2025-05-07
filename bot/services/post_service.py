@@ -223,30 +223,6 @@ class PostService:
         except Exception as e:
             raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
 
-    async def add_post_image(
-        self,
-        post_id: int,
-        image_url: str
-    ) -> PostDTO:
-        if not await self.post_repo.exists(post_id):
-            raise PostNotFoundError(f"Post with id {post_id} not found")
-
-        await self.post_repo.add_image(post_id, image_url)
-        updated_post = await self.post_repo.get(post_id)
-        return PostDTO.from_orm(updated_post)
-
-    async def remove_post_image(
-        self,
-        post_id: int,
-        image_id: int
-    ) -> PostDTO:
-        if not await self.post_repo.exists(post_id):
-            raise PostNotFoundError(f"Post with id {post_id} not found")
-
-        await self.post_repo.remove_image(post_id, image_id)
-        updated_post = await self.post_repo.get(post_id)
-        return PostDTO.from_orm(updated_post)
-
     async def get_post(self, post_id: int) -> PostDTO:
         post = await self.post_repo.get(post_id)
 
@@ -307,11 +283,14 @@ class PostService:
         )
         return [PostDTO.from_orm(post) for post in posts]
     
-    async def delete_all_posts_in_flow(self, flow_id: int) -> None:
-        if not await self.flow_repo.exists(flow_id):
-            raise PostNotFoundError(f"Flow with id {flow_id} not found")
 
-        posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id)
-
-        for post in posts:
-            await self.post_repo.delete(post.id)
+    async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
+        if scheduled_time < datetime.now():
+            raise InvalidOperationError("Нельзя запланировать пост в прошлом")
+            
+        post = await self.post_repo.get(post_id)
+        if not post:
+            raise PostNotFoundError(f"Post with id {post_id} not found")
+            
+        await self.post_repo.schedule_post(post_id, scheduled_time)
+        return await self.get_post(post_id)

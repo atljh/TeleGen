@@ -1,15 +1,17 @@
 import logging
+import operator
 from datetime import datetime
+from django.db import models
+from functools import reduce
+from django.db.models import Q
+from typing import List, Optional
+from asgiref.sync import sync_to_async
+
 from admin_panel.admin_panel.models import Flow
 from bot.database.dtos import GenerationFrequency
 from bot.database.exceptions import FlowNotFoundError
-from typing import List, Optional
-from django.db import models
-from datetime import datetime
-from django.db.models import Q
 from bot.database.dtos.dtos import FlowDTO
-from functools import reduce
-import operator
+
 
 class FlowRepository:
     async def create_flow(
@@ -82,6 +84,8 @@ class FlowRepository:
     async def delete_flow(self, flow: Flow):
         await flow.adelete()
     
+
+
     async def list(
         self,
         next_generation_time__lte: datetime | None = None,

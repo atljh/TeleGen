@@ -1,6 +1,8 @@
 import os
+import re
 import logging
 from typing import Dict
+from datetime import datetime, time
 from aiogram.types import CallbackQuery, Message, ForceReply, ContentType
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
@@ -13,6 +15,7 @@ from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import paging_getter, send_media_album
 
+logger = logging.getLogger()
 
 async def on_back_to_posts(
     callback: CallbackQuery, 
@@ -221,9 +224,8 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
         await message.answer("Помилка при збереженні змін")
 
 
-async def on_schedule_post(callback: CallbackQuery, button: Button, manager: DialogManager):
-    post_id = manager.dialog_data.get("current_post_id")
-    await callback.answer(f"Запланувати публікацію поста {post_id}")
+
+
 
 async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
     post_id = manager.dialog_data.get("current_post_id")
@@ -232,10 +234,73 @@ async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: Di
     await callback.answer("Пост збережено в буфер!")
 
 
+#===========================================SCHEDULE===========================================
 
-async def open_calendar(callback: CallbackQuery, widget, dialog_manager: DialogManager):
-    await dialog_manager.switch_to(FlowMenu.schedule)
+async def on_schedule_post(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowMenu.select_date)
 
-async def schedule_post(callback: CallbackQuery, widget, manager: DialogManager, selected_date):
-    await callback.answer(f"Заплановано на {selected_date.strftime('%d.%m.%Y')}")
-    await manager.switch_to(FlowMenu.posts_list)
+async def back_to_select_type(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowMenu.select_type)
+
+async def select_date(callback: CallbackQuery, widget, manager: DialogManager, selected_date):
+    try:
+        manager.dialog_data["scheduled_date_str"] = selected_date.strftime('%d.%m.%Y')
+        manager.dialog_data["scheduled_date_obj"] = selected_date
+        await manager.switch_to(FlowMenu.select_type)
+    except Exception as e:
+        logging.error(f"Error in select_date: {e}")
+        await callback.answer("❌ Помилка при виборі дати")
+
+async def show_time_buttons(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowMenu.select_time)
+
+async def on_input_time(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowMenu.input_time)
+
+async def set_time(callback: CallbackQuery, button: Button, manager: DialogManager):
+    hour = int(button.widget_id.split("_")[1])
+    manager.dialog_data["selected_hour"] = hour
+    await process_time_selection(manager)
+
+async def time_input_handler(message: Message, widget, manager: DialogManager):
+    if not re.match(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', message.text):
+        await message.answer("❌ Невірний формат часу")
+        return
+    
+    hours, minutes = map(int, message.text.split(':'))
+    manager.dialog_data["selected_hour"] = hours
+    manager.dialog_data["selected_minute"] = minutes
+    await process_time_selection(manager)
+
+async def process_time_selection(manager: DialogManager):
+    date_obj = manager.dialog_data["scheduled_date_obj"]
+    hour = manager.dialog_data.get("selected_hour", 12)
+    minute = manager.dialog_data.get("selected_minute", 0)
+    
+    scheduled_datetime = datetime.combine(date_obj, time(hour=hour, minute=minute))
+    manager.dialog_data["scheduled_datetime"] = scheduled_datetime
+    manager.dialog_data["scheduled_datetime_str"] = scheduled_datetime.strftime('%d.%m.%Y о %H:%M')
+    
+    await manager.switch_to(FlowMenu.confirm_schedule)
+
+async def confirm_schedule(callback: CallbackQuery, button: Button, manager: DialogManager):
+    try:
+        dialog_data = await paging_getter(manager)
+        start_data = manager.start_data or {}
+
+        current_post = dialog_data["post"]
+        post_id = current_post["id"]
+
+        scheduled_datetime = manager.dialog_data["scheduled_datetime"]
+        
+        post_service = Container.post_service()
+        await post_service.schedule_post(post_id, scheduled_datetime)
+        
+        await callback.answer(
+            f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
+        )
+        await manager.switch_to(FlowMenu.posts_list)
+    except Exception as e:
+        logger.error(f"Error confirming schedule: {e}")
+        await callback.answer(f"❌ Помилка: {str(e)}")
+        await manager.switch_to(FlowMenu.select_date)

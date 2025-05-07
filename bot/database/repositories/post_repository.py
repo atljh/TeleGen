@@ -274,3 +274,9 @@ class PostRepository:
     async def delete(self, post_id: int) -> None:
         post = await self.get(post_id)
         await post.adelete()
+
+    async def schedule_post(self, post_id: int, scheduled_time: datetime) -> None:
+        await sync_to_async(Post.objects.filter(id=post_id).update)(
+            scheduled_time=scheduled_time,
+            is_draft=True
+        )
