@@ -45,7 +45,7 @@ class DefaultContentProcessor(ContentProcessor):
         return text.strip()
 
 class ChatGPTContentProcessor(ContentProcessor):
-    def __init__(self, api_key: str, flow: FlowDTO, model: str = "gpt-4-turbo", 
+    def __init__(self, api_key: str, flow: FlowDTO, model: str = "gpt-4o-mini", 
                  max_retries: int = 2, timeout: float = 15.0):
         self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
         self.flow = flow
