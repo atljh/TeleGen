@@ -276,13 +276,6 @@ class PostService:
             raise PostNotFoundError(f"Post with id {post_id} not found")
         await self.post_repo.delete(post_id)
 
-    async def get_scheduled_posts(self) -> List[PostDTO]:
-        posts = await self.post_repo.list(
-            status="scheduled",
-            scheduled_time_lt=datetime.now()
-        )
-        return [PostDTO.from_orm(post) for post in posts]
-    
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         if scheduled_time < datetime.now():
@@ -294,3 +287,40 @@ class PostService:
             
         await self.post_repo.schedule_post(post_id, scheduled_time)
         return await self.get_post(post_id)
+    
+
+    async def get_scheduled_posts(self, flow_id: Optional[int] = None) -> List[PostDTO]:
+        now = datetime.now()
+        filters = {
+            'is_draft': True,
+            'scheduled_time__isnull': False,
+            'scheduled_time__gt': now
+        }
+        
+        if flow_id:
+            filters['flow_id'] = flow_id
+            
+        posts = await sync_to_async(list)(
+            Post.objects.filter(**filters).order_by('scheduled_time')
+        )
+        return [PostDTO.from_orm(post) for post in posts]
+    
+    async def publish_scheduled_posts(self) -> List[PostDTO]:
+        now = datetime.now()
+        posts = await sync_to_async(list)(
+            Post.objects.filter(
+                is_draft=True,
+                scheduled_time__isnull=False,
+                scheduled_time__lte=now
+            )
+        )
+        
+        published = []
+        for post in posts:
+            try:
+                result = await self.publish_post(post.id, post.flow.channel.channel_id)
+                published.append(result)
+            except Exception as e:
+                logging.error(f"Failed to publish scheduled post {post.id}: {e}")
+                
+        return published
