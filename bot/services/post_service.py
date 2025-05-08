@@ -319,7 +319,8 @@ class PostService:
         published = []
         for post in posts:
             try:
-                channel_id = self.get_channel_id(post.id)
+                channel_id = await self.get_channel_id(post.id)
+                logging.info(channel_id)
                 result = await self.publish_post(post.id, channel_id)
                 published.append(result)
             except Exception as e:
