@@ -310,7 +310,7 @@ class PostService:
         now = datetime.now()
         posts = await sync_to_async(list)(
             Post.objects.filter(
-                is_draft=True,
+                is_published=False,
                 scheduled_time__isnull=False,
                 scheduled_time__lte=now
             )
