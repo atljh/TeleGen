@@ -115,8 +115,7 @@ class PostService:
         source_url: Optional[str] = None,
         is_draft: bool = True,
         scheduled_time: Optional[datetime] = None,
-        image_urls: Optional[List[str]] = None,
-        video_url: Optional[str] = None
+        media_list: Optional[List[str]] = None,
     ) -> PostDTO:
         if not await self.flow_repo.exists(flow_id):
             raise PostNotFoundError(f"Flow with id {flow_id} not found")
@@ -126,20 +125,17 @@ class PostService:
 
         flow = await self.flow_repo.get_flow_by_id(flow_id)
 
-        post = await self.post_repo.create(
+        post = await self.post_repo.create_with_media(
             flow=flow,
             content=content,
-            source_url=source_url,
-            is_draft=is_draft,
-            scheduled_time=scheduled_time,
-            images=image_urls,
-            video_url=video_url
+            media_list=media_list,
+            is_draft=True
         )
-        return PostDTO.from_orm(post)
+        # return PostDTO.from_orm(post)
+        return await sync_to_async(PostDTO.from_orm)(post)
 
     async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
         post = await self.get_post(post_id)
-
         if post.is_published:
             raise InvalidOperationError("Пост вже опублiкований!")
         
@@ -223,6 +219,7 @@ class PostService:
         except Exception as e:
             raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
 
+
     async def get_post(self, post_id: int) -> PostDTO:
         post = await self.post_repo.get(post_id)
 
@@ -305,6 +302,10 @@ class PostService:
         )
         return [PostDTO.from_orm(post) for post in posts]
     
+    @sync_to_async
+    def get_channel_id(self, post_id: int) -> str:
+        return Post.objects.select_related("flow__channel").get(id=post_id).flow.channel.channel_id
+
     async def publish_scheduled_posts(self) -> List[PostDTO]:
         now = datetime.now()
         posts = await sync_to_async(list)(
@@ -318,7 +319,8 @@ class PostService:
         published = []
         for post in posts:
             try:
-                result = await self.publish_post(post.id, post.flow.channel.channel_id)
+                channel_id = self.get_channel_id(post.id)
+                result = await self.publish_post(post.id, channel_id)
                 published.append(result)
             except Exception as e:
                 logging.error(f"Failed to publish scheduled post {post.id}: {e}")
