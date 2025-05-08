@@ -210,7 +210,7 @@ class PaymentDTO(BaseModel):
 
 class AISettingsDTO(BaseModel):
     id: int
-    user_id: int
+    flow_id: int
     prompt: str
     style: str
     created_at: datetime

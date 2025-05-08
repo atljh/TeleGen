@@ -13,16 +13,24 @@ from telethon.tl.functions.messages import ImportChatInviteRequest
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
-from  bot.services.content_processing.pipeline import PostProcessingPipeline
+
+from bot.services.aisettings_service import AISettingsService
 
 class UserbotService:
-    def __init__(self, api_id: int, api_hash: str, phone: str = None,
-                 session_path: Optional[str] = None):
+    def __init__(
+        self,
+        api_id: int,
+        api_hash: str,
+        aisettings_service: AISettingsService,
+        phone: str = None,
+        session_path: Optional[str] = None,
+    ):
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone = phone
         self.session_path = session_path or os.getenv("SESSION_PATH", "userbot.session")
         self.download_semaphore = asyncio.Semaphore(10)
+        self.aisettings_service = aisettings_service
         
         if not os.path.isabs(self.session_path):
             self.session_path = os.path.join('/app/sessions', self.session_path)

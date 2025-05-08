@@ -30,7 +30,7 @@ class UserAdmin(admin.ModelAdmin):
               "subscription_status", "subscription_end_date", "subscription_type",
               "payment_method",)
 
-    inlines = [AISettingsInline, ChannelInline, SubscriptionInline]
+    inlines = [ChannelInline, SubscriptionInline]
 
 
 @admin.register(Channel)
@@ -45,6 +45,8 @@ class FlowAdmin(admin.ModelAdmin):
     list_display = ('name', 'frequency', 'next_generation_time')
     list_filter = ('frequency',)
     search_fields = ('name', 'theme')
+
+    inlines = [AISettingsInline]
 
 class PostImageInline(admin.TabularInline):
     model = PostImage
@@ -77,13 +79,13 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(AISettings)
 class AISettingsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'style', 'created_at')
-    search_fields = ('user__username', 'style')
+    list_display = ('flow', 'style', 'created_at')
+    search_fields = ('style',)
     list_filter = ('style', 'created_at')
 
-@admin.register(Statistics)
-class StatisticsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'channel', 'total_posts', 'total_views', 'total_likes', 'last_updated')
-    search_fields = ('user__username', 'channel__name')
-    list_filter = ('last_updated',)
+# @admin.register(Statistics)
+# class StatisticsAdmin(admin.ModelAdmin):
+#     list_display = ('user', 'channel', 'total_posts', 'total_views', 'total_likes', 'last_updated')
+#     search_fields = ('user__username', 'channel__name')
+#     list_filter = ('last_updated',)
 

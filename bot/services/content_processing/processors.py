@@ -11,7 +11,6 @@ from langdetect import detect
 
 from bot.database.dtos.dtos import FlowDTO
 
-
 class ContentProcessor(ABC):
     @abstractmethod
     async def process(self, text: str) -> str:

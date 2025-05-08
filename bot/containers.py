@@ -59,6 +59,7 @@ class Container(containers.DeclarativeContainer):
     )
     userbot_service = providers.Singleton(
         EnhancedUserbotService,
+        aisettings_service=AISettingsService,
         api_id=os.getenv("USERBOT_API_ID"),
         api_hash=os.getenv("USERBOT_API_HASH"),
         phone=os.getenv("TELEGRAM_PHONE"),

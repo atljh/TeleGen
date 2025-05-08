@@ -219,18 +219,20 @@ class Payment(models.Model):
 
 
 class AISettings(models.Model):
-    user = models.OneToOneField(
-        User,
+    flow = models.OneToOneField(
+        Flow,
         on_delete=models.CASCADE,
         related_name='ai_settings',
-        verbose_name="Користувач"
+        verbose_name="Флоу",
+        blank=True,
+        null=True,
     )
     prompt = models.TextField(verbose_name="Промпт")
     style = models.CharField(max_length=100, verbose_name="Стиль")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
     def __str__(self):
-        return f"Налаштування AI для {self.user.username}"
+        return f"Налаштування AI для {self.flow}"
 
     class Meta:
         verbose_name = "Налаштування AI"
