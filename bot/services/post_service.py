@@ -276,7 +276,7 @@ class PostService:
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         if scheduled_time < datetime.now():
-            raise InvalidOperationError("Нельзя запланировать пост в прошлом")
+            raise InvalidOperationError("Не можна запланувати пост у минулому")
             
         post = await self.post_repo.get(post_id)
         if not post:
