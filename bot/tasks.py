@@ -116,7 +116,8 @@ async def _async_check_scheduled_posts():
         else:
             logger.info("No posts to publish")
             
-        return published
+        return [post.dict() for post in published]
+
         
     except Exception as e:
         logger.error(f"Error publishing scheduled posts: {e}", exc_info=True)
