@@ -92,6 +92,7 @@ class PostDTO(BaseModel):
     publication_date: Optional[datetime] = None
     status: PostStatus = PostStatus.DRAFT
     created_at: datetime
+    original_date: Optional[datetime] = None
     scheduled_time: Optional[datetime] = None
     media_type: Optional[MediaType] = None
     media_url: Optional[str] = None
