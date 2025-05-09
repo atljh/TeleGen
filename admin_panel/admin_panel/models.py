@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.db import models
 
 class User(models.Model):
@@ -132,13 +133,27 @@ class PostImage(models.Model):
         return f"Зображення для поста {self.post.id}"
 
 class Post(models.Model):
+    DRAFT = 'draft'
+    SCHEDULED = 'scheduled'
+    PUBLISHED = 'published'
+    
+    STATUS_CHOICES = [
+        (DRAFT, 'Чернетка'),
+        (SCHEDULED, 'Заплановано'),
+        (PUBLISHED, 'Опубліковано'),
+    ]
+    
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE, related_name='posts', verbose_name="Флоу")
     content = models.TextField(verbose_name="Контент")
     source_url = models.URLField(blank=True, null=True, verbose_name="Посилання на джерело")
     publication_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата публікації")
-    is_published = models.BooleanField(default=False, verbose_name="Опубліковано")
-    is_draft = models.BooleanField(default=False, verbose_name="Чернетка")
-    scheduled_time = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default=DRAFT,
+        verbose_name="Статус"
+    )
+    scheduled_time = models.DateTimeField(null=True, blank=True, verbose_name="Запланований час")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     video = models.FileField(
         upload_to='posts/videos/',
@@ -165,6 +180,13 @@ class Post(models.Model):
     @property
     def image_urls(self):
         return [img.image.url for img in self.images.all()]
+
+    def save(self, *args, **kwargs):
+        if self.status == self.PUBLISHED and not self.publication_date:
+            self.publication_date = timezone.now()
+        elif self.scheduled_time and not self.status == self.PUBLISHED:
+            self.status = self.SCHEDULED
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"

@@ -54,9 +54,9 @@ class PostImageInline(admin.TabularInline):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('flow', 'publication_date', 'is_published', 'is_draft', 'created_at')
+    list_display = ('flow', 'publication_date', 'status', 'created_at')
     search_fields = ('content', 'source_url')
-    list_filter = ('is_published', 'is_draft', 'created_at')
+    list_filter = ('status', 'created_at')
     inlines = [PostImageInline]
 
 @admin.register(Draft)
