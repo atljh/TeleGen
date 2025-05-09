@@ -145,13 +145,15 @@ class Post(models.Model):
     
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE, related_name='posts', verbose_name="Флоу")
     content = models.TextField(verbose_name="Контент")
-    source_url = models.URLField(blank=True, null=True, verbose_name="Посилання на джерело")
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
         default=DRAFT,
         verbose_name="Статус"
     )
+    
+    source_url = models.URLField(blank=True, null=True, verbose_name="Посилання на джерело")
+    original_link = models.CharField(blank=True, null=True, verbose_name="Посилання на оригiнальний пост")
     publication_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата публікації")
     scheduled_time = models.DateTimeField(null=True, blank=True, verbose_name="Запланований час")
     original_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата оригiнальної публікації")
