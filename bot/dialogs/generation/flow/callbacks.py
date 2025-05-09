@@ -258,8 +258,10 @@ async def on_input_time(callback: CallbackQuery, button: Button, manager: Dialog
     await manager.switch_to(FlowMenu.input_time)
 
 async def set_time(callback: CallbackQuery, button: Button, manager: DialogManager):
-    hour = int(button.widget_id.split("_")[1])
-    manager.dialog_data["selected_hour"] = hour
+    hours = int(button.widget_id.split("_")[0])
+    minutes = int(button.widget_id.split("_")[1])
+    manager.dialog_data["selected_hour"] = hours
+    manager.dialog_data["selected_minute"] = minutes
     await process_time_selection(manager)
 
 async def time_input_handler(message: Message, widget, manager: DialogManager):

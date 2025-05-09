@@ -1,4 +1,5 @@
 import logging
+from itertools import zip_longest
 from aiogram.enums import ParseMode 
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager
@@ -31,6 +32,12 @@ from .callbacks import (
 )
 
 from aiogram_dialog.widgets.kbd import NumberedPager
+
+def chunked(iterable, n):
+    args = [iter(iterable)] * n
+    return zip_longest(*args)
+
+times = [f"{hour:02d}:{minute:02d}" for hour in range(8, 23) for minute in (0, 30)]
 
 async def on_dialog_result(
     event, 
@@ -126,17 +133,16 @@ def flow_dialog() -> Dialog:
         ),
         Window(
             Format("📅 Обрана дата: {dialog_data[scheduled_date_str]}\n"
-                   "🕒 Виберіть час:"),
-            Row(
-                Button(Const("08:00"), id="time_08", on_click=set_time),
-                Button(Const("12:00"), id="time_12", on_click=set_time),
-                Button(Const("15:00"), id="time_15", on_click=set_time),
-            ),
-            Row(
-                Button(Const("18:00"), id="time_18", on_click=set_time),
-                Button(Const("20:00"), id="time_20", on_click=set_time),
-                Button(Const("22:00"), id="time_22", on_click=set_time),
-            ),
+                "🕒 Виберіть час:"),
+            *[
+                Row(
+                    *[
+                        Button(Const(time), id=f"{time.replace(':', '_')}", on_click=set_time)
+                        for time in row if time
+                    ]
+                )
+                for row in chunked(times, 4)
+            ],
             Button(Const("◀️ Назад"), id='back_to_select_type', on_click=back_to_select_type),
             state=FlowMenu.select_time,
         ),
