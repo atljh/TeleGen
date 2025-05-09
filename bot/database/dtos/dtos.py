@@ -75,6 +75,11 @@ class MediaType(str, Enum):
     IMAGE = "image"
     VIDEO = "video"
 
+class PostStatus(str, Enum):
+    DRAFT = 'draft'
+    SCHEDULED = 'scheduled'
+    PUBLISHED = 'published'
+
 class PostImageDTO(BaseModel):
     url: str
     order: int
@@ -85,8 +90,7 @@ class PostDTO(BaseModel):
     content: str
     source_url: Optional[str] = None
     publication_date: Optional[datetime] = None
-    is_published: bool = False
-    is_draft: bool = False
+    status: PostStatus = PostStatus.DRAFT
     created_at: datetime
     scheduled_time: Optional[datetime] = None
     media_type: Optional[MediaType] = None
@@ -96,7 +100,8 @@ class PostDTO(BaseModel):
 
     class Config:
         json_encoders = {
-            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
+            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None,
+            PostStatus: lambda v: v.value,
         }
 
     @property
@@ -110,14 +115,14 @@ class PostDTO(BaseModel):
         elif self.video_url:
             return {"type": MediaType.VIDEO, "url": self.video_url}
         return None
-    
 
     def to_telegram_dict(self) -> Dict[str, Any]:
         return {
             "text": self.content,
             "images": [{"url": img.url, "order": img.order} for img in self.images],
             "video_url": self.video_url,
-            "is_album": len(self.images) > 1
+            "is_album": len(self.images) > 1,
+            "status": self.status.value
         }
 
     @property
@@ -134,15 +139,22 @@ class PostDTO(BaseModel):
         
         video_url = next(
             (media['path'] for media in raw_post.get('media', [])
-            if media['type'] == 'video'
-        ), None)
+            if media['type'] == 'video'),
+            None
+        )
+
+        status = PostStatus.DRAFT
+        if raw_post.get('is_published', False):
+            status = PostStatus.PUBLISHED
+        elif raw_post.get('scheduled_time'):
+            status = PostStatus.SCHEDULED
 
         return cls(
             content=raw_post.get('text', ''),
             source_url=raw_post.get('source', {}).get('link'),
             images=images,
             video_url=video_url,
-            is_album=raw_post.get('is_album', False),
+            status=status,
             flow_id=0,
             created_at=datetime.now()
         )
@@ -160,14 +172,15 @@ class PostDTO(BaseModel):
         elif post.video:
             media_type = MediaType.VIDEO
 
+        status = PostStatus(post.status)
+
         return cls(
             id=post.id,
-            flow_id=post.flow_id,
+            flow_id=post.flow.id,
             content=post.content,
             source_url=post.source_url,
             publication_date=post.publication_date,
-            is_published=post.is_published,
-            is_draft=post.is_draft,
+            status=status,
             created_at=post.created_at,
             scheduled_time=post.scheduled_time,
             media_url=image_dtos[0].url if image_dtos else None,
