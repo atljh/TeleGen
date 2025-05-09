@@ -50,6 +50,7 @@ class PostRepository:
         flow: Flow,
         content: str,
         media_list: List[dict],
+        status: PostStatus,
         scheduled_time: Optional[datetime] = None
     ) -> Post:
         post = Post(
