@@ -13,7 +13,6 @@ from .callbacks import (
     add_channel,
     on_create_flow,
     on_buffer,
-    on_book_recall,
     on_flow,
     on_force_generate
 )
@@ -55,6 +54,11 @@ def create_generation_dialog():
                     id="flow", 
                     on_click=on_flow,
                     when="has_flow"
+                ),
+                Button(
+                    Const("Буфер"), 
+                    id="buffer", 
+                    on_click=on_buffer,
                 ),
                 Button(
                     Const("Створити флоу"), 

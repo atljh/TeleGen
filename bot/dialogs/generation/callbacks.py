@@ -9,6 +9,7 @@ from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
 from dialogs.generation.states import GenerationMenu
+from dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 
@@ -113,10 +114,7 @@ async def on_create_flow(callback: CallbackQuery, button: Button, manager: Dialo
     )
 
 async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(GenerationMenu.buffer)
-
-async def on_book_recall(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(GenerationMenu.book_recall)
+    await manager.start(BufferMenu.preview)
 
 
 async def on_force_generate(

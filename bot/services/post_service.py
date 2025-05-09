@@ -135,7 +135,7 @@ class PostService:
 
     async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
         post = await self.get_post(post_id)
-        if post.is_published:
+        if post.status == PostStatus.PUBLISHED:
             raise InvalidOperationError("Пост вже опублiкований!")
         
         try:
@@ -209,7 +209,7 @@ class PostService:
             
             return await self.update_post(
                 post_id=post_id,
-                is_published=True,
+                status=PostStatus.PUBLISHED,
                 content=post.content,
                 publication_date=timezone.now(),
                 scheduled_time=None
@@ -238,7 +238,7 @@ class PostService:
         content: Optional[str] = None,
         images: Optional[List[dict]] = None,
         publication_date: Optional[datetime] = None,
-        is_published: Optional[bool] = False,
+        status: Optional[PostStatus] = None,
         video_url: Optional[str] = None,
         **kwargs
     ) -> PostDTO:
@@ -248,8 +248,8 @@ class PostService:
             post.content = content
         if publication_date:
             post.publication_date = publication_date
-        if is_published:
-            post.is_published = is_published
+        if status:
+            post.status = status
         if images is not None:
             await sync_to_async(lambda: post.images.all().delete())()
             
@@ -319,7 +319,6 @@ class PostService:
         for post in posts:
             try:
                 channel_id = await self.get_channel_id(post.id)
-                logging.info(channel_id)
                 result = await self.publish_post(post.id, channel_id)
                 published.append(result)
             except Exception as e:
