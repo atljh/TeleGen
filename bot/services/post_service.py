@@ -95,7 +95,7 @@ class PostService:
                     flow=flow,
                     content=post_dto.content,
                     media_list=media_list,
-                    is_draft=True
+                    status=PostStatus.DRAFT
                 )
                 
                 db_post_dto = await sync_to_async(PostDTO.from_orm)(post)
@@ -112,7 +112,6 @@ class PostService:
         flow_id: int,
         content: str,
         source_url: Optional[str] = None,
-        is_draft: bool = True,
         scheduled_time: Optional[datetime] = None,
         media_list: Optional[List[str]] = None,
     ) -> PostDTO:
@@ -128,9 +127,7 @@ class PostService:
             flow=flow,
             content=content,
             media_list=media_list,
-            is_draft=True
         )
-        # return PostDTO.from_orm(post)
         return await sync_to_async(PostDTO.from_orm)(post)
 
     async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
@@ -283,23 +280,6 @@ class PostService:
             
         await self.post_repo.schedule_post(post_id, scheduled_time)
         return await self.get_post(post_id)
-    
-
-    async def get_scheduled_posts(self, flow_id: Optional[int] = None) -> List[PostDTO]:
-        now = datetime.now()
-        filters = {
-            'is_draft': True,
-            'scheduled_time__isnull': False,
-            'scheduled_time__gt': now
-        }
-        
-        if flow_id:
-            filters['flow_id'] = flow_id
-            
-        posts = await sync_to_async(list)(
-            Post.objects.filter(**filters).order_by('scheduled_time')
-        )
-        return [PostDTO.from_orm(post) for post in posts]
     
     @sync_to_async
     def get_channel_id(self, post_id: int) -> str:

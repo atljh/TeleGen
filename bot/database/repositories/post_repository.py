@@ -22,7 +22,7 @@ class PostRepository:
         flow: Flow,
         content: str,
         source_url: Optional[str] = None,
-        is_draft: bool = True,
+        status: PostStatus = None,
         scheduled_time: Optional[datetime] = None,
         images: Optional[List[str]] = None,
         video_path: Optional[str] = None
@@ -31,7 +31,7 @@ class PostRepository:
             flow=flow,
             content=content,
             source_url=source_url,
-            is_draft=is_draft,
+            status=status,
             scheduled_time=scheduled_time
         )
         await post.asave()
@@ -50,13 +50,12 @@ class PostRepository:
         flow: Flow,
         content: str,
         media_list: List[dict],
-        is_draft: bool = True,
         scheduled_time: Optional[datetime] = None
     ) -> Post:
         post = Post(
             flow=flow,
             content=content,
-            is_draft=is_draft,
+            status=PostStatus.DRAFT,
             scheduled_time=scheduled_time
         )
         await post.asave()
