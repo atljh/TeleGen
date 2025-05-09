@@ -1,20 +1,19 @@
-from datetime import datetime
 import os
-import random
 import logging
+from datetime import datetime
 from urllib.parse import unquote
 from typing import Optional, List
 from django.utils import timezone
 from aiogram import Bot
 from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from aiogram.types import FSInputFile, URLInputFile, InputMediaPhoto, InputMediaVideo
 from admin_panel.admin_panel.models import PostImage, Post
-from bot.database.dtos import PostDTO, FlowDTO, PostImageDTO
+from bot.database.dtos import PostDTO, PostStatus
 from bot.database.dtos.dtos import ContentLength
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
-from django.conf import settings
 
 from bot.services.userbot_service import UserbotService
 
@@ -310,7 +309,7 @@ class PostService:
         now = datetime.now()
         posts = await sync_to_async(list)(
             Post.objects.filter(
-                is_published=False,
+                status=PostStatus.SCHEDULED,
                 scheduled_time__isnull=False,
                 scheduled_time__lte=now
             )

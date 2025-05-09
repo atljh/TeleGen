@@ -12,7 +12,7 @@ from django.db.models import Prefetch
 from aiogram_dialog.api.entities import MediaAttachment
 from admin_panel.admin_panel.models import Post, Flow, PostImage
 from bot.database.exceptions import PostNotFoundError
-from bot.database.dtos.dtos import MediaType, PostDTO, PostImageDTO
+from bot.database.dtos.dtos import MediaType, PostDTO, PostImageDTO, PostStatus
 
 
 class PostRepository:
@@ -163,37 +163,23 @@ class PostRepository:
     
     @sync_to_async
     def _fetch_posts_from_db(self, flow_id: int) -> List[PostDTO]:
-        posts = Post.objects.filter(flow_id=flow_id)\
+        posts = Post.objects.filter(
+            flow_id=flow_id,
+            status__in=[Post.PUBLISHED, Post.DRAFT]
+        )\
             .select_related('flow')\
             .prefetch_related(
                 Prefetch('images', queryset=PostImage.objects.only('image', 'order').order_by('order'))
             )\
             .only(
                 'id', 'content', 'source_url', 'publication_date',
-                'is_published', 'is_draft', 'created_at', 'scheduled_time',
+                'status', 'created_at', 'scheduled_time',
                 'video', 'flow__id', 'flow__name'
             )\
             .order_by('-created_at')
         
         return [
-            PostDTO(
-                id=post.id,
-                flow_id=post.flow_id,
-                content=post.content,
-                source_url=post.source_url,
-                publication_date=post.publication_date,
-                is_published=post.is_published,
-                is_draft=post.is_draft,
-                created_at=post.created_at,
-                scheduled_time=post.scheduled_time,
-                images=[
-                    PostImageDTO(
-                        url=image.image.url,
-                        order=image.order
-                    ) for image in post.images.all()
-                ],
-                video_url=post.video.url if post.video else None
-            )
+            PostDTO.from_orm(post)
             for post in posts
         ]
     
@@ -278,5 +264,5 @@ class PostRepository:
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> None:
         await sync_to_async(Post.objects.filter(id=post_id).update)(
             scheduled_time=scheduled_time,
-            is_draft=True
+            status=PostStatus.SCHEDULED
         )
