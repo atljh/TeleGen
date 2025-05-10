@@ -100,6 +100,8 @@ class UserbotService:
                             post_data = await self._process_album(client, entity, msg)
                         else:
                             post_data = await self._process_message(client, msg)
+                        
+                        logging.info(post_data)
 
                         if post_data:
                             result.append(post_data)
@@ -140,13 +142,16 @@ class UserbotService:
             
             downloaded_media = await self._download_media_batch(client, all_media)
             
+            original_link = f"https://t.me/c/{entity.id}/{initial_msg.id}"
+            
             post_data = {
                 'text': "\n\n".join(texts) if texts else "",
                 'media': downloaded_media,
                 'is_album': True,
-                'album_size': len(album_messages)
+                'album_size': len(album_messages),
+                'original_link': original_link,
+                'original_date': initial_msg.date
             }
-            
             return post_data
             
         except Exception as e:
@@ -156,12 +161,21 @@ class UserbotService:
     async def _process_message(self, client: TelegramClient, msg) -> Optional[Dict]:
         if not msg.text and not msg.media:
             return None
-
+            
+        try:
+            entity = await msg.get_chat()
+            original_link = f"https://t.me/c/{entity.id}/{msg.id}"
+        except Exception as e:
+            logging.error(f"Could not generate original link: {str(e)}")
+            original_link = None
+            
         post_data = {
             'text': msg.text or '',
             'media': [],
             'is_album': False,
-            'album_size': 0
+            'album_size': 0,
+            'original_link': original_link,
+            'original_date': msg.date
         }
 
         if msg.media:
