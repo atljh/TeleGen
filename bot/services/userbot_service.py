@@ -101,8 +101,6 @@ class UserbotService:
                         else:
                             post_data = await self._process_message(client, msg)
                         
-                        logging.info(post_data)
-
                         if post_data:
                             result.append(post_data)
                             if len(result) >= limit:
@@ -168,7 +166,8 @@ class UserbotService:
         except Exception as e:
             logging.error(f"Could not generate original link: {str(e)}")
             original_link = None
-            
+        logging.info(original_link)
+        logging.info(msg.date)
         post_data = {
             'text': msg.text or '',
             'media': [],
@@ -299,18 +298,29 @@ class EnhancedUserbotService(UserbotService):
 
     async def _process_single_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:
         post_dto = PostDTO.from_raw_post(raw_post)
+        
         if not post_dto.content:
             return None
 
         if isinstance(post_dto.content, list):
             post_dto.content = " ".join(filter(None, post_dto.content))
         
+        if 'original_link' in raw_post:
+            post_dto.original_link = raw_post['original_link']
+        if 'original_date' in raw_post:
+            post_dto.original_date = raw_post['original_date']
+        
         try:
             processed_text = await self._process_content(post_dto.content, flow)
             if isinstance(processed_text, list):
                 processed_text = " ".join(filter(None, processed_text))
                 
-            return post_dto.copy(update={'content': processed_text})
+            return post_dto.copy(update={
+                'content': processed_text,
+                'flow_id': flow.id,
+                'original_link': post_dto.original_link,
+                'original_date': post_dto.original_date
+            })
         except Exception as e:
             self.logger.error(f"Error processing post: {str(e)}")
             return None

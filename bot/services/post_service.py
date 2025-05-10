@@ -94,6 +94,8 @@ class PostService:
                 post = await self.post_repo.create_with_media(
                     flow=flow,
                     content=post_dto.content,
+                    original_date=post_dto.original_date,
+                    original_link=post_dto.original_link,
                     media_list=media_list,
                     status=PostStatus.DRAFT
                 )

@@ -91,7 +91,7 @@ class PostDTO(BaseModel):
     source_url: Optional[str] = None
     publication_date: Optional[datetime] = None
     status: PostStatus = PostStatus.DRAFT
-    original_link: str = None
+    original_link: Optional[str] = None
     created_at: datetime
     original_date: Optional[datetime] = None
     scheduled_time: Optional[datetime] = None
@@ -157,6 +157,8 @@ class PostDTO(BaseModel):
             images=images,
             video_url=video_url,
             status=status,
+            original_link=raw_post.get('original_link'),
+            original_date=raw_post.get('original_date'),
             flow_id=0,
             created_at=datetime.now()
         )

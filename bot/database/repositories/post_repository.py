@@ -50,12 +50,16 @@ class PostRepository:
         flow: Flow,
         content: str,
         media_list: List[dict],
+        original_link: str,
+        original_date: datetime,
         status: PostStatus,
         scheduled_time: Optional[datetime] = None
     ) -> Post:
         post = Post(
             flow=flow,
             content=content,
+            original_link=original_link,
+            original_date=original_date,
             status=PostStatus.DRAFT,
             scheduled_time=scheduled_time
         )
