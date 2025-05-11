@@ -56,7 +56,11 @@ class UserbotService:
         finally:
             await client.disconnect()
 
-    async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[Dict]:
+    async def get_last_posts(
+        self,
+        sources: List[Dict],
+        limit: int = 10
+    ) -> List[Dict]:
         result = []
         processed_albums = set()
 
@@ -97,9 +101,9 @@ class UserbotService:
 
                         if hasattr(msg, 'grouped_id') and msg.grouped_id:
                             processed_albums.add(msg.grouped_id)
-                            post_data = await self._process_album(client, entity, msg)
+                            post_data = await self._process_album(client, entity, msg, source['link'])
                         else:
-                            post_data = await self._process_message(client, msg)
+                            post_data = await self._process_message(client, msg, source['link'])
                         
                         if post_data:
                             result.append(post_data)
@@ -112,7 +116,7 @@ class UserbotService:
 
         return result[::-1]
 
-    async def _process_album(self, client: TelegramClient, entity, initial_msg) -> Optional[Dict]:
+    async def _process_album(self, client: TelegramClient, entity, initial_msg, source_url: str) -> Optional[Dict]:
         try:
             messages = await client.get_messages(
                 entity,
@@ -148,7 +152,8 @@ class UserbotService:
                 'is_album': True,
                 'album_size': len(album_messages),
                 'original_link': original_link,
-                'original_date': initial_msg.date
+                'original_date': initial_msg.date,
+                'source_url': source_url
             }
             return post_data
             
@@ -156,7 +161,7 @@ class UserbotService:
             logging.error(f"Error processing album: {str(e)}")
             return None
 
-    async def _process_message(self, client: TelegramClient, msg) -> Optional[Dict]:
+    async def _process_message(self, client: TelegramClient, msg, source_url: str) -> Optional[Dict]:
         if not msg.text and not msg.media:
             return None
             
@@ -173,9 +178,9 @@ class UserbotService:
             'is_album': False,
             'album_size': 0,
             'original_link': original_link,
-            'original_date': msg.date
+            'original_date': msg.date,
+            'source_url': source_url
         }
-
         if msg.media:
             media_items = await self._extract_media(client, msg.media)
             post_data['media'] = await self._download_media_batch(client, media_items)
@@ -270,9 +275,7 @@ class EnhancedUserbotService(UserbotService):
         try:
             start_time = time.time()
             raw_posts = await super().get_last_posts(flow.sources, limit)
-            
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
-            
             self.logger.info(f"Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
             return processed_posts
         except Exception as e:
@@ -308,7 +311,9 @@ class EnhancedUserbotService(UserbotService):
             post_dto.original_link = raw_post['original_link']
         if 'original_date' in raw_post:
             post_dto.original_date = raw_post['original_date']
-        
+        if 'source_url' in raw_post:
+            post_dto.source_url = raw_post['source_url']   
+
         try:
             processed_text = await self._process_content(post_dto.content, flow)
             if isinstance(processed_text, list):
@@ -317,6 +322,7 @@ class EnhancedUserbotService(UserbotService):
             return post_dto.copy(update={
                 'content': processed_text,
                 'flow_id': flow.id,
+                'source_url': post_dto.source_url,
                 'original_link': post_dto.original_link,
                 'original_date': post_dto.original_date
             })

@@ -118,15 +118,6 @@ class PostDTO(BaseModel):
             return {"type": MediaType.VIDEO, "url": self.video_url}
         return None
 
-    def to_telegram_dict(self) -> Dict[str, Any]:
-        return {
-            "text": self.content,
-            "images": [{"url": img.url, "order": img.order} for img in self.images],
-            "video_url": self.video_url,
-            "is_album": len(self.images) > 1,
-            "status": self.status.value
-        }
-
     @property
     def has_media(self) -> bool:
         return len(self.images) > 0 or self.video_url is not None
@@ -183,6 +174,8 @@ class PostDTO(BaseModel):
             flow_id=post.flow.id,
             content=post.content,
             source_url=post.source_url,
+            original_link=post.original_link,
+            original_date=post.original_date,
             publication_date=post.publication_date,
             status=status,
             created_at=post.created_at,

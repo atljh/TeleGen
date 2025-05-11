@@ -121,7 +121,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 images = post.images if hasattr(post, 'images') else []
                 video_url = post.video_url if hasattr(post, 'video_url') else None
                 content = post.content if hasattr(post, 'content') else ''
-                
+
+                original_link = post.original_link if hasattr(post, 'original_link') else ''
+                original_date = post.original_date if hasattr(post, 'original_date') else ''
+                source_url = post.source_url if hasattr(post, 'source_url') else ''
+
                 pub_time = await sync_to_async(
                     lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
                     if hasattr(post, 'publication_date') and post.publication_date 
@@ -146,7 +150,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "images_count": len(images),
                     "images": images,
                     "video_url": video_url,
-                    "is_album": is_album
+                    "is_album": is_album,
+
+                    "original_date": original_date,
+                    "original_link": original_link,
+                    "source_url": source_url
                 }
 
                 if is_album:
@@ -164,7 +172,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
     else:
         posts = dialog_data.get("all_posts", [])
 
-    # posts = dialog_data.get("all_posts", [])
     total_pages = len(posts)
     
     dialog_manager.dialog_data['current_page'] = current_page
