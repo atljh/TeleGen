@@ -53,6 +53,7 @@ class PostRepository:
         original_link: str,
         original_date: datetime,
         status: PostStatus,
+        source_url: str,
         scheduled_time: Optional[datetime] = None
     ) -> Post:
         post = Post(
@@ -60,6 +61,7 @@ class PostRepository:
             content=content,
             original_link=original_link,
             original_date=original_date,
+            source_url=source_url,
             status=PostStatus.DRAFT,
             scheduled_time=scheduled_time
         )

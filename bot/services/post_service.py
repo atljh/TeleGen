@@ -113,6 +113,8 @@ class PostService:
         self,
         flow_id: int,
         content: str,
+        original_link: str,
+        original_date: datetime,
         source_url: Optional[str] = None,
         scheduled_time: Optional[datetime] = None,
         media_list: Optional[List[str]] = None,
@@ -127,6 +129,9 @@ class PostService:
 
         post = await self.post_repo.create_with_media(
             flow=flow,
+            original_link=original_link,
+            original_date=original_date,
+            source_url=source_url,
             content=content,
             media_list=media_list,
         )

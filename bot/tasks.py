@@ -52,6 +52,9 @@ async def create_new_posts(flow_id: int, posts_dto: List, post_service):
             })
         
         post = await post_service.create_post(
+            original_link=post_data.original_link,
+            original_date=post_data.original_date,
+            status=post_data.status,
             flow_id=flow_id,
             content=post_data.content,
             media_list=media_list

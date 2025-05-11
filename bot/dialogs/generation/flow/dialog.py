@@ -22,6 +22,7 @@ from .callbacks import (
     on_edit_post,
     on_edit_text,
     on_input_time,
+    on_post_info,
     on_publish_post,
     on_schedule_post,
     process_edit_input,
@@ -77,6 +78,7 @@ def flow_dialog() -> Dialog:
                 Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
                 Button(Const("📅 Запланувати"), id="schedule_publish", on_click=on_schedule_post),
+                Button(Const("ℹ️ Пост iнфо"), id="post_info", on_click=on_post_info),
                 width=2
             ),
             Row(
