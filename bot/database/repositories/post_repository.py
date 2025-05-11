@@ -180,7 +180,7 @@ class PostRepository:
                 'id', 'content', 'source_url', 'publication_date',
                 'status', 'created_at', 'scheduled_time',
                 'video', 'flow__id', 'flow__name',
-                'original_link', 'original_data', 'source_url'
+                'original_link', 'original_date', 'source_url'
             )\
             .order_by('-created_at')
         

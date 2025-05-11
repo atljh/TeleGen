@@ -166,8 +166,7 @@ class UserbotService:
         except Exception as e:
             logging.error(f"Could not generate original link: {str(e)}")
             original_link = None
-        logging.info(original_link)
-        logging.info(msg.date)
+
         post_data = {
             'text': msg.text or '',
             'media': [],
