@@ -264,7 +264,6 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
 async def post_info_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = await paging_getter(dialog_manager)
     post = dialog_data["post"]
-    logging.info(post)
     return {
         "source_url": post.get("source_url", ""),
         "original_link": post.get("original_link", ""),

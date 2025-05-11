@@ -66,7 +66,7 @@ def flow_dialog() -> Dialog:
     
     return Dialog(
         Window(
-            Format("<b>{post[status]} | {post[created_time]}\n</b>"),
+            Format("<b>{post[status]}\n</b>"),
             Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
             DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
             StubScroll(id="stub_scroll", pages="pages", on_page_changed=on_page_changed),
