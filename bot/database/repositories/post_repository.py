@@ -52,7 +52,6 @@ class PostRepository:
         media_list: List[dict],
         original_link: str,
         original_date: datetime,
-        status: PostStatus,
         source_url: str,
         scheduled_time: Optional[datetime] = None
     ) -> Post:
@@ -180,7 +179,8 @@ class PostRepository:
             .only(
                 'id', 'content', 'source_url', 'publication_date',
                 'status', 'created_at', 'scheduled_time',
-                'video', 'flow__id', 'flow__name'
+                'video', 'flow__id', 'flow__name',
+                'original_link', 'original_data', 'source_url'
             )\
             .order_by('-created_at')
         

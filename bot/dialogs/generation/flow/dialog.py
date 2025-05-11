@@ -13,7 +13,7 @@ from aiogram_dialog.widgets.kbd import (
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.flow.states import FlowMenu
-from .getters import edit_post_getter, paging_getter, send_media_album
+from .getters import edit_post_getter, paging_getter, post_info_getter, send_media_album
 from .callbacks import (
     back_to_select_type,
     confirm_schedule,
@@ -86,6 +86,17 @@ def flow_dialog() -> Dialog:
             ),
             getter=paging_getter,
             state=FlowMenu.posts_list,
+            parse_mode=ParseMode.HTML,
+        ),
+        Window(
+            Format(
+                "<b>Source: {source_link}</b>\nLink: {original_link}\nPost created: {original_date}"
+            ),
+            Row(
+                Back(Const("🔙 Назад")),
+            ),
+            getter=post_info_getter,
+            state=FlowMenu.post_info,
             parse_mode=ParseMode.HTML,
         ),
         Window(

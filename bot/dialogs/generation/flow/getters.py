@@ -58,12 +58,6 @@ async def send_media_album(
                 media=media_group
             )
             message_ids = [msg.message_id for msg in new_messages]
-
-            # new_message = await bot.send_message(
-            #     chat_id=chat_id,
-            #     text=f"📷 Альбом ({len(images)} фото)\nУправление:",
-            #     reply_markup=build_album_keyboard(post_data)
-            # )
             
             dialog_manager.dialog_data["message_ids"] = message_ids
             
@@ -259,3 +253,6 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
         "content": content,
         "media": media
     }
+
+async def post_info_getter(dialog_manger: DialogManager, **kwargs):
+    ...

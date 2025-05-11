@@ -94,10 +94,10 @@ class PostService:
                 post = await self.post_repo.create_with_media(
                     flow=flow,
                     content=post_dto.content,
+                    source_url=post_dto.source_url,
                     original_date=post_dto.original_date,
                     original_link=post_dto.original_link,
-                    media_list=media_list,
-                    status=PostStatus.DRAFT
+                    media_list=media_list
                 )
                 
                 db_post_dto = await sync_to_async(PostDTO.from_orm)(post)

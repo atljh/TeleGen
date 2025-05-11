@@ -3,6 +3,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 class FlowMenu(StatesGroup):
     posts_list = State()
+    post_info = State()
     edit_post = State()
     schedule = State()
     save_to_buffer = State()
