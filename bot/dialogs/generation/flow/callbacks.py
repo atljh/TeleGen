@@ -310,10 +310,5 @@ async def confirm_schedule(callback: CallbackQuery, button: Button, manager: Dia
 
 
 async def on_post_info(callback: CallbackQuery, button: Button, manager: DialogManager):
-    try:
-        dialog_data = await paging_getter(manager)
-        current_post = dialog_data["post"]
-        logging.info(current_post)
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        await callback.answer(f"❌ Помилка: {str(e)}")
+    await manager.switch_to(FlowMenu.post_info)
+

@@ -90,7 +90,7 @@ def flow_dialog() -> Dialog:
         ),
         Window(
             Format(
-                "<b>Source: {source_link}</b>\nLink: {original_link}\nPost created: {original_date}"
+                "<b>Source: {source_url}\nLink: {original_link}\nPost created: {original_date}</b>"
             ),
             Row(
                 Back(Const("🔙 Назад")),
@@ -98,6 +98,7 @@ def flow_dialog() -> Dialog:
             getter=post_info_getter,
             state=FlowMenu.post_info,
             parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
         ),
         Window(
             Format("<b>✏️ Редагування поста</b>\n\n"
