@@ -13,6 +13,7 @@ from bot.database.dtos.dtos import MediaType, PostImageDTO
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 
 from bot.dialogs.generation.flow.states import FlowMenu
+from bot.utils.notifications import notify_admins
 from .getters import paging_getter, send_media_album
 
 logger = logging.getLogger()

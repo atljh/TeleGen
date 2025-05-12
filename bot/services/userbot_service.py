@@ -7,14 +7,17 @@ from datetime import datetime
 from tqdm.asyncio import tqdm_asyncio
 from typing import Optional, List, Dict, AsyncGenerator
 from contextlib import asynccontextmanager
+
 import openai
+
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
+from telethon.errors import SessionPasswordNeededError
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
-
 from bot.services.aisettings_service import AISettingsService
+from bot.utils.notifications import notify_admins
 
 class UserbotService:
     def __init__(
@@ -50,9 +53,29 @@ class UserbotService:
         )
         try:
             await client.connect()
+            
             if not await client.is_user_authorized():
-                await client.start(phone=self.phone)
+                try:
+                    await client.start(
+                        phone=self.phone,
+                        code_callback=lambda: None,
+                        password=lambda: None
+                    )
+                except SessionPasswordNeededError:
+                    await notify_admins("🔐 Потрібна двофакторна аутентифікація для Userbot!")
+                    raise
+                except EOFError:
+                    await notify_admins("⚠️ Userbot потребує повторної авторизації!")
+                    raise
+                except Exception as e:
+                    await notify_admins(f"❌ Помилка авторизації Userbot: {str(e)}")
+                    raise
+            
             yield client
+            
+        except Exception as e:
+            self.logger.error(f"Помилка Telegram клієнта: {str(e)}")
+            raise
         finally:
             await client.disconnect()
 
