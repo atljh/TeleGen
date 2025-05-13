@@ -74,10 +74,10 @@ def flow_dialog() -> Dialog:
                 width=5,
             ),
             Group(
-                Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post),
-                Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post),
-                Button(Const("📅 Запланувати"), id="schedule_publish", on_click=on_schedule_post),
-                Button(Const("ℹ️ Пост iнфо"), id="post_info", on_click=on_post_info),
+                Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(Const("📅 Запланувати"), id="schedule_publish", on_click=on_schedule_post, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(Const("ℹ️ Пост iнфо"), id="post_info", on_click=on_post_info, when=lambda data, widget, manager: data["post"].get("content")),
                 width=2
             ),
             Row(
