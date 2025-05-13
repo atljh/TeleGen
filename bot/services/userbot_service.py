@@ -17,6 +17,7 @@ from telethon.errors import SessionPasswordNeededError
 from bot.database.dtos.dtos import FlowDTO, PostDTO
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
+from bot.services.user_service import UserService
 from bot.utils.notifications import notify_admins
 
 class UserbotService:
@@ -25,15 +26,17 @@ class UserbotService:
         api_id: int,
         api_hash: str,
         aisettings_service: AISettingsService,
+        user_service: UserService,
         phone: str = None,
         session_path: Optional[str] = None,
     ):
+        self.phone = phone
         self.api_id = api_id
         self.api_hash = api_hash
-        self.phone = phone
         self.session_path = session_path or os.getenv("SESSION_PATH", "userbot.session")
         self.download_semaphore = asyncio.Semaphore(10)
         self.aisettings_service = aisettings_service
+        self.user_service = user_service
         
         if not os.path.isabs(self.session_path):
             self.session_path = os.path.join('/app/sessions', self.session_path)
@@ -366,13 +369,16 @@ class EnhancedUserbotService(UserbotService):
         return text
 
     async def _process_with_chatgpt(self, text: str, flow: FlowDTO) -> str:
+        user = self.user_service.get_user_by_flow(flow)
+        logging.info(user)
         processor = ChatGPTContentProcessor(
             api_key=self.openai_key,
             flow=flow,
             max_retries=2,
-            timeout=15.0
+            timeout=15.0,
+            aisettings_service=self.aisettings_service
         )
-        return await processor.process(text)
+        return await processor.process(text, user.id)
 
     # async def _process_media(self, media_items: List[Dict]) -> List[Dict]:
     #     return media_items

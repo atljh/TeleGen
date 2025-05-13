@@ -80,6 +80,7 @@ class PostService:
             return []
 
         posts_dto = await self.userbot_service.get_last_posts(flow)
+
         # posts_dto = await self.web_service.get_last_posts(flow)
 
         generated_posts = []

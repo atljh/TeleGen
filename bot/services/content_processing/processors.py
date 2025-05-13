@@ -1,15 +1,15 @@
 import re
+import time
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime
-import time
-from typing import Dict, List
 
 import openai
 from langdetect import detect
 
 from bot.database.dtos.dtos import FlowDTO
+from bot.database.exceptions import AISettingsNotFoundError
+from bot.services.aisettings_service import AISettingsService
 
 class ContentProcessor(ABC):
     @abstractmethod
@@ -44,28 +44,73 @@ class DefaultContentProcessor(ContentProcessor):
         return text.strip()
 
 class ChatGPTContentProcessor(ContentProcessor):
-    def __init__(self, api_key: str, flow: FlowDTO, model: str = "gpt-4o-mini", 
-                 max_retries: int = 2, timeout: float = 15.0):
-        self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
+    def __init__(
+        self,
+        api_key: str,
+        flow: FlowDTO,
+        aisettings_service: AISettingsService,
+        model: str = "gpt-4o-mini", 
+        max_retries: int = 2, 
+        timeout: float = 15.0,
+        cache_size_limit: int = 1000
+    ):
+        self.cache = {}
         self.flow = flow
         self.model = model
         self.max_retries = max_retries
-        self.cache = {} 
+        self.request_timeout = timeout
+        self.cache_size_limit = cache_size_limit
+        self.aisettings_service = aisettings_service
+        self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
 
-    async def process(self, text: str) -> str:
+    async def _get_or_create_user_prompt(self, user_id: int) -> str:
+        try:
+            aisettings = await self.aisettings_service.get_aisettings_by_user_id(user_id)
+            return aisettings.prompt
+        except AISettingsNotFoundError:
+            default_prompt = (
+                "You are a professional content editor. Improve the text while preserving: "
+                "1) Original meaning 2) Language 3) Key facts. Make it more engaging and readable."
+            )
+            aisettings = await self.aisettings_service.create_aisettings(
+                user_id=user_id,
+                prompt=default_prompt,
+                style="professional"
+            )
+            return default_prompt
+        except Exception as e:
+            logging.error(f"Error getting user prompt: {str(e)}")
+            return "Improve this text professionally while keeping its core meaning."
+
+    async def process(self, text: str, user_id: int) -> str:
+
         if isinstance(text, list):
             text = " ".join([str(item) for item in text if item])
             
         if not text.strip():
             return ""
-            
-        cache_key = hash(f"{text}_{self.flow.id}")
+        
+        logging.info(user_id)
+
+        cache_key = hash(f"{text}_{self.flow.id}_{user_id}")
         
         if cache_key in self.cache:
             return self.cache[cache_key]
         
-        system_prompt = self._build_system_prompt(text)
-        
+        try:
+            system_prompt = await self._build_system_prompt(text, user_id)
+            result = await self._call_ai_with_retry(text, system_prompt)
+            
+            if len(self.cache) >= self.cache_size_limit:
+                self.cache.pop(next(iter(self.cache)))
+            
+            self.cache[cache_key] = result
+            return result
+        except Exception as e:
+            logging.error(f"Final processing error: {str(e)}")
+            return text
+
+    async def _call_ai_with_retry(self, text: str, system_prompt: str) -> str:
         for attempt in range(self.max_retries + 1):
             try:
                 start_time = time.time()
@@ -77,21 +122,21 @@ class ChatGPTContentProcessor(ContentProcessor):
                     ],
                     temperature=0.5,
                     top_p=0.9,
-                    max_tokens=2000
+                    max_tokens=2000,
+                    timeout=self.request_timeout
                 )
                 result = response.choices[0].message.content.strip()
-                self.cache[cache_key] = result
-                logging.debug(f"OpenAI request took {time.time() - start_time:.2f}s")
+                logging.debug(f"AI request took {time.time() - start_time:.2f}s")
                 return result
             except Exception as e:
                 if attempt == self.max_retries:
-                    logging.warning(f"OpenAI failed after {self.max_retries} attempts: {str(e)}")
-                    return text
+                    raise
                 await asyncio.sleep(1 * (attempt + 1))
 
-
-    def _build_system_prompt(self, text: str) -> str:
+    async def _build_system_prompt(self, text: str, user_id: int) -> str:
+        user_prompt = await self._get_or_create_user_prompt(user_id)
         detected_language = detect(text)
+        
         language_name = {
             'uk': 'Ukrainian',
             'ru': 'Russian',
@@ -99,32 +144,32 @@ class ChatGPTContentProcessor(ContentProcessor):
         }.get(detected_language, 'the original language')
 
         rules = [
-            "You are a professional post editor.",
-            f"Do not change the language — keep it in {language_name}. No translation.",
-            f"Edit the text according to the following rules:",
-            f"1. Keep the original meaning, but improve readability and clarity.",
-            f"2. Remove unnecessary links, formatting artifacts, and special characters.",
-            f"3. The total text length must not exceed {self._get_length_instruction()} characters.",
-            f"4. Rewrite the text in the following style: {self.flow.theme}.",
+            user_prompt,
+            f"Language: Maintain {language_name} without translation.",
+            "Key requirements:",
+            "1. Preserve all factual information",
+            "2. Improve clarity and engagement",
+            f"3. Length: {self._get_length_instruction()}",
+            f"4. Style: {self.flow.theme}",
         ]
 
         if self.flow.use_emojis:
             emoji_type = "premium" if self.flow.use_premium_emojis else "regular"
-            rules.append(f"5. Insert appropriate {emoji_type} emojis into the text where relevant.")
+            rules.append(f"5. Use relevant {emoji_type} emojis")
         
         if self.flow.title_highlight:
-            rules.append("6. Highlight the title using the <b> HTML tag.")
+            rules.append("6. Format title with <b> tags")
         
         if self.flow.cta:
-            rules.append("7. Add a concise and relevant call to action at the end of the post.")
+            rules.append(f"7. Add CTA: {self.flow.cta}")
         
-        rules.append("Return only the edited post. Do not include any explanations or extra commentary.")
+        rules.append("Return only the edited content without commentary.")
         return "\n".join(rules)
 
     def _get_length_instruction(self) -> str:
-        lengths = {
-            "short": "100",
-            "medium": "300", 
-            "long": "1000"
+        length_mapping = {
+            "short": "50-100 words",
+            "medium": "150-300 words", 
+            "long": "500-1000 words"
         }
-        return lengths.get(self.flow.content_length, "300")
+        return length_mapping.get(self.flow.content_length, "150-300 words")
