@@ -20,3 +20,4 @@ from bot.services.subscription_service import SubscriptionService
 from bot.services.payment_service import PaymentService
 from bot.services.statistics_service import StatisticsService
 from bot.services.userbot_service import UserbotService, EnhancedUserbotService
+from bot.services.web_service import WebService

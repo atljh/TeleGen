@@ -23,7 +23,8 @@ from bot.services import (
     AISettingsService,
     StatisticsService,
     UserbotService,
-    EnhancedUserbotService
+    EnhancedUserbotService,
+    WebService
 )
 import os
 
@@ -78,12 +79,17 @@ class Container(containers.DeclarativeContainer):
         channel_repository=channel_repository
     )
 
+    web_service = providers.Factory(
+        WebService
+    )
+
     post_service = providers.Factory(
         PostService,
         post_repository=post_repository,
         flow_repository=flow_repository,
         bot=bot,
-        userbot_service=userbot_service
+        userbot_service=userbot_service,
+        web_service=web_service
     )
 
     draft_service = providers.Factory(
