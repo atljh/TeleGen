@@ -66,7 +66,6 @@ def flow_dialog() -> Dialog:
     
     return Dialog(
         Window(
-            Format("<b>{post[status]}\n</b>"),
             Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
             DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
             StubScroll(id="stub_scroll", pages="pages", on_page_changed=on_page_changed),
@@ -90,7 +89,11 @@ def flow_dialog() -> Dialog:
         ),
         Window(
             Format(
-                "<b>Source: {source_url}\nLink: {original_link}\nPost created: {original_date}</b>"
+                "<b>Інформація поста</b>\n\n"
+                "<b>Статус:</b> {status}\n"
+                "<b>Джерело:</b> {source_url}\n"
+                "<b>Посилання:</b> {original_link}\n"
+                "<b>Дата публікації:</b> {original_date}"
             ),
             Row(
                 Back(Const("🔙 Назад")),
