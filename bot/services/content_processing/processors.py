@@ -63,9 +63,9 @@ class ChatGPTContentProcessor(ContentProcessor):
         self.aisettings_service = aisettings_service
         self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
 
-    async def _get_or_create_user_prompt(self, user_id: int) -> str:
+    async def _get_or_create_user_prompt(self, flow: FlowDTO) -> str:
         try:
-            aisettings = await self.aisettings_service.get_aisettings_by_user_id(user_id)
+            aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
             return aisettings.prompt
         except AISettingsNotFoundError:
             default_prompt = (
@@ -73,13 +73,13 @@ class ChatGPTContentProcessor(ContentProcessor):
                 "1) Original meaning 2) Language 3) Key facts. Make it more engaging and readable."
             )
             aisettings = await self.aisettings_service.create_aisettings(
-                user_id=user_id,
+                flow=self.flow,
                 prompt=default_prompt,
                 style="professional"
             )
             return default_prompt
         except Exception as e:
-            logging.error(f"Error getting user prompt: {str(e)}")
+            logging.error(f"Error getting flow prompt: {str(e)}")
             return "Improve this text professionally while keeping its core meaning."
 
     async def process(self, text: str, user_id: int) -> str:
@@ -90,15 +90,13 @@ class ChatGPTContentProcessor(ContentProcessor):
         if not text.strip():
             return ""
         
-        logging.info(user_id)
-
         cache_key = hash(f"{text}_{self.flow.id}_{user_id}")
         
         if cache_key in self.cache:
             return self.cache[cache_key]
         
         try:
-            system_prompt = await self._build_system_prompt(text, user_id)
+            system_prompt = await self._build_system_prompt(text, self.flow)
             result = await self._call_ai_with_retry(text, system_prompt)
             
             if len(self.cache) >= self.cache_size_limit:
@@ -133,8 +131,8 @@ class ChatGPTContentProcessor(ContentProcessor):
                     raise
                 await asyncio.sleep(1 * (attempt + 1))
 
-    async def _build_system_prompt(self, text: str, user_id: int) -> str:
-        user_prompt = await self._get_or_create_user_prompt(user_id)
+    async def _build_system_prompt(self, text: str, flow: FlowDTO) -> str:
+        user_prompt = await self._get_or_create_user_prompt(flow)
         detected_language = detect(text)
         
         language_name = {

@@ -28,6 +28,6 @@ class UserService:
         await self.user_repository.delete_user(user)
 
     async def get_user_by_flow(self, flow: FlowDTO) -> UserDTO:
-        channel = await self.channel_repository.get_channel_by_id(flow.channel_id)
+        channel = await self.channel_repository.get_channel(flow.channel_id)
         user = await self.user_repository.get_user_by_id(channel.user_id)
         return user

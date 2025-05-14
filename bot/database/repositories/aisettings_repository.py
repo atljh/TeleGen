@@ -2,9 +2,9 @@ from admin_panel.admin_panel.models import AISettings
 from bot.database.exceptions import AISettingsNotFoundError
 
 class AISettingsRepository:
-    async def create_ai_settings(self, user, prompt: str, style: str) -> AISettings:
+    async def create_ai_settings(self, flow, prompt: str, style: str) -> AISettings:
         return await AISettings.objects.acreate(
-            user=user,
+            flow=flow,
             prompt=prompt,
             style=style
         )
@@ -15,12 +15,12 @@ class AISettingsRepository:
         except AISettings.DoesNotExist:
             raise AISettingsNotFoundError(f"AISettings with id={ai_settings_id} not found.")
 
-    async def get_ai_settings_by_user(self, user) -> AISettings:
+    async def get_ai_settings_by_flow(self, flow) -> AISettings:
 
         try:
-            return await AISettings.objects.aget(user=user)
+            return await AISettings.objects.aget(flow=flow)
         except AISettings.DoesNotExist:
-            raise AISettingsNotFoundError(f"AISettings with user={user} not found.")
+            raise AISettingsNotFoundError(f"AISettings with flow={flow} not found.")
 
     async def update_ai_settings(self, ai_settings: AISettings) -> AISettings:
         await ai_settings.asave()
