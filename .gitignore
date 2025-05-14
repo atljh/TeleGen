@@ -183,3 +183,4 @@ staticfiles
 *.tmp
 *.image
 *.video
+*.json
