@@ -54,6 +54,11 @@ class Container(containers.DeclarativeContainer):
     ai_settings_repository = providers.Factory(AISettingsRepository)
     statistics_repository = providers.Factory(StatisticsRepository)
 
+    ai_settings_service = providers.Factory(
+        AISettingsService,
+        aisettings_repository=ai_settings_repository,
+        user_repository=user_repository
+    )
     user_service = providers.Factory(
         UserService,
         user_repository=user_repository,
@@ -61,8 +66,8 @@ class Container(containers.DeclarativeContainer):
     )
     userbot_service = providers.Singleton(
         EnhancedUserbotService,
-        aisettings_service=AISettingsService,
-        user_service=UserService,
+        aisettings_service=ai_settings_service,
+        user_service=user_service,
         api_id=os.getenv("USERBOT_API_ID"),
         api_hash=os.getenv("USERBOT_API_HASH"),
         phone=os.getenv("TELEGRAM_PHONE"),
@@ -82,7 +87,8 @@ class Container(containers.DeclarativeContainer):
     )
 
     web_service = providers.Factory(
-        WebService
+        WebService,
+        openai_key='ss'
     )
 
     post_service = providers.Factory(
@@ -107,11 +113,6 @@ class Container(containers.DeclarativeContainer):
     payment_service = providers.Factory(
         PaymentService,
         payment_repository=payment_repository,
-    )
-
-    ai_settings_service = providers.Factory(
-        AISettingsService,
-        ai_settings_repository=ai_settings_repository,
     )
 
     statistics_service = providers.Factory(

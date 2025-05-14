@@ -24,7 +24,7 @@ FROM base AS admin_panel
 
 WORKDIR /admin_panel
 
-COPY admin_panel/ /admin_panel/
+# COPY admin_panel/ /admin_panel/
 
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
 
@@ -32,6 +32,6 @@ FROM base AS bot
 
 WORKDIR /bot
 
-COPY bot/ /bot/
+# COPY bot/ /bot/
 
 CMD ["python", "-m", "main.py"]

@@ -4,9 +4,9 @@ from bot.database.repositories.user_repository import UserRepository
 from bot.database.repositories.channel_repository import ChannelRepository
 
 class UserService:
-    def __init__(self, user_repository: UserRepository, channel_repo: ChannelRepository):
+    def __init__(self, user_repository: UserRepository, channel_repository: ChannelRepository):
         self.user_repository = user_repository
-        self.channel_repo = channel_repo
+        self.channel_repository = channel_repository
 
     async def create_or_get_user(self, telegram_id: int, username: str | None = None) -> tuple[UserDTO, bool]:
         user, created = await self.user_repository.get_or_create_user(telegram_id, username)
@@ -28,6 +28,6 @@ class UserService:
         await self.user_repository.delete_user(user)
 
     async def get_user_by_flow(self, flow: FlowDTO) -> UserDTO:
-        channel = await self.channel_repo.get_channel_by_id(flow.channel_id)
+        channel = await self.channel_repository.get_channel_by_id(flow.channel_id)
         user = await self.user_repository.get_user_by_id(channel.user_id)
         return user

@@ -25,8 +25,6 @@ class UserbotService:
         self,
         api_id: int,
         api_hash: str,
-        aisettings_service: AISettingsService,
-        user_service: UserService,
         phone: str = None,
         session_path: Optional[str] = None,
     ):
@@ -35,8 +33,6 @@ class UserbotService:
         self.api_hash = api_hash
         self.session_path = session_path or os.getenv("SESSION_PATH", "userbot.session")
         self.download_semaphore = asyncio.Semaphore(10)
-        self.aisettings_service = aisettings_service
-        self.user_service = user_service
         
         if not os.path.isabs(self.session_path):
             self.session_path = os.path.join('/app/sessions', self.session_path)
@@ -284,12 +280,22 @@ class UserbotService:
                 
 
 class EnhancedUserbotService(UserbotService):
-    def __init__(self, api_id: int, api_hash: str, openai_key: str = None, **kwargs):
+    def __init__(
+            self,
+            api_id: int,
+            api_hash: str,
+            aisettings_service: AISettingsService,
+            user_service: UserService,
+            openai_key: str = None,
+            **kwargs
+        ):
         super().__init__(api_id, api_hash, **kwargs)
         self.logger = logging.getLogger(__name__)
         self.openai_key = openai_key
         self._openai_client = None
         self._semaphore = asyncio.Semaphore(10)
+        self.user_service = user_service
+        self.aisettings_service = aisettings_service
 
     @property
     def openai_client(self):
@@ -368,8 +374,10 @@ class EnhancedUserbotService(UserbotService):
         
         return text
 
+
     async def _process_with_chatgpt(self, text: str, flow: FlowDTO) -> str:
-        user = self.user_service.get_user_by_flow(flow)
+
+        user = await self.user_service.get_user_by_flow(flow)
         logging.info(user)
         processor = ChatGPTContentProcessor(
             api_key=self.openai_key,
