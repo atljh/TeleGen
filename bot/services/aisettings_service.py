@@ -1,8 +1,9 @@
-from bot.database.dtos import AISettingsDTO
+from django.db import transaction
+from asgiref.sync import sync_to_async
 from bot.database.dtos.dtos import FlowDTO
+from bot.database.dtos import AISettingsDTO
+from bot.database.exceptions import AISettingsNotFoundError
 from bot.database.repositories import AISettingsRepository, UserRepository
-from bot.database.exceptions import AISettingsNotFoundError, UserNotFoundError
-from bot.database.repositories.flow_repository import FlowRepository
 
 class AISettingsService:
     def __init__(
@@ -27,8 +28,5 @@ class AISettingsService:
         return AISettingsDTO.from_orm(aisettings)
 
     async def get_aisettings_by_flow(self, flow: FlowDTO) -> AISettingsDTO:
-        try:
-            aisettings = await self.aisettings_repository.get_ai_settings_by_flow(flow)
-            return AISettingsDTO.from_orm(aisettings)
-        except AISettingsNotFoundError:
-            raise AISettingsNotFoundError(f"Настройки ИИ для flow с {flow} не найдены.")
+        aisettings = await self.aisettings_repository.get_ai_settings_by_flow(flow)
+        return AISettingsDTO.from_orm(aisettings)

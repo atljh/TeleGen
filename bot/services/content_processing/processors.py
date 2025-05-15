@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 
 import openai
 from langdetect import detect
+from psycopg2.errors import UniqueViolation
 
 from bot.database.dtos.dtos import FlowDTO
 from bot.database.exceptions import AISettingsNotFoundError
@@ -67,21 +68,32 @@ class ChatGPTContentProcessor(ContentProcessor):
         try:
             aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
             return aisettings.prompt
+            
         except AISettingsNotFoundError:
             default_prompt = (
                 "You are a professional content editor. Improve the text while preserving: "
                 "1) Original meaning 2) Language 3) Key facts. Make it more engaging and readable."
             )
-            aisettings = await self.aisettings_service.create_aisettings(
-                flow=self.flow,
-                prompt=default_prompt,
-                style="professional"
-            )
-            return default_prompt
-        except Exception as e:
-            logging.error(f"Error getting flow prompt: {str(e)}")
-            return "Improve this text professionally while keeping its core meaning."
-
+            try:
+                aisettings = await self.aisettings_service.create_aisettings(
+                    flow=flow,
+                    prompt=default_prompt,
+                    style="professional"
+                )
+                return default_prompt
+                
+            except UniqueViolation:
+                existing_settings = await self.aisettings_service.get_aisettings_by_flow(flow)
+                return existing_settings.prompt
+                
+            except Exception as create_error:
+                logging.error(f"Error creating AI settings: {str(create_error)}")
+                return default_prompt
+                
+        # except Exception as e:
+        #     logging.error(f"Error getting flow prompt: {str(e)}")
+        #     return "Improve this text professionally while keeping its core meaning."
+        
     async def process(self, text: str, user_id: int) -> str:
 
         if isinstance(text, list):
@@ -133,6 +145,7 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     async def _build_system_prompt(self, text: str, flow: FlowDTO) -> str:
         user_prompt = await self._get_or_create_user_prompt(flow)
+        logging.info(user_prompt)
         detected_language = detect(text)
         
         language_name = {

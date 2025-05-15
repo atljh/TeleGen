@@ -3,11 +3,12 @@ from bot.database.exceptions import AISettingsNotFoundError
 
 class AISettingsRepository:
     async def create_ai_settings(self, flow, prompt: str, style: str) -> AISettings:
-        return await AISettings.objects.acreate(
+        aisettings, created = await AISettings.objects.aget_or_create(
             flow=flow,
             prompt=prompt,
             style=style
         )
+        return aisettings.prompt
 
     async def get_ai_settings_by_id(self, ai_settings_id: int) -> AISettings:
         try:

@@ -378,7 +378,6 @@ class EnhancedUserbotService(UserbotService):
     async def _process_with_chatgpt(self, text: str, flow: FlowDTO) -> str:
 
         user = await self.user_service.get_user_by_flow(flow)
-        logging.info(user)
         processor = ChatGPTContentProcessor(
             api_key=self.openai_key,
             flow=flow,
