@@ -64,24 +64,22 @@ class ChatGPTContentProcessor(ContentProcessor):
         self.aisettings_service = aisettings_service
         self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
 
-    async def _get_or_create_user_prompt(self, flow: FlowDTO) -> str:
+    async def _get_or_create_user_prompt(self, text: str, flow: FlowDTO) -> str:
         try:
             aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
             return aisettings.prompt
             
         except AISettingsNotFoundError:
-            default_prompt = (
-                "You are a professional content editor. Improve the text while preserving: "
-                "1) Original meaning 2) Language 3) Key facts. Make it more engaging and readable."
-            )
+            default_prompt = await self._build_system_prompt(text, flow)
             try:
+                logging.info(flow.theme)
                 aisettings = await self.aisettings_service.create_aisettings(
                     flow=flow,
                     prompt=default_prompt,
-                    style="professional"
+                    style=str(flow.theme)
                 )
                 return default_prompt
-                
+
             except UniqueViolation:
                 existing_settings = await self.aisettings_service.get_aisettings_by_flow(flow)
                 return existing_settings.prompt
@@ -90,9 +88,9 @@ class ChatGPTContentProcessor(ContentProcessor):
                 logging.error(f"Error creating AI settings: {str(create_error)}")
                 return default_prompt
                 
-        # except Exception as e:
-        #     logging.error(f"Error getting flow prompt: {str(e)}")
-        #     return "Improve this text professionally while keeping its core meaning."
+        except Exception as e:
+            logging.error(f"Error getting flow prompt: {str(e)}")
+            return await self._build_system_prompt(text, flow)
         
     async def process(self, text: str, user_id: int) -> str:
 
@@ -108,7 +106,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             return self.cache[cache_key]
         
         try:
-            system_prompt = await self._build_system_prompt(text, self.flow)
+            system_prompt = await self._get_prompt(text, self.flow)
             result = await self._call_ai_with_retry(text, system_prompt)
             
             if len(self.cache) >= self.cache_size_limit:
@@ -143,9 +141,12 @@ class ChatGPTContentProcessor(ContentProcessor):
                     raise
                 await asyncio.sleep(1 * (attempt + 1))
 
+
+    async def _get_prompt(self, text: str, flow: FlowDTO) -> str:
+        return await self._get_or_create_user_prompt(text, flow)
+
+
     async def _build_system_prompt(self, text: str, flow: FlowDTO) -> str:
-        user_prompt = await self._get_or_create_user_prompt(flow)
-        logging.info(user_prompt)
         detected_language = detect(text)
         
         language_name = {
@@ -155,13 +156,13 @@ class ChatGPTContentProcessor(ContentProcessor):
         }.get(detected_language, 'the original language')
 
         rules = [
-            user_prompt,
-            f"Language: Maintain {language_name} without translation.",
-            "Key requirements:",
-            "1. Preserve all factual information",
-            "2. Improve clarity and engagement",
-            f"3. Length: {self._get_length_instruction()}",
-            f"4. Style: {self.flow.theme}",
+            "You are a professional post editor.",
+            f"Do not change the language — keep it in {language_name}. No translation.",
+            f"Edit the text according to the following rules:",
+            f"1. Keep the original meaning, but improve readability and clarity.",
+            f"2. Remove unnecessary links, formatting artifacts, and special characters.",
+            f"3. The total text length must not exceed {self._get_length_instruction()} characters.",
+            f"4. Rewrite the text in the following style: {self.flow.theme}.",
         ]
 
         if self.flow.use_emojis:
