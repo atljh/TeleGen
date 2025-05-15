@@ -8,7 +8,7 @@ class AISettingsRepository:
             prompt=prompt,
             style=style
         )
-        return aisettings.prompt
+        return aisettings
 
     async def get_ai_settings_by_id(self, ai_settings_id: int) -> AISettings:
         try:

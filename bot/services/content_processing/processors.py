@@ -72,7 +72,6 @@ class ChatGPTContentProcessor(ContentProcessor):
         except AISettingsNotFoundError:
             default_prompt = await self._build_system_prompt(text, flow)
             try:
-                logging.info(flow.theme)
                 aisettings = await self.aisettings_service.create_aisettings(
                     flow=flow,
                     prompt=default_prompt,
