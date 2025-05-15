@@ -151,7 +151,14 @@ class Post(models.Model):
         default=DRAFT,
         verbose_name="Статус"
     )
-    
+    source_id = models.CharField(
+        max_length=255,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name="Унікальний ID із джерела",
+        help_text="Ідентифікатор посту в оригінальному джерелі (Telegram/Web)"
+    )
     source_url = models.URLField(blank=True, null=True, verbose_name="Посилання на джерело")
     original_link = models.CharField(blank=True, null=True, verbose_name="Посилання на оригiнальний пост")
     publication_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата публікації")
