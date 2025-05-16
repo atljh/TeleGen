@@ -46,7 +46,6 @@ class PostRepository:
 
         return post
     
-
     async def create_with_media(
         self,
         flow: Flow,
@@ -59,95 +58,138 @@ class PostRepository:
         scheduled_time: Optional[datetime] = None
     ) -> Optional[Post]:
         try:
-            if await Post.objects.filter(source_id=source_id).aexists():
-                logging.warning(f"Duplicate post skipped: {source_id}")
+            if await self._post_exists(source_id):
                 return None
 
-            @sync_to_async
-            def _create_post_and_media():
-                with transaction.atomic():
-                    post = Post.objects.create(
-                        flow=flow,
-                        content=content,
-                        original_link=original_link,
-                        original_date=original_date,
-                        source_url=source_url,
-                        source_id=source_id,
-                        status=PostStatus.DRAFT,
-                        scheduled_time=scheduled_time
-                    )
-                    
-                    for media in media_list:
-                        media_type = media.get("type")
-                        local_path = media.get("path")
-                        if not local_path or not media_type:
-                            continue
-
-                        if media_type == MediaType.IMAGE.value:
-                            self._save_image_sync(post, local_path)
-                        elif media_type == MediaType.VIDEO.value:
-                            self._save_video_sync(post, local_path)
-                    
-                    return post
-
-            return await _create_post_and_media()
+            return await self._create_post_with_media_transaction(
+                flow=flow,
+                content=content,
+                media_list=media_list,
+                original_link=original_link,
+                original_date=original_date,
+                source_url=source_url,
+                source_id=source_id,
+                scheduled_time=scheduled_time
+            )
 
         except IntegrityError as e:
-            if isinstance(e.__cause__, UniqueViolation):
-                logging.warning(f"Duplicate post detected (source_id: {source_id})")
-                return await Post.objects.filter(source_id=source_id).afirst()
-            logging.error(f"Post creation error: {str(e)}")
-            raise
+            return await self._handle_integrity_error(e, source_id)
         except Exception as e:
             logging.error(f"Unexpected error: {str(e)}")
             raise
 
-    def _save_image_sync(self, post: Post, image_path: str) -> bool:
-        try:
-            ext = os.path.splitext(image_path)[1] or '.jpg'
-            filename = f"{uuid.uuid4()}{ext}"
-            
-            permanent_path = os.path.join('images', filename)
-            os.makedirs(os.path.dirname(permanent_path), exist_ok=True)
-            shutil.copy(image_path, permanent_path)
-            
-            order = post.images.count()
-            PostImage.objects.create(
-                post=post,
-                image=permanent_path,
-                order=order
-            )
-            return True
-        except Exception as e:
-            logging.error(f"Failed to save image: {str(e)}")
-            return False
+    async def _post_exists(self, source_id: str) -> bool:
+        exists = await Post.objects.filter(source_id=source_id).aexists()
+        if exists:
+            logging.warning(f"Duplicate post skipped: {source_id}")
+        return exists
 
-    def _save_video_sync(self, post: Post, video_path: str) -> bool:
+    async def _create_post_with_media_transaction(
+        self,
+        flow: Flow,
+        content: str,
+        media_list: List[dict],
+        original_link: str,
+        original_date: datetime,
+        source_url: str,
+        source_id: str,
+        scheduled_time: Optional[datetime] = None
+    ) -> Post:
+        @sync_to_async
+        def _transaction():
+            with transaction.atomic():
+                post = self._create_post(
+                    flow=flow,
+                    content=content,
+                    original_link=original_link,
+                    original_date=original_date,
+                    source_url=source_url,
+                    source_id=source_id,
+                    scheduled_time=scheduled_time
+                )
+                self._process_media_list(post, media_list)
+                return post
+        
+        return await _transaction()
+
+    def _create_post(
+        self,
+        flow: Flow,
+        content: str,
+        original_link: str,
+        original_date: datetime,
+        source_url: str,
+        source_id: str,
+        scheduled_time: Optional[datetime] = None
+    ) -> Post:
+        return Post.objects.create(
+            flow=flow,
+            content=content,
+            original_link=original_link,
+            original_date=original_date,
+            source_url=source_url,
+            source_id=source_id,
+            status=PostStatus.DRAFT,
+            scheduled_time=scheduled_time
+        )
+
+    def _process_media_list(self, post: Post, media_list: List[dict]):
+        for media in media_list:
+            try:
+                self._process_single_media(post, media)
+            except Exception as e:
+                logging.error(f"Failed to process media: {str(e)}")
+                continue
+
+    def _process_single_media(self, post: Post, media: dict):
+        media_type = media.get("type")
+        local_path = media.get("path")
+        
+        if not local_path or not media_type:
+            return
+
+        permanent_path = self._store_media_permanently(
+            local_path,
+            'images' if media_type == MediaType.IMAGE.value else 'videos'
+        )
+
+        if media_type == MediaType.IMAGE.value:
+            self._create_post_image(post, permanent_path)
+        elif media_type == MediaType.VIDEO.value:
+            self._update_post_video(post, permanent_path)
+
+    def _create_post_image(self, post: Post, image_path: str):
+        PostImage.objects.create(
+            post=post,
+            image=image_path,
+            order=post.images.count()
+        )
+
+    def _update_post_video(self, post: Post, video_path: str):
+        post.video = video_path
+        post.save()
+
+    async def _handle_integrity_error(self, error: IntegrityError, source_id: str) -> Optional[Post]:
+        if isinstance(error.__cause__, UniqueViolation):
+            logging.warning(f"Duplicate post detected (source_id: {source_id})")
+            return await Post.objects.filter(source_id=source_id).afirst()
+        logging.error(f"Database error: {str(error)}")
+        raise error
+
+    def _store_media_permanently(self, temp_path: str, media_type: str) -> str:
         try:
-            ext = os.path.splitext(video_path)[1] or '.mp4'
+            media_dir = 'posts/images' if media_type == 'images' else 'posts/videos'
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
+            
+            ext = os.path.splitext(temp_path)[1] or ('.jpg' if media_type == 'images' else '.mp4')
             filename = f"{uuid.uuid4()}{ext}"
+            permanent_path = os.path.join(media_dir, filename)
             
-            permanent_path = os.path.join('videos', filename)
-            os.makedirs(os.path.dirname(permanent_path), exist_ok=True)
-            shutil.copy(video_path, permanent_path)
-            
-            post.video = permanent_path
-            post.save()
-            return True
+            shutil.copy2(temp_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
+            return permanent_path
         except Exception as e:
-            logging.error(f"Failed to save video: {str(e)}")
-            return False
-        
-    async def _store_media_permanently(self, temp_path: str, media_type: str) -> str:
-        media_dir = 'posts/images' if media_type == 'images' else 'posts/videos'
-        os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
-        
-        ext = os.path.splitext(temp_path)[1]
-        filename = f"{uuid.uuid4()}{ext}"
-        permanent_path = os.path.join(media_dir, filename)
-        
-        shutil.copy2(temp_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
-        return permanent_path
+            logging.error(f"Failed to store media: {str(e)}")
+            raise
 
     async def get(self, post_id: int) -> Post:
         try:
