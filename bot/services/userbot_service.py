@@ -15,6 +15,7 @@ from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.errors import SessionPasswordNeededError
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO
+from admin_panel.admin_panel.models import PostImage, Post
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
@@ -123,7 +124,10 @@ class UserbotService:
                                 continue
                             
                             chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
-                            source_id = f"telegram_{chat_id}_{msg.id}"  
+                            source_id = f"telegram_{chat_id}_{msg.id}"
+                            if await Post.objects.filter(source_id=source_id).aexists():
+                                logging.info(f"Пропускаем существующий пост: {source_id}")
+                                continue
                             if hasattr(msg, 'grouped_id') and msg.grouped_id:
                                 source_id = f"telegram_{chat_id}_album_{msg.grouped_id}"
                             if hasattr(msg, 'grouped_id') and msg.grouped_id:
@@ -135,6 +139,7 @@ class UserbotService:
                                 post_data['source_id'] = source_id
 
                             if post_data:
+
                                 result.append(post_data)
                                 if len(result) >= limit:
                                     break

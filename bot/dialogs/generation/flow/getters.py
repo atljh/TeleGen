@@ -28,7 +28,18 @@ async def send_media_album(
     bot = dialog_manager.middleware_data['bot']
     chat_id = dialog_manager.middleware_data['event_chat'].id
     message = dialog_manager.event.message
-    
+
+    message_ids = dialog_manager.dialog_data.get("message_ids", [])
+    if message_ids:
+        bot = dialog_manager.middleware_data['bot']
+        chat_id = dialog_manager.middleware_data['event_chat'].id
+        for msg_id in message_ids:
+            try:
+                await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            except:
+                pass
+        dialog_manager.dialog_data["message_ids"] = []
+
     try:
         images = post_data.get('images', [])[:10]
         if not images:
