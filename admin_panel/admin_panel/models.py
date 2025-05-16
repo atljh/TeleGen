@@ -204,7 +204,13 @@ class Post(models.Model):
     class Meta:
         verbose_name = "Пост"
         verbose_name_plural = "Пости"
-
+        constraints = [
+            models.UniqueConstraint(
+                fields=['source_id'],
+                name='unique_source_id',
+                condition=models.Q(source_id__isnull=False)
+            )
+        ]
 
 class Draft(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='drafts', verbose_name="Користувач")

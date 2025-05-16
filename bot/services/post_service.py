@@ -80,12 +80,14 @@ class PostService:
             return []
 
         posts_dto = await self.userbot_service.get_last_posts(flow)
-
-        # posts_dto = await self.web_service.get_last_posts(flow)
-
         generated_posts = []
+
         for post_dto in posts_dto:
             try:
+                if await Post.objects.filter(source_id=post_dto.source_id).aexists():
+                    logging.info(f"Skipping duplicate post: {post_dto.source_id}")
+                    continue
+
                 media_list = [
                     {'path': img.url, 'type': 'image', 'order': img.order}
                     for img in post_dto.images
@@ -96,17 +98,20 @@ class PostService:
                         'type': 'video',
                         'order': len(post_dto.images)
                     })
+
                 post = await self.post_repo.create_with_media(
                     flow=flow,
                     content=post_dto.content,
                     source_url=post_dto.source_url,
                     original_date=post_dto.original_date,
                     original_link=post_dto.original_link,
+                    source_id=post_dto.source_id,
                     media_list=media_list
                 )
                 
-                db_post_dto = await sync_to_async(PostDTO.from_orm)(post)
-                generated_posts.append(db_post_dto)
+                if post:
+                    db_post_dto = await sync_to_async(PostDTO.from_orm)(post)
+                    generated_posts.append(db_post_dto)
 
             except Exception as e:
                 logging.error(f"Post creation failed: {str(e)}")

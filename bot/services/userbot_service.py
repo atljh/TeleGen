@@ -118,19 +118,30 @@ class UserbotService:
                     messages = await client.get_messages(entity, limit=remaining_limit * 2)
 
                     for msg in messages:
-                        if hasattr(msg, 'grouped_id') and msg.grouped_id in processed_albums:
-                            continue
+                        try:
+                            if hasattr(msg, 'grouped_id') and msg.grouped_id in processed_albums:
+                                continue
+                            
+                            chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
+                            source_id = f"telegram_{chat_id}_{msg.id}"  
+                            if hasattr(msg, 'grouped_id') and msg.grouped_id:
+                                source_id = f"telegram_{chat_id}_album_{msg.grouped_id}"
+                            if hasattr(msg, 'grouped_id') and msg.grouped_id:
+                                processed_albums.add(msg.grouped_id)
+                                post_data = await self._process_album(client, entity, msg, source['link'])
+                                post_data['source_id'] = source_id
+                            else:
+                                post_data = await self._process_message(client, msg, source['link'])
+                                post_data['source_id'] = source_id
 
-                        if hasattr(msg, 'grouped_id') and msg.grouped_id:
-                            processed_albums.add(msg.grouped_id)
-                            post_data = await self._process_album(client, entity, msg, source['link'])
-                        else:
-                            post_data = await self._process_message(client, msg, source['link'])
-                        
-                        if post_data:
-                            result.append(post_data)
-                            if len(result) >= limit:
-                                break
+                            if post_data:
+                                result.append(post_data)
+                                if len(result) >= limit:
+                                    break
+
+                        except Exception as msg_error:
+                            logging.error(f"Error processing message {msg.id}: {str(msg_error)}")
+                            continue
 
                 except Exception as e:
                     logging.error(f"Error processing source {source['link']}: {str(e)}")
@@ -345,6 +356,8 @@ class EnhancedUserbotService(UserbotService):
             post_dto.original_date = raw_post['original_date']
         if 'source_url' in raw_post:
             post_dto.source_url = raw_post['source_url']   
+        if 'source_id' in raw_post:
+            post_dto.source_id = raw_post['source_id']
 
         try:
             processed_text = await self._process_content(post_dto.content, flow)
@@ -355,6 +368,7 @@ class EnhancedUserbotService(UserbotService):
                 'content': processed_text,
                 'flow_id': flow.id,
                 'source_url': post_dto.source_url,
+                'source_id': post_dto.source_id,
                 'original_link': post_dto.original_link,
                 'original_date': post_dto.original_date
             })

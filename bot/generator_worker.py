@@ -11,17 +11,10 @@ from bot.containers import Container
 from bot.utils.notifications import send_telegram_notification
 
 def setup_logging(flow_id: int):
-    log_dir = Path("/app/logs/generation")
-    log_dir.mkdir(exist_ok=True)
-    
+
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    
-    file_handler = RotatingFileHandler(
-        log_dir / f"flow_{flow_id}.log",
-        maxBytes=5*1024*1024,
-        backupCount=3
-    )
+
     
     class FlushingStreamHandler(logging.StreamHandler):
         def emit(self, record):
@@ -35,7 +28,7 @@ def setup_logging(flow_id: int):
         datefmt='%d.%m.%Y %H:%M:%S'
     )
     
-    for handler in [file_handler, console_handler]:
+    for handler in [console_handler]:
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 

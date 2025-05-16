@@ -151,6 +151,7 @@ class PostDTO(BaseModel):
             status=status,
             original_link=raw_post.get('original_link'),
             original_date=raw_post.get('original_date'),
+            source_id=raw_post.get('source_id'),
             flow_id=0,
             created_at=datetime.now()
         )
@@ -177,6 +178,7 @@ class PostDTO(BaseModel):
             source_url=post.source_url,
             original_link=post.original_link,
             original_date=post.original_date,
+            source_id=post.source_id,
             publication_date=post.publication_date,
             status=status,
             created_at=post.created_at,

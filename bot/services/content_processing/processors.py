@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 
 import openai
 from langdetect import detect
-from psycopg2.errors import UniqueViolation
+from psycopg.errors import UniqueViolation
 
 from bot.database.dtos.dtos import FlowDTO
 from bot.database.exceptions import AISettingsNotFoundError
