@@ -231,18 +231,21 @@ class PostRepository:
         await post.asave()
         return post
 
-    async def get_posts_by_flow_id(self, flow_id: int) -> List[PostDTO]:
-        posts = await self._fetch_posts_from_db(flow_id)
+    async def get_posts_by_flow_id(self, flow_id: int, status: PostStatus = None) -> List[PostDTO]:
+        posts = await self._fetch_posts_from_db(flow_id, status=status)
         await self._preload_media_for_posts(posts)
         return posts
     
     @sync_to_async
-    def _fetch_posts_from_db(self, flow_id: int) -> List[PostDTO]:
-        posts = Post.objects.filter(
-            flow_id=flow_id,
-            status__in=[Post.PUBLISHED, Post.DRAFT]
-        )\
-            .select_related('flow')\
+    def _fetch_posts_from_db(self, flow_id: int, status: PostStatus = None) -> List[PostDTO]:
+        posts = Post.objects.filter(flow_id=flow_id)
+        
+        if status is not None:
+            posts = posts.filter(status=status)
+        else:
+            posts = posts.filter(status__in=[PostStatus.PUBLISHED, PostStatus.DRAFT])
+        
+        posts = posts.select_related('flow')\
             .prefetch_related(
                 Prefetch('images', queryset=PostImage.objects.only('image', 'order').order_by('order'))
             )\

@@ -1,20 +1,32 @@
 from aiogram_dialog import Dialog, Window
+from aiogram.enums import ParseMode 
+from aiogram.types import CallbackQuery
+from aiogram_dialog import DialogManager
+from aiogram_dialog import Dialog, Window
+from aiogram_dialog.widgets.media import DynamicMedia
+from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, Row, Column, Back, Calendar
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import TextInput, MessageInput
-from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column
+from aiogram_dialog.widgets.kbd import (
+    Select, ScrollingGroup, Button, Row, Button, Group,
+    StubScroll, NumberedPager, Cancel, Back, Calendar
+)
 from aiogram.enums import ParseMode
 
 from aiogram_dialog import DialogManager
 
 from datetime import datetime, timedelta
 
-from .states import BufferMenu
+from bot.dialogs.buffer.getters import get_user_channels_data, paging_getter, send_media_album
+
+from bot.dialogs.buffer.states import BufferMenu
+from bot.dialogs.generation.callbacks import go_back_to_channels
 from .callbacks import (
-    publish_now,
-    on_text_edited,
-    open_calendar,
-    schedule_post
+    on_channel_selected,
+    on_edit_post,
+    on_post_info,
+    on_publish_post,
 )
 
 async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
@@ -29,6 +41,16 @@ async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
     }
 
 def create_buffer_dialog():
+    async def on_page_changed(
+        callback: CallbackQuery, 
+        widget,
+        manager: DialogManager, 
+    ):
+        data = await paging_getter(manager)
+        if data["post"].get("is_album"):
+            await send_media_album(manager, data["post"])
+            return
+
     return Dialog(
         Window(
             Const("Оберiть канал"),
@@ -47,32 +69,25 @@ def create_buffer_dialog():
             getter=get_user_channels_data,
         ),
         Window(
-            Format(
-                "📌 <b>Буфер публікацій</b>\n\n"
-                "Текст: {post_text}\n"
-                "Медіа: {has_media}\n"
-                "Статус: {is_scheduled}\n\n"
-                "Оберіть дію:"
+            Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
+            Format("|", when=lambda data, widget, manager: data["post"].get("is_album")),
+            DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
+            StubScroll(id="stub_scroll", pages="pages", on_page_changed=on_page_changed),
+            Group(
+                NumberedPager(scroll="stub_scroll"),
+                width=5,
+            ),
+            Group(
+                Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(Const("ℹ️ Пост iнфо"), id="post_info", on_click=on_post_info, when=lambda data, widget, manager: data["post"].get("content")),
+                width=2
             ),
             Row(
-                Button(Const("✅ Опублікувати зараз"), id="publish_now", on_click=publish_now),
-                Button(Const("📅 Запланувати"), id="schedule_publish", on_click=open_calendar),
+                Button(Const("🔙 Назад"), id='go_back_to_channels', on_click=go_back_to_channels)
             ),
-            Row(
-                Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_text_edited),
-                Button(Const("🗑 Видалити чернетку"), id="delete_draft"),
-            ),
-            state=BufferMenu.preview,
+            getter=paging_getter,
+            state=BufferMenu.channel_main,
             parse_mode=ParseMode.HTML,
-            getter=get_buffer_data
-        ),
-
-        Window(
-            Const("📅 Виберіть дату публікації:"),
-            Calendar(id="calendar", on_click=schedule_post),
-            Row(
-                Back(Const("◀️ Скасувати")),
-            ),
-            state=BufferMenu.set_schedule,
         ),
     )

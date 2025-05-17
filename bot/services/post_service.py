@@ -232,7 +232,6 @@ class PostService:
         except Exception as e:
             raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
 
-
     async def get_post(self, post_id: int) -> PostDTO:
         post = await self.post_repo.get(post_id)
 
@@ -242,7 +241,7 @@ class PostService:
         images_qs = await sync_to_async(lambda: list(post.images.all().order_by('order')))()
         return PostDTO.from_orm(post, images=images_qs)
     
-    async def get_posts_by_flow_id(self, flow_id: int) -> list[PostDTO]:
+    async def get_posts_by_flow_id(self, flow_id: int, status: PostStatus = None) -> list[PostDTO]:
         posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id)
         return posts
 
@@ -286,7 +285,6 @@ class PostService:
             raise PostNotFoundError(f"Post with id {post_id} not found")
         await self.post_repo.delete(post_id)
 
-
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         if scheduled_time < datetime.now():
             raise InvalidOperationError("Не можна запланувати пост у минулому")
@@ -322,3 +320,4 @@ class PostService:
                 logging.error(f"Failed to publish scheduled post {post.id}: {e}")
                 
         return published
+    

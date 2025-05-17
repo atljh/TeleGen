@@ -4,7 +4,7 @@ from aiogram.dispatcher.dispatcher import Dispatcher
 from aiogram_dialog import DialogManager, StartMode
 
 from dialogs.settings.states import SettingsMenu
-from dialogs.buffer.states import BufferMenu
+from bot.dialogs.buffer.states import BufferMenu
 from dialogs.generation.states import GenerationMenu
 from dialogs.support.states import SupportMenu
 
@@ -21,7 +21,7 @@ async def handle_generation(message: types.Message, dialog_manager: DialogManage
 
 @router.message(F.text == "📂 Буфер")
 async def handle_buffer(message: types.Message, dialog_manager: DialogManager):
-    await dialog_manager.start(state=BufferMenu.preview, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(state=BufferMenu.main, mode=StartMode.RESET_STACK)
 
 @router.message(F.text == "❓ Допомога")
 async def handle_support(message: types.Message, dialog_manager: DialogManager):
