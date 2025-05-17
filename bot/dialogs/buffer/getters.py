@@ -111,9 +111,10 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
-    dialog_manager.dialog_data['channel_flow'] = start_data.get("channel_flow")
-    dialog_manager.dialog_data['selected_channel'] = start_data.get("selected_channel")
-
+    selected_channel = dialog_data.get("selected_channel")
+    
+    dialog_manager.dialog_data["selected_channel"] = selected_channel
+    dialog_manager.dialog_data['channel_flow'] = dialog_data.get("channel_flow")
 
     data = {
         "current_page": 1,

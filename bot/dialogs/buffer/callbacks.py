@@ -21,6 +21,32 @@ logger = logging.getLogger()
 logger = logging.getLogger(__name__)
 
 
+async def go_back_to_channels(
+    callback: CallbackQuery,
+    button: Button,
+    manager: DialogManager
+):
+    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get('selected_channel')
+    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get('channel_flow')
+    messages = manager.dialog_data.get("message_ids")
+    bot = manager.middleware_data['bot']
+
+    if messages:
+        for message_id in messages:
+            bot = manager.middleware_data['bot']
+            chat_id = manager.middleware_data['event_chat'].id
+            await bot.delete_message(chat_id=chat_id, message_id=message_id)
+            manager.dialog_data["message_ids"] = []
+
+    await manager.start(
+        BufferMenu.main,
+        data={
+            "selected_channel": channel,
+            "channel_flow": channel_flow,
+            "item_id": str(channel.id)
+        },
+    )
+
 async def on_channel_selected(
     callback: CallbackQuery,
     widget,
@@ -96,22 +122,19 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     dialog_data = await paging_getter(manager)
     start_data = manager.start_data or {}
 
+    channel = manager.dialog_data.get('selected_channel')
+
     current_post = dialog_data["post"]
     post_id = current_post["id"]
-    
-    channel = start_data.get("selected_channel") or dialog_data.get("selected_channel")
     
     if not channel:
         await callback.answer("Канал не вибрано!")
         return
     
     post_service = Container.post_service()
-    is_album = False
     
     try:
         updated_post = await post_service.publish_post(post_id, channel.channel_id)
-
-        is_album = len(updated_post.images) > 1
         
         manager.dialog_data["post"] = {
             **current_post,

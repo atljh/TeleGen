@@ -18,11 +18,14 @@ from aiogram_dialog import DialogManager
 
 from datetime import datetime, timedelta
 
-from bot.dialogs.buffer.getters import edit_post_getter, get_user_channels_data, paging_getter, post_info_getter, send_media_album
+from bot.dialogs.buffer.getters import (
+    edit_post_getter, get_user_channels_data,
+    paging_getter, post_info_getter, send_media_album
+)
 
 from bot.dialogs.buffer.states import BufferMenu
-from bot.dialogs.generation.callbacks import go_back_to_channels
 from .callbacks import (
+    go_back_to_channels,
     on_back_to_posts,
     on_channel_selected,
     on_edit_media,
