@@ -138,7 +138,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         post_service = Container.post_service()
         try:
             raw_posts = await post_service.get_posts_by_flow_id(flow.id, status=PostStatus.SCHEDULED)
-            logging.info(raw_posts)
             posts = []
             
             for idx, post in enumerate(raw_posts):

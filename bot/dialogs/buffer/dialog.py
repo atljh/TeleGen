@@ -18,7 +18,7 @@ from aiogram_dialog import DialogManager
 
 from datetime import datetime, timedelta
 
-from bot.dialogs.buffer.getters import edit_post_getter, get_user_channels_data, paging_getter, send_media_album
+from bot.dialogs.buffer.getters import edit_post_getter, get_user_channels_data, paging_getter, post_info_getter, send_media_album
 
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.callbacks import go_back_to_channels
@@ -93,6 +93,22 @@ def create_buffer_dialog():
             getter=paging_getter,
             state=BufferMenu.channel_main,
             parse_mode=ParseMode.HTML,
+        ),
+        Window(
+            Format(
+                "<b>Інформація поста</b>\n\n"
+                "<b>Статус:</b> {status}\n"
+                "<b>Джерело:</b> {source_url}\n"
+                "<b>Посилання:</b> {original_link}\n"
+                "<b>Дата публікації:</b> {original_date}"
+            ),
+            Row(
+                Back(Const("🔙 Назад")),
+            ),
+            getter=post_info_getter,
+            state=BufferMenu.post_info,
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
         ),
         Window(
             Format("<b>✏️ Редагування поста</b>\n\n"

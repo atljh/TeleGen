@@ -79,7 +79,7 @@ async def on_back_to_posts(
     manager.dialog_data.pop("all_posts", None)
     await paging_getter(manager)
     
-    await manager.switch_to(FlowMenu.posts_list)
+    await manager.switch_to(BufferMenu.channel_main)
     
     scroll = manager.find("stub_scroll")
     if scroll:
