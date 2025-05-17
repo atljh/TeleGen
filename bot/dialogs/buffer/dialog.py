@@ -18,15 +18,19 @@ from aiogram_dialog import DialogManager
 
 from datetime import datetime, timedelta
 
-from bot.dialogs.buffer.getters import get_user_channels_data, paging_getter, send_media_album
+from bot.dialogs.buffer.getters import edit_post_getter, get_user_channels_data, paging_getter, send_media_album
 
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.callbacks import go_back_to_channels
 from .callbacks import (
+    on_back_to_posts,
     on_channel_selected,
+    on_edit_media,
     on_edit_post,
+    on_edit_text,
     on_post_info,
     on_publish_post,
+    process_edit_input,
 )
 
 async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
@@ -89,5 +93,25 @@ def create_buffer_dialog():
             getter=paging_getter,
             state=BufferMenu.channel_main,
             parse_mode=ParseMode.HTML,
+        ),
+        Window(
+            Format("<b>✏️ Редагування поста</b>\n\n"
+                "\n{content}\n\n"
+                ),
+            DynamicMedia("media"),
+            
+            Row(
+                Button(Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text),
+                Button(Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media),
+            ),
+            Row(
+                Button(Const("🔙 Назад"), id='on_back_to_posts', on_click=on_back_to_posts)
+            ),
+            
+            MessageInput(process_edit_input),
+            
+            getter=edit_post_getter,
+            state=BufferMenu.edit_post,
+            parse_mode="HTML"
         ),
     )
