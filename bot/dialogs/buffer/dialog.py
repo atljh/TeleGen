@@ -2,8 +2,9 @@ from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Button, Row, Column, Back, Calendar
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import TextInput, MessageInput
+from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column
 from aiogram.enums import ParseMode
-from aiogram.types import Message, CallbackQuery, ContentType
+
 from aiogram_dialog import DialogManager
 
 from datetime import datetime, timedelta
@@ -29,6 +30,22 @@ async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
 
 def create_buffer_dialog():
     return Dialog(
+        Window(
+            Const("Оберiть канал"),
+            Group(
+                Select(
+                    text=Format("{item.name}"),
+                    item_id_getter=lambda channel: channel.id,
+                    items="channels",
+                    id="channel_select",
+                    on_click=on_channel_selected,
+                ),
+                width=2,
+            ),
+            state=BufferMenu.main,
+            parse_mode=ParseMode.HTML,
+            getter=get_user_channels_data,
+        ),
         Window(
             Format(
                 "📌 <b>Буфер публікацій</b>\n\n"
