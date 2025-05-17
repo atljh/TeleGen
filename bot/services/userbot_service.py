@@ -116,30 +116,39 @@ class UserbotService:
                             logging.error(f"Failed to get entity for {source['link']}: {e}")
                             continue
 
-                    messages = await client.get_messages(entity, limit=remaining_limit * 2)
-
+                    messages = await client.get_messages(
+                        entity, 
+                        limit=remaining_limit,
+                    )
                     for msg in messages:
                         try:
-                            if hasattr(msg, 'grouped_id') and msg.grouped_id in processed_albums:
-                                continue
-                            
                             chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
-                            source_id = f"telegram_{chat_id}_{msg.id}"
-                            if await Post.objects.filter(source_id=source_id).aexists():
-                                logging.info(f"Пропускаем существующий пост: {source_id}")
-                                continue
+                            
                             if hasattr(msg, 'grouped_id') and msg.grouped_id:
+                                if msg.grouped_id in processed_albums:
+                                    continue
+                                    
                                 source_id = f"telegram_{chat_id}_album_{msg.grouped_id}"
-                            if hasattr(msg, 'grouped_id') and msg.grouped_id:
+                                
+                                if await Post.objects.filter(source_id=source_id).aexists():
+                                    logging.info(f"Пропускаем существующий альбом: {source_id}")
+                                    processed_albums.add(msg.grouped_id)
+                                    continue
+                                    
                                 processed_albums.add(msg.grouped_id)
                                 post_data = await self._process_album(client, entity, msg, source['link'])
                                 post_data['source_id'] = source_id
                             else:
+                                source_id = f"telegram_{chat_id}_{msg.id}"
+                                
+                                if await Post.objects.filter(source_id=source_id).aexists():
+                                    logging.info(f"Пропускаем существующий пост: {source_id}")
+                                    continue
+                                    
                                 post_data = await self._process_message(client, msg, source['link'])
                                 post_data['source_id'] = source_id
 
                             if post_data:
-
                                 result.append(post_data)
                                 if len(result) >= limit:
                                     break
