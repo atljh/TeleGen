@@ -88,7 +88,9 @@ class Container(containers.DeclarativeContainer):
 
     web_service = providers.Factory(
         WebService,
-        openai_key='ss'
+        aisettings_service=ai_settings_service,
+        user_service=user_service,
+        openai_key=os.getenv("OPENAI_API_KEY")
     )
 
     post_service = providers.Factory(
