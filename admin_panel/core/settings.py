@@ -118,13 +118,13 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_WORKER_CONCURRENCY = 10
 
-# CELERY_BEAT_SCHEDULE = {
-#     'check-scheduled-posts': {
-#         'task': 'bot.tasks.check_scheduled_posts',
-#         'schedule': 60.0,
-#     },
-#     'check-flows-generation': {
-#         'task': 'bot.tasks.check_flows_generation',
-#         'schedule': 1800.0,
-#     },
-# }
+CELERY_BEAT_SCHEDULE = {
+    'check-scheduled-posts': {
+        'task': 'bot.tasks.check_scheduled_posts',
+        'schedule': 1800.0,
+    },
+    'check-flows-generation': {
+        'task': 'bot.tasks.check_flows_generation',
+        'schedule': 1800.0,
+    },
+}
