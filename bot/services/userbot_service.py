@@ -117,6 +117,7 @@ class UserbotService:
                     entity = await self._get_entity(client, source)
                     if not entity:
                         continue
+                    
 
                     messages = await client.get_messages(
                         entity, 
@@ -125,18 +126,17 @@ class UserbotService:
 
                     for msg in messages:
                         try:
-                            post_data, msg_count = await self._process_message_or_album(
+                            proccess_result = await self._process_message_or_album(
                                 client, 
                                 entity, 
                                 msg, 
                                 source['link'], 
                                 processed_albums
                             )
-                            if post_data:
+                            if proccess_result:
+                                post_data, msg_count = proccess_result
                                 result.append(post_data)
-                                logging.info(msg_count)
-                                message_count += msg_count + 1
-                                source_limits[source['link']] -= msg_count
+                                source_limits[source['link']] -= 1
                                 if message_count >= limit:
                                     break
 
@@ -192,7 +192,7 @@ class UserbotService:
                 return None, 0
 
             post_data['source_id'] = source_id
-            return post_data, post_data.get("album_size", 1) + 1
+            return post_data, post_data.get("album_size", 1)
         else:
             source_id = f"telegram_{chat_id}_{msg.id}"
 
