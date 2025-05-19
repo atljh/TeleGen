@@ -7,8 +7,7 @@ import tempfile
 import hashlib
 import feedparser
 from datetime import datetime
-from typing import Optional, List, Dict, AsyncGenerator
-from contextlib import asynccontextmanager
+from typing import Optional, List, Dict
 from pydantic import BaseModel
 
 from crawl4ai import AsyncWebCrawler
