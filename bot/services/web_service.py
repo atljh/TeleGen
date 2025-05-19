@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import asyncio
@@ -8,7 +9,9 @@ from typing import Optional, List, Dict, AsyncGenerator
 from contextlib import asynccontextmanager
 
 from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
+from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, LLMConfig, CacheMode
+from crawl4ai.extraction_strategy import LLMExtractionStrategy
+
 from bot.database.dtos.dtos import FlowDTO, PostDTO
 from admin_panel.admin_panel.models import PostImage, Post
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
@@ -78,47 +81,88 @@ class WebService:
 
     async def _process_web_source(self, source: Dict, limit: int) -> Optional[Dict]:
         try:
-            async with AsyncWebCrawler(config=BrowserConfig()) as crawler:
-                result = await crawler.arun(
-                    url=source['link'],
-                    config=BrowserConfig(
-                        enable_js=True,
-                        wait_for_page_load=2,
-                        scroll_to_bottom=True,
-                        extract_metadata=True
-                    )
-                )
-
-            # Обрабатываем контент страницы
-            content = result.markdown or result.cleaned_text or result.raw_html
-            if not content:
+            web_post = await self._parse_with_llm(source['link'])
+            if not web_post:
                 return None
 
-            # Извлекаем медиа (изображения/видео)
             media_items = []
-            if result.metadata and result.metadata.get('images'):
+            if web_post.images:
                 media_items = [
                     {'type': 'image', 'url': img, 'file_id': hash(img)}
-                    for img in result.metadata['images'][:5]  # Берем первые 5 изображений
+                    for img in web_post.images[:5]
                 ]
 
-            # Загружаем медиа файлы
             downloaded_media = await self._download_media_batch(media_items)
 
             return {
-                'text': content[:5000],  # Ограничиваем размер текста
+                'text': web_post.content[:10000],
                 'media': downloaded_media,
                 'is_album': False,
                 'album_size': 0,
-                'original_link': source['link'],
-                'original_date': datetime.now(),
+                'original_link': web_post.url,
+                'original_date': web_post.date or datetime.now(),
                 'source_url': source['link'],
-                'source_id': f"web_{hash(source['link'])}"
+                'source_id': f"web_{hash(web_post.url)}",
+                'title': web_post.title
             }
 
         except Exception as e:
             self.logger.error(f"Error processing web source {source['link']}: {str(e)}")
             return None
+
+    async def _parse_with_llm(self, url: str) -> Optional[Post]:
+        llm_strat = LLMExtractionStrategy(
+            llmConfig=LLMConfig(
+                provider="openai/gpt-4o",
+                api_token=self.openai_key
+            ),
+            schema=Post.model_json_schema(),
+            extraction_type="schema",
+            instruction=(
+                "From this HTML page, extract structured content with fields:\n"
+                "- title (main headline)\n"
+                "- content (full article text, 5-10 paragraphs)\n"
+                "- date (publication date if available)\n"
+                "- source (website or publisher name)\n"
+                "- url (original page URL)\n"
+                "- images (list of relevant image URLs)\n"
+                "Keep the content detailed and well-structured. "
+                "Respond only with valid JSON matching the schema."
+            ),
+            chunk_token_threshold=2000,
+            apply_chunking=True,
+            input_format="html",
+            extra_args={
+                "temperature": 0.2,
+                "max_tokens": 2000,
+                "top_p": 0.9
+            }
+        )
+
+        crawl_config = CrawlerRunConfig(
+            extraction_strategy=llm_strat,
+            cache_mode=CacheMode.BYPASS,
+            browser_config=BrowserConfig(
+                headless=True,
+                enable_js=True,
+                wait_for_page_load=3,
+                scroll_to_bottom=True
+            )
+        )
+
+        try:
+            async with AsyncWebCrawler() as crawler:
+                result = await crawler.arun(url=url, config=crawl_config)
+                if result.success:
+                    parsed_data = json.loads(result.extracted_content)
+                    return Post(**parsed_data)
+                else:
+                    self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
+                    return None
+        except Exception as e:
+            self.logger.error(f"Error during LLM parsing of {url}: {str(e)}")
+            return None
+
 
     async def _download_media_batch(self, media_items: List[Dict]) -> List[Dict]:
         if not media_items:
