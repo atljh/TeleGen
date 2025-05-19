@@ -90,6 +90,9 @@ class UserbotService:
         sources: List[Dict],
         limit: int = 10
     ) -> List[Dict]:
+        telegram_sources = [s for s in sources if s.get('type') == 'telegram']
+        if not telegram_sources:
+            return []
         result = []
         processed_albums = set()
         source_limits = self._calculate_source_limits(sources, limit)
@@ -99,7 +102,7 @@ class UserbotService:
         logging.info(source_limits)
 
         async with self.get_client() as client:
-            for source in sources:
+            for source in telegram_sources:
                 if message_count >= limit:
                     break
 
