@@ -8,10 +8,10 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 from django.conf import settings
-from aiogram.types import FSInputFile, URLInputFile, InputMediaPhoto, InputMediaVideo
+from aiogram.types import FSInputFile, URLInputFile, InputMediaPhoto
+
 from admin_panel.admin_panel.models import PostImage, Post
 from bot.database.dtos import PostDTO, PostStatus
-from bot.database.dtos.dtos import ContentLength
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 

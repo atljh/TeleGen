@@ -66,7 +66,7 @@ class WebService:
             raw_posts = await self._fetch_rss_posts(rss_urls, limit)
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
 
-            self.logger.info(f"Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
+            self.logger.info(f"[WEB] Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
             return processed_posts[:limit]
         except Exception as e:
             self.logger.error(f"Error getting posts: {str(e)}")
