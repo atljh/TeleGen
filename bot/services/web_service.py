@@ -15,7 +15,7 @@ from crawl4ai import AsyncWebCrawler
 from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, LLMConfig, CacheMode
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
-from bot.database.dtos.dtos import FlowDTO, PostDTO
+from bot.database.dtos.dtos import FlowDTO, PostDTO, PostStatus
 from admin_panel.admin_panel.models import PostImage, Post
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
@@ -49,10 +49,11 @@ class WebService:
             start_time = time.time()
             raw_posts = await self._fetch_posts(flow.sources, limit)
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
-            unique_posts = await self._filter_existing_posts(processed_posts)
+            logging.info(f"postss: {len(processed_posts)}")
+            # unique_posts = await self._filter_existing_posts(processed_posts)
             
-            self.logger.info(f"Processed {len(unique_posts)} posts in {time.time() - start_time:.2f}s")
-            return unique_posts[:limit]
+            self.logger.info(f"Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
+            return processed_posts[:limit]
         except Exception as e:
             self.logger.error(f"Error getting posts: {str(e)}", exc_info=True)
             return []
@@ -190,7 +191,7 @@ class WebService:
     async def _parse_with_llm(self, url: str) -> Optional[WebPost]:
         llm_strat = LLMExtractionStrategy(
             llmConfig=LLMConfig(
-                provider="openai/gpt-4o",
+                provider="openai/gpt-4o-mini",
                 api_token=self.openai_key
             ),
             schema=WebPost.model_json_schema(),
@@ -216,26 +217,47 @@ class WebService:
             }
         )
 
+
         crawl_config = CrawlerRunConfig(
             extraction_strategy=llm_strat,
-            cache_mode=CacheMode.BYPASS,
-            browser_config=BrowserConfig(
-                headless=True,
-                enable_js=True,
-                wait_for_page_load=3,
-                scroll_to_bottom=True
-            )
+            cache_mode=CacheMode.BYPASS
         )
 
         try:
             async with AsyncWebCrawler() as crawler:
                 result = await crawler.arun(url=url, config=crawl_config)
-                if result.success:
-                    parsed_data = json.loads(result.extracted_content)
-                    return WebPost(**parsed_data)
-                else:
+
+                if not result.success:
                     self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
                     return None
+
+                try:
+                    parsed_data = json.loads(result.extracted_content)
+                    
+                    if isinstance(parsed_data, list):
+                        if len(parsed_data) > 0:
+                            parsed_data = parsed_data[0]
+                        else:
+                            self.logger.error(f"Empty list returned for {url}")
+                            return None
+                    
+                    if 'url' not in parsed_data:
+                        parsed_data['url'] = url
+                    
+                    if 'images' not in parsed_data:
+                        parsed_data['images'] = []
+                    elif not isinstance(parsed_data['images'], list):
+                        parsed_data['images'] = [parsed_data['images']]
+                    
+                    return WebPost(**parsed_data)
+                    
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Invalid JSON response for {url}: {str(e)}")
+                    return None
+                except Exception as e:
+                    self.logger.error(f"Error parsing LLM response for {url}: {str(e)}")
+                    return None
+                    
         except Exception as e:
             self.logger.error(f"Error during LLM parsing of {url}: {str(e)}")
             return None
@@ -314,6 +336,7 @@ class WebService:
     async def _process_posts_parallel(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
         tasks = []
         for raw_post in raw_posts:
+            logging.info(f"RAW: {raw_post}")
             task = self._safe_process_post(raw_post, flow)
             tasks.append(task)
         
@@ -328,33 +351,60 @@ class WebService:
             return None
 
     async def _process_single_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:
-        post_dto = PostDTO.from_raw_post(raw_post)
-        
-        if not post_dto.content:
-            return None
-
-        if isinstance(post_dto.content, list):
-            post_dto.content = " ".join(filter(None, post_dto.content))
-        
-        post_dto.original_link = raw_post.get('original_link')
-        post_dto.original_date = raw_post.get('original_date')
-        post_dto.source_url = raw_post.get('source_url')
-        post_dto.source_id = raw_post.get('source_id')
-
         try:
+            if not raw_post.get('content'):
+                self.logger.error(f"Post has no content: {raw_post.get('title', 'No title')}")
+                return None
+
+            media_type, images = self._prepare_media(raw_post.get('media', []))
+            
+            post_dto = PostDTO(
+                id=None,
+                flow_id=flow.id,
+                content=raw_post['content'],
+                source_id=raw_post.get('source_id', ''),
+                source_url=raw_post.get('source_url'),
+                publication_date=None,
+                status=PostStatus.DRAFT,
+                original_link=raw_post.get('original_link'),
+                created_at=datetime.now(),
+                original_date=raw_post.get('original_date'),
+                scheduled_time=None,
+                media_type=media_type,
+                media_url=None,
+                images=images,
+                video_url=None
+            )
+
+            # Обрабатываем контент
             processed_text = await self._process_content(post_dto.content, flow)
-            if isinstance(processed_text, list):
-                processed_text = " ".join(filter(None, processed_text))
-                
-            return post_dto.copy(update={
-                'content': processed_text,
-                'flow_id': flow.id,
-                'media_type': self._determine_media_type(raw_post.get('media')),
-                'images': self._prepare_images(raw_post.get('media'))
-            })
+            if not processed_text:
+                return None
+
+            return post_dto.copy(update={'content': processed_text})
+
         except Exception as e:
             self.logger.error(f"Error processing post: {str(e)}")
             return None
+
+    def _prepare_media(self, media_items: List[Dict]) -> tuple:
+        if not media_items:
+            return None, []
+        
+        media_type = None
+        images = []
+        
+        for item in media_items:
+            if item.get('type') == 'image':
+                media_type = 'image'
+                images.append({
+                    'url': item.get('url'),
+                    'path': item.get('path')
+                })
+            elif item.get('type') == 'video':
+                media_type = 'video'
+        
+        return media_type, images
 
     def _determine_media_type(self, media_items: List[Dict]) -> Optional[str]:
         if not media_items:

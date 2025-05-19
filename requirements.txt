@@ -57,3 +57,4 @@ openai
 langdetect
 crawl4ai
 playwright
+feedparser

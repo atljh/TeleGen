@@ -5,7 +5,6 @@ import logging
 from abc import ABC, abstractmethod
 
 import openai
-from langdetect import detect
 from psycopg.errors import UniqueViolation
 
 from bot.database.dtos.dtos import FlowDTO
@@ -146,17 +145,10 @@ class ChatGPTContentProcessor(ContentProcessor):
 
 
     async def _build_system_prompt(self, text: str, flow: FlowDTO) -> str:
-        detected_language = detect(text)
-        
-        language_name = {
-            'uk': 'Ukrainian',
-            'ru': 'Russian',
-            'en': 'English'
-        }.get(detected_language, 'the original language')
 
         rules = [
             "You are a professional post editor.",
-            f"Do not change the language — keep it in {language_name}. No translation.",
+            f"Translate it to Ukranian",
             f"Edit the text according to the following rules:",
             f"1. Keep the original meaning, but improve readability and clarity.",
             f"2. Remove unnecessary links, formatting artifacts, and special characters.",

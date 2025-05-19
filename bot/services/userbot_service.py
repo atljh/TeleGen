@@ -357,8 +357,7 @@ class UserbotService:
                 if 'tmp_path' in locals() and os.path.exists(tmp_path):
                     os.unlink(tmp_path)
                 return None
-
-                
+              
 
 class EnhancedUserbotService(UserbotService):
     def __init__(
