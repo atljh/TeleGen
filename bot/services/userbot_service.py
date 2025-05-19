@@ -5,7 +5,7 @@ import logging
 import tempfile
 from datetime import datetime
 from tqdm.asyncio import tqdm_asyncio
-from typing import Optional, List, Dict, AsyncGenerator, Union
+from typing import Optional, List, Dict, AsyncGenerator, Tuple, Union
 from contextlib import asynccontextmanager
 
 import openai
@@ -86,61 +86,67 @@ class UserbotService:
             await client.disconnect()
 
     async def get_last_posts(
-            self,
-            sources: List[Dict],
-            limit: int = 10
-        ) -> List[Dict]:
-            result = []
-            processed_albums = set()
-            source_limits = self._calculate_source_limits(sources, limit)
-            logging.info('================================================')
-            logging.info(source_limits)
-            async with self.get_client() as client:
-                for source in sources:
-                    if len(result) >= limit:
-                        break
+        self,
+        sources: List[Dict],
+        limit: int = 10
+    ) -> List[Dict]:
+        result = []
+        processed_albums = set()
+        source_limits = self._calculate_source_limits(sources, limit)
+        message_count = 0
 
-                    if source['type'] != 'telegram':
+        logging.info('================================================')
+        logging.info(source_limits)
+
+        async with self.get_client() as client:
+            for source in sources:
+                if message_count >= limit:
+                    break
+
+                if source['type'] != 'telegram':
+                    continue
+
+                try:
+                    remaining_for_source = source_limits[source['link']]
+                    if remaining_for_source <= 0:
                         continue
 
-                    try:
-                        remaining_for_source = source_limits[source['link']]
-                        if remaining_for_source <= 0:
-                            continue
-
-                        entity = await self._get_entity(client, source)
-                        if not entity:
-                            continue
-
-                        messages = await client.get_messages(
-                            entity, 
-                            limit=remaining_for_source
-                        )
-
-                        for msg in messages:
-                            try:
-                                post_data = await self._process_message_or_album(
-                                    client, 
-                                    entity, 
-                                    msg, 
-                                    source['link'], 
-                                    processed_albums
-                                )
-                                if post_data:
-                                    result.append(post_data)
-                                    source_limits[source['link']] -= 1
-                                    if len(result) >= limit:
-                                        break
-
-                            except Exception as msg_error:
-                                logging.error(f"Error processing message {msg.id}: {str(msg_error)}")
-                                continue
-
-                    except Exception as e:
-                        logging.error(f"Error processing source {source['link']}: {str(e)}")
+                    entity = await self._get_entity(client, source)
+                    if not entity:
                         continue
 
-            return result[::-1]
+                    messages = await client.get_messages(
+                        entity, 
+                        limit=remaining_for_source
+                    )
+
+                    for msg in messages:
+                        try:
+                            post_data, msg_count = await self._process_message_or_album(
+                                client, 
+                                entity, 
+                                msg, 
+                                source['link'], 
+                                processed_albums
+                            )
+                            if post_data:
+                                result.append(post_data)
+                                logging.info(msg_count)
+                                message_count += msg_count + 1
+                                source_limits[source['link']] -= msg_count
+                                if message_count >= limit:
+                                    break
+
+                        except Exception as msg_error:
+                            logging.error(f"Error processing message {msg.id}: {str(msg_error)}")
+                            continue
+
+                except Exception as e:
+                    logging.error(f"Error processing source {source['link']}: {str(e)}")
+                    continue
+
+        return result[::-1]
+
 
     async def _get_entity(self, client, source) -> Optional[TelegramEntity]:
         try:
@@ -164,32 +170,39 @@ class UserbotService:
         msg,
         source_link,
         processed_albums
-    ) -> Optional[Dict]:
+    ) -> Tuple[Optional[Dict], int]:
         chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
-        
+
         if hasattr(msg, 'grouped_id') and msg.grouped_id:
             if msg.grouped_id in processed_albums:
-                return None
-                
+                return None, 0
+
             source_id = f"telegram_{chat_id}_album_{msg.grouped_id}"
-            
+
             if await Post.objects.filter(source_id=source_id).aexists():
                 processed_albums.add(msg.grouped_id)
-                return None
-                
+                return None, 0
+
             processed_albums.add(msg.grouped_id)
             post_data = await self._process_album(client, entity, msg, source_link)
+            if not post_data:
+                return None, 0
+
             post_data['source_id'] = source_id
+            return post_data, post_data.get("album_size", 1) + 1
         else:
             source_id = f"telegram_{chat_id}_{msg.id}"
-            
-            if await Post.objects.filter(source_id=source_id).aexists():
-                return None
-                
-            post_data = await self._process_message(client, msg, source_link)
-            post_data['source_id'] = source_id
 
-        return post_data
+            if await Post.objects.filter(source_id=source_id).aexists():
+                return None, 0
+
+            post_data = await self._process_message(client, msg, source_link)
+            if not post_data:
+                return None, 0
+
+            post_data['source_id'] = source_id
+            return post_data, 1
+
 
     def _calculate_source_limits(self, sources: List[Dict], limit: int) -> Dict[str, int]:
         source_limits = {}
