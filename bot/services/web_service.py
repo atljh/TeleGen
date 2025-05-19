@@ -7,6 +7,7 @@ import tempfile
 import hashlib
 import feedparser
 from datetime import datetime
+from urllib.parse import urlparse
 from typing import Optional, List, Dict
 from pydantic import BaseModel
 
@@ -14,7 +15,7 @@ from crawl4ai import AsyncWebCrawler
 from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, LLMConfig, CacheMode
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
-from bot.database.dtos.dtos import FlowDTO, PostDTO, PostStatus
+from bot.database.dtos.dtos import FlowDTO, PostDTO, PostImageDTO, PostStatus
 from admin_panel.admin_panel.models import PostImage, Post
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
@@ -42,60 +43,126 @@ class WebService:
         self.user_service = user_service
         self.aisettings_service = aisettings_service
         self.download_semaphore = asyncio.Semaphore(5)
+        
+        self.rss_cache = {}
+        self.common_rss_paths = [
+            '/feed',
+            '/rss',
+            '/atom.xml',
+            '/feed.xml',
+            '/rss.xml',
+            '/blog/feed',
+            '/news/feed',
+            '/feed/rss',
+            '/feed/atom'
+        ]
+
 
     async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
         try:
             start_time = time.time()
-            raw_posts = await self._fetch_posts(flow.sources, limit)
+
+            rss_urls = await self._discover_rss_urls(flow.sources)
+            raw_posts = await self._fetch_rss_posts(rss_urls, limit)
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
-            logging.info(f"postss: {len(processed_posts)}")
-            # unique_posts = await self._filter_existing_posts(processed_posts)
-            
+
             self.logger.info(f"Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
             return processed_posts[:limit]
         except Exception as e:
-            self.logger.error(f"Error getting posts: {str(e)}", exc_info=True)
+            self.logger.error(f"Error getting posts: {str(e)}")
             return []
 
-    async def _fetch_posts(self, sources: List[Dict], limit: int) -> List[Dict]:
-        result = []
-        source_limits = {}
+
+    async def _discover_rss_urls(self, sources: List[Dict]) -> List[str]:
+        rss_urls = []
         
-        base_limit = max(1, limit // len(sources))
         for source in sources:
-            source_limits[source['link']] = base_limit
-        
-        remaining = limit - base_limit * len(sources)
-        for source in sources[:remaining]:
-            source_limits[source['link']] += 1
-
-        for source in sources:
-            if len(result) >= limit:
-                break
-
-            try:
-                remaining_for_source = source_limits[source['link']]
-                if remaining_for_source <= 0:
-                    continue
-
-                if source['type'] == 'web':
-                    post_data = await self._process_web_source(source)
-                elif source['type'] == 'rss':
-                    post_data = await self._process_rss_source(source, remaining_for_source)
-                else:
-                    continue
-
-                if post_data:
-                    if isinstance(post_data, list):
-                        result.extend(post_data[:remaining_for_source])
-                    else:
-                        result.append(post_data)
-
-            except Exception as e:
-                self.logger.error(f"Error processing source {source['link']}: {str(e)}")
+            if source['type'] != 'web':
                 continue
+                
+            base_url = source['link'].rstrip('/')
+            for path in self.common_rss_paths:
+                rss_url = f"{base_url}{path}"
+                if await self._validate_rss_feed(rss_url):
+                    rss_urls.append(rss_url)
+                    break
+            else:
+                self.logger.warning(f"RSS feed not found for {source['link']}")
+                
+        return rss_urls
+    
+    async def _validate_rss_feed(self, url: str) -> bool:
+        try:
+            feed = feedparser.parse(url)
+            return len(feed.entries) > 0
+        except Exception:
+            return False
+        
+    # async def _fetch_posts(self, sources: List[Dict], limit: int) -> List[Dict]:
+    #     result = []
+    #     source_limits = {}
+        
+    #     base_limit = max(1, limit // len(sources))
+    #     for source in sources:
+    #         source_limits[source['link']] = base_limit
+        
+    #     remaining = limit - base_limit * len(sources)
+    #     for source in sources[:remaining]:
+    #         source_limits[source['link']] += 1
 
-        return result
+    #     for source in sources:
+    #         if len(result) >= limit:
+    #             break
+
+    #         try:
+    #             remaining_for_source = source_limits[source['link']]
+    #             if remaining_for_source <= 0:
+    #                 continue
+
+    #             if source['type'] == 'web':
+    #                 post_data = await self._process_web_source(source)
+    #             elif source['type'] == 'rss':
+    #                 post_data = await self._process_rss_source(source, remaining_for_source)
+    #             else:
+    #                 continue
+
+    #             if post_data:
+    #                 if isinstance(post_data, list):
+    #                     result.extend(post_data[:remaining_for_source])
+    #                 else:
+    #                     result.append(post_data)
+
+    #         except Exception as e:
+    #             self.logger.error(f"Error processing source {source['link']}: {str(e)}")
+    #             continue
+
+    #     return result
+
+
+    async def _fetch_rss_posts(self, rss_urls: List[str], limit: int) -> List[Dict]:
+        posts = []
+        
+        for rss_url in rss_urls:
+            try:
+                feed = feedparser.parse(rss_url)
+                domain = urlparse(rss_url).netloc
+                
+                for entry in feed.entries[:limit]:
+                    post = {
+                        'title': entry.title,
+                        'content': entry.description or entry.title,
+                        'original_link': entry.link,
+                        'original_date': self._parse_rss_date(entry.get('published')),
+                        'source_url': rss_url,
+                        'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
+                        'images': self._extract_rss_images(entry),
+                        'domain': domain
+                    }
+                    posts.append(post)
+            except Exception as e:
+                self.logger.error(f"Error parsing RSS feed {rss_url}: {str(e)}")
+                
+        return posts
 
     async def _process_rss_source(self, source: Dict, limit: int) -> List[Dict]:
         try:
@@ -335,7 +402,7 @@ class WebService:
     async def _process_posts_parallel(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
         tasks = []
         for raw_post in raw_posts:
-            logging.info(f"RAW: {raw_post}")
+            # logging.info(f"RAW: {raw_post}")
             task = self._safe_process_post(raw_post, flow)
             tasks.append(task)
         
@@ -350,41 +417,25 @@ class WebService:
             return None
 
     async def _process_single_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:
-        try:
-            if not raw_post.get('content'):
-                self.logger.error(f"Post has no content: {raw_post.get('title', 'No title')}")
-                return None
-
-            media_type, images = self._prepare_media(raw_post.get('media', []))
-            
-            post_dto = PostDTO(
-                id=None,
-                flow_id=flow.id,
-                content=raw_post['content'],
-                source_id=raw_post.get('source_id', ''),
-                source_url=raw_post.get('source_url'),
-                publication_date=None,
-                status=PostStatus.DRAFT,
-                original_link=raw_post.get('original_link'),
-                created_at=datetime.now(),
-                original_date=raw_post.get('original_date'),
-                scheduled_time=None,
-                media_type=media_type,
-                media_url=None,
-                images=images,
-                video_url=None
-            )
-
-            # Обрабатываем контент
-            processed_text = await self._process_content(post_dto.content, flow)
-            if not processed_text:
-                return None
-
-            return post_dto.copy(update={'content': processed_text})
-
-        except Exception as e:
-            self.logger.error(f"Error processing post: {str(e)}")
-            return None
+        domain = raw_post.get('domain', '')
+        signature = f"{flow.signature}\n\nИсточник: {domain}" if flow.signature else f"Источник: {domain}"
+        
+        post_dto = PostDTO(
+            id=None,
+            flow_id=flow.id,
+            content=raw_post['content'],
+            source_id=raw_post['source_id'],
+            source_url=raw_post['source_url'],
+            original_link=raw_post['original_link'],
+            original_date=raw_post['original_date'],
+            created_at=datetime.now(),
+            status=PostStatus.DRAFT,
+            images=[PostImageDTO(url=img) for img in raw_post.get('images', [])],
+            media_type='image' if raw_post.get('images') else None
+        )
+        
+        processed_text = await self._process_content(post_dto.content, flow)
+        return post_dto.copy(update={'content': processed_text})
 
     def _prepare_media(self, media_items: List[Dict]) -> tuple:
         if not media_items:
