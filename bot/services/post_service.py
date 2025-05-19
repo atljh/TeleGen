@@ -79,10 +79,16 @@ class PostService:
         if not flow:
             return []
 
-        posts_dto = await self.userbot_service.get_last_posts(flow)
+        userbot_posts = await self.userbot_service.get_last_posts(flow)
+        web_posts = await self.web_service.get_last_posts(flow)
+        
+        combined_posts = userbot_posts + web_posts
+        
+        combined_posts.sort(key=lambda x: x.created_at, reverse=True)
+        
         generated_posts = []
 
-        for post_dto in posts_dto:
+        for post_dto in combined_posts:
             try:
                 if await Post.objects.filter(source_id=post_dto.source_id).aexists():
                     logging.info(f"Skipping duplicate post: {post_dto.source_id}")

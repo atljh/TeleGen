@@ -4,9 +4,12 @@ import time
 import asyncio
 import logging
 import tempfile
+import hashlib
+import feedparser
 from datetime import datetime
 from typing import Optional, List, Dict, AsyncGenerator
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
 
 from crawl4ai import AsyncWebCrawler
 from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, LLMConfig, CacheMode
@@ -18,6 +21,14 @@ from bot.services.content_processing.processors import ChatGPTContentProcessor, 
 from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
 from bot.utils.notifications import notify_admins
+
+class WebPost(BaseModel):
+    title: str
+    content: str
+    date: Optional[str]
+    source: Optional[str]
+    url: str
+    images: Optional[List[str]]
 
 class WebService:
     def __init__(
@@ -36,15 +47,17 @@ class WebService:
     async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
         try:
             start_time = time.time()
-            raw_posts = await self._fetch_web_posts(flow.sources, limit)
+            raw_posts = await self._fetch_posts(flow.sources, limit)
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
-            self.logger.info(f"Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
-            return processed_posts
+            unique_posts = await self._filter_existing_posts(processed_posts)
+            
+            self.logger.info(f"Processed {len(unique_posts)} posts in {time.time() - start_time:.2f}s")
+            return unique_posts[:limit]
         except Exception as e:
             self.logger.error(f"Error getting posts: {str(e)}", exc_info=True)
             return []
 
-    async def _fetch_web_posts(self, sources: List[Dict], limit: int) -> List[Dict]:
+    async def _fetch_posts(self, sources: List[Dict], limit: int) -> List[Dict]:
         result = []
         source_limits = {}
         
@@ -60,18 +73,23 @@ class WebService:
             if len(result) >= limit:
                 break
 
-            if source['type'] != 'web':
-                continue
-
             try:
                 remaining_for_source = source_limits[source['link']]
                 if remaining_for_source <= 0:
                     continue
 
-                post_data = await self._process_web_source(source, remaining_for_source)
+                if source['type'] == 'web':
+                    post_data = await self._process_web_source(source)
+                elif source['type'] == 'rss':
+                    post_data = await self._process_rss_source(source, remaining_for_source)
+                else:
+                    continue
+
                 if post_data:
-                    result.append(post_data)
-                    source_limits[source['link']] -= 1
+                    if isinstance(post_data, list):
+                        result.extend(post_data[:remaining_for_source])
+                    else:
+                        result.append(post_data)
 
             except Exception as e:
                 self.logger.error(f"Error processing source {source['link']}: {str(e)}")
@@ -79,11 +97,71 @@ class WebService:
 
         return result
 
-    async def _process_web_source(self, source: Dict, limit: int) -> Optional[Dict]:
+    async def _process_rss_source(self, source: Dict, limit: int) -> List[Dict]:
+        try:
+            feed = feedparser.parse(source['url'])
+            posts = []
+            
+            for entry in feed.entries[:limit]:
+                source_id = self._generate_source_id(
+                    source_type='rss',
+                    source_url=source['url'],
+                    entry_id=entry.get('id', entry.link),
+                    date_str=entry.get('published', '')
+                )
+                
+                post_data = {
+                    'title': entry.title,
+                    'content': entry.description or entry.title,
+                    'original_link': entry.link,
+                    'original_date': self._parse_rss_date(entry.get('published')),
+                    'source_url': source['url'],
+                    'source_id': source_id,
+                    'images': self._extract_rss_images(entry)
+                }
+                posts.append(post_data)
+            
+            return posts
+        except Exception as e:
+            self.logger.error(f"Error processing RSS source {source['url']}: {str(e)}")
+            return []
+
+    def _generate_source_id(self, source_type: str, source_url: str, entry_id: str, date_str: str) -> str:
+        unique_str = f"{source_type}_{source_url}_{entry_id}_{date_str}"
+        return hashlib.md5(unique_str.encode()).hexdigest()
+
+    def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
+        if not date_str:
+            return None
+        try:
+            return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
+        except ValueError:
+            return None
+
+    def _extract_rss_images(self, entry) -> List[str]:
+        images = []
+        if hasattr(entry, 'media_content'):
+            for media in entry.media_content:
+                if media.get('type', '').startswith('image/'):
+                    images.append(media['url'])
+        if hasattr(entry, 'links'):
+            for link in entry.links:
+                if link.get('type', '').startswith('image/'):
+                    images.append(link['href'])
+        return images[:3]
+
+    async def _process_web_source(self, source: Dict) -> Optional[Dict]:
         try:
             web_post = await self._parse_with_llm(source['link'])
             if not web_post:
                 return None
+
+            source_id = self._generate_source_id(
+                source_type='web',
+                source_url=source['link'],
+                entry_id=web_post.url,
+                date_str=web_post.date or ""
+            )
 
             media_items = []
             if web_post.images:
@@ -95,28 +173,27 @@ class WebService:
             downloaded_media = await self._download_media_batch(media_items)
 
             return {
-                'text': web_post.content[:10000],
+                'title': web_post.title,
+                'content': web_post.content[:10000],
                 'media': downloaded_media,
                 'is_album': False,
                 'album_size': 0,
                 'original_link': web_post.url,
                 'original_date': web_post.date or datetime.now(),
                 'source_url': source['link'],
-                'source_id': f"web_{hash(web_post.url)}",
-                'title': web_post.title
+                'source_id': source_id
             }
-
         except Exception as e:
             self.logger.error(f"Error processing web source {source['link']}: {str(e)}")
             return None
 
-    async def _parse_with_llm(self, url: str) -> Optional[Post]:
+    async def _parse_with_llm(self, url: str) -> Optional[WebPost]:
         llm_strat = LLMExtractionStrategy(
             llmConfig=LLMConfig(
                 provider="openai/gpt-4o",
                 api_token=self.openai_key
             ),
-            schema=Post.model_json_schema(),
+            schema=WebPost.model_json_schema(),
             extraction_type="schema",
             instruction=(
                 "From this HTML page, extract structured content with fields:\n"
@@ -155,14 +232,13 @@ class WebService:
                 result = await crawler.arun(url=url, config=crawl_config)
                 if result.success:
                     parsed_data = json.loads(result.extracted_content)
-                    return Post(**parsed_data)
+                    return WebPost(**parsed_data)
                 else:
                     self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
                     return None
         except Exception as e:
             self.logger.error(f"Error during LLM parsing of {url}: {str(e)}")
             return None
-
 
     async def _download_media_batch(self, media_items: List[Dict]) -> List[Dict]:
         if not media_items:
@@ -200,14 +276,10 @@ class WebService:
     async def _download_media_file(self, url: str, media_type: str) -> Optional[str]:
         async with self.download_semaphore:
             try:
-                # Здесь должна быть реализация загрузки файла по URL
-                # Например, используя aiohttp или requests
-                # Для примера просто создаем временный файл
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{media_type}') as tmp_file:
                     tmp_path = tmp_file.name
                 
-                # В реальной реализации здесь должен быть код загрузки файла
-                # Например:
+                # TODO: Реализовать реальную загрузку файла
                 # async with aiohttp.ClientSession() as session:
                 #     async with session.get(url) as response:
                 #         with open(tmp_path, 'wb') as f:
@@ -224,6 +296,20 @@ class WebService:
                 if 'tmp_path' in locals() and os.path.exists(tmp_path):
                     os.unlink(tmp_path)
                 return None
+
+    async def _filter_existing_posts(self, posts: List[PostDTO]) -> List[PostDTO]:
+        if not posts:
+            return []
+        
+        source_ids = [post.source_id for post in posts if post.source_id]
+        if not source_ids:
+            return posts
+        
+        existing_ids = set(await Post.objects.filter(source_id__in=source_ids)
+                         .values_list('source_id', flat=True)
+                         .alist())
+        
+        return [post for post in posts if post.source_id not in existing_ids]
 
     async def _process_posts_parallel(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
         tasks = []
@@ -250,14 +336,10 @@ class WebService:
         if isinstance(post_dto.content, list):
             post_dto.content = " ".join(filter(None, post_dto.content))
         
-        if 'original_link' in raw_post:
-            post_dto.original_link = raw_post['original_link']
-        if 'original_date' in raw_post:
-            post_dto.original_date = raw_post['original_date']
-        if 'source_url' in raw_post:
-            post_dto.source_url = raw_post['source_url']   
-        if 'source_id' in raw_post:
-            post_dto.source_id = raw_post['source_id']
+        post_dto.original_link = raw_post.get('original_link')
+        post_dto.original_date = raw_post.get('original_date')
+        post_dto.source_url = raw_post.get('source_url')
+        post_dto.source_id = raw_post.get('source_id')
 
         try:
             processed_text = await self._process_content(post_dto.content, flow)
@@ -267,14 +349,25 @@ class WebService:
             return post_dto.copy(update={
                 'content': processed_text,
                 'flow_id': flow.id,
-                'source_url': post_dto.source_url,
-                'source_id': post_dto.source_id,
-                'original_link': post_dto.original_link,
-                'original_date': post_dto.original_date
+                'media_type': self._determine_media_type(raw_post.get('media')),
+                'images': self._prepare_images(raw_post.get('media'))
             })
         except Exception as e:
             self.logger.error(f"Error processing post: {str(e)}")
             return None
+
+    def _determine_media_type(self, media_items: List[Dict]) -> Optional[str]:
+        if not media_items:
+            return None
+        return 'image' if media_items[0]['type'] == 'image' else 'video'
+
+    def _prepare_images(self, media_items: List[Dict]) -> List[Dict]:
+        if not media_items:
+            return []
+        return [
+            {'url': item['url'], 'path': item.get('path')}
+            for item in media_items if item['type'] == 'image'
+        ]
 
     async def _process_content(self, text: str, flow: FlowDTO) -> str:
         text = await DefaultContentProcessor().process(text)
