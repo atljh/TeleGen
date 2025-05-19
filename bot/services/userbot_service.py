@@ -5,7 +5,7 @@ import logging
 import tempfile
 from datetime import datetime
 from tqdm.asyncio import tqdm_asyncio
-from typing import Optional, List, Dict, AsyncGenerator
+from typing import Optional, List, Dict, AsyncGenerator, Union
 from contextlib import asynccontextmanager
 
 import openai
@@ -13,13 +13,19 @@ import openai
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.errors import SessionPasswordNeededError
-
+from telethon.tl.types import (
+    Channel,
+    Chat,
+    User
+)
 from bot.database.dtos.dtos import FlowDTO, PostDTO
 from admin_panel.admin_panel.models import PostImage, Post
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
 from bot.utils.notifications import notify_admins
+
+TelegramEntity = Union[Channel, Chat, User]
 
 class UserbotService:
     def __init__(
@@ -86,16 +92,9 @@ class UserbotService:
         ) -> List[Dict]:
             result = []
             processed_albums = set()
-            source_limits = {}
-            
-            base_limit = max(1, limit // len(sources))
-            for source in sources:
-                source_limits[source['link']] = base_limit
-            
-            remaining = limit - base_limit * len(sources)
-            for source in sources[:remaining]:
-                source_limits[source['link']] += 1
-
+            source_limits = self._calculate_source_limits(sources, limit)
+            logging.info('================================================')
+            logging.info(source_limits)
             async with self.get_client() as client:
                 for source in sources:
                     if len(result) >= limit:
@@ -109,23 +108,9 @@ class UserbotService:
                         if remaining_for_source <= 0:
                             continue
 
-                        entity = None
-                        try:
-                            entity = await client.get_entity(source['link'])
-                        except Exception as e:
-                            if 't.me/+' in source['link']:
-                                invite_hash = source['link'].split('+')[-1]
-                                try:
-                                    await client(ImportChatInviteRequest(invite_hash))
-                                    entity = await client.get_entity(source['link'])
-                                except Exception as join_err:
-                                    logging.error(f"Failed to join private chat {source['link']}: {join_err}")
-                                    continue
-                                else:
-                                    logging.info(f"Joined private channel {source['link']}")
-                            else:
-                                logging.error(f"Failed to get entity for {source['link']}: {e}")
-                                continue
+                        entity = await self._get_entity(client, source)
+                        if not entity:
+                            continue
 
                         messages = await client.get_messages(
                             entity, 
@@ -134,30 +119,13 @@ class UserbotService:
 
                         for msg in messages:
                             try:
-                                chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
-                                
-                                if hasattr(msg, 'grouped_id') and msg.grouped_id:
-                                    if msg.grouped_id in processed_albums:
-                                        continue
-                                        
-                                    source_id = f"telegram_{chat_id}_album_{msg.grouped_id}"
-                                    
-                                    if await Post.objects.filter(source_id=source_id).aexists():
-                                        processed_albums.add(msg.grouped_id)
-                                        continue
-                                        
-                                    processed_albums.add(msg.grouped_id)
-                                    post_data = await self._process_album(client, entity, msg, source['link'])
-                                    post_data['source_id'] = source_id
-                                else:
-                                    source_id = f"telegram_{chat_id}_{msg.id}"
-                                    
-                                    if await Post.objects.filter(source_id=source_id).aexists():
-                                        continue
-                                        
-                                    post_data = await self._process_message(client, msg, source['link'])
-                                    post_data['source_id'] = source_id
-
+                                post_data = await self._process_message_or_album(
+                                    client, 
+                                    entity, 
+                                    msg, 
+                                    source['link'], 
+                                    processed_albums
+                                )
                                 if post_data:
                                     result.append(post_data)
                                     source_limits[source['link']] -= 1
@@ -173,6 +141,67 @@ class UserbotService:
                         continue
 
             return result[::-1]
+
+    async def _get_entity(self, client, source) -> Optional[TelegramEntity]:
+        try:
+            return await client.get_entity(source['link'])
+        except Exception as e:
+            if 't.me/+' in source['link']:
+                invite_hash = source['link'].split('+')[-1]
+                try:
+                    await client(ImportChatInviteRequest(invite_hash))
+                    return await client.get_entity(source['link'])
+                except Exception as join_err:
+                    logging.error(f"Failed to join private chat {source['link']}: {join_err}")
+            else:
+                logging.error(f"Failed to get entity for {source['link']}: {e}")
+            return None
+
+    async def _process_message_or_album(
+        self,
+        client,
+        entity,
+        msg,
+        source_link,
+        processed_albums
+    ) -> Optional[Dict]:
+        chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
+        
+        if hasattr(msg, 'grouped_id') and msg.grouped_id:
+            if msg.grouped_id in processed_albums:
+                return None
+                
+            source_id = f"telegram_{chat_id}_album_{msg.grouped_id}"
+            
+            if await Post.objects.filter(source_id=source_id).aexists():
+                processed_albums.add(msg.grouped_id)
+                return None
+                
+            processed_albums.add(msg.grouped_id)
+            post_data = await self._process_album(client, entity, msg, source_link)
+            post_data['source_id'] = source_id
+        else:
+            source_id = f"telegram_{chat_id}_{msg.id}"
+            
+            if await Post.objects.filter(source_id=source_id).aexists():
+                return None
+                
+            post_data = await self._process_message(client, msg, source_link)
+            post_data['source_id'] = source_id
+
+        return post_data
+
+    def _calculate_source_limits(self, sources: List[Dict], limit: int) -> Dict[str, int]:
+        source_limits = {}
+        base_limit = max(1, limit // len(sources))
+        for source in sources:
+            source_limits[source['link']] = base_limit
+        
+        remaining = limit - base_limit * len(sources)
+        for source in sources[:remaining]:
+            source_limits[source['link']] += 1
+        
+        return source_limits
 
     async def _process_album(self, client: TelegramClient, entity, initial_msg, source_url: str) -> Optional[Dict]:
         try:
