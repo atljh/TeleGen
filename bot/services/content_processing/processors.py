@@ -105,7 +105,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         
         try:
             system_prompt = await self._get_prompt(text, self.flow)
-            result = await self._call_ai_with_retry(text, system_prompt)
+            result = await self._call_ai_with_retry(text, system_prompt, self.flow)
             
             if len(self.cache) >= self.cache_size_limit:
                 self.cache.pop(next(iter(self.cache)))
@@ -116,7 +116,9 @@ class ChatGPTContentProcessor(ContentProcessor):
             logging.error(f"Final processing error: {str(e)}")
             return text
 
-    async def _call_ai_with_retry(self, text: str, system_prompt: str) -> str:
+    async def _call_ai_with_retry(self, text: str, system_prompt: str, flow) -> str:
+        aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
+
         for attempt in range(self.max_retries + 1):
             try:
                 start_time = time.time()
@@ -124,6 +126,7 @@ class ChatGPTContentProcessor(ContentProcessor):
                     model=self.model,
                     messages=[
                         {"role": "system", "content": system_prompt},
+                        {"role": aisettings.role, "content": aisettings.role_content},
                         {"role": "user", "content": text}
                     ],
                     temperature=0.5,
