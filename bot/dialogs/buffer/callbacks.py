@@ -13,6 +13,7 @@ from bot.database.dtos.dtos import MediaType, PostImageDTO
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 
 from bot.dialogs.buffer.states import BufferMenu
+from bot.dialogs.generation.states import GenerationMenu
 from bot.utils.notifications import notify_admins
 from .getters import paging_getter, send_media_album
 
@@ -31,6 +32,8 @@ async def go_back_to_channels(
     messages = manager.dialog_data.get("message_ids")
     bot = manager.middleware_data['bot']
 
+
+    from_gen = manager.start_data.get('from_gen') if manager.start_data else None
     if messages:
         for message_id in messages:
             bot = manager.middleware_data['bot']
@@ -38,6 +41,16 @@ async def go_back_to_channels(
             await bot.delete_message(chat_id=chat_id, message_id=message_id)
             manager.dialog_data["message_ids"] = []
 
+    if from_gen:
+        await manager.start(
+            GenerationMenu.channel_main,
+            data={
+            "selected_channel": channel,
+            "channel_flow": channel_flow,
+            "item_id": str(channel.id)
+        },
+        )
+        return
     await manager.start(
         BufferMenu.main,
         data={

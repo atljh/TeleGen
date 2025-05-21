@@ -8,7 +8,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from bot.dialogs.generation.add_channel.states import AddChannelMenu 
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 
-from dialogs.generation.states import GenerationMenu
+from bot.dialogs.generation.states import GenerationMenu
 from bot.containers import Container
 
 

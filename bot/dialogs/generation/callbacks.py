@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 
-from dialogs.generation.states import GenerationMenu
+from bot.dialogs.generation.states import GenerationMenu
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
@@ -120,6 +120,7 @@ async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogMana
     await manager.start(
         BufferMenu.channel_main,
         data={
+            "from_gen": True,
             "selected_channel": channel,
             "channel_flow": channel_flow,
             "item_id": str(channel.id)

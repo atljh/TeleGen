@@ -164,35 +164,6 @@ class WebService:
                 
         return posts
 
-    async def _process_rss_source(self, source: Dict, limit: int) -> List[Dict]:
-        try:
-            feed = feedparser.parse(source['url'])
-            posts = []
-            
-            for entry in feed.entries[:limit]:
-                source_id = self._generate_source_id(
-                    source_type='rss',
-                    source_url=source['url'],
-                    entry_id=entry.get('id', entry.link),
-                    date_str=entry.get('published', '')
-                )
-                
-                post_data = {
-                    'title': entry.title,
-                    'content': entry.description or entry.title,
-                    'original_link': entry.link,
-                    'original_date': self._parse_rss_date(entry.get('published')),
-                    'source_url': source['url'],
-                    'source_id': source_id,
-                    'images': self._extract_rss_images(entry)
-                }
-                posts.append(post_data)
-            
-            return posts
-        except Exception as e:
-            self.logger.error(f"Error processing RSS source {source['url']}: {str(e)}")
-            return []
-
     def _generate_source_id(self, source_type: str, source_url: str, entry_id: str, date_str: str) -> str:
         unique_str = f"{source_type}_{source_url}_{entry_id}_{date_str}"
         return hashlib.md5(unique_str.encode()).hexdigest()

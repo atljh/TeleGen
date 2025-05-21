@@ -5,7 +5,6 @@ from aiogram_dialog import DialogManager
 from aiogram.enums.parse_mode import ParseMode
 from aiogram_dialog.api.entities import StartMode
 
-from .states import MainMenu
 
 async def on_main_dialog_start(start_data, dialog_manager: DialogManager):
     keyboard = ReplyKeyboardMarkup(
@@ -35,7 +34,6 @@ def create_main_dialog():
                 "Оберіть опцію з меню нижче\\:\n"
                 "👇👇👇"
             ),
-            state=MainMenu.main,
             parse_mode=ParseMode.MARKDOWN_V2,
         ),
         on_start=on_main_dialog_start

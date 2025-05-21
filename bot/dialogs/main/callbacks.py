@@ -2,7 +2,7 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.kbd import Button
 
-from dialogs.generation.states import GenerationMenu
+from bot.dialogs.generation.states import GenerationMenu
 from dialogs.buffer.states import BufferMenu
 from dialogs.settings.states import SettingsMenu
 from dialogs.support.states import SupportMenu

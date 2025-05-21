@@ -5,7 +5,7 @@ from aiogram_dialog import DialogManager, StartMode
 
 from dialogs.settings.states import SettingsMenu
 from bot.dialogs.buffer.states import BufferMenu
-from dialogs.generation.states import GenerationMenu
+from bot.dialogs.generation.states import GenerationMenu
 from dialogs.support.states import SupportMenu
 
 
