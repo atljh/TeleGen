@@ -1,5 +1,8 @@
+import asyncio
 import re
 import logging
+import subprocess
+import sys
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
@@ -8,6 +11,7 @@ from aiogram_dialog.widgets.input import TextInput
 from bot.database.dtos import ContentLength, GenerationFrequency
 from bot.database.exceptions import ChannelNotFoundError
 
+from bot.dialogs.generation.callbacks import show_generated_posts
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from bot.containers import Container
 
@@ -283,6 +287,8 @@ async def show_my_flows(callback: CallbackQuery, button: Button, manager: Dialog
 async def start_generation_process(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
         flow_data = manager.dialog_data.get("created_flow", {})
+        channel = manager.dialog_data.get("selected_channel")
+
         flow_id = flow_data.get("id")
         
         if not flow_id:
@@ -293,8 +299,47 @@ async def start_generation_process(callback: CallbackQuery, button: Button, mana
         
         logger.info(f"Starting generation for Flow ID: {flow_id}")
         
-        await callback.answer(f"🔁 Генерація для '{flow.name}' запущена!")
-        await manager.switch_to(GenerationMenu.status)
+
+        await callback.answer("🔄 Запускаю генерацію...")
+
+        bot = manager.middleware_data["bot"]
+        status_msg = await bot.send_message(
+            chat_id=callback.message.chat.id,
+            text=f"⚡ Генерація для флоу *{flow.name}*...",
+            parse_mode="Markdown"
+        )
+
+        process = subprocess.Popen(
+            [
+                "python", "generator_worker.py",
+                str(flow.id),
+                str(callback.message.chat.id),
+                str(status_msg.message_id)
+            ],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            text=True,
+            bufsize=1
+        )
+
+        asyncio.create_task(
+            show_generated_posts(
+                process=process,
+                flow_id=flow.id,
+                chat_id=callback.message.chat.id,
+                status_msg_id=status_msg.message_id,
+                bot=bot,
+                flow=flow,
+                channel=channel
+            )
+        )
+
+    except Exception as e:
+        logging.error(f"Помилка запуску генерації: {str(e)}")
+        await callback.message.answer(
+            f"❌ Помилка: {str(e)}",
+            parse_mode="Markdown"
+        )
         
     except Exception as e:
         logger.error(f"Error starting generation: {e}")

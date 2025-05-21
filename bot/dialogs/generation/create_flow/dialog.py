@@ -19,6 +19,7 @@ from .getters import (
     source_type_getter
 )
 from .callbacks import(
+    start_generation_process,
     to_channel,
     to_select_frequency,
     
@@ -277,7 +278,7 @@ def create_flow_dialog():
             ),
             Column(
                 Button(Const("Налаштування Flow"), id="to_settings", on_click=start_flow_settings),
-                Button(Const("Почати генерацiю"), id="start_generation", on_click=on_force_generate),
+                Button(Const("Почати генерацiю"), id="start_generation", on_click=start_generation_process),
             ),
             state=CreateFlowMenu.confirmation,
             parse_mode=ParseMode.HTML,
