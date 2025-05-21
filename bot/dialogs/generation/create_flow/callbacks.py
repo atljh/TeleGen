@@ -233,7 +233,6 @@ async def create_new_flow(manager: DialogManager):
     flow_data = manager.dialog_data
 
     channel = flow_data.get("selected_channel") or manager.start_data.get('selected_channel')
-    logging.info(manager.start_data.get('selected_channel'))
     if not channel:
         raise ValueError("Channel ID not found")
 
@@ -264,32 +263,13 @@ async def create_new_flow(manager: DialogManager):
     
     return new_flow
 
-async def show_my_flows(callback: CallbackQuery, button: Button, manager: DialogManager):
-    try:
-        user_id = callback.from_user.id
-        flow_service = Container.flow_service()
-        
-        flows = await flow_service.get_user_flows(user_id)
-        
-        if not flows:
-            await callback.answer("У вас ще немає створених Flow")
-            return
-            
-        # manager.dialog_data["user_flows"] = [FlowDTO.from_orm(f) for f in flows]
-        
-        # await manager.start(MyFlowsMenu.list)
-        await callback.answer("📋 Список ваших Flow")
-        
-    except Exception as e:
-        logger.error(f"Error showing flows: {e}")
-        await callback.answer("❌ Помилка завантаження списку")
 
 async def start_generation_process(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
         flow_data = manager.dialog_data.get("created_flow", {})
         channel = manager.dialog_data.get("selected_channel")
 
-        flow_id = flow_data.get("id")
+        flow_id = flow_data.get("flow_id")
         
         if not flow_id:
             raise ValueError("Flow ID not found in dialog data")
