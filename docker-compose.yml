@@ -22,7 +22,7 @@ services:
       - MEDIA_ROOT=/app/media
       - SESSION_PATH=/app/sessions/userbot.session
     command: >
-      bash -c "playwright install --with-deps && python watcher.py"
+      bash -c "python watcher.py"
 
 
 

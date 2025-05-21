@@ -55,6 +55,4 @@ watchdog
 asgiref
 openai
 langdetect
-crawl4ai
-playwright
 feedparser
