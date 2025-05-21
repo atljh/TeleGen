@@ -226,7 +226,8 @@ class AISettingsDTO(BaseModel):
     id: int
     flow_id: int
     prompt: str
-    style: str
+    style: str = None
+    role: str = None
     created_at: datetime
 
     class Config:
