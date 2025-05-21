@@ -203,7 +203,7 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
     except Exception as e:
         logger.error(f"Signature input error: {e}")
         await message.answer("❌ Помилка збереження підпису")
-        await manager.switch_to(CreateFlowMenu.select_source)
+        await manager.switch_to(CreateFlowMenu.select_theme)
 
 
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -216,11 +216,11 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
         
     except ChannelNotFoundError:
         await callback.answer("❌ Канал не знайдено")
-        await manager.switch_to(CreateFlowMenu.select_source)
+        await manager.switch_to(CreateFlowMenu.select_theme)
     except Exception as e:
         logger.error(f"Flow creation error: {e}")
         await callback.answer("❌ Помилка створення Flow")
-        await manager.switch_to(CreateFlowMenu.select_source)
+        await manager.switch_to(CreateFlowMenu.select_theme)
 
 
 # ==================CONFIRMATION======================
@@ -228,10 +228,13 @@ async def skip_signature(callback: CallbackQuery, button: Button, manager: Dialo
 async def create_new_flow(manager: DialogManager):
     flow_data = manager.dialog_data
 
-    channel_id = flow_data.get("selected_channel").channel_id
-    channel_name = flow_data.get("selected_channel").name
-    if not channel_id:
+    channel = flow_data.get("selected_channel") or manager.start_data.get('selected_channel')
+    logging.info(manager.start_data.get('selected_channel'))
+    if not channel:
         raise ValueError("Channel ID not found")
+
+    channel_id =  channel.channel_id
+    channel_name = channel.name
 
     flow_service = Container.flow_service()
     

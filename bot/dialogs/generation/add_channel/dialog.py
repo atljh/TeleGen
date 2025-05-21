@@ -1,9 +1,11 @@
+import logging
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Url
 from aiogram_dialog.widgets.text import Const, Format, Jinja
 from aiogram_dialog.widgets.input import MessageInput
 
+from bot.containers import Container
 from bot.dialogs.generation.add_channel.states import AddChannelMenu 
 from .getters import channel_data_getter
 from .callbacks import (
@@ -15,9 +17,13 @@ from utils.buttons import (
 )
 
 async def channel_success_getter(dialog_manager: DialogManager, **kwargs):
-    data = dialog_manager.start_data or {}
+    channel_id = dialog_manager.start_data.get("channel_id")
+    channel_service = Container.channel_service()
+    channel = await channel_service.get_channel(channel_id)
+    logging.info(channel)
+    dialog_manager.dialog_data['selected_channel'] = channel
     return {
-        "channel_id": dialog_manager.start_data.get("channel_id"),
+        "channel_id": channel_id,
         "channel_name": dialog_manager.start_data.get("channel_name"),
         "channel_username": dialog_manager.start_data.get("channel_username")
     }

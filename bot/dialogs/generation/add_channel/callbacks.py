@@ -19,7 +19,7 @@ async def on_create_flow(callback: CallbackQuery, button: Button, manager: Dialo
         await callback.answer(f"У канала {selected_channel.name} вже є Флоу")
         return
     await manager.start(
-        CreateFlowMenu.select_source,
+        CreateFlowMenu.select_theme,
         data={"selected_channel": selected_channel},
         mode=StartMode.RESET_STACK 
     )
