@@ -256,7 +256,6 @@ class Payment(models.Model):
         verbose_name = "Платіж"
         verbose_name_plural = "Платежі"
 
-
 class AISettings(models.Model):
     flow = models.OneToOneField(
         Flow,
@@ -267,8 +266,9 @@ class AISettings(models.Model):
         null=True,
     )
     prompt = models.TextField(verbose_name="Промпт")
-    style = models.CharField(max_length=100, verbose_name="Стиль", blank=True)
     role = models.CharField(max_length=255, verbose_name='Роль', blank=True)
+    role_content = models.TextField(verbose_name='Текст роли', blank=True)
+    style = models.CharField(max_length=100, verbose_name="Стиль", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
     def __str__(self):

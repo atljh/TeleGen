@@ -132,7 +132,7 @@ class ChatGPTContentProcessor(ContentProcessor):
                     timeout=self.request_timeout
                 )
                 result = response.choices[0].message.content.strip()
-                logging.debug(f"AI request took {time.time() - start_time:.2f}s")
+                logging.info(f"AI request took {time.time() - start_time:.2f}s")
                 return result
             except Exception as e:
                 if attempt == self.max_retries:

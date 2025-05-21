@@ -228,6 +228,7 @@ class AISettingsDTO(BaseModel):
     prompt: str
     style: str = None
     role: str = None
+    role_content: str = None
     created_at: datetime
 
     class Config:
