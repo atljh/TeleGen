@@ -80,6 +80,9 @@ async def on_channel_selected(
         
         flow_service = Container.flow_service()
         channel_flow = await flow_service.get_flow_by_channel_id(int(item_id))
+        if not channel_flow:
+            await callback.answer("У канала немає флоу")
+            return
         manager.dialog_data['item_id'] = item_id
         
         manager.dialog_data.update({

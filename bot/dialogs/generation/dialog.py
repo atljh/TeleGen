@@ -59,6 +59,7 @@ def create_generation_dialog():
                     Const("Буфер"), 
                     id="buffer", 
                     on_click=on_buffer,
+                    when="has_flow"
                 ),
                 Button(
                     Const("Створити флоу"), 
