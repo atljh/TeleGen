@@ -15,6 +15,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from bot.dialogs.generation.flow.states import FlowMenu
 from .getters import edit_post_getter, paging_getter, post_info_getter, send_media_album
 from .callbacks import (
+    back_to_post_view,
     back_to_select_type,
     confirm_schedule,
     on_back_to_posts,
@@ -28,6 +29,7 @@ from .callbacks import (
     process_edit_input,
     select_date,
     set_time,
+    show_publish_confirm,
     show_time_buttons,
     time_input_handler,
 )
@@ -75,7 +77,7 @@ def flow_dialog() -> Dialog:
                 width=5,
             ),
             Group(
-                Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(Const("✅ Опублікувати"), id="publish_post", on_click=show_publish_confirm, when=lambda data, widget, manager: data["post"].get("content")),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post, when=lambda data, widget, manager: data["post"].get("content")),
                 Button(Const("📅 Запланувати"), id="schedule_publish", on_click=on_schedule_post, when=lambda data, widget, manager: data["post"].get("content")),
                 Button(Const("ℹ️ Пост iнфо"), id="post_info", on_click=on_post_info, when=lambda data, widget, manager: data["post"].get("content")),
@@ -169,6 +171,16 @@ def flow_dialog() -> Dialog:
             Button(Const("✅ Підтвердити"), id="confirm", on_click=confirm_schedule),
             Button(Const("◀️ Назад"), id='back_to_select_type', on_click=back_to_select_type),
             state=FlowMenu.confirm_schedule,
+        ),
+        Window(
+            Format("Ви впевнені, що хочете опублікувати цей пост?"),
+            Group(
+                Button(Const("✅ Так, опублікувати"), id="confirm_publish", on_click=on_publish_post),
+                Button(Const("❌ Скасувати"), id="cancel_publish", on_click=back_to_post_view),
+                width=2
+            ),
+            state=FlowMenu.publish_confirm,
+            parse_mode=ParseMode.HTML,
         ),
         on_process_result=on_dialog_result
     )

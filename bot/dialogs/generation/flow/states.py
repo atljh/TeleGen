@@ -12,3 +12,4 @@ class FlowMenu(StatesGroup):
     input_time = State()
     select_time = State()
     confirm_schedule = State()
+    publish_confirm = State()

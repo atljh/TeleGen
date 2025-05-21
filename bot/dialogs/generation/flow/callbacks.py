@@ -9,7 +9,6 @@ from aiogram_dialog import DialogManager, StartMode
 from django.conf import settings
 
 from bot.containers import Container
-from bot.database.dtos.dtos import MediaType, PostImageDTO
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 
 from bot.dialogs.generation.flow.states import FlowMenu
@@ -52,28 +51,31 @@ async def on_back_to_posts(
     # else:
     #     await manager.show()
 
+#===========================================PUBLISH===========================================
+
+async def show_publish_confirm(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowMenu.publish_confirm)
+
+
+async def back_to_post_view(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(FlowMenu.posts_list)
+
 
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = await paging_getter(manager)
     start_data = manager.start_data or {}
-
     current_post = dialog_data["post"]
     post_id = current_post["id"]
-    
-    channel = start_data.get("selected_channel") or dialog_data.get("selected_channel")
-    
+    channel = start_data.get("selected_channel", '') or dialog_data.get("selected_channel", '')
     if not channel:
         await callback.answer("Канал не вибрано!")
         return
     
     post_service = Container.post_service()
-    is_album = False
     
     try:
         updated_post = await post_service.publish_post(post_id, channel.channel_id)
 
-        is_album = len(updated_post.images) > 1
-        
         manager.dialog_data["post"] = {
             **current_post,
             "status": "✅ Опубліковано",
@@ -81,18 +83,17 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
             "is_published": True
         }
         
-        await callback.answer(f"Пост успiшно опублiковано в канал!")
+        await manager.switch_to(FlowMenu.posts_list)
+        await callback.answer("Пост успішно опубліковано!")
         
     except InvalidOperationError as e:
-        logging.error(e)
-        await callback.answer(str(e))
+        logging.error(f"Invalid operation: {e}")
+        await callback.answer(f"❌ Помилка: {str(e)}")
+        await manager.switch_to(FlowMenu.posts_list)
     except Exception as e:
-        logging.error(e)
-        await callback.answer(f"Помилка: {str(e)}")
         logging.exception("Помилка при публікації посту")
-    finally:
-        await manager.show()
-
+        await callback.message.edit_text(f"❌ Сталася неочікувана помилка: {str(e)}")
+        await manager.switch_to(FlowMenu.posts_list)
 
 #===========================================EDIT===========================================
 async def on_edit_post(
