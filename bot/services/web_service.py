@@ -255,12 +255,12 @@ class WebService:
     #     )
 
 
-        crawl_config = CrawlerRunConfig(
-            extraction_strategy=llm_strat,
-            cache_mode=CacheMode.BYPASS
-        )
+        # crawl_config = CrawlerRunConfig(
+        #     extraction_strategy=llm_strat,
+        #     cache_mode=CacheMode.BYPASS
+        # )
 
-        try:
+        # try:
             # async with AsyncWebCrawler() as crawler:
                 # result = await crawler.arun(url=url, config=crawl_config)
 
@@ -295,9 +295,9 @@ class WebService:
                 #     self.logger.error(f"Error parsing LLM response for {url}: {str(e)}")
                 #     return None
                     
-        except Exception as e:
-            self.logger.error(f"Error during LLM parsing of {url}: {str(e)}")
-            return None
+        # except Exception as e:
+        #     self.logger.error(f"Error during LLM parsing of {url}: {str(e)}")
+        #     return None
 
     async def _download_media_batch(self, media_items: List[Dict]) -> List[Dict]:
         if not media_items:
