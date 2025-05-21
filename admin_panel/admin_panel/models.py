@@ -145,6 +145,7 @@ class Post(models.Model):
     
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE, related_name='posts', verbose_name="Флоу")
     content = models.TextField(verbose_name="Контент")
+    original_content = models.TextField(verbose_name='Оригiнальний текст', blank=True, null=True)
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,

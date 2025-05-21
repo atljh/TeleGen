@@ -88,6 +88,7 @@ class PostDTO(BaseModel):
     id: Optional[int] = None
     flow_id: int
     content: str
+    original_content: str = None
     source_id: str
     source_url: Optional[str] = None
     publication_date: Optional[datetime] = None
