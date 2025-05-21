@@ -11,9 +11,9 @@ from urllib.parse import urlparse
 from typing import Optional, List, Dict
 from pydantic import BaseModel
 
-from crawl4ai import AsyncWebCrawler
-from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, LLMConfig, CacheMode
-from crawl4ai.extraction_strategy import LLMExtractionStrategy
+# from crawl4ai import AsyncWebCrawler
+# from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, LLMConfig, CacheMode
+# from crawl4ai.extraction_strategy import LLMExtractionStrategy
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO, PostImageDTO, PostStatus
 from admin_panel.admin_panel.models import PostImage, Post
@@ -225,34 +225,34 @@ class WebService:
             self.logger.error(f"Error processing web source {source['link']}: {str(e)}")
             return None
 
-    async def _parse_with_llm(self, url: str) -> Optional[WebPost]:
-        llm_strat = LLMExtractionStrategy(
-            llmConfig=LLMConfig(
-                provider="openai/gpt-4o-mini",
-                api_token=self.openai_key
-            ),
-            schema=WebPost.model_json_schema(),
-            extraction_type="schema",
-            instruction=(
-                "From this HTML page, extract structured content with fields:\n"
-                "- title (main headline)\n"
-                "- content (full article text, 5-10 paragraphs)\n"
-                "- date (publication date if available)\n"
-                "- source (website or publisher name)\n"
-                "- url (original page URL)\n"
-                "- images (list of relevant image URLs)\n"
-                "Keep the content detailed and well-structured. "
-                "Respond only with valid JSON matching the schema."
-            ),
-            chunk_token_threshold=2000,
-            apply_chunking=True,
-            input_format="html",
-            extra_args={
-                "temperature": 0.2,
-                "max_tokens": 2000,
-                "top_p": 0.9
-            }
-        )
+    # async def _parse_with_llm(self, url: str) -> Optional[WebPost]:
+    #     llm_strat = LLMExtractionStrategy(
+    #         llmConfig=LLMConfig(
+    #             provider="openai/gpt-4o-mini",
+    #             api_token=self.openai_key
+    #         ),
+    #         schema=WebPost.model_json_schema(),
+    #         extraction_type="schema",
+    #         instruction=(
+    #             "From this HTML page, extract structured content with fields:\n"
+    #             "- title (main headline)\n"
+    #             "- content (full article text, 5-10 paragraphs)\n"
+    #             "- date (publication date if available)\n"
+    #             "- source (website or publisher name)\n"
+    #             "- url (original page URL)\n"
+    #             "- images (list of relevant image URLs)\n"
+    #             "Keep the content detailed and well-structured. "
+    #             "Respond only with valid JSON matching the schema."
+    #         ),
+    #         chunk_token_threshold=2000,
+    #         apply_chunking=True,
+    #         input_format="html",
+    #         extra_args={
+    #             "temperature": 0.2,
+    #             "max_tokens": 2000,
+    #             "top_p": 0.9
+    #         }
+    #     )
 
 
         crawl_config = CrawlerRunConfig(
@@ -261,39 +261,39 @@ class WebService:
         )
 
         try:
-            async with AsyncWebCrawler() as crawler:
-                result = await crawler.arun(url=url, config=crawl_config)
+            # async with AsyncWebCrawler() as crawler:
+                # result = await crawler.arun(url=url, config=crawl_config)
 
-                if not result.success:
-                    self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
-                    return None
+                # if not result.success:
+                #     self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
+                #     return None
 
-                try:
-                    parsed_data = json.loads(result.extracted_content)
+                # try:
+                #     parsed_data = json.loads(result.extracted_content)
                     
-                    if isinstance(parsed_data, list):
-                        if len(parsed_data) > 0:
-                            parsed_data = parsed_data[0]
-                        else:
-                            self.logger.error(f"Empty list returned for {url}")
-                            return None
+                #     if isinstance(parsed_data, list):
+                #         if len(parsed_data) > 0:
+                #             parsed_data = parsed_data[0]
+                #         else:
+                #             self.logger.error(f"Empty list returned for {url}")
+                #             return None
                     
-                    if 'url' not in parsed_data:
-                        parsed_data['url'] = url
+                #     if 'url' not in parsed_data:
+                #         parsed_data['url'] = url
                     
-                    if 'images' not in parsed_data:
-                        parsed_data['images'] = []
-                    elif not isinstance(parsed_data['images'], list):
-                        parsed_data['images'] = [parsed_data['images']]
+                #     if 'images' not in parsed_data:
+                #         parsed_data['images'] = []
+                #     elif not isinstance(parsed_data['images'], list):
+                #         parsed_data['images'] = [parsed_data['images']]
                     
-                    return WebPost(**parsed_data)
+                #     return WebPost(**parsed_data)
                     
-                except json.JSONDecodeError as e:
-                    self.logger.error(f"Invalid JSON response for {url}: {str(e)}")
-                    return None
-                except Exception as e:
-                    self.logger.error(f"Error parsing LLM response for {url}: {str(e)}")
-                    return None
+                # except json.JSONDecodeError as e:
+                #     self.logger.error(f"Invalid JSON response for {url}: {str(e)}")
+                #     return None
+                # except Exception as e:
+                #     self.logger.error(f"Error parsing LLM response for {url}: {str(e)}")
+                #     return None
                     
         except Exception as e:
             self.logger.error(f"Error during LLM parsing of {url}: {str(e)}")
