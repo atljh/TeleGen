@@ -250,6 +250,7 @@ class UserbotService:
             original_link = f"https://t.me/c/{entity.id}/{initial_msg.id}"
             
             post_data = {
+                'original_content': "\n\n".join(texts) if texts else "",
                 'text': "\n\n".join(texts) if texts else "",
                 'media': downloaded_media,
                 'is_album': True,
@@ -276,6 +277,7 @@ class UserbotService:
             original_link = None
 
         post_data = {
+            'original_content': msg.text or '',
             'text': msg.text or '',
             'media': [],
             'is_album': False,
@@ -427,6 +429,8 @@ class EnhancedUserbotService(UserbotService):
             post_dto.source_url = raw_post['source_url']   
         if 'source_id' in raw_post:
             post_dto.source_id = raw_post['source_id']
+        if 'original_content' in raw_post:
+            post_dto.original_content = raw_post['original_content']
 
         try:
             processed_text = await self._process_content(post_dto.content, flow)
@@ -436,6 +440,7 @@ class EnhancedUserbotService(UserbotService):
             return post_dto.copy(update={
                 'content': processed_text,
                 'flow_id': flow.id,
+                'original_content': post_dto.original_content,
                 'source_url': post_dto.source_url,
                 'source_id': post_dto.source_id,
                 'original_link': post_dto.original_link,

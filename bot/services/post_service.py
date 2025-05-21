@@ -111,6 +111,7 @@ class PostService:
                     source_url=post_dto.source_url,
                     original_date=post_dto.original_date,
                     original_link=post_dto.original_link,
+                    original_content=post_dto.original_content,
                     source_id=post_dto.source_id,
                     media_list=media_list
                 )
@@ -131,6 +132,7 @@ class PostService:
         content: str,
         original_link: str,
         original_date: datetime,
+        original_content: str,
         source_url: Optional[str] = None,
         scheduled_time: Optional[datetime] = None,
         media_list: Optional[List[str]] = None,
@@ -145,6 +147,7 @@ class PostService:
 
         post = await self.post_repo.create_with_media(
             flow=flow,
+            original_content=original_content,
             original_link=original_link,
             original_date=original_date,
             source_url=source_url,

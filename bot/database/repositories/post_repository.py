@@ -55,6 +55,7 @@ class PostRepository:
         original_date: datetime,
         source_url: str,
         source_id: str,
+        original_content: str,
         scheduled_time: Optional[datetime] = None
     ) -> Optional[Post]:
         try:
@@ -67,6 +68,7 @@ class PostRepository:
                 media_list=media_list,
                 original_link=original_link,
                 original_date=original_date,
+                original_content=original_content,
                 source_url=source_url,
                 source_id=source_id,
                 scheduled_time=scheduled_time
@@ -93,6 +95,7 @@ class PostRepository:
         original_date: datetime,
         source_url: str,
         source_id: str,
+        original_content: str,
         scheduled_time: Optional[datetime] = None
     ) -> Post:
         @sync_to_async
@@ -101,6 +104,7 @@ class PostRepository:
                 post = self._create_post(
                     flow=flow,
                     content=content,
+                    original_content=original_content,
                     original_link=original_link,
                     original_date=original_date,
                     source_url=source_url,
@@ -120,11 +124,13 @@ class PostRepository:
         original_date: datetime,
         source_url: str,
         source_id: str,
+        original_content: str,
         scheduled_time: Optional[datetime] = None
     ) -> Post:
         return Post.objects.create(
             flow=flow,
             content=content,
+            original_content=original_content,
             original_link=original_link,
             original_date=original_date,
             source_url=source_url,
