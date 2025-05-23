@@ -59,12 +59,54 @@ async def pay_subscription(callback: CallbackQuery, button: Button, manager: Dia
 async def confirm_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(SettingsMenu.confirm_delete)
 
+# ================== ОБРАБОТЧИКИ ОСНОВНЫХ НАСТРОЕК КАНАЛА ==================
+
+async def open_notification_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.notification_settings)
+
+async def open_timezone_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.timezone_settings)
+
+async def open_emoji_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.emoji_settings)
+
+async def open_channel_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.channel_signature)
+
+# ================== GETTER ДЛЯ ОКНА НАСТРОЕК ==================
+
+async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
+    channel_service = Container.channel_service()
+    selected_channel_id = dialog_manager.dialog_data["selected_channel"].id
+    
+    try:
+        channel = await channel_service.get_channel_by_id(selected_channel_id)
+        
+        return {
+            "selected_channel": channel,
+            "channel_flow": dialog_manager.dialog_data.get("channel_flow", None)
+        }
+    except Exception as e:
+        logger.error(f"Error getting channel data: {e}")
+        return {
+            "selected_channel": None,
+            "channel_flow": None
+        }
+
+# ================== ОБРАБОТЧИКИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ==================
+
 async def delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    channel_service = Container.channel_service() 
-    channel = manager.dialog_data['selected_channel']
-    await channel_service.delete_channel(channel.channel_id)
-    await callback.answer(f"Канал {channel.name} видалено")
-    await manager.switch_to(SettingsMenu.main)
+    channel_service = Container.channel_service()
+    selected_channel = manager.dialog_data["selected_channel"]
+    
+    try:
+        await channel_service.delete_channel(selected_channel.id)
+        await callback.answer("✅ Канал успішно видалено!")
+        await manager.done()
+    except Exception as e:
+        logger.error(f"Error deleting channel: {e}")
+        await callback.answer("❌ Помилка при видаленні каналу")
 
 async def cancel_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.channel_main_settings)
+    await callback.answer("Видалення скасовано")
+    await manager.back()
