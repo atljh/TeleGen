@@ -118,17 +118,27 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     async def _call_ai_with_retry(self, text: str, system_prompt: str, flow) -> str:
         aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
-
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+        ]
+        
+        if aisettings.role and aisettings.role.strip():
+            valid_roles = {"system", "assistant", "user", "function", "tool", "developer"}
+            if aisettings.role.lower() in valid_roles:
+                messages.append({
+                    "role": aisettings.role.lower(),
+                    "content": aisettings.role_content,
+                })
+        
+        messages.append({"role": "user", "content": text})
+        
         for attempt in range(self.max_retries + 1):
             try:
                 start_time = time.time()
                 response = await self.client.chat.completions.create(
                     model=self.model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": aisettings.role, "content": aisettings.role_content},
-                        {"role": "user", "content": text}
-                    ],
+                    messages=messages,
                     temperature=0.5,
                     top_p=0.9,
                     max_tokens=2000,
@@ -141,7 +151,6 @@ class ChatGPTContentProcessor(ContentProcessor):
                 if attempt == self.max_retries:
                     raise
                 await asyncio.sleep(1 * (attempt + 1))
-
 
     async def _get_prompt(self, text: str, flow: FlowDTO) -> str:
         return await self._get_or_create_user_prompt(text, flow)
