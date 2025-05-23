@@ -12,6 +12,10 @@ from bot.utils.getters import selected_channel_getter
 
 from .callbacks import (
     on_channel_selected,
+    open_channel_signature,
+    open_emoji_settings,
+    open_notification_settings,
+    open_timezone_settings,
     pay_subscription,
     confirm_delete_channel,
     delete_channel,
@@ -75,15 +79,15 @@ def create_settings_dialog():
         Window(
             Format(
                 "⚙️ <b>НАЛАШТУВАННЯ Загальні</b>\n\n"
-                "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
-                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
-                "<b>Флоу: {channel_flow}</b>"
+                "📢 <b>Назва:</b> {selected_channel.name}\n"
+                "📅 <b>Дата додавання:</b> {selected_channel.created_at:%d.%m.%Y}\n\n"
+                "<b>Флоу:</b> {'Активний' if channel_flow else 'Не налаштовано'}"
             ),
             Column(
-                Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings"),
-                Button(Const("🌍 Налаштування часового поясу"), id="timezone_settings"),
-                Button(Const("😊 Емоції перед заголовком"), id="emoji_settings"),
-                Button(Const("📝 Підпис каналу"), id="channel_signature"),
+                Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings", on_click=open_notification_settings),
+                Button(Const("🌍 Налаштування часового поясу"), id="timezone_settings", on_click=open_timezone_settings),
+                Button(Const("😊 Емоції перед заголовком"), id="emoji_settings", on_click=open_emoji_settings),
+                Button(Const("📝 Підпис каналу"), id="channel_signature", on_click=open_channel_signature),
                 Button(Const("🗑️ Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
             ),
             Row(
