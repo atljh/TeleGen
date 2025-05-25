@@ -19,7 +19,13 @@ logger = logging.getLogger(__name__)
 async def start_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     flow_service = Container.flow_service()
 
-    selected_channel = manager.dialog_data.get("selected_channel")
+    start_data = manager.start_data or {}
+    dialog_data = manager.dialog_data or {}
+    selected_channel = (
+        start_data.get("selected_channel", False)
+        or dialog_data.get('selected_channel, False')
+    )
+    logging.info(f'----{selected_channel}')
     channel_flow = await flow_service.get_flow_by_channel_id(selected_channel.id)
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
@@ -55,6 +61,7 @@ async def open_main_settings(callback: CallbackQuery, button: Button, manager: D
         },
         mode=StartMode.RESET_STACK 
     )
+    return
 
 async def back_to_settings(callback: CallbackQuery, b: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")

@@ -61,8 +61,8 @@ def create_settings_dialog():
         Window(
             Format(
                 "⚙️ <b>Налаштування каналу:</b>\n\n"
-                "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
-                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
+                "📢 <b>Назва: {selected_channel.name}</b>\n"
+                "📅 <b>Дата додавання:</b> {selected_channel.created_at:%d.%m.%Y}\n\n"
                 "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
@@ -81,7 +81,7 @@ def create_settings_dialog():
                 "⚙️ <b>НАЛАШТУВАННЯ Загальні</b>\n\n"
                 "📢 <b>Назва:</b> {selected_channel.name}\n"
                 "📅 <b>Дата додавання:</b> {selected_channel.created_at:%d.%m.%Y}\n\n"
-                "<b>Флоу:</b> {'Активний' if channel_flow else 'Не налаштовано'}"
+                "<b>Флоу:</b> {channel_flow}"
             ),
             Column(
                 Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings", on_click=open_notification_settings),
