@@ -5,7 +5,7 @@ from aiogram_dialog import DialogManager
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
-    
+    logging.info(dialog_data)
     selected_channel = (
         start_data.get("selected_channel") 
         or dialog_data.get("selected_channel")

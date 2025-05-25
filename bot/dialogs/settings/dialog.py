@@ -8,8 +8,8 @@ from aiogram_dialog import DialogManager
 
 from bot.containers import Container
 from .states import SettingsMenu
-from bot.utils.getters import selected_channel_getter
 
+from .getters import selected_channel_getter
 from .callbacks import (
     on_channel_selected,
     open_channel_signature,

@@ -33,7 +33,6 @@ async def on_channel_selected(
             (channel for channel in channels if str(channel.id) == item_id),
             None
         )
-        
         if not selected_channel:
             await callback.answer("Channel not found!")
             return

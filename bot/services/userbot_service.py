@@ -433,6 +433,7 @@ class EnhancedUserbotService(UserbotService):
             post_dto.original_content = raw_post['original_content']
 
         try:
+            logging.info("===q-")
             processed_text = await self._process_content(post_dto.content, flow)
             if isinstance(processed_text, list):
                 processed_text = " ".join(filter(None, processed_text))
