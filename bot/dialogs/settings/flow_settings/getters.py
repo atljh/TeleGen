@@ -5,7 +5,6 @@ from aiogram_dialog import DialogManager
 async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
-
     flow_data = (
         dialog_data.get("channel_flow")
         or start_data.get("channel_flow")
@@ -15,6 +14,9 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
         dialog_data.get("selected_channel")
         or start_data.get("selected_channel")
     )
+
+    dialog_manager.dialog_data['selected_channel'] = channel_data
+    dialog_manager.dialog_data['channel_flow'] = flow_data
 
     frequency_map = {
         'daily': 'Раз на день',
