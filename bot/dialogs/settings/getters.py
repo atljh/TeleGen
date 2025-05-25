@@ -36,9 +36,6 @@ from bot.containers import Container
 #     }
 
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
-    channel_service = Container.channel_service()
-    # selected_channel_id = dialog_manager.dialog_data["selected_channel"].id
-    # channel_flow = dialog_manager.dialog_data.get("channel_flow", None)
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
     selected_channel = (
@@ -49,10 +46,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         start_data.get("channel_flow", False)
         or dialog_data.get("channel_flow", False)
     )
-    logging.info(f'+++++++++{selected_channel}')
     try:
-        # channel = await channel_service.get_channel_by_id(selected_channel_id)
-        
         return {
             "selected_channel": selected_channel,
             "channel_flow": "Присутнiй" if channel_flow else 'Вiдсутнiй'
