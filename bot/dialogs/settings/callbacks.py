@@ -1,7 +1,8 @@
 import logging
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog import DialogManager, StartMode, Dialog, Window
+from aiogram_dialog.widgets.input import TextInput
 
 from bot.containers import Container
 
@@ -69,9 +70,6 @@ async def open_timezone_settings(callback: CallbackQuery, button: Button, manage
 async def open_emoji_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(SettingsMenu.emoji_settings)
 
-async def open_channel_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.channel_signature)
-
 # ================== GETTER ДЛЯ ОКНА НАСТРОЕК ==================
 
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
@@ -109,3 +107,28 @@ async def delete_channel(callback: CallbackQuery, button: Button, manager: Dialo
 async def cancel_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.answer("Видалення скасовано")
     await manager.back()
+
+# ================== ОБРАБОТЧИКИ ПОДПИСИ КАНАЛА ==================
+
+async def open_signature_editor(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.edit_signature)
+
+
+async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogManager):
+    new_signature = message.text
+    
+    if len(new_signature) > 200:
+        await message.answer("⚠️ Пiдпис (макс. 200 символов)")
+        return
+    
+    flow_service = Container.flow_service()
+    flow = manager.dialog_data["channel_flow"]
+    await flow_service.update_flow(
+        flow_id=flow.id,
+        signature=new_signature
+    )
+    
+    flow.signature = new_signature
+    
+    await message.answer(f"✅ Пiдпис оновлен:\n<code>{new_signature}</code>", parse_mode="HTML")
+    await manager.switch_to(SettingsMenu.channel_main_settings)

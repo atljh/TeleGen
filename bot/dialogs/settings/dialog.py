@@ -5,21 +5,26 @@ from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column, Next, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.input import TextInput
+from aiogram_dialog.widgets.kbd import Back, Cancel, Row
+from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.text import Const, Format
 
 from bot.containers import Container
 from .states import SettingsMenu
 
 from .getters import selected_channel_getter
 from .callbacks import (
+    handle_sig_input,
     on_channel_selected,
-    open_channel_signature,
     open_emoji_settings,
     open_notification_settings,
+    open_signature_editor,
     open_timezone_settings,
     pay_subscription,
     confirm_delete_channel,
     delete_channel,
-    cancel_delete_channel
+    cancel_delete_channel,
 )
 from .flow_settings.callbacks import (
     start_flow_settings
@@ -87,7 +92,7 @@ def create_settings_dialog():
                 Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings", on_click=open_notification_settings),
                 Button(Const("🌍 Налаштування часового поясу"), id="timezone_settings", on_click=open_timezone_settings),
                 Button(Const("😊 Емоції перед заголовком"), id="emoji_settings", on_click=open_emoji_settings),
-                Button(Const("📝 Підпис каналу"), id="channel_signature", on_click=open_channel_signature),
+                Button(Const("📝 Підпис каналу"), id="channel_signature", on_click=open_signature_editor),
                 Button(Const("🗑️ Видалити канал"), id="delete_channel", on_click=confirm_delete_channel),
             ),
             Row(
@@ -95,6 +100,22 @@ def create_settings_dialog():
             ),
             state=SettingsMenu.channel_main_settings,
             parse_mode=ParseMode.HTML,
+            getter=selected_channel_getter
+        ),
+        Window(
+            Format(
+                "📝 <b>НАЛАШТУВАННЯ ПІДПИСУ КАНАЛУ</b>\n\n"
+                "Поточний підпис:\n"
+                "<code>{signature}</code>\n\n"
+                "Напишіть новий підпис або натисніть кнопку для скидання:"
+            ),
+            Row(
+                Back(Const("🔙 Назад")),
+                Cancel(Const("❌ Отмена")),
+            ),
+            MessageInput(handle_sig_input),
+            state=SettingsMenu.edit_signature,
+            parse_mode="HTML",
             getter=selected_channel_getter
         ),
         Window(
