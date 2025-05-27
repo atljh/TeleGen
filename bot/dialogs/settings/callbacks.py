@@ -158,13 +158,19 @@ async def set_timezone(callback: CallbackQuery, button: Button, manager: DialogM
     channel_service = Container.channel_service()
     channel = manager.dialog_data["selected_channel"]
     
-    await channel_service.update_channel(
-        channel_id=channel.id,
-        timezone=tz
-    )
-    channel.timezone = tz
-    await callback.answer(f"Часовий пояс встановлено: {tz}")
-    await manager.back()
+    # await channel_service.update_channel(
+    #     channel_id=channel.id,
+    #     timezone=tz
+    # )
+    # channel.timezone = tz
+    timezones = {
+        "europe_kiev": "🇺🇦 Київ (UTC+2)",
+        "europe_london": "🇪🇺 Лондон (UTC+0)",
+        "america_new_york": "🇺🇸 Нью-Йорк (UTC-4)"
+    }
+    await callback.answer(f"Часовий пояс встановлено: {timezones[tz]}")
+    await manager.switch_to(SettingsMenu.channel_main_settings)
+
 
 async def toggle_emoji(callback: CallbackQuery, widget, manager: DialogManager, is_enabled: bool):
     channel_service = Container.channel_service()
