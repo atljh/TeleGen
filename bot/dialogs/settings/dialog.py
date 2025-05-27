@@ -13,7 +13,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from bot.containers import Container
 from .states import SettingsMenu
 
-from .getters import selected_channel_getter
+from .getters import emoji_button_getter, emoji_getter, notification_button_getter, notification_getter, selected_channel_getter, timezone_getter
 from .callbacks import (
     handle_sig_input,
     on_channel_selected,
@@ -25,6 +25,10 @@ from .callbacks import (
     confirm_delete_channel,
     delete_channel,
     cancel_delete_channel,
+    set_timezone,
+    toggle_emoji,
+    toggle_notification,
+    open_settings,
 )
 from .flow_settings.callbacks import (
     start_flow_settings
@@ -118,6 +122,44 @@ def create_settings_dialog():
             parse_mode="HTML",
             getter=selected_channel_getter
         ),
+        Window(
+            Format(
+                "🔔 <b>Налаштування сповіщень для {channel_name}</b>\n\n"
+                "Тут ви можете керувати сповіщеннями каналу"
+            ),
+
+            Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
+            state=SettingsMenu.notification_settings,
+            parse_mode=ParseMode.HTML,
+            getter=notification_getter
+        ),
+        Window(
+            Format(
+                "🌍 <b>Налаштування часового поясу для {channel_name}</b>\n\n"
+                "Поточний часовий пояс: {current_timezone}\n\n"
+                "Оберіть новий часовий пояс:"
+            ),
+            Column(
+                Button(Const("🇺🇦 Київ (UTC+2)"), id="tz_europe_kiev", on_click=set_timezone),
+                Button(Const("🇪🇺 Лондон (UTC+0)"), id="tz_europe_london", on_click=set_timezone),
+                Button(Const("🇺🇸 Нью-Йорк (UTC-4)"), id="tz_america_new_york", on_click=set_timezone),
+            ),
+            Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
+            state=SettingsMenu.timezone_settings,
+            parse_mode=ParseMode.HTML,
+            getter=timezone_getter
+        ),
+        Window(
+            Format(
+                "😊 <b>Налаштування емодзі для {channel_name}</b>\n\n"
+                "Додавати випадкові емодзі перед заголовками"
+            ),
+            Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
+            state=SettingsMenu.emoji_settings,
+            parse_mode=ParseMode.HTML,
+            getter=emoji_getter
+        ),
+
         Window(
             Const("⚠️ <b>Ви впевнені, що хочете видалити цей канал?</b>\n\n"
                  "Усі дані будуть втрачені без можливості відновлення."),

@@ -2,8 +2,8 @@ import logging
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog import DialogManager, StartMode, Dialog, Window
-from aiogram_dialog.widgets.input import TextInput
-
+from aiogram_dialog import Window, DialogManager
+from aiogram_dialog.widgets.kbd import Back, Button, Column, Row
 from bot.containers import Container
 
 from .states import SettingsMenu
@@ -59,6 +59,10 @@ async def pay_subscription(callback: CallbackQuery, button: Button, manager: Dia
 async def confirm_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(SettingsMenu.confirm_delete)
 
+async def open_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(SettingsMenu.channel_main_settings)
+
+
 # ================== ОБРАБОТЧИКИ ОСНОВНЫХ НАСТРОЕК КАНАЛА ==================
 
 async def open_notification_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -106,7 +110,7 @@ async def delete_channel(callback: CallbackQuery, button: Button, manager: Dialo
 
 async def cancel_delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.answer("Видалення скасовано")
-    await manager.back()
+    await manager.switch_to(SettingsMenu.channel_main_settings)
 
 # ================== ОБРАБОТЧИКИ ПОДПИСИ КАНАЛА ==================
 
@@ -132,3 +136,46 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
     
     await message.answer(f"✅ Пiдпис оновлен:\n<code>{new_signature}</code>", parse_mode="HTML")
     await manager.switch_to(SettingsMenu.channel_main_settings)
+
+
+
+
+# ================== ОБРОБНИКИ ТА GETTERS ==================
+
+async def toggle_notification(callback: CallbackQuery, widget, manager: DialogManager, is_enabled: bool):
+    channel_service = Container.channel_service()
+    channel = manager.dialog_data["selected_channel"]
+    
+    await channel_service.update_channel(
+        channel_id=channel.id,
+        notifications_enabled=is_enabled
+    )
+    channel.notifications_enabled = is_enabled
+    await callback.answer(f"Сповіщення {'увімкнені' if is_enabled else 'вимкнені'}")
+
+async def set_timezone(callback: CallbackQuery, button: Button, manager: DialogManager):
+    tz = button.widget_id.replace("tz_", "")
+    channel_service = Container.channel_service()
+    channel = manager.dialog_data["selected_channel"]
+    
+    await channel_service.update_channel(
+        channel_id=channel.id,
+        timezone=tz
+    )
+    channel.timezone = tz
+    await callback.answer(f"Часовий пояс встановлено: {tz}")
+    await manager.back()
+
+async def toggle_emoji(callback: CallbackQuery, widget, manager: DialogManager, is_enabled: bool):
+    channel_service = Container.channel_service()
+    channel = manager.dialog_data["selected_channel"]
+    
+    await channel_service.update_channel(
+        channel_id=channel.id,
+        emoji_enabled=is_enabled
+    )
+    channel.emoji_enabled = is_enabled
+    await callback.answer(f"Емодзі {'увімкнені' if is_enabled else 'вимкнені'}")
+
+
+

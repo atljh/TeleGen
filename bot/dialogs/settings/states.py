@@ -15,3 +15,6 @@ class SettingsMenu(StatesGroup):
     posts_in_flow = State()
     source_settings = State()
     edit_signature = State()
+    notification_settings = State()
+    timezone_settings = State()
+    emoji_settings = State()
