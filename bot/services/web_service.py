@@ -384,7 +384,7 @@ class WebService:
         try:
             return await self._process_single_post(raw_post, flow)
         except Exception as e:
-            self.logger.warning(f"Post processing failed: {str(e)}")
+            self.logger.warning(f"Web Post processing failed: {str(e)}")
             return None
 
     async def _process_single_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:

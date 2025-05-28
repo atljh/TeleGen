@@ -399,6 +399,8 @@ class EnhancedUserbotService(UserbotService):
     async def _process_posts_parallel(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
         tasks = []
         for raw_post in raw_posts:
+            if not raw_post:
+                continue
             task = self._safe_process_post(raw_post, flow)
             tasks.append(task)
         
@@ -409,7 +411,7 @@ class EnhancedUserbotService(UserbotService):
         try:
             return await self._process_single_post(raw_post, flow)
         except Exception as e:
-            self.logger.warning(f"Post processing failed: {str(e)}")
+            self.logger.warning(f"Telegram Post processing failed: {str(e)}")
             return None
 
     async def _process_single_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:
@@ -433,7 +435,6 @@ class EnhancedUserbotService(UserbotService):
             post_dto.original_content = raw_post['original_content']
 
         try:
-            logging.info("===q-")
             processed_text = await self._process_content(post_dto.content, flow)
             if isinstance(processed_text, list):
                 processed_text = " ".join(filter(None, processed_text))
