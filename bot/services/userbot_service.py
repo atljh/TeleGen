@@ -275,7 +275,6 @@ class UserbotService:
         except Exception as e:
             logging.error(f"Could not generate original link: {str(e)}")
             original_link = None
-
         post_data = {
             'original_content': msg.text or '',
             'text': msg.text or '',

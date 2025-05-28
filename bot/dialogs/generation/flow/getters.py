@@ -10,6 +10,8 @@ from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
 from aiogram_dialog.widgets.kbd import StubScroll
 
+import pytz
+from datetime import datetime
 from django.conf import settings
 from asgiref.sync import sync_to_async
 from functools import lru_cache
@@ -272,12 +274,40 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
         "media": media
     }
 
+
+
+from django.utils import timezone
+
 async def post_info_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = await paging_getter(dialog_manager)
     post = dialog_data["post"]
+    
+    original_date = post.get("original_date", "")
+    kiev_date = ""
+    
+    if original_date:
+        try:
+            if isinstance(original_date, str):
+                dt = timezone.datetime.fromisoformat(original_date)
+                if not timezone.is_aware(dt):
+                    dt = timezone.make_aware(dt, timezone.utc)
+            elif isinstance(original_date, datetime) and not timezone.is_aware(original_date):
+                dt = timezone.make_aware(original_date, timezone.utc)
+            elif isinstance(original_date, datetime):
+                dt = original_date
+            else:
+                raise ValueError("Unsupported date format")
+            
+            kiev_tz = pytz.timezone('Europe/Kiev')
+            kiev_date = timezone.localtime(dt, timezone=kiev_tz).strftime("%Y-%m-%d %H:%M:%S")
+            
+        except Exception as e:
+            print(f"Error converting date: {e}")
+            kiev_date = original_date
+    
     return {
         "status": post.get("status", ""),
         "source_url": post.get("source_url", ""),
         "original_link": post.get("original_link", ""),
-        "original_date": post.get("original_date", "")
+        "original_date": kiev_date or original_date
     }
