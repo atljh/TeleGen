@@ -13,6 +13,7 @@ import openai
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.errors import SessionPasswordNeededError
+from telethon.tl.types import MessageEntityTextUrl, MessageEntityUrl
 from telethon.tl.types import (
     Channel,
     Chat,
@@ -86,70 +87,106 @@ class UserbotService:
             await client.disconnect()
 
     async def get_last_posts(
-        self,
-        sources: List[Dict],
-        limit: int = 10
-    ) -> List[Dict]:
-        telegram_sources = [s for s in sources if s.get('type') == 'telegram']
-        if not telegram_sources:
-            return []
-        result = []
-        processed_albums = set()
-        source_limits = self._calculate_source_limits(sources, limit)
-        message_count = 0
+            self,
+            sources: List[Dict],
+            limit: int = 10
+        ) -> List[Dict]:
+            telegram_sources = [s for s in sources if s.get('type') == 'telegram']
+            if not telegram_sources:
+                return []
+            result = []
+            processed_albums = set()
+            source_limits = self._calculate_source_limits(sources, limit)
+            message_count = 0
 
-        logging.info('================================================')
-        logging.info(source_limits)
+            logging.info('================================================')
+            logging.info(source_limits)
 
-        async with self.get_client() as client:
-            for source in telegram_sources:
-                if message_count >= limit:
-                    break
+            async with self.get_client() as client:
+                for source in telegram_sources:
+                    if message_count >= limit:
+                        break
 
-                if source['type'] != 'telegram':
-                    continue
-
-                try:
-                    remaining_for_source = source_limits[source['link']]
-                    if remaining_for_source <= 0:
+                    if source['type'] != 'telegram':
                         continue
 
-                    entity = await self._get_entity(client, source)
-                    if not entity:
-                        continue
-                    
-
-                    messages = await client.get_messages(
-                        entity, 
-                        limit=remaining_for_source
-                    )
-
-                    for msg in messages:
-                        try:
-                            proccess_result = await self._process_message_or_album(
-                                client, 
-                                entity, 
-                                msg, 
-                                source['link'], 
-                                processed_albums
-                            )
-                            if proccess_result:
-                                post_data, msg_count = proccess_result
-                                result.append(post_data)
-                                source_limits[source['link']] -= 1
-                                if message_count >= limit:
-                                    break
-
-                        except Exception as msg_error:
-                            logging.error(f"Error processing message {msg.id}: {str(msg_error)}")
+                    try:
+                        remaining_for_source = source_limits[source['link']]
+                        if remaining_for_source <= 0:
                             continue
 
-                except Exception as e:
-                    logging.error(f"Error processing source {source['link']}: {str(e)}")
-                    continue
+                        entity = await self._get_entity(client, source)
+                        if not entity:
+                            continue
+                        
+                        messages = await client.get_messages(
+                            entity, 
+                            limit=remaining_for_source * 2
+                        )
 
-        return result[::-1]
+                        for msg in messages:
+                            try:
+                                if await self._contains_external_links(client, msg, entity):
+                                    continue
 
+                                proccess_result = await self._process_message_or_album(
+                                    client, 
+                                    entity, 
+                                    msg, 
+                                    source['link'], 
+                                    processed_albums
+                                )
+                                if proccess_result:
+                                    post_data, msg_count = proccess_result
+                                    result.append(post_data)
+                                    source_limits[source['link']] -= 1
+                                    message_count += 1
+                                    if message_count >= limit:
+                                        break
+
+                            except Exception as msg_error:
+                                logging.error(f"Error processing message {msg.id}: {str(msg_error)}")
+                                continue
+
+                    except Exception as e:
+                        logging.error(f"Error processing source {source['link']}: {str(e)}")
+                        continue
+
+            return result
+
+    async def _contains_external_links(self, client, message, channel_entity) -> bool:
+        if not message.entities:
+            return False
+        
+        channel_username = getattr(channel_entity, 'username', None)
+        channel_id = channel_entity.id
+        
+        for entity in message.entities:
+            if isinstance(entity, MessageEntityTextUrl):
+                url = entity.url
+                if url.startswith('https://t.me/'):
+                    mentioned_username = url.split('/')[-1]
+                    if mentioned_username.lower() != channel_username.lower():
+                        return True
+            
+            elif isinstance(entity, MessageEntityUrl):
+                text = message.text[entity.offset:entity.offset+entity.length]
+                if text.startswith('https://t.me/'):
+                    mentioned_username = text.split('/')[-1]
+                    if mentioned_username.lower() != channel_username.lower():
+                        return True
+        
+        if message.reply_markup:
+            for row in message.reply_markup.rows:
+                for button in row.buttons:
+                    if hasattr(button, 'url'):
+                        url = button.url
+                        if url.startswith('https://t.me/'):
+                            mentioned_username = url.split('/')[-1]
+                            if mentioned_username.lower() != channel_username.lower():
+                                return True
+        
+        return False
 
     async def _get_entity(self, client, source) -> Optional[TelegramEntity]:
         try:
