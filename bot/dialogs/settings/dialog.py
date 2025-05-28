@@ -125,10 +125,22 @@ def create_settings_dialog():
         Window(
             Format(
                 "🔔 <b>Налаштування сповіщень для {channel_name}</b>\n\n"
-                "Тут ви можете керувати сповіщеннями каналу"
+                "Тут ви можете керувати типами сповіщень:"
             ),
-
-            Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
+            Column(
+                Button(
+                    Format("🟢 Сповіщення увімкнено: {notifications_enabled}"),
+                    id="notifications_toggle",
+                    on_click=toggle_notification,
+                )
+                # ),
+                # Button(
+                #     Const("⏰ Налаштувати час сповіщень"),
+                #     id="set_notification_time",
+                #     on_click=open_notification_time_settings,
+                # ),
+            ),
+            Back(Const("🔙 Назад")),
             state=SettingsMenu.notification_settings,
             parse_mode=ParseMode.HTML,
             getter=notification_getter

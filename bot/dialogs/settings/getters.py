@@ -86,8 +86,9 @@ async def timezone_getter(dialog_manager: DialogManager, **kwargs):
 
 async def notification_getter(dialog_manager: DialogManager, **kwargs):
     channel = dialog_manager.dialog_data["selected_channel"]
+    notifications_enabled = dialog_manager.dialog_data.get('notifications_enabled', False)
     return {
-        "notifications_enabled": getattr(channel, "notifications_enabled", False),
+        "notifications_enabled": '🟢 Сповіщення увімкнено' if notifications_enabled else '🔴 Сповіщення вимкнено',
         "channel_name": channel.name
     }
 

@@ -142,16 +142,18 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
 
 # ================== ОБРОБНИКИ ТА GETTERS ==================
 
-async def toggle_notification(callback: CallbackQuery, widget, manager: DialogManager, is_enabled: bool):
+async def toggle_notification(callback: CallbackQuery, widget, manager: DialogManager):
     channel_service = Container.channel_service()
     channel = manager.dialog_data["selected_channel"]
-    
-    await channel_service.update_channel(
-        channel_id=channel.id,
-        notifications_enabled=is_enabled
-    )
-    channel.notifications_enabled = is_enabled
-    await callback.answer(f"Сповіщення {'увімкнені' if is_enabled else 'вимкнені'}")
+    notifications_enabled = manager.dialog_data.get('notifications_enabled', False)
+    notifications_enabled = not notifications_enabled
+    manager.dialog_data['notifications_enabled'] = notifications_enabled
+    # await channel_service.update_channel(
+    #     channel_id=channel.id,
+    #     notifications_enabled=is_enabled
+    # )
+    # channel.notifications_enabled = is_enabled
+    await callback.answer(f"Сповіщення {'увімкнені' if notifications_enabled else 'вимкнені'}")
 
 async def set_timezone(callback: CallbackQuery, button: Button, manager: DialogManager):
     tz = button.widget_id.replace("tz_", "")
