@@ -93,6 +93,7 @@ def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
     return keyboard
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+    
     scroll: StubScroll = dialog_manager.find("stub_scroll")
     current_page = await scroll.get_page() if scroll else 0
 
@@ -231,6 +232,8 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     type=media_info['type']
                 )
 
+    if data["post"].get("is_album"):
+        await send_media_album(dialog_manager, data["post"])
     return data
 
 async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
