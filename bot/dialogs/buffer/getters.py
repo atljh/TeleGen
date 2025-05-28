@@ -242,6 +242,8 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     type=media_info['type']
                 )
 
+    if data["post"].get("is_album"):
+        await send_media_album(dialog_manager, data["post"])
     return data
 
 async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
