@@ -30,6 +30,7 @@ class ChannelDTO(BaseModel):
     description: str | None
     created_at: datetime
     is_active: bool
+    notifications: bool
 
     class Config:
         from_attributes = True

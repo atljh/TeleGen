@@ -27,6 +27,7 @@ class Channel(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name="Опис каналу")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     is_active = models.BooleanField(default=True, verbose_name="Активний")
+    notifications = models.BooleanField(default=False, verbose_name="Сповiщення")
 
     def __str__(self):
         return f"{self.name} (ID: {self.channel_id})"

@@ -131,12 +131,6 @@ def create_settings_dialog():
                     id="notifications_toggle",
                     on_click=toggle_notification,
                 )
-                # ),
-                # Button(
-                #     Const("⏰ Налаштувати час сповіщень"),
-                #     id="set_notification_time",
-                #     on_click=open_notification_time_settings,
-                # ),
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.notification_settings,
