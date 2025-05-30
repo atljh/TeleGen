@@ -72,7 +72,9 @@ async def open_timezone_settings(callback: CallbackQuery, button: Button, manage
     await manager.switch_to(SettingsMenu.timezone_settings)
 
 async def open_emoji_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.switch_to(SettingsMenu.emoji_settings)
+    # await manager.switch_to(SettingsMenu.emoji_settings)
+    await callback.answer("Функція в розробці")
+    
 
 # ================== GETTER ДЛЯ ОКНА НАСТРОЕК ==================
 
