@@ -1,8 +1,11 @@
+import logging
 from bot.database.dtos import ChannelDTO
 from bot.database.repositories import (
     ChannelRepository,
     UserRepository
 )
+
+logger = logging.getLogger(__name__)
 
 class ChannelService:
     def __init__(
@@ -57,11 +60,24 @@ class ChannelService:
     async def get_channel(self, channel_id: str) -> ChannelDTO:
         channel = await self.channel_repository.get_channel_by_id(channel_id)
         return ChannelDTO.from_orm(channel)
-    
-    async def update_channel(self, channel_id: str) -> ChannelDTO:
-        channel = await self.channel_repository.get_channel_by_id(channel_id)
-        updated_channel = await self.channel_repository.update_channel(channel)
-        return ChannelDTO.from_orm(updated_channel)
+
+    async def update_channel(self, channel_id: int, **kwargs) -> ChannelDTO:
+        try:
+            channel = await self.channel_repository.get_channel(channel_id)
+
+            if not channel:
+                raise ValueError(f"Flow with ID {channel_id} not found")
+            
+            for field, value in kwargs.items():
+                setattr(channel, field, value)
+            
+            updated_channel = await self.channel_repository.update_channel(channel)
+            return ChannelDTO.from_orm(updated_channel)
+            
+        except Exception as e:
+            logger.error(f"Error updating channel {channel_id}: {e}")
+            raise
+
 
     async def delete_channel(self, channel_id: str):
         channel =  await self.channel_repository.get_channel_by_id(channel_id)

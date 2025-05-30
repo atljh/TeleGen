@@ -148,11 +148,11 @@ async def toggle_notification(callback: CallbackQuery, widget, manager: DialogMa
     notifications_enabled = manager.dialog_data.get('notifications_enabled', False)
     notifications_enabled = not notifications_enabled
     manager.dialog_data['notifications_enabled'] = notifications_enabled
-    # await channel_service.update_channel(
-    #     channel_id=channel.id,
-    #     notifications_enabled=is_enabled
-    # )
-    # channel.notifications_enabled = is_enabled
+    await channel_service.update_channel(
+        channel_id=channel.id,
+        notifications=notifications_enabled
+    )
+    channel.notifications = notifications_enabled
     await callback.answer(f"Сповіщення {'увімкнені' if notifications_enabled else 'вимкнені'}")
 
 async def set_timezone(callback: CallbackQuery, button: Button, manager: DialogManager):
