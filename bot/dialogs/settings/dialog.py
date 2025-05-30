@@ -115,7 +115,6 @@ def create_settings_dialog():
             ),
             Row(
                 Back(Const("🔙 Назад")),
-                Cancel(Const("❌ Отмена")),
             ),
             MessageInput(handle_sig_input),
             state=SettingsMenu.edit_signature,
@@ -125,11 +124,10 @@ def create_settings_dialog():
         Window(
             Format(
                 "🔔 <b>Налаштування сповіщень для {channel_name}</b>\n\n"
-                "Тут ви можете керувати типами сповіщень:"
             ),
             Column(
                 Button(
-                    Format("🟢 Сповіщення увімкнено: {notifications_enabled}"),
+                    Format("{notifications_enabled}"),
                     id="notifications_toggle",
                     on_click=toggle_notification,
                 )
@@ -140,7 +138,7 @@ def create_settings_dialog():
                 #     on_click=open_notification_time_settings,
                 # ),
             ),
-            Back(Const("🔙 Назад")),
+            Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.notification_settings,
             parse_mode=ParseMode.HTML,
             getter=notification_getter
