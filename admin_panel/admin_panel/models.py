@@ -1,5 +1,6 @@
 from datetime import timezone
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 class User(models.Model):
     telegram_id = models.BigIntegerField(unique=True, verbose_name="Telegram ID")
@@ -21,6 +22,12 @@ class User(models.Model):
 
 
 class Channel(models.Model):
+    TIMEZONE_CHOICES = [
+        ('Europe/Kiev', '🇺🇦 Київ (UTC+2)'),
+        ('Europe/London', '🇪🇺 Лондон (UTC+0)'),
+        ('America/New_York', '🇺🇸 Нью-Йорк (UTC-4)'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='channels', verbose_name="Користувач")
     channel_id = models.CharField(max_length=100, unique=True, verbose_name="ID каналу")
     name = models.CharField(max_length=255, verbose_name="Назва каналу")
@@ -28,6 +35,12 @@ class Channel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     is_active = models.BooleanField(default=True, verbose_name="Активний")
     notifications = models.BooleanField(default=False, verbose_name="Сповiщення")
+    timezone = models.CharField(
+        max_length=50,
+        choices=TIMEZONE_CHOICES,
+        default='Europe/Kiev',
+        verbose_name="Часовий пояс"
+    )
 
     def __str__(self):
         return f"{self.name} (ID: {self.channel_id})"
@@ -35,7 +48,6 @@ class Channel(models.Model):
     class Meta:
         verbose_name = "Канал"
         verbose_name_plural = "Канали"
-
 
 class Flow(models.Model):
     class ContentLength(models.TextChoices):

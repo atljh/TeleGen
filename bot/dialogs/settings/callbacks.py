@@ -156,23 +156,35 @@ async def toggle_notification(callback: CallbackQuery, widget, manager: DialogMa
     await callback.answer(f"Сповіщення {'увімкнені' if notifications_enabled else 'вимкнені'}")
 
 async def set_timezone(callback: CallbackQuery, button: Button, manager: DialogManager):
-    tz = button.widget_id.replace("tz_", "")
+    tz_mapping = {
+        "europe_kiev": "Europe/Kiev",
+        "europe_london": "Europe/London",
+        "america_new_york": "America/New_York"
+    }
+    
+    tz_key = button.widget_id.replace("tz_", "")
+    tz = tz_mapping.get(tz_key)
+    
+    if not tz:
+        await callback.answer("Невідомий часовий пояс")
+        return
+    
     channel_service = Container.channel_service()
     channel = manager.dialog_data["selected_channel"]
     
-    # await channel_service.update_channel(
-    #     channel_id=channel.id,
-    #     timezone=tz
-    # )
-    # channel.timezone = tz
-    timezones = {
-        "europe_kiev": "🇺🇦 Київ (UTC+2)",
-        "europe_london": "🇪🇺 Лондон (UTC+0)",
-        "america_new_york": "🇺🇸 Нью-Йорк (UTC-4)"
+    await channel_service.update_channel(
+        channel_id=channel.id,
+        timezone=tz
+    )
+    
+    display_names = {
+        "Europe/Kiev": "🇺🇦 Київ (UTC+2)",
+        "Europe/London": "🇪🇺 Лондон (UTC+0)",
+        "America/New_York": "🇺🇸 Нью-Йорк (UTC-4)"
     }
-    await callback.answer(f"Часовий пояс встановлено: {timezones[tz]}")
+    
+    await callback.answer(f"Часовий пояс встановлено: {display_names[tz]}")
     await manager.switch_to(SettingsMenu.channel_main_settings)
-
 
 async def toggle_emoji(callback: CallbackQuery, widget, manager: DialogManager, is_enabled: bool):
     channel_service = Container.channel_service()

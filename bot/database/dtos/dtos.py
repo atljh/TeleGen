@@ -31,6 +31,7 @@ class ChannelDTO(BaseModel):
     created_at: datetime
     is_active: bool
     notifications: bool
+    timezone: str
 
     class Config:
         from_attributes = True
