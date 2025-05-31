@@ -108,18 +108,19 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "📝 <b>НАЛАШТУВАННЯ ПІДПИСУ КАНАЛУ</b>\n\n"
-                "Поточний підпис:\n"
-                "<code>{signature}</code>\n\n"
-                "Напишіть новий підпис або натисніть кнопку для скидання:"
+                "📝 **НАЛАШТУВАННЯ ПІДПИСУ КАНАЛУ**\n\n"
+                "Поточний підпис: "
+                "{signature}\n\n"
+                "Введiть новий підпис: "
             ),
             Row(
                 Back(Const("🔙 Назад")),
             ),
             MessageInput(handle_sig_input),
             state=SettingsMenu.edit_signature,
-            parse_mode="HTML",
-            getter=selected_channel_getter
+            parse_mode=ParseMode.MARKDOWN_V2,
+            getter=selected_channel_getter,
+            disable_web_page_preview=True,
         ),
         Window(
             Format(
@@ -135,7 +136,8 @@ def create_settings_dialog():
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.notification_settings,
             parse_mode=ParseMode.HTML,
-            getter=notification_getter
+            getter=notification_getter,
+            disable_web_page_preview=True,
         ),
         Window(
             Format(

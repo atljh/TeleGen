@@ -1,5 +1,8 @@
+import re
 import logging
 from aiogram.types import CallbackQuery, Message
+from aiogram.enums import ParseMode
+
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog import DialogManager, StartMode, Dialog, Window
 from aiogram_dialog import Window, DialogManager
@@ -74,8 +77,6 @@ async def open_timezone_settings(callback: CallbackQuery, button: Button, manage
 async def open_emoji_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
     # await manager.switch_to(SettingsMenu.emoji_settings)
     await callback.answer("Функція в розробці")
-    
-
 # ================== GETTER ДЛЯ ОКНА НАСТРОЕК ==================
 
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
@@ -121,26 +122,73 @@ async def open_signature_editor(callback: CallbackQuery, button: Button, manager
 
 
 async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogManager):
-    new_signature = message.text
-    
-    if len(new_signature) > 200:
-        await message.answer("⚠️ Пiдпис (макс. 200 символов)")
-        return
-    
-    flow_service = Container.flow_service()
-    flow = manager.dialog_data["channel_flow"]
-    await flow_service.update_flow(
-        flow_id=flow.id,
-        signature=new_signature
-    )
-    
-    flow.signature = new_signature
-    
-    await message.answer(f"✅ Пiдпис оновлен:\n<code>{new_signature}</code>", parse_mode="HTML")
-    await manager.switch_to(SettingsMenu.channel_main_settings)
+    try:
+        message_text = message.text or message.caption or ""
+        entities = message.entities or message.caption_entities or []
+
+        markdown_parts = []
+        last_offset = 0
+
+        for entity in entities:
+            if entity.offset > last_offset:
+                markdown_parts.append(message_text[last_offset:entity.offset])
+
+            if entity.type == "text_link":
+                text = message_text[entity.offset:entity.offset + entity.length]
+                url = entity.url
+                markdown_parts.append(f"[{text}]({url})")
+                last_offset = entity.offset + entity.length
+            elif entity.type == "url":
+                url = message_text[entity.offset:entity.offset + entity.length]
+                markdown_parts.append(url)
+                last_offset = entity.offset + entity.length
+
+        markdown_parts.append(message_text[last_offset:])
+        new_signature = "".join(markdown_parts).strip()
+
+        if len(new_signature) > 200:
+            await message.answer(
+                "⚠️ *Підпис занадто довгий*\nМаксимум 200 символів",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            return
+
+        flow_service = Container.flow_service()
+        flow = manager.dialog_data["channel_flow"]
+        await flow_service.update_flow(flow.id, signature=new_signature)
+        flow.signature = new_signature
+
+        escaped_signature = escape_markdown(new_signature)
 
 
+        escaped_signature = escape_markdown_except_links(new_signature)
+        await message.answer(
+            f"✅ *Підпис оновлено:*\n{escaped_signature}",
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+        await manager.switch_to(SettingsMenu.channel_main_settings)
 
+    except Exception as e:
+        logging.error(f"Signature processing error: {str(e)}")
+        await message.answer(
+            "⚠️ *Помилка!* Не вдалось обробити підпис",
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+
+
+def escape_markdown(text: str) -> str:
+    to_escape = r"_*[]()~`>#+-=|{}.!"
+    return ''.join(f"\\{c}" if c in to_escape else c for c in text)
+
+
+def escape_markdown_except_links(text: str) -> str:
+    def escape(s):
+        to_escape = r"_*[]()~`>#+-=|{}.!"
+        return ''.join(f"\\{c}" if c in to_escape else c for c in s)
+
+    parts = re.split(r"(\[[^\]]+\]\([^)]+\))", text)
+    escaped = [escape(part) if not part.startswith('[') else part for part in parts]
+    return ''.join(escaped)
 
 # ================== ОБРОБНИКИ ТА GETTERS ==================
 
