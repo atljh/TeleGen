@@ -99,11 +99,11 @@ def create_buffer_dialog():
         ),
         Window(
             Format(
-                "<b>Інформація поста</b>\n\n"
-                "<b>Статус:</b> {status}\n"
-                "<b>Джерело:</b> {source_url}\n"
-                "<b>Посилання:</b> {original_link}\n"
-                "<b>Дата публікації:</b> {original_date}"
+                "**Інформація поста**\n\n"
+                "**Статус:** {status}\n"
+                "**Джерело:** {source_url}\n"
+                "**Посилання:** {original_link}\n"
+                "**Дата публікації:** {original_date}"
             ),
             Row(
                 Back(Const("🔙 Назад")),
@@ -114,7 +114,7 @@ def create_buffer_dialog():
             disable_web_page_preview=True
         ),
         Window(
-            Format("<b>✏️ Редагування поста</b>\n\n"
+            Format("**✏️ Редагування поста**\n\n"
                 "\n{content}\n\n"
                 ),
             DynamicMedia("media"),

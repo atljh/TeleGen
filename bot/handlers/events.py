@@ -62,7 +62,7 @@ async def bot_removed_from_channel(event: ChatMemberUpdated, dialog_manager: Dia
         try:
             await event.bot.send_message(
                 chat_id=event.from_user.id,
-                text=f"❌ Бота було видалено з каналу <b>{event.chat.title}</b>\n\n"
+                text=f"❌ Бота було видалено з каналу **{event.chat.title}**\n\n"
                      f"ID каналу: <code>{event.chat.id}</code>\n"
                      "Публікації в цей канал більше неможливі.",
                 parse_mode="HTML"

@@ -6,7 +6,7 @@ basic_commands_router = Router()
 @basic_commands_router.message(Command("settings"))
 async def settings_command(message: types.Message):
     await message.answer(
-        "⚙ <b>Налаштування бота</b>\n\n"
+        "⚙ **Налаштування бота**\n\n"
         "Тут ви можете налаштувати:\n"
         "- Мову інтерфейсу\n"
         "- Сповіщення\n"
@@ -17,7 +17,7 @@ async def settings_command(message: types.Message):
 @basic_commands_router.message(Command("help"))
 async def help_command(message: types.Message):
     await message.answer(
-        "🆘 <b>Допомога</b>\n\n"
+        "🆘 **Допомога**\n\n"
         "Доступні команди:\n"
         "/start - Початок роботи\n"
         "/settings - Налаштування\n"
@@ -29,7 +29,7 @@ async def help_command(message: types.Message):
 @basic_commands_router.message(Command("start"))
 async def start_command(message: types.Message):
     await message.answer(
-        "👋 <b>Вітаємо у нашому боті!</b>\n\n"
+        "👋 **Вітаємо у нашому боті!**\n\n"
         "Цей бот допоможе вам з...\n\n"
         "Щоб почати, оберіть потрібну команду з меню або введіть /help",
         parse_mode="HTML",
@@ -39,7 +39,7 @@ async def start_command(message: types.Message):
 @basic_commands_router.message(Command("price"))
 async def price_command(message: types.Message):
     await message.answer(
-        "💵 <b>Наші ціни</b>\n\n"
+        "💵 **Наші ціни**\n\n"
         "🔹 Базовий тариф - 100 грн/міс\n"
         "🔹 Стандартний тариф - 200 грн/міс\n"
         "🔹 Преміум тариф - 350 грн/міс\n\n",
@@ -58,7 +58,7 @@ async def menu_command(message: types.Message):
     )
     
     await message.answer(
-        "📱 <b>Головне меню</b>\n\n"
+        "📱 **Головне меню**\n\n"
         "Оберіть потрібний пункт:",
         parse_mode="HTML",
         reply_markup=keyboard

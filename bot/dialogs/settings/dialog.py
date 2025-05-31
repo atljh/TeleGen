@@ -48,7 +48,7 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
 def create_settings_dialog():
     return Dialog(
         Window(
-            Const("📋 <b>Оберіть канал або додайте новий</b>"),
+            Const("📋 **Оберіть канал або додайте новий**"),
             Group(
                 Select(
                     text=Format("📢 {item.name}"),
@@ -69,10 +69,10 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "⚙️ <b>Налаштування каналу:</b>\n\n"
-                "📢 <b>Назва: {selected_channel.name}</b>\n"
-                "📅 <b>Дата додавання:</b> {selected_channel.created_at:%d.%m.%Y}\n\n"
-                "<b>Флоу: {channel_flow}</b>"
+                "⚙️ **Налаштування каналу:**\n\n"
+                "📢 **Назва: {selected_channel.name}**\n"
+                "📅 **Дата додавання:** {selected_channel.created_at:%d.%m.%Y}\n\n"
+                "**Флоу: {channel_flow}**"
             ),
             Column(
                 SwitchTo(Const("Загальні"), id="main_settings", state=SettingsMenu.channel_main_settings),
@@ -87,10 +87,10 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "⚙️ <b>НАЛАШТУВАННЯ Загальні</b>\n\n"
-                "📢 <b>Назва:</b> {selected_channel.name}\n"
-                "📅 <b>Дата додавання:</b> {selected_channel.created_at:%d.%m.%Y}\n\n"
-                "<b>Флоу:</b> {channel_flow}"
+                "⚙️ **НАЛАШТУВАННЯ Загальні**\n\n"
+                "📢 **Назва:** {selected_channel.name}\n"
+                "📅 **Дата додавання:** {selected_channel.created_at:%d.%m.%Y}\n\n"
+                "**Флоу:** {channel_flow}"
             ),
             Column(
                 Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings", on_click=open_notification_settings),
@@ -124,7 +124,7 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "🔔 <b>Налаштування сповіщень для {channel_name}</b>\n\n"
+                "🔔 **Налаштування сповіщень для {channel_name}**\n\n"
             ),
             Column(
                 Button(
@@ -141,7 +141,7 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "🌍 <b>Налаштування часового поясу для {channel_name}</b>\n\n"
+                "🌍 **Налаштування часового поясу для {channel_name}**\n\n"
                 "Поточний часовий пояс: {current_timezone}\n\n"
                 "Оберіть новий часовий пояс:"
             ),
@@ -157,7 +157,7 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "😊 <b>Налаштування емодзі для {channel_name}</b>\n\n"
+                "😊 **Налаштування емодзі для {channel_name}**\n\n"
                 "Додавати випадкові емодзі перед заголовками"
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
@@ -167,7 +167,7 @@ def create_settings_dialog():
         ),
 
         Window(
-            Const("⚠️ <b>Ви впевнені, що хочете видалити цей канал?</b>\n\n"
+            Const("⚠️ **Ви впевнені, що хочете видалити цей канал?**\n\n"
                  "Усі дані будуть втрачені без можливості відновлення."),
             Column(
                 Button(Const("✅ Так, видалити"), id="confirm_delete", on_click=delete_channel),

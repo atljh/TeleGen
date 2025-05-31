@@ -99,7 +99,7 @@ async def get_sources_data(dialog_manager: DialogManager, **kwargs):
         sources_text = "<i>Джерела відсутні</i>"
     else:
         sources_text = "\n".join(
-            f"{idx+1}. <b>{src['type']}</b>: <code>{src['link']}</code>"
+            f"{idx+1}. **{src['type']}**: <code>{src['link']}</code>"
             for idx, src in enumerate(sources)
         )
 

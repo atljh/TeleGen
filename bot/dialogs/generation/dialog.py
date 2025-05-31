@@ -44,9 +44,9 @@ def create_generation_dialog():
         ),
         Window(
             Format(
-                "📢 <b>Назва: {dialog_data[selected_channel].name}</b>\n"
-                "📅 <b>Дата додавання:</b> {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
-                "<b>Флоу: {channel_flow}</b>"
+                "**Назва: {dialog_data[selected_channel].name}**\n"
+                # "📅 **Дата додавання:** {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
+                "**Флоу: {channel_flow}**"
             ),
             Column(
                 Button(
