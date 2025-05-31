@@ -163,7 +163,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             f"Translate it to Ukranian",
             f"Edit the text according to the following rules:",
             f"1. Keep the original meaning, but improve readability and clarity.",
-            f"2. Remove unnecessary links, formatting artifacts, and special characters.",
+            # f"2. Remove unnecessary links, formatting artifacts, and special characters.",
             f"3. The total text length must not exceed {self._get_length_instruction()} characters.",
             f"4. Rewrite the text in the following style: {self.flow.theme}.",
         ]

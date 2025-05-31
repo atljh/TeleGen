@@ -6,6 +6,7 @@ from aiogram.types import (
     InputMediaPhoto, FSInputFile, Message,
     InlineKeyboardMarkup, InlineKeyboardButton
 )
+from aiogram.enums import ParseMode
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
 from aiogram_dialog.widgets.kbd import StubScroll
@@ -56,7 +57,7 @@ async def send_media_album(
             media = InputMediaPhoto(
                 media=FSInputFile(media_path),
                 caption=post_data['content'] if i == 0 else None,
-                parse_mode='HTML'
+                parse_mode=ParseMode.MARKDOWN_V2
             )
             media_group.append(media)
         

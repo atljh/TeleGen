@@ -88,7 +88,7 @@ def flow_dialog() -> Dialog:
             ),
             getter=paging_getter,
             state=FlowMenu.posts_list,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
         ),
         Window(
             Format(
@@ -103,7 +103,7 @@ def flow_dialog() -> Dialog:
             ),
             getter=post_info_getter,
             state=FlowMenu.post_info,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True
         ),
         Window(
