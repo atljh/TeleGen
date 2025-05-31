@@ -72,7 +72,7 @@ def create_buffer_dialog():
                 width=2,
             ),
             state=BufferMenu.main,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=get_user_channels_data,
         ),
         Window(
@@ -95,7 +95,7 @@ def create_buffer_dialog():
             ),
             getter=paging_getter,
             state=BufferMenu.channel_main,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
         ),
         Window(
             Format(
@@ -110,7 +110,7 @@ def create_buffer_dialog():
             ),
             getter=post_info_getter,
             state=BufferMenu.post_info,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True
         ),
         Window(

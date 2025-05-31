@@ -64,7 +64,7 @@ def create_settings_dialog():
             ),
 
             state=SettingsMenu.main,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=get_user_channels_data,
         ),
         Window(
@@ -82,7 +82,7 @@ def create_settings_dialog():
                 Back(Const("◀️ До списку каналів")),
             ),
             state=SettingsMenu.channel_settings,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=selected_channel_getter
         ),
         Window(
@@ -103,7 +103,7 @@ def create_settings_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=SettingsMenu.channel_main_settings,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=selected_channel_getter
         ),
         Window(
@@ -135,7 +135,7 @@ def create_settings_dialog():
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.notification_settings,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=notification_getter,
             disable_web_page_preview=True,
         ),
@@ -152,7 +152,7 @@ def create_settings_dialog():
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.timezone_settings,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=timezone_getter
         ),
         Window(
@@ -162,7 +162,7 @@ def create_settings_dialog():
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.emoji_settings,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             getter=emoji_getter
         ),
 
@@ -174,6 +174,6 @@ def create_settings_dialog():
                 Button(Const("❌ Скасувати"), id="cancel_delete", on_click=cancel_delete_channel),
             ),
             state=SettingsMenu.confirm_delete,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
         )
     )

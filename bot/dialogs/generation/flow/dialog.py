@@ -180,7 +180,7 @@ def flow_dialog() -> Dialog:
                 width=2
             ),
             state=FlowMenu.publish_confirm,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
         ),
         on_process_result=on_dialog_result
     )
