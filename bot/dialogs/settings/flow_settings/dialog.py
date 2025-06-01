@@ -55,7 +55,7 @@ def create_flow_settings_window():
         """
         **Канал:** {channel_name}
                 
-        **<u>Параметри Flow</u>**
+        **Параметри Flow**
         - **Тематика:** {theme}
         - **Джерела ({source_count}):**
             **{sources}**
@@ -82,7 +82,7 @@ def create_flow_settings_window():
             Button(Const("🔙 Назад"), id="open_main_settings", on_click=open_main_settings),
         ),
         state=FlowSettingsMenu.flow_settings,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.MARKDOWN,
         getter=flow_settings_getter,
         disable_web_page_preview=True
     )
@@ -169,7 +169,7 @@ def create_posts_in_flow_window():
 def create_sources_dialog():
     return Window(
         Format(
-            "**Управління джерелами**\n\n"
+            "<b>Управління джерелами</b>\n\n"
             "Кількість джерел: {sources_count}\n\n"
             "{sources_list}"
         ),
@@ -180,7 +180,7 @@ def create_sources_dialog():
         ),
         Button(Const("🔙 Назад"), id="back_to_settings", on_click=open_flow_settings),
         state=FlowSettingsMenu.source_settings,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
         getter=get_sources_data
     )
 
@@ -206,7 +206,7 @@ def create_select_source_type():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.add_source_type,
-        parse_mode=ParseMode.MARKDOWN_V2
+        parse_mode=ParseMode.HTML
     )
 
 def create_input_source_link():
@@ -224,7 +224,7 @@ def create_input_source_link():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.add_source_link,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
         getter=get_source_type_data
     )
 #=======================================EDIT FLOW===========================================
@@ -250,7 +250,7 @@ def create_select_edit_source():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.edit_select_source,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
         getter=get_sources_list
     )
 
@@ -298,7 +298,7 @@ def create_edit_source_link():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.edit_source_link,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
         getter=get_source_type_data
     )
 

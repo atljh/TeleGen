@@ -70,8 +70,7 @@ def create_settings_dialog():
         Window(
             Format(
                 "⚙️ **Налаштування каналу:**\n\n"
-                "📢 **Назва: {selected_channel.name}**\n"
-                "📅 **Дата додавання:** {selected_channel.created_at:%d.%m.%Y}\n\n"
+                "**Назва: {selected_channel.name}**\n"
                 "**Флоу: {channel_flow}**"
             ),
             Column(
@@ -88,8 +87,7 @@ def create_settings_dialog():
         Window(
             Format(
                 "⚙️ **НАЛАШТУВАННЯ Загальні**\n\n"
-                "📢 **Назва:** {selected_channel.name}\n"
-                "📅 **Дата додавання:** {selected_channel.created_at:%d.%m.%Y}\n\n"
+                "**Назва:** {selected_channel.name}\n"
                 "**Флоу:** {channel_flow}"
             ),
             Column(
@@ -168,7 +166,7 @@ def create_settings_dialog():
 
         Window(
             Const("⚠️ **Ви впевнені, що хочете видалити цей канал?**\n\n"
-                 "Усі дані будуть втрачені без можливості відновлення."),
+                 "Усі дані будуть втрачені без можливості відновлення"),
             Column(
                 Button(Const("✅ Так, видалити"), id="confirm_delete", on_click=delete_channel),
                 Button(Const("❌ Скасувати"), id="cancel_delete", on_click=cancel_delete_channel),
