@@ -175,7 +175,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 if is_album:
                     post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
                 else:
-                    post_dict["content_preview"] = content[:1000] + ("..." if len(content) > 1000 else "")
+                    post_dict["content_preview"] = content
 
                 posts.append(post_dict)
 
