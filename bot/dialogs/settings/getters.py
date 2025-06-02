@@ -57,7 +57,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         return {
             "selected_channel": selected_channel,
             "channel_flow": "Присутнiй" if channel_flow else 'Вiдсутнiй',
-            "signature": channel_flow.signature
+            "signature": channel_flow.signature if channel_flow else ''
         }
     except Exception as e:
         logging.error(f"Error getting channel data: {e}")

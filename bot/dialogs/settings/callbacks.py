@@ -104,7 +104,7 @@ async def delete_channel(callback: CallbackQuery, button: Button, manager: Dialo
     selected_channel = manager.dialog_data["selected_channel"]
     
     try:
-        await channel_service.delete_channel(selected_channel.id)
+        await channel_service.delete_channel(selected_channel.channel_id)
         await callback.answer("✅ Канал успішно видалено!")
         await manager.done()
     except Exception as e:
