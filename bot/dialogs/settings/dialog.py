@@ -48,7 +48,7 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
 def create_settings_dialog():
     return Dialog(
         Window(
-            Const("📋 <b>Оберіть канал або додайте новий</b>"),
+            Const("<b>Оберіть канал або додайте новий</b>"),
             Group(
                 Select(
                     text=Format("📢 {item.name}"),
@@ -69,7 +69,7 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "⚙️ <b>Налаштування каналу:</b>\n\n"
+                "<b>Налаштування каналу:</b>\n\n"
                 "<b>Назва: {selected_channel.name}</b>\n"
                 "<b>Флоу: {channel_flow}</b>"
             ),
@@ -86,7 +86,7 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "⚙️ <b>НАЛАШТУВАННЯ Загальні</b>\n\n"
+                "<b>НАЛАШТУВАННЯ Загальні</b>\n\n"
                 "<b>Назва: {selected_channel.name}</b>\n"
                 "<b>Флоу: {channel_flow}</b>"
             ),
@@ -106,7 +106,7 @@ def create_settings_dialog():
         ),
         Window(
             Format(
-                "📝 <b>НАЛАШТУВАННЯ ПІДПИСУ КАНАЛУ</b>\n\n"
+                "<b>НАЛАШТУВАННЯ ПІДПИСУ КАНАЛУ</b>\n\n"
                 "Поточний підпис: "
                 "{signature}\n\n"
                 "Введiть новий підпис: "

@@ -7,37 +7,6 @@ from aiogram_dialog.widgets.text import Const, Format
 from bot.containers import Container
 from bot.dialogs.settings.callbacks import toggle_emoji, toggle_notification
 
-# async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
-#     start_data = dialog_manager.start_data or {}
-#     dialog_data = dialog_manager.dialog_data or {}
-
-#     selected_channel = (
-#         start_data.get("selected_channel") 
-#         or dialog_data.get("selected_channel")
-#     )
-#     channel_flow = (
-#         start_data.get("channel_flow", False)
-#         or dialog_data.get("channel_flow", False)
-#     )
-
-#     if not selected_channel:
-#         return {
-#             "channel_name": "Канал не вибрано",
-#             "channel_id": "N/A",
-#             "created_at": datetime.now(),
-#             "channel_flow": "Вiдсутнiй"
-#         }
-    
-#     dialog_manager.dialog_data["selected_channel"] = selected_channel
-#     dialog_manager.dialog_data["channel_flow"] = channel_flow
-#     logging.info(f'===={selected_channel}')
-#     return {
-#         "channel_name": selected_channel.name,
-#         "channel_id": selected_channel.channel_id,
-#         "created_at": selected_channel.created_at,
-#         "channel_flow": "Присутнiй" if channel_flow else 'Вiдсутнiй'
-#     }
-
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
@@ -66,7 +35,6 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
             "channel_flow": "Присутнiй" if channel_flow else 'Вiдсутнiй'
         }
     
-
 def notification_button_getter(manager: DialogManager, **kwargs):
     value = manager.dialog_data.get("notifications_enabled", False)
     text = "✅ Сповіщення увімкнені" if value else "❌ Сповіщення вимкнені"
@@ -91,8 +59,6 @@ async def notification_getter(dialog_manager: DialogManager, **kwargs):
         "notifications_enabled": '🟢 Сповіщення увімкнено' if notifications_enabled else '🔴 Сповіщення вимкнено',
         "channel_name": channel.name
     }
-
-
 
 async def emoji_getter(dialog_manager: DialogManager, **kwargs):
     channel = dialog_manager.dialog_data["selected_channel"]

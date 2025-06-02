@@ -1,5 +1,7 @@
 import re
 import logging
+from html import escape as escape_html
+
 from aiogram.types import CallbackQuery, Message
 from aiogram.enums import ParseMode
 
@@ -126,29 +128,38 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
         message_text = message.text or message.caption or ""
         entities = message.entities or message.caption_entities or []
 
-        markdown_parts = []
+        html_parts = []
         last_offset = 0
 
         for entity in entities:
             if entity.offset > last_offset:
-                markdown_parts.append(message_text[last_offset:entity.offset])
+                html_parts.append(escape_html(message_text[last_offset:entity.offset]))
 
             if entity.type == "text_link":
                 text = message_text[entity.offset:entity.offset + entity.length]
                 url = entity.url
-                markdown_parts.append(f"[{text}]({url})")
+                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(text)}</a>')
                 last_offset = entity.offset + entity.length
             elif entity.type == "url":
                 url = message_text[entity.offset:entity.offset + entity.length]
-                markdown_parts.append(url)
+                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(url)}</a>')
                 last_offset = entity.offset + entity.length
 
-        markdown_parts.append(message_text[last_offset:])
-        new_signature = "".join(markdown_parts).strip()
+        html_parts.append(escape_html(message_text[last_offset:]))
+        
+        import re
+        text_with_links = "".join(html_parts)
+        text_with_links = re.sub(
+            r'\[([^\]]+)\]\(([^)]+)\)',
+            lambda m: f'<a href="{escape_html(m.group(2))}">{escape_html(m.group(1))}</a>',
+            text_with_links
+        )
+
+        new_signature = text_with_links.strip()
 
         if len(new_signature) > 200:
             await message.answer(
-                "⚠️ *Підпис занадто довгий*\nМаксимум 200 символів",
+                "⚠️ <b>Підпис занадто довгий</b>\nМаксимум 200 символів",
                 parse_mode=ParseMode.HTML
             )
             return
@@ -158,12 +169,8 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
         await flow_service.update_flow(flow.id, signature=new_signature)
         flow.signature = new_signature
 
-        escaped_signature = escape_markdown(new_signature)
-
-
-        escaped_signature = escape_markdown_except_links(new_signature)
         await message.answer(
-            f"✅ *Підпис оновлено:*\n{escaped_signature}",
+            f"✅ <b>Підпис оновлено:</b>\n{new_signature}",
             parse_mode=ParseMode.HTML
         )
         await manager.switch_to(SettingsMenu.channel_main_settings)
@@ -171,10 +178,9 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
     except Exception as e:
         logging.error(f"Signature processing error: {str(e)}")
         await message.answer(
-            "⚠️ *Помилка!* Не вдалось обробити підпис",
+            "⚠️ <b>Помилка!</b> Не вдалось обробити підпис",
             parse_mode=ParseMode.HTML
         )
-
 
 def escape_markdown(text: str) -> str:
     to_escape = r"_*[]()~`>#+-=|{}.!"
