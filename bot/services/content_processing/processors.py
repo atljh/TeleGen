@@ -145,7 +145,6 @@ class ChatGPTContentProcessor(ContentProcessor):
                     timeout=self.request_timeout
                 )
                 result = response.choices[0].message.content.strip()
-                logging.info(f"AI request took {time.time() - start_time:.2f}s")
                 return result
             except Exception as e:
                 if attempt == self.max_retries:
@@ -183,9 +182,9 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     def _get_length_instruction(self) -> str:
         length_mapping = {
-            "short": "100 characters",
-            "medium": "300 characters",
-            "long": "1000 characters"
+            "to_100": "100 characters",
+            "to_300": "300 characters",
+            "to_1000": "1000 characters"
         }
         logging.info(f"CONTENT LENGH {self.flow.content_length}")
-        return length_mapping.get(self.flow.content_length, "150-300 words")
+        return length_mapping.get(self.flow.content_length, "300 characters")
