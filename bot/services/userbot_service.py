@@ -100,7 +100,7 @@ class UserbotService:
         source_limits = self._calculate_source_limits(sources, limit)
         total_posts_needed = limit
         total_posts_collected = 0
-
+        logging.info(f"Remaining for source {remaining_for_source}")
         async with self.get_client() as client:
             for source in telegram_sources:
                 if len(result) >= total_posts_needed:
@@ -131,7 +131,6 @@ class UserbotService:
                         process_result = await self._process_message_or_album(
                             client, entity, msg, source['link'], processed_albums
                         )
-                        logging.info(f'---------PROCCESS: {process_result}')
                         if process_result is None:
                             continue
                             

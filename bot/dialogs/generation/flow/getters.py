@@ -44,42 +44,41 @@ async def send_media_album(
                 pass
         dialog_manager.dialog_data["message_ids"] = []
 
-    # try:
-    images = post_data.get('images', [])[:10]
-    if not images:
-        return None
-        
-    media_group = []
-    for i, image in enumerate(images):
-        media_path = get_media_path(image.url)
-        if not os.path.exists(media_path):
-            continue
-        caption = escape_markdown_v2(post_data['content']) if i == 0 else None
-        logging.info(caption)
-        media = InputMediaPhoto(
-            media=FSInputFile(media_path),
-            caption=caption,
-            parse_mode=ParseMode.MARKDOWN_V2
-        )
-        media_group.append(media)
-    
-    if media_group:
-        try:
-            await message.delete()
-        except:
-            pass
+    try:
+        images = post_data.get('images', [])[:10]
+        if not images:
+            return None
             
-        new_messages = await bot.send_media_group(
-            chat_id=chat_id,
-            media=media_group
-        )
-        message_ids = [msg.message_id for msg in new_messages]
+        media_group = []
+        for i, image in enumerate(images):
+            media_path = get_media_path(image.url)
+            if not os.path.exists(media_path):
+                continue
+            caption = post_data['content'] if i == 0 else None
+            media = InputMediaPhoto(
+                media=FSInputFile(media_path),
+                caption=caption,
+                parse_mode=ParseMode.HTML
+            )
+            media_group.append(media)
         
-        dialog_manager.dialog_data["message_ids"] = message_ids
-        
-    # except Exception as e:
-    #     logging.error(f"Error sending media album: {str(e)}")
-    #     await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
+        if media_group:
+            try:
+                await message.delete()
+            except:
+                pass
+                
+            new_messages = await bot.send_media_group(
+                chat_id=chat_id,
+                media=media_group
+            )
+            message_ids = [msg.message_id for msg in new_messages]
+            
+            dialog_manager.dialog_data["message_ids"] = message_ids
+            
+    except Exception as e:
+        logging.error(f"Error sending media album: {str(e)}")
+        await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
     
     return None
 
@@ -177,7 +176,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 if is_album:
                     post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
                 else:
-                    post_dict["content_preview"] = escape_markdown_v2(content)
+                    post_dict["content_preview"] = content
 
                 posts.append(post_dict)
 

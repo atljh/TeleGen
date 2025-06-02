@@ -71,7 +71,7 @@ def create_flow_dialog():
                 Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
             ),
             state=CreateFlowMenu.select_theme,
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.HTML
         ),
         Window(
             Format(
@@ -92,7 +92,7 @@ def create_flow_dialog():
                 Button(Const("🔜 Далі"), id="next", when="has_selected_sources", on_click=to_select_frequency),
             ),
             state=CreateFlowMenu.select_source,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=source_type_getter
         ),
         Window(
@@ -109,7 +109,7 @@ def create_flow_dialog():
                 # Button(Const("📋 Мої джерела"), id="my_sources", on_click=show_my_sources),
             ),
             state=CreateFlowMenu.add_source_link,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=source_link_getter
         ),
         Window(
@@ -122,7 +122,7 @@ def create_flow_dialog():
                 Next(Const("🔜 Ні, продовжити"), id="continue_flow"),
             ),
             state=CreateFlowMenu.source_confirmation,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=source_confirmation_getter
         ),
         Window(
@@ -139,7 +139,7 @@ def create_flow_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.select_frequency,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         ),
         Window(
             Const(
@@ -155,7 +155,7 @@ def create_flow_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.select_words_limit,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         ),
         Window(
             Const(
@@ -178,7 +178,7 @@ def create_flow_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.title_highlight_confirm,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         ),
         # Window(
         #     Format("⏰ **Налаштування рекламного топу**\n\n"
@@ -195,7 +195,7 @@ def create_flow_dialog():
         #         Button(Const("🔄 Скинути"), id="reset_time", on_click=reset_ad_time),
         #     ),
         #     state=CreateFlowMenu.ad_time_settings,
-        #     parse_mode=ParseMode.MARKDOWN_V2,
+        #     parse_mode=ParseMode.HTML,
         #     getter=ad_time_getter
         # ),
         Window(
@@ -225,7 +225,7 @@ def create_flow_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.flow_volume_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=flow_volume_getter
         ),
         Window(
@@ -241,7 +241,7 @@ def create_flow_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.custom_volume_input,
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.HTML
         ),
         Window(
             Format(
@@ -260,7 +260,7 @@ def create_flow_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.signature_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=signature_getter
         ),
         Window(
@@ -281,7 +281,7 @@ def create_flow_dialog():
                 Button(Const("Почати генерацiю"), id="start_generation", on_click=start_generation_process),
             ),
             state=CreateFlowMenu.confirmation,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=flow_confirmation_getter
         ),
         Window(
@@ -293,6 +293,6 @@ def create_flow_dialog():
             ),
             Back(Const("🔙 Назад")),
             state=CreateFlowMenu.input_custom_theme,
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.HTML
         ),
     )

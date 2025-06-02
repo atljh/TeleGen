@@ -402,7 +402,7 @@ async def on_source_new_link_entered(
             f"✅ Джерело успішно змiнено!:\n\n"
             f"Було: <code>{old_link}</code>\n"
             f"Стало: <code>{new_link}</code>",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.HTML
         )
 
         await manager.switch_to(

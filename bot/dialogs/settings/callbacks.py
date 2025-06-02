@@ -149,7 +149,7 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
         if len(new_signature) > 200:
             await message.answer(
                 "⚠️ *Підпис занадто довгий*\nМаксимум 200 символів",
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.HTML
             )
             return
 
@@ -164,7 +164,7 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
         escaped_signature = escape_markdown_except_links(new_signature)
         await message.answer(
             f"✅ *Підпис оновлено:*\n{escaped_signature}",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.HTML
         )
         await manager.switch_to(SettingsMenu.channel_main_settings)
 
@@ -172,7 +172,7 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
         logging.error(f"Signature processing error: {str(e)}")
         await message.answer(
             "⚠️ *Помилка!* Не вдалось обробити підпис",
-            parse_mode=ParseMode.MARKDOWN_V2
+            parse_mode=ParseMode.HTML
         )
 
 

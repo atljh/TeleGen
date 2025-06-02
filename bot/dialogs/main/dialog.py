@@ -34,7 +34,7 @@ def create_main_dialog():
                 "Оберіть опцію з меню нижче\\:\n"
                 "👇👇👇"
             ),
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         ),
         on_start=on_main_dialog_start
     )

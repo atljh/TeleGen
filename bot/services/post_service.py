@@ -169,11 +169,11 @@ class PostService:
                 for i, image in enumerate(post.images):
                     if i == 0:
                         if image.url.startswith(('http://', 'https://')):
-                            media = InputMediaPhoto(media=image.url, caption=caption, parse_mode=ParseMode.MARKDOWN_V2)
+                            media = InputMediaPhoto(media=image.url, caption=caption, parse_mode=ParseMode.HTML)
                         else:
                             media_path = os.path.join(settings.BASE_DIR, image.url.lstrip("/"))
                             if os.path.exists(media_path):
-                                media = InputMediaPhoto(media=FSInputFile(media_path), caption=caption, parse_mode=ParseMode.MARKDOWN_V2)
+                                media = InputMediaPhoto(media=FSInputFile(media_path), caption=caption, parse_mode=ParseMode.HTML)
                             else:
                                 raise InvalidOperationError(f"Файл изображения не найден: {image.url}")
                     else:
@@ -197,7 +197,7 @@ class PostService:
                         chat_id=channel_id,
                         video=video,
                         caption=caption,
-                        parse_mode=ParseMode.MARKDOWN_V2
+                        parse_mode=ParseMode.HTML
                     )
                 else:
                     decoded_path = unquote(post.video_url)
@@ -209,7 +209,7 @@ class PostService:
                             chat_id=channel_id,
                             video=video,
                             caption=caption,
-                            parse_mode=ParseMode.MARKDOWN_V2
+                            parse_mode=ParseMode.HTML
                         )
                     else:
                         raise InvalidOperationError("Файл видео не найден")
@@ -221,13 +221,13 @@ class PostService:
                         await self.bot.send_message(
                             chat_id=channel_id,
                             text=chunk,
-                            parse_mode=ParseMode.MARKDOWN_V2
+                            parse_mode=ParseMode.HTML
                         )
                 else:
                     await self.bot.send_message(
                         chat_id=channel_id,
                         text=post.content,
-                        parse_mode=ParseMode.MARKDOWN_V2
+                        parse_mode=ParseMode.HTML
                     )
             
             return await self.update_post(

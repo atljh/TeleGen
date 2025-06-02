@@ -107,7 +107,7 @@ def create_ad_block_settings_window():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.ad_block_settings,
-        parse_mode=ParseMode.MARKDOWN_V2
+        parse_mode=ParseMode.HTML
     )
 
 def create_frequency_settings_window():
@@ -123,7 +123,7 @@ def create_frequency_settings_window():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.generation_frequency,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
     )
 
 def create_character_limit_window():
@@ -146,7 +146,7 @@ def create_character_limit_window():
             ),
         ),
         state=FlowSettingsMenu.character_limit,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
         getter=character_limit_getter
     )
 
@@ -162,7 +162,7 @@ def create_posts_in_flow_window():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),        
         ),
         state=FlowSettingsMenu.posts_in_flow,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
         getter=posts_in_flow_getter
     )
     
@@ -280,7 +280,7 @@ def create_edit_source_type():
             Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.edit_source_type,
-        parse_mode=ParseMode.MARKDOWN_V2
+        parse_mode=ParseMode.HTML
     )
 
 def create_edit_source_link():

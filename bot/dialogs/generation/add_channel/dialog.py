@@ -50,12 +50,12 @@ def create_add_channel_dialog():
                 Button(Const("🔙 Назад"), id="go_back_to_generation", on_click=go_back_to_generation),
             ),
             state=AddChannelMenu.instructions,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=channel_data_getter
         ),
         Window(
             Format(
-                "🎉 **Дякуємо! Канал {channel_name} успішно доданий.**\n\n"
+                "🎉 <b>Дякуємо! Канал {channel_name} успішно доданий.</b>\n\n"
                 "ID каналу: <code>{channel_id}</code>\n"
                 "Наразі вам доступна обмежена безкоштовна підписка.\n"
                 "Для розширення функціоналу підпишіться на платну версію"

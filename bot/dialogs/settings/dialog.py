@@ -64,14 +64,14 @@ def create_settings_dialog():
             ),
 
             state=SettingsMenu.main,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=get_user_channels_data,
         ),
         Window(
             Format(
-                "⚙️ **Налаштування каналу:**\n\n"
-                "**Назва: {selected_channel.name}**\n"
-                "**Флоу: {channel_flow}**"
+                "⚙️ <b>Налаштування каналу:</b>\n\n"
+                "<b>Назва: {selected_channel.name}</b>\n"
+                "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
                 SwitchTo(Const("Загальні"), id="main_settings", state=SettingsMenu.channel_main_settings),
@@ -81,14 +81,14 @@ def create_settings_dialog():
                 Back(Const("◀️ До списку каналів")),
             ),
             state=SettingsMenu.channel_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=selected_channel_getter
         ),
         Window(
             Format(
-                "⚙️ **НАЛАШТУВАННЯ Загальні**\n\n"
-                "**Назва:** {selected_channel.name}\n"
-                "**Флоу:** {channel_flow}"
+                "⚙️ <b>НАЛАШТУВАННЯ Загальні</b>\n\n"
+                "<b>Назва: {selected_channel.name}</b>\n"
+                "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
                 Button(Const("⚙️ Налаштування сповіщень"), id="notification_settings", on_click=open_notification_settings),
@@ -101,12 +101,12 @@ def create_settings_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=SettingsMenu.channel_main_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=selected_channel_getter
         ),
         Window(
             Format(
-                "📝 **НАЛАШТУВАННЯ ПІДПИСУ КАНАЛУ**\n\n"
+                "📝 <b>НАЛАШТУВАННЯ ПІДПИСУ КАНАЛУ</b>\n\n"
                 "Поточний підпис: "
                 "{signature}\n\n"
                 "Введiть новий підпис: "
@@ -116,13 +116,13 @@ def create_settings_dialog():
             ),
             MessageInput(handle_sig_input),
             state=SettingsMenu.edit_signature,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=selected_channel_getter,
             disable_web_page_preview=True,
         ),
         Window(
             Format(
-                "🔔 **Налаштування сповіщень для {channel_name}**\n\n"
+                "🔔 <b>Налаштування сповіщень для {channel_name}</b>\n\n"
             ),
             Column(
                 Button(
@@ -133,13 +133,13 @@ def create_settings_dialog():
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.notification_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=notification_getter,
             disable_web_page_preview=True,
         ),
         Window(
             Format(
-                "🌍 **Налаштування часового поясу для {channel_name}**\n\n"
+                "🌍 <b>Налаштування часового поясу для {channel_name}</b>\n\n"
                 "Поточний часовий пояс: {current_timezone}\n\n"
                 "Оберіть новий часовий пояс:"
             ),
@@ -150,28 +150,28 @@ def create_settings_dialog():
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.timezone_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=timezone_getter
         ),
         Window(
             Format(
-                "😊 **Налаштування емодзі для {channel_name}**\n\n"
+                "😊 <b>Налаштування емодзі для {channel_name}</b>\n\n"
                 "Додавати випадкові емодзі перед заголовками"
             ),
             Button(Const("🔙 Назад"), id='open_settings', on_click=open_settings),
             state=SettingsMenu.emoji_settings,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=emoji_getter
         ),
 
         Window(
-            Const("⚠️ **Ви впевнені, що хочете видалити цей канал?**\n\n"
+            Const("⚠️ <b>Ви впевнені, що хочете видалити цей канал?</b>\n\n"
                  "Усі дані будуть втрачені без можливості відновлення"),
             Column(
                 Button(Const("✅ Так, видалити"), id="confirm_delete", on_click=delete_channel),
                 Button(Const("❌ Скасувати"), id="cancel_delete", on_click=cancel_delete_channel),
             ),
             state=SettingsMenu.confirm_delete,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         )
     )

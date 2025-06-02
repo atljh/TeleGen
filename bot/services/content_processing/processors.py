@@ -173,7 +173,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             rules.append(f"5. Use relevant {emoji_type} emojis")
         
         if self.flow.title_highlight:
-            rules.append("6. Format title with ** markdown")
+            rules.append("6. Format title with <b> tag")
         
         if self.flow.cta:
             rules.append(f"7. Add CTA: {self.flow.cta}")

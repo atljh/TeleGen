@@ -1,3 +1,4 @@
+import html
 import logging
 from itertools import zip_longest
 from aiogram.enums import ParseMode 
@@ -88,26 +89,26 @@ def flow_dialog() -> Dialog:
             ),
             getter=paging_getter,
             state=FlowMenu.posts_list,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         ),
         Window(
             Format(
-                "**Інформація поста**\n\n"
-                "**Статус:** {status}\n"
-                "**Джерело:** {source_url}\n"
-                "**Посилання:** {original_link}\n"
-                "**Дата публікації:** {original_date}"
+                "<b>Інформація поста</b>\n\n"
+                "<b>Статус:</b> {status}\n"
+                "<b>Джерело:</b> {source_url}\n"
+                "<b>Посилання:</b> {original_link}\n"
+                "<b>Дата публікації:</b> {original_date}"
             ),
             Row(
                 Back(Const("🔙 Назад")),
             ),
             getter=post_info_getter,
             state=FlowMenu.post_info,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             disable_web_page_preview=True
         ),
         Window(
-            Format("**✏️ Редагування поста**\n\n"
+            Format("<b>✏️ Редагування поста</b>\n\n"
                 "\n{content}\n\n"
                 ),
             DynamicMedia("media"),
@@ -180,7 +181,7 @@ def flow_dialog() -> Dialog:
                 width=2
             ),
             state=FlowMenu.publish_confirm,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
         ),
         on_process_result=on_dialog_result
     )

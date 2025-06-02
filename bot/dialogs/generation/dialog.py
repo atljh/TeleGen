@@ -39,14 +39,14 @@ def create_generation_dialog():
                 Button(Const("Додати канал"), id="add_channel", on_click=add_channel),
             ),
             state=GenerationMenu.main,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=get_user_channels_data,
         ),
         Window(
             Format(
-                "**Назва: {dialog_data[selected_channel].name}**\n"
-                # "📅 **Дата додавання:** {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
-                "**Флоу: {channel_flow}**"
+                "<b>Назва: {dialog_data[selected_channel].name}</b>\n"
+                "<b>Дата додавання: {dialog_data[selected_channel].created_at:%d.%m.%Y}</b>\n\n"
+                "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
                 Button(
@@ -78,7 +78,7 @@ def create_generation_dialog():
                 Back(Const("🔙 Назад")),
             ),
             state=GenerationMenu.channel_main,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=selected_channel_getter
         )
     )
