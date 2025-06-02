@@ -20,7 +20,6 @@ async def channel_success_getter(dialog_manager: DialogManager, **kwargs):
     channel_id = dialog_manager.start_data.get("channel_id")
     channel_service = Container.channel_service()
     channel = await channel_service.get_channel(channel_id)
-    logging.info(channel)
     dialog_manager.dialog_data['selected_channel'] = channel
     return {
         "channel_id": channel_id,
@@ -32,14 +31,15 @@ def create_add_channel_dialog():
     return Dialog(
         Window(
             Jinja(
-                "📝 **Інструкція з додавання бота до каналу**\n\n"
-                "**1. Додайте <a href='{{bot_url}}'>@{{bot_username}}</a> як адміністратора**\n\n"
-                "**2. Надайте боту такі права:\n"
+                "📝 *Інструкція з додавання бота до каналу*\n\n"
+                "*1\\. Додайте [@{{bot_username}}]({{bot_url}}) як адміністратора*\n\n"
+                "*2\\. Надайте боту такі права:*\n"
                 "   • Надсилання повідомлень\n"
                 "   • Редагування повідомлень\n"
-                "   • Управління чатом**\n\n"
-                "**3. Натисніть кнопку 'Перевірити права'**"
+                "   • Управління чатом\n\n"
+                "*3\\. Натисніть кнопку 'Перевірити права'*"
             ),
+
             Row(
                 Url(
                     text=Const("📲 Додати бота автоматично"),
@@ -68,7 +68,7 @@ def create_add_channel_dialog():
                 Button(Const("🔙 Назад"), id="back", on_click=go_back_to_generation),
             ),
             state=AddChannelMenu.success,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode=ParseMode.HTML,
             getter=channel_success_getter
         )
     )

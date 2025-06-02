@@ -55,10 +55,11 @@ async def send_media_album(
         if not os.path.exists(media_path):
             continue
         caption = escape_markdown_v2(post_data['content']) if i == 0 else None
+        logging.info(caption)
         media = InputMediaPhoto(
             media=FSInputFile(media_path),
             caption=caption,
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.MARKDOWN_V2
         )
         media_group.append(media)
     

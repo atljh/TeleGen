@@ -119,19 +119,19 @@ class UserbotService:
                         entity,
                         limit=remaining_for_source * 2
                     )
-
                     for msg in messages:
                         if len(result) >= total_posts_needed:
                             logging.info(f'break {len(result)}\{total_posts_collected}')
                             break
                             
                         if await self._contains_external_links(client, msg, entity):
+                            logging.info("Post contain external link. PASS")
                             continue
 
                         process_result = await self._process_message_or_album(
                             client, entity, msg, source['link'], processed_albums
                         )
-                        
+                        logging.info(f'---------PROCCESS: {process_result}')
                         if process_result is None:
                             continue
                             
@@ -168,20 +168,20 @@ class UserbotService:
         channel_username = getattr(channel_entity, 'username', None)
         channel_id = channel_entity.id
         
-        for entity in message.entities:
-            if isinstance(entity, MessageEntityTextUrl):
-                url = entity.url
-                if url.startswith('https://t.me/'):
-                    mentioned_username = url.split('/')[-1]
-                    if mentioned_username.lower() != channel_username.lower():
-                        return True
+        # for entity in message.entities:
+            # if isinstance(entity, MessageEntityTextUrl):
+            #     url = entity.url
+            #     if url.startswith('https://t.me/'):
+            #         mentioned_username = url.split('/')[-1]
+            #         if mentioned_username.lower() != channel_username.lower():
+            #             return True
             
-            elif isinstance(entity, MessageEntityUrl):
-                text = message.text[entity.offset:entity.offset+entity.length]
-                if text.startswith('https://t.me/'):
-                    mentioned_username = text.split('/')[-1]
-                    if mentioned_username.lower() != channel_username.lower():
-                        return True
+            # elif isinstance(entity, MessageEntityUrl):
+            #     text = message.text[entity.offset:entity.offset+entity.length]
+            #     if text.startswith('https://t.me/'):
+            #         mentioned_username = text.split('/')[-1]
+            #         if mentioned_username.lower() != channel_username.lower():
+            #             return True
         
         if message.reply_markup:
             for row in message.reply_markup.rows:
