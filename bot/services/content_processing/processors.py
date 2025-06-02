@@ -164,7 +164,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             f"Edit the text according to the following rules:",
             f"1. Keep the original meaning, but improve readability and clarity.",
             # f"2. Remove unnecessary links, formatting artifacts, and special characters.",
-            f"3. The total text length must not exceed {self._get_length_instruction()} characters.",
+            f"3. The text MUST be EXACTLY {self._get_length_instruction()} characters or less. Truncate if needed.",
             f"4. Rewrite the text in the following style: {self.flow.theme}.",
         ]
 
@@ -183,9 +183,9 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     def _get_length_instruction(self) -> str:
         length_mapping = {
-            "short": "50-100 words",
-            "medium": "150-300 words", 
-            "long": "500-1000 words"
+            "short": "100 characters",
+            "medium": "300 characters",
+            "long": "1000 characters"
         }
         logging.info(f"CONTENT LENGH {self.flow.content_length}")
         return length_mapping.get(self.flow.content_length, "150-300 words")

@@ -100,7 +100,6 @@ class UserbotService:
         source_limits = self._calculate_source_limits(sources, limit)
         total_posts_needed = limit
         total_posts_collected = 0
-        logging.info(f"Remaining for source {remaining_for_source}")
         async with self.get_client() as client:
             for source in telegram_sources:
                 if len(result) >= total_posts_needed:
@@ -108,6 +107,8 @@ class UserbotService:
 
                 try:
                     remaining_for_source = source_limits[source['link']]
+                    logging.info(f"Remaining for source {source} | {remaining_for_source}")
+
                     if remaining_for_source <= 0:
                         continue
 

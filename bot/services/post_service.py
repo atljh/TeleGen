@@ -79,7 +79,7 @@ class PostService:
         if not flow:
             return []
 
-        userbot_posts = await self.userbot_service.get_last_posts(flow)
+        userbot_posts = await self.userbot_service.get_last_posts(flow.flow_volume)
         web_posts = await self.web_service.get_last_posts(flow)
         
         combined_posts = userbot_posts + web_posts
