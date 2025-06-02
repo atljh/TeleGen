@@ -48,7 +48,7 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
 def create_settings_dialog():
     return Dialog(
         Window(
-            Const("📋 **Оберіть канал або додайте новий**"),
+            Const("📋 <b>Оберіть канал або додайте новий</b>"),
             Group(
                 Select(
                     text=Format("📢 {item.name}"),
