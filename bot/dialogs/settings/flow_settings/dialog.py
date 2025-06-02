@@ -53,17 +53,17 @@ def create_flow_settings_window():
     return Window(
         Format(
         """
-        **Канал:** {channel_name}
+        <b>Канал:</b> {channel_name}
                 
-        **Параметри Flow**
-        - **Тематика:** {theme}
-        - **Джерела ({source_count}):**
-            **{sources}**
-        - **Частота генерації:** {frequency}
-        - **Кількість знаків:** {words_limit}
-        - **Кількість постів у флоу:** {flow_volume}
-        - **Виділення заголовка:** {title_highlight}
-        - **Підпис до постів:** {signature}
+        <b>Параметри Flow</b>
+        - <b>Тематика:</b> {theme}
+        - <b>Джерела ({source_count}):</b>
+            <b>{sources}</b>
+        - <b>Частота генерації:</b> {frequency}
+        - <b>Кількість знаків:</b> {words_limit}
+        - <b>Кількість постів у флоу:</b> {flow_volume}
+        - <b>Виділення заголовка:</b> {title_highlight}
+        - <b>Підпис до постів:</b> {signature}
         """
         ),
         Column(
@@ -90,7 +90,7 @@ def create_flow_settings_window():
 
 def create_ad_block_settings_window():
     return Window(
-        Const("📢 **Налаштування рекламного блоку**"),
+        Const("📢 Налаштування рекламного блоку</b>"),
         Column(
             Button(
                 Const("✅ Включити рекламу"), 
@@ -112,7 +112,7 @@ def create_ad_block_settings_window():
 
 def create_frequency_settings_window():
     return Window(
-        Const("⏱ **Налаштування частоти генерації**\n\n"
+        Const("⏱ <b>Налаштування частоти генерації</b>\n\n"
              "Оберіть як часто бот буде генерувати пости:"),
         Column(
             Button(Const("Кожну годину"), id="freq_1h", on_click=set_frequency),
@@ -129,7 +129,7 @@ def create_frequency_settings_window():
 def create_character_limit_window():
     return Window(
         Format(
-            "🔠 **Обмеження по знакам**\n\n"
+            "🔠 <b>Обмеження по знакам</b>\n\n"
             "Поточний ліміт: {char_limit} знаків\n\n"
             "Оберіть дію:"
         ),
@@ -152,7 +152,7 @@ def create_character_limit_window():
 
 def create_posts_in_flow_window():
     return Window(
-        Format("📊 **Кількість постів у флоу**\n\nПоточне значення: {posts_count}"),
+        Format("📊 <b>Кількість постів у флоу</b>\n\nПоточне значення: {posts_count}"),
         Column(
             Button(Const("5"), id="volume_5", on_click=set_flow_volume),
             Button(Const("10"), id="volume_10", on_click=set_flow_volume),
