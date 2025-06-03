@@ -1,23 +1,23 @@
-# Налаштування Django
+# Dajngo
 DEBUG=True
 SECRET_KEY=your-secret-key-here
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Налаштування бази даних PostgreSQL
+# PostgreSQL
 DB_NAME=telegen_db
 DB_USER=telegen_user
 DB_PASSWORD=your-db-password
 DB_HOST=localhost
 DB_PORT=5432
 
-# Налаштування Telegram-бота
+# Telegram Bot
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 TELEGRAM_ADMIN_IDS=your-admin-id, your-admin-id2
 
-# Налаштування OpenAI API
+# OpenAI API
 OPENAI_API_KEY=your-openai-api-key
 
-# Налаштування Userbot
+# Userbot
 USERBOT_API_ID=api_id
 USERBOT_API_HASH=api_hash
 TELEGRAM_PHONE =phone number
