@@ -7,6 +7,7 @@ from aiogram.types import CallbackQuery, Message, ForceReply, ContentType
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 from django.conf import settings
+import pytz
 
 from bot.containers import Container
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
@@ -281,7 +282,10 @@ async def process_time_selection(manager: DialogManager):
     hour = manager.dialog_data.get("selected_hour", 12)
     minute = manager.dialog_data.get("selected_minute", 0)
     
-    scheduled_datetime = datetime.combine(date_obj, time(hour=hour, minute=minute))
+    ukraine_tz = pytz.timezone('Europe/Kiev')
+    naive_datetime = datetime.combine(date_obj, time(hour=hour, minute=minute))
+    scheduled_datetime = ukraine_tz.localize(naive_datetime)
+    
     manager.dialog_data["scheduled_datetime"] = scheduled_datetime
     manager.dialog_data["scheduled_datetime_str"] = scheduled_datetime.strftime('%d.%m.%Y о %H:%M')
     

@@ -295,7 +295,9 @@ class PostService:
         await self.post_repo.delete(post_id)
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
-        if scheduled_time < datetime.now():
+        now = datetime.now(scheduled_time.tzinfo)
+        
+        if scheduled_time < now:
             raise InvalidOperationError("Не можна запланувати пост у минулому")
             
         post = await self.post_repo.get(post_id)
@@ -304,7 +306,7 @@ class PostService:
             
         await self.post_repo.schedule_post(post_id, scheduled_time)
         return await self.get_post(post_id)
-    
+
     @sync_to_async
     def get_channel_id(self, post_id: int) -> str:
         return Post.objects.select_related("flow__channel").get(id=post_id).flow.channel.channel_id
