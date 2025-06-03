@@ -12,7 +12,18 @@ DB_PORT=5432
 
 # Налаштування Telegram-бота
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-TELEGRAM_ADMIN_ID=your-admin-id
+TELEGRAM_ADMIN_IDS=your-admin-id, your-admin-id2
 
 # Налаштування OpenAI API
 OPENAI_API_KEY=your-openai-api-key
+
+# Налаштування Userbot
+USERBOT_API_ID=api_id
+USERBOT_API_HASH=api_hash
+TELEGRAM_PHONE =phone number
+SESSION_PATH=/app/sessions/userbot.session
+
+# Celery settings
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_TIMEZONE = 'Europe/Kiev'
