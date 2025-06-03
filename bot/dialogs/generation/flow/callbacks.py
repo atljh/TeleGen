@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import logging
@@ -57,10 +58,8 @@ async def on_back_to_posts(
 async def show_publish_confirm(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowMenu.publish_confirm)
 
-
 async def back_to_post_view(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowMenu.posts_list)
-
 
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = await paging_getter(manager)
@@ -84,6 +83,10 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
             "is_published": True
         }
         
+        manager.dialog_data["needs_refresh"] = True
+        manager.dialog_data.pop("all_posts", None)
+
+        await asyncio.sleep(1)
         await manager.switch_to(FlowMenu.posts_list)
         await callback.answer("Пост успішно опубліковано!")
         
@@ -122,7 +125,6 @@ async def on_edit_media(callback: CallbackQuery, button: Button, manager: Dialog
         "Надішліть нове фото або відео для поста:",
     )
     manager.dialog_data["awaiting_input"] = "media"
-
 
 async def process_edit_input(message: Message, widget, manager: DialogManager):
     input_type = manager.dialog_data.get("awaiting_input")
@@ -226,16 +228,11 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
         logging.error(f"Помилка збереження: {str(e)}")
         await message.answer("Помилка при збереженні змін")
 
-
-
-
-
 async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
     post_id = manager.dialog_data.get("current_post_id")
     # post_service = Container.post_service()
     # await post_service.save_to_buffer(post_id)
     await callback.answer("Пост збережено в буфер!")
-
 
 #===========================================SCHEDULE===========================================
 
@@ -312,8 +309,6 @@ async def confirm_schedule(callback: CallbackQuery, button: Button, manager: Dia
         logger.error(f"Error confirming schedule: {e}")
         await callback.answer(f"❌ Помилка: {str(e)}")
         await manager.switch_to(FlowMenu.select_date)
-
-
 
 async def on_post_info(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowMenu.post_info)

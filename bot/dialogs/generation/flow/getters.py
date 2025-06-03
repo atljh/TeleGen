@@ -18,6 +18,7 @@ from asgiref.sync import sync_to_async
 from functools import lru_cache
 
 from bot.containers import Container
+from bot.database.dtos.dtos import PostStatus
 from bot.utils.text_cleaner import escape_markdown_v2
 
 
@@ -130,7 +131,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
     if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
         post_service = Container.post_service()
         try:
-            raw_posts = await post_service.get_posts_by_flow_id(flow.id)
+            raw_posts = await post_service.get_posts_by_flow_id(flow.id, status=PostStatus.DRAFT)
             posts = []
             
             for idx, post in enumerate(raw_posts):

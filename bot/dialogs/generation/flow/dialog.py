@@ -174,6 +174,9 @@ def flow_dialog() -> Dialog:
             state=FlowMenu.confirm_schedule,
         ),
         Window(
+            Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
+            Format("Альбом {post[images_count]} зобр.", when=lambda data, widget, manager: data["post"].get("is_album")),
+            DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
             Format("Ви впевнені, що хочете опублікувати цей пост?"),
             Group(
                 Button(Const("✅ Так, опублікувати"), id="confirm_publish", on_click=on_publish_post),
@@ -182,6 +185,7 @@ def flow_dialog() -> Dialog:
             ),
             state=FlowMenu.publish_confirm,
             parse_mode=ParseMode.HTML,
+            getter=paging_getter,
         ),
         on_process_result=on_dialog_result
     )

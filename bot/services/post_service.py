@@ -251,7 +251,7 @@ class PostService:
         return PostDTO.from_orm(post, images=images_qs)
     
     async def get_posts_by_flow_id(self, flow_id: int, status: PostStatus = None) -> list[PostDTO]:
-        posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id, status= status)
+        posts = await self.post_repo.get_posts_by_flow_id(flow_id=flow_id, status=status)
         return posts
 
     async def update_post(
