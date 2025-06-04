@@ -25,6 +25,7 @@ from bot.dialogs.buffer.getters import (
 
 from bot.dialogs.buffer.states import BufferMenu
 from .callbacks import (
+    back_to_post_view,
     go_back_to_channels,
     on_back_to_posts,
     on_channel_selected,
@@ -34,7 +35,18 @@ from .callbacks import (
     on_post_info,
     on_publish_post,
     process_edit_input,
+    show_publish_confirm,
 )
+
+async def on_dialog_result(
+    event, 
+    manager: DialogManager, 
+    result
+):
+    if manager.current_state() == BufferError.channel_main:
+        if manager.dialog_data.pop("needs_refresh", False):
+            manager.dialog_data.pop("all_posts", None)
+            await manager.show()
 
 async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
     data = dialog_manager.start_data or {}
@@ -85,7 +97,7 @@ def create_buffer_dialog():
                 width=5,
             ),
             Group(
-                Button(Const("✅ Опублікувати"), id="publish_post", on_click=on_publish_post, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(Const("✅ Опублікувати"), id="publish_post", on_click=show_publish_confirm, when=lambda data, widget, manager: data["post"].get("content")),
                 Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post, when=lambda data, widget, manager: data["post"].get("content")),
                 Button(Const("ℹ️ Пост iнфо"), id="post_info", on_click=on_post_info, when=lambda data, widget, manager: data["post"].get("content")),
                 width=2
@@ -133,4 +145,19 @@ def create_buffer_dialog():
             state=BufferMenu.edit_post,
             parse_mode="HTML"
         ),
+        Window(
+            Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
+            Format("Альбом {post[images_count]} зобр.", when=lambda data, widget, manager: data["post"].get("is_album")),
+            DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
+            Format("Ви впевнені, що хочете опублікувати цей пост?"),
+            Group(
+                Button(Const("✅ Так, опублікувати"), id="confirm_publish", on_click=on_publish_post),
+                Button(Const("❌ Скасувати"), id="cancel_publish", on_click=back_to_post_view),
+                width=2
+            ),
+            state=BufferMenu.publish_confirm,
+            parse_mode=ParseMode.HTML,
+            getter=paging_getter,
+        ),
+        on_process_result=on_dialog_result
     )

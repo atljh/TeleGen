@@ -304,16 +304,11 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
 
 
 
-
-
-async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
-    post_id = manager.dialog_data.get("current_post_id")
-    # post_service = Container.post_service()
-    # await post_service.save_to_buffer(post_id)
-    await callback.answer("Пост збережено в буфер!")
-
-
-
 async def on_post_info(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(BufferMenu.post_info)
 
+async def show_publish_confirm(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(BufferMenu.publish_confirm)
+
+async def back_to_post_view(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.switch_to(BufferMenu.channel_main)

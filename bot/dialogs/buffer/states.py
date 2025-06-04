@@ -5,3 +5,4 @@ class BufferMenu(StatesGroup):
     channel_main = State()
     edit_post = State()
     post_info = State()
+    publish_confirm = State()
