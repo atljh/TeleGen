@@ -154,6 +154,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     else "Без дати"
                 )()
 
+                post_stats = {
+                    PostStatus.DRAFT: "Чернетка",
+                    PostStatus.SCHEDULED: "Заплановано",
+                    PostStatus.PUBLISHED: "Опублiковано"
+                }
                 is_album = len(images) > 1
                 post_dict = {
                     "id": str(post.id) if hasattr(post, 'id') else "",
@@ -161,7 +166,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "content": content,
                     "pub_time": pub_time,
                     "created_time": created_time,
-                    "status": "✅ Опубліковано" if getattr(post, 'is_published', False) else "📝 Чернетка",
+                    "status": post_stats[post.status],
                     "full_content": content,
                     "has_media": bool(images or video_url),
                     "images_count": len(images),

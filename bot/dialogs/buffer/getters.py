@@ -1,6 +1,8 @@
+from datetime import datetime
 import os
 import logging
 from typing import Dict, Any, Optional
+from zoneinfo import ZoneInfo
 
 from aiogram.types import (
     InputMediaPhoto, FSInputFile, Message,
@@ -145,8 +147,21 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 content = post.content if hasattr(post, 'content') else ''
 
                 original_link = post.original_link if hasattr(post, 'original_link') else ''
-                original_date = post.original_date if hasattr(post, 'original_date') else ''
                 source_url = post.source_url if hasattr(post, 'source_url') else ''
+
+                original_date = post.original_date if hasattr(post, 'original_date') else ''
+                if original_date:
+                    if isinstance(original_date, str):
+                        original_date = datetime.fromisoformat(original_date.replace('Z', '+00:00'))
+                        kyiv_tz = ZoneInfo("Europe/Kiev")
+                        original_date = original_date.astimezone(kyiv_tz)
+                        original_date = original_date.strftime("%d.%m.%Y %H:%M")
+                    elif isinstance(original_date, datetime):
+                        if original_date.tzinfo is None:
+                            original_date = original_date.replace(tzinfo=ZoneInfo("UTC"))
+                        kyiv_tz = ZoneInfo("Europe/Kiev")
+                        original_date = original_date.astimezone(kyiv_tz)
+                        original_date = original_date.strftime("%d.%m.%Y %H:%M")
 
                 pub_time = await sync_to_async(
                     lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
@@ -158,7 +173,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     if hasattr(post, 'created_at') and post.created_at 
                     else "Без дати"
                 )()
-
+                post_stats = {
+                    PostStatus.DRAFT: "Чернетка",
+                    PostStatus.SCHEDULED: "Заплановано",
+                    PostStatus.PUBLISHED: "Опублiковано"
+                }
                 is_album = len(images) > 1
                 post_dict = {
                     "id": str(post.id) if hasattr(post, 'id') else "",
@@ -166,15 +185,14 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "content": content,
                     "pub_time": pub_time,
                     "created_time": created_time,
-                    "status": "✅ Опубліковано" if getattr(post, 'is_published', False) else "📝 Чернетка",
+                    "status": post_stats[post.status],
                     "full_content": content,
                     "has_media": bool(images or video_url),
                     "images_count": len(images),
                     "images": images,
                     "video_url": video_url,
                     "is_album": is_album,
-
-                    "original_date": original_date,
+                    "original_date": original_date if original_date else "Без дати",
                     "original_link": original_link,
                     "source_url": source_url
                 }
@@ -241,7 +259,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 )
 
     data["selected_channel"] = selected_channel
-
     if data["post"].get("is_album"):
         await send_media_album(dialog_manager, data["post"])
     return data
@@ -290,7 +307,6 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
 async def post_info_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = await paging_getter(dialog_manager)
     post = dialog_data["post"]
-    logging.info(post)
     return {
         "status": post.get("status", ""),
         "source_url": post.get("source_url", ""),
