@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import logging
@@ -137,12 +138,9 @@ async def on_back_to_posts(
 async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = await paging_getter(manager)
     start_data = manager.start_data or {}
-
-    channel = manager.dialog_data.get('selected_channel')
-
     current_post = dialog_data["post"]
     post_id = current_post["id"]
-    
+    channel = start_data.get("selected_channel", '') or dialog_data.get("selected_channel", '')
     if not channel:
         await callback.answer("Канал не вибрано!")
         return
@@ -151,7 +149,7 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     
     try:
         updated_post = await post_service.publish_post(post_id, channel.channel_id)
-        
+
         manager.dialog_data["post"] = {
             **current_post,
             "status": "✅ Опубліковано",
@@ -159,17 +157,22 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
             "is_published": True
         }
         
-        await callback.answer(f"Пост успiшно опублiковано в канал!")
+        manager.dialog_data["needs_refresh"] = True
+        manager.dialog_data.pop("all_posts", None)
+
+        await asyncio.sleep(1)
+        await manager.switch_to(BufferMenu.channel_main)
+        await callback.answer("Пост успішно опубліковано!")
         
     except InvalidOperationError as e:
-        logging.error(e)
-        await callback.answer(str(e))
+        logging.error(f"Invalid operation: {e}")
+        await callback.answer(f"❌ Помилка: {str(e)}")
+        await manager.switch_to(BufferMenu.channel_main)
     except Exception as e:
-        logging.error(e)
-        await callback.answer(f"Помилка: {str(e)}")
         logging.exception("Помилка при публікації посту")
-    finally:
-        await manager.show()
+        await callback.message.edit_text(f"❌ Сталася неочікувана помилка: {str(e)}")
+        await manager.switch_to(BufferMenu.channel_main)
+
 
 
 #===========================================EDIT===========================================

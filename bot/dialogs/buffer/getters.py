@@ -18,6 +18,10 @@ from bot.containers import Container
 from bot.database.dtos.dtos import PostStatus
 
 
+@lru_cache(maxsize=100)
+def get_media_path(media_url: str) -> str:
+    return os.path.join(settings.MEDIA_ROOT, media_url.split('/media/')[-1])
+
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     channel_service = Container.channel_service()
     user_telegram_id = dialog_manager.event.from_user.id
@@ -26,12 +30,6 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     return {
         "channels": channels or []
     }
-
-
-
-@lru_cache(maxsize=100)
-def get_media_path(media_url: str) -> str:
-    return os.path.join(settings.MEDIA_ROOT, media_url.split('/media/')[-1])
 
 async def send_media_album(
     dialog_manager: DialogManager, 
@@ -242,6 +240,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     type=media_info['type']
                 )
 
+    dialog_data["selected_channel"] = selected_channel
     if data["post"].get("is_album"):
         await send_media_album(dialog_manager, data["post"])
     return data
