@@ -126,7 +126,7 @@ def create_buffer_dialog():
             disable_web_page_preview=True
         ),
         Window(
-            Format("**✏️ Редагування поста**\n\n"
+            Format("<b>✏️ Редагування поста</b>\n\n"
                 "\n{content}\n\n"
                 ),
             DynamicMedia("media"),
@@ -149,7 +149,7 @@ def create_buffer_dialog():
             Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
             Format("Альбом {post[images_count]} зобр.", when=lambda data, widget, manager: data["post"].get("is_album")),
             DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
-            Format("Ви впевнені, що хочете опублікувати цей пост?"),
+            Format("\n\nВи впевнені, що хочете опублікувати цей пост?"),
             Group(
                 Button(Const("✅ Так, опублікувати"), id="confirm_publish", on_click=on_publish_post),
                 Button(Const("❌ Скасувати"), id="cancel_publish", on_click=back_to_post_view),

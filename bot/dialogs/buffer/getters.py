@@ -109,7 +109,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
-    selected_channel = dialog_data.get("selected_channel")
+    selected_channel = dialog_data.get("selected_channel") or start_data.get("selected_channel")
     
     dialog_manager.dialog_data["selected_channel"] = selected_channel
     dialog_manager.dialog_data['channel_flow'] = dialog_data.get("channel_flow")
@@ -240,7 +240,8 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     type=media_info['type']
                 )
 
-    dialog_data["selected_channel"] = selected_channel
+    data["selected_channel"] = selected_channel
+
     if data["post"].get("is_album"):
         await send_media_album(dialog_manager, data["post"])
     return data
@@ -289,6 +290,7 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
 async def post_info_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = await paging_getter(dialog_manager)
     post = dialog_data["post"]
+    logging.info(post)
     return {
         "status": post.get("status", ""),
         "source_url": post.get("source_url", ""),

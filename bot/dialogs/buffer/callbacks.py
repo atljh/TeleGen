@@ -140,7 +140,8 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     start_data = manager.start_data or {}
     current_post = dialog_data["post"]
     post_id = current_post["id"]
-    channel = start_data.get("selected_channel", '') or dialog_data.get("selected_channel", '')
+    channel = dialog_data.get("selected_channel", None)
+
     if not channel:
         await callback.answer("Канал не вибрано!")
         return
