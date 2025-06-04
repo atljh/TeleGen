@@ -82,7 +82,7 @@ def create_flow_settings_window():
             Button(Const("🔙 Назад"), id="open_main_settings", on_click=open_main_settings),
         ),
         state=FlowSettingsMenu.flow_settings,
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.HTML,
         getter=flow_settings_getter,
         disable_web_page_preview=True
     )
