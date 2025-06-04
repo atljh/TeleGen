@@ -94,10 +94,10 @@ def flow_dialog() -> Dialog:
         Window(
             Format(
                 "<b>Інформація поста</b>\n\n"
-                "<b>Статус:</b> {status}\n"
-                "<b>Джерело:</b> {source_url}\n"
-                "<b>Посилання:</b> {original_link}\n"
-                "<b>Дата публікації:</b> {original_date}"
+                "<b>Статус: {status}</b>\n"
+                "<b>Джерело: {source_url}</b>\n"
+                "<b>Посилання: {original_link}</b>\n"
+                "<b>Дата публікації: {original_date}</b>"
             ),
             Row(
                 Back(Const("🔙 Назад")),
