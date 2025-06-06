@@ -163,6 +163,20 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                         original_date = original_date.astimezone(kyiv_tz)
                         original_date = original_date.strftime("%d.%m.%Y %H:%M")
 
+                scheduled_time = post.scheduled_time if hasattr(post, 'scheduled_time') else ''
+                if scheduled_time:
+                    if isinstance(scheduled_time, str):
+                        scheduled_time = datetime.fromisoformat(scheduled_time.replace('Z', '+00:00'))
+                        kyiv_tz = ZoneInfo("Europe/Kiev")
+                        scheduled_time = scheduled_time.astimezone(kyiv_tz)
+                        scheduled_time = scheduled_time.strftime("%d.%m.%Y %H:%M")
+                    elif isinstance(scheduled_time, datetime):
+                        if scheduled_time.tzinfo is None:
+                            scheduled_time = scheduled_time.replace(tzinfo=ZoneInfo("UTC"))
+                        kyiv_tz = ZoneInfo("Europe/Kiev")
+                        scheduled_time = scheduled_time.astimezone(kyiv_tz)
+                        scheduled_time = scheduled_time.strftime("%d.%m.%Y %H:%M")
+
                 pub_time = await sync_to_async(
                     lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
                     if hasattr(post, 'publication_date') and post.publication_date 
@@ -194,6 +208,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "is_album": is_album,
                     "original_date": original_date if original_date else "Без дати",
                     "original_link": original_link,
+                    "scheduled_time": scheduled_time,
                     "source_url": source_url
                 }
 
@@ -311,5 +326,6 @@ async def post_info_getter(dialog_manager: DialogManager, **kwargs):
         "status": post.get("status", ""),
         "source_url": post.get("source_url", ""),
         "original_link": post.get("original_link", ""),
-        "original_date": post.get("original_date", "")
+        "original_date": post.get("original_date", ""),
+        "scheduled_time": post.get("scheduled_time", "")
     }

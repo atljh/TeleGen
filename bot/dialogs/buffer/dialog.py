@@ -115,7 +115,8 @@ def create_buffer_dialog():
                 "<b>Статус: {status}</b>\n"
                 "<b>Джерело: {source_url}</b>\n"
                 "<b>Посилання: {original_link}</b>\n"
-                "<b>Дата публікації: {original_date}</b>"
+                "<b>Дата публікації: {original_date}</b>\n"
+                "<b>Заплановано на: {scheduled_time}</b>"
             ),
             Row(
                 Back(Const("🔙 Назад")),
