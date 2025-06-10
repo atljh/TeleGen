@@ -12,6 +12,7 @@ from aiogram_dialog.api.entities import MediaAttachment
 from aiogram_dialog.widgets.kbd import StubScroll
 
 import pytz
+from django.utils import timezone
 from datetime import datetime
 from django.conf import settings
 from asgiref.sync import sync_to_async
@@ -182,7 +183,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 if is_album:
                     post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
                 else:
-                    post_dict["content_preview"] = content
+                    post_dict["content_preview"] = content[:1024]
 
                 posts.append(post_dict)
 
@@ -287,7 +288,6 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
 
 
 
-from django.utils import timezone
 
 async def post_info_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = await paging_getter(dialog_manager)
