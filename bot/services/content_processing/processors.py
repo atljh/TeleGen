@@ -10,6 +10,7 @@ from psycopg.errors import UniqueViolation
 from bot.database.dtos.dtos import FlowDTO
 from bot.database.exceptions import AISettingsNotFoundError
 from bot.services.aisettings_service import AISettingsService
+from bot.utils.notifications import notify_admins
 
 class ContentProcessor(ABC):
     @abstractmethod
@@ -91,29 +92,37 @@ class ChatGPTContentProcessor(ContentProcessor):
             return await self._build_system_prompt(text, flow)
         
     async def process(self, text: str, user_id: int) -> str:
-
-        if isinstance(text, list):
-            text = " ".join([str(item) for item in text if item])
-            
-        if not text.strip():
-            return ""
-        
-        cache_key = hash(f"{text}_{self.flow.id}_{user_id}")
-        
-        if cache_key in self.cache:
-            return self.cache[cache_key]
-        
         try:
+            if isinstance(text, list):
+                text = " ".join([str(item) for item in text if item])
+                
+            if not text.strip():
+                return ""
+            
+            cache_key = hash(f"{text}_{self.flow.id}_{user_id}")
+            if cache_key in self.cache:
+                return self.cache[cache_key]
+            
             system_prompt = await self._get_prompt(text, self.flow)
             result = await self._call_ai_with_retry(text, system_prompt, self.flow)
             
             if len(self.cache) >= self.cache_size_limit:
                 self.cache.pop(next(iter(self.cache)))
-            
             self.cache[cache_key] = result
+            
             return result
+            
+        except openai.RateLimitError as e:
+            logging.error(f"OpenAI quota exceeded: {str(e)}")
+            await self._notify_admin(f"OpenAI quota exceeded")
+            return text
+            
+        except openai.APIError as e:
+            logging.error(f"OpenAI API error: {str(e)}")
+            return text
+            
         except Exception as e:
-            logging.error(f"Final processing error: {str(e)}")
+            logging.error(f"Unexpected processing error: {str(e)}", exc_info=True)
             return text
 
     async def _call_ai_with_retry(self, text: str, system_prompt: str, flow) -> str:
@@ -133,6 +142,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         
         messages.append({"role": "user", "content": text})
         
+        last_error = None
         for attempt in range(self.max_retries + 1):
             try:
                 start_time = time.time()
@@ -144,12 +154,34 @@ class ChatGPTContentProcessor(ContentProcessor):
                     max_tokens=2000,
                     timeout=self.request_timeout
                 )
-                result = response.choices[0].message.content.strip()
-                return result
-            except Exception as e:
+                return response.choices[0].message.content.strip()
+                
+            except openai.RateLimitError as e:
+                last_error = e
                 if attempt == self.max_retries:
                     raise
-                await asyncio.sleep(1 * (attempt + 1))
+                wait_time = min(10, 2 ** (attempt + 1))
+                await asyncio.sleep(wait_time)
+                
+            except openai.APIError as e:
+                last_error = e
+                if attempt == self.max_retries:
+                    raise
+                await asyncio.sleep(1)
+                
+            except Exception as e:
+                last_error = e
+                if attempt == self.max_retries:
+                    raise openai.APIError(f"Unexpected error: {str(e)}")
+                await asyncio.sleep(1)
+        
+        raise last_error if last_error else openai.APIError("Unknown error after retries")
+
+    async def _notify_admin(self, message: str):
+        try:
+            await notify_admins(message)
+        except Exception as e:
+            logging.error(f"Failed to send admin notification: {str(e)}")
 
     async def _get_prompt(self, text: str, flow: FlowDTO) -> str:
         return await self._get_or_create_user_prompt(text, flow)
