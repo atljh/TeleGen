@@ -219,6 +219,17 @@ class UserbotService:
         processed_albums
     ) -> Tuple[Optional[Dict], int]:
         chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
+        
+        post_date = msg.date if hasattr(msg, 'date') else None
+        
+        if post_date:
+            last_post = await Post.objects.filter(
+                source_id__startswith=f"telegram_{chat_id}_"
+            ).order_by('-original_date').afirst()
+            
+            if last_post and last_post.original_date and post_date <= last_post.original_date:
+                logging.info(f"Skipping old post from {post_date} (last in DB: {last_post.original_date})")
+                return None, 0
 
         if hasattr(msg, 'grouped_id') and msg.grouped_id:
             if msg.grouped_id in processed_albums:
