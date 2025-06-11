@@ -80,7 +80,10 @@ async def on_channel_selected(
         await callback.answer("Error processing selection")
 
 async def add_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(AddChannelMenu.instructions)
+    await manager.start(
+        AddChannelMenu.instructions,
+        mode=StartMode.RESET_STACK
+)
 
 
 async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):

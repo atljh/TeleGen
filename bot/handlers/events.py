@@ -1,5 +1,6 @@
 import logging
-from aiogram import Router, types
+from aiogram import Router, types, F
+from aiogram.enums import ChatType
 from aiogram.types import ChatMemberUpdated
 from aiogram.filters import ExceptionTypeFilter
 from aiogram_dialog.api.exceptions import UnknownIntent
@@ -19,13 +20,44 @@ from bot.dialogs.generation.add_channel.states import AddChannelMenu
 
 channel_router = Router()
 
-@channel_router.my_chat_member(
-    ChatMemberUpdatedFilter(IS_NOT_MEMBER >> ADMINISTRATOR)
-)
-async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogManager):
-    if event.new_chat_member.user.id == event.bot.id:
-        channel_service = Container.channel_service()
+# @channel_router.my_chat_member(
+#     ChatMemberUpdatedFilter(IS_NOT_MEMBER >> ADMINISTRATOR)
+# )
+# async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogManager):
+#     if event.new_chat_member.user.id == event.bot.id:
+#         channel_service = Container.channel_service()
 
+#         channel = await channel_service.get_or_create_channel(
+#             user_telegram_id=event.from_user.id,
+#             channel_id=str(event.chat.id),
+#             name=event.chat.title
+#         )
+
+#         me = await event.bot.get_me()
+
+#         user_dm = dialog_manager.bg(user_id=event.from_user.id, chat_id=event.from_user.id)
+
+#         await user_dm.start(
+#             AddChannelMenu.success,
+#             data={
+#                 "channel_id": str(event.chat.id),
+#                 "channel_name": event.chat.title,
+#                 "channel_username": event.chat.username or "",
+#                 "bot_url": f"https://t.me/{me.username}",
+#                 "bot_username": me.username
+#             },
+#             mode=StartMode.RESET_STACK
+#         )
+
+@channel_router.my_chat_member(
+    ChatMemberUpdatedFilter(
+        member_status_changed=IS_NOT_MEMBER >> ADMINISTRATOR
+    ),
+    F.chat.type == ChatType.CHANNEL
+)
+async def on_bot_added_to_channel(event: ChatMemberUpdated, dialog_manager: DialogManager):
+    channel_service = Container.channel_service()
+    try:    
         channel = await channel_service.get_or_create_channel(
             user_telegram_id=event.from_user.id,
             channel_id=str(event.chat.id),
@@ -41,11 +73,16 @@ async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogMan
             data={
                 "channel_id": str(event.chat.id),
                 "channel_name": event.chat.title,
-                "channel_username": event.chat.username or "",
-                "bot_url": f"https://t.me/{me.username}",
                 "bot_username": me.username
             },
             mode=StartMode.RESET_STACK
+        )
+        
+    except Exception as e:
+        logging.error(f"Error adding channel: {e}")
+        await event.bot.send_message(
+            event.from_user.id,
+            "❌ Помилка при додаванні каналу. Спробуйте ще раз."
         )
 
 @channel_router.my_chat_member(
@@ -62,7 +99,7 @@ async def bot_removed_from_channel(event: ChatMemberUpdated, dialog_manager: Dia
         try:
             await event.bot.send_message(
                 chat_id=event.from_user.id,
-                text=f"❌ Бота було видалено з каналу **{event.chat.title}**\n\n"
+                text=f"❌ Бота було видалено з каналу <b>{event.chat.title}</b>\n\n"
                      f"ID каналу: <code>{event.chat.id}</code>\n"
                      "Публікації в цей канал більше неможливі.",
                 parse_mode="HTML"

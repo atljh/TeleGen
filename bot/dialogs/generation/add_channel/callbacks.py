@@ -26,3 +26,41 @@ async def on_create_flow(callback: CallbackQuery, button: Button, manager: Dialo
 
 async def subscribe(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.answer("Функція в розробці")
+
+
+async def check_admin_rights(
+    callback: CallbackQuery, 
+    button: Button, 
+    dialog_manager: DialogManager
+):
+    bot = dialog_manager.middleware_data["bot"]
+    
+    try:
+        channel_id = dialog_manager.start_data.get("channel_id")
+        if not channel_id:
+            raise ValueError("Channel ID not found in dialog data")
+        
+        me = await bot.get_me()
+        admins = await bot.get_chat_administrators(int(channel_id))
+        
+        is_admin = any(admin.user.id == me.id for admin in admins)
+        
+        if is_admin:
+            await dialog_manager.done()
+            await dialog_manager.start(
+                AddChannelMenu.success,
+                data={
+                    **dialog_manager.start_data,
+                    "is_admin": True
+                },
+                mode=StartMode.RESET_STACK
+            )
+        else:
+            await callback.answer("❌ Бот ще не адміністратор каналу!", show_alert=True)
+            
+    except ValueError as e:
+        logging.error(f"Missing channel data: {e}")
+        await callback.answer("Помилка: дані каналу не знайдено", show_alert=True)
+    except Exception as e:
+        logging.error(f"Error checking admin rights: {e}")
+        await callback.answer("Помилка перевірки прав. Спробуйте пізніше.", show_alert=True)
