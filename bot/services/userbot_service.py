@@ -1,5 +1,6 @@
 import os
 import time
+import atexit
 import asyncio
 import logging
 import tempfile
@@ -41,11 +42,23 @@ class UserbotService:
         self.api_hash = api_hash
         self.session_path = session_path or os.getenv("SESSION_PATH", "userbot.session")
         self.download_semaphore = asyncio.Semaphore(10)
+        self._temp_files = set()
         
         if not os.path.isabs(self.session_path):
             self.session_path = os.path.join('/app/sessions', self.session_path)
         
         os.makedirs(os.path.dirname(self.session_path), exist_ok=True)
+
+        atexit.register(self.cleanup_temp_files)
+
+    def cleanup_temp_files(self):
+        for file_path in self._temp_files:
+            try:
+                if os.path.exists(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                logging.error(f"Error deleting temp file {file_path}: {str(e)}")
+        self._temp_files.clear()
 
     @asynccontextmanager
     async def get_client(self) -> AsyncGenerator[TelegramClient, None]:
@@ -407,21 +420,33 @@ class UserbotService:
             try:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{media_type}') as tmp_file:
                     tmp_path = tmp_file.name
-                
+                    self._temp_files.add(tmp_path)
+
                 await client.download_media(media, file=tmp_path)
                 
                 if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
                     return tmp_path
                 
-                os.unlink(tmp_path)
-                return None
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                    self._temp_files.discard(tmp_path)
+                    return None
                 
             except Exception as e:
                 logging.error(f"Media download failed: {str(e)}")
                 if 'tmp_path' in locals() and os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
+                    try:
+                        os.unlink(tmp_path)
+                        self._temp_files.discard(tmp_path)
+                    except:
+                        pass
                 return None
               
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.cleanup_temp_files()
+
+    def __del__(self):
+        self.cleanup_temp_files()
 
 class EnhancedUserbotService(UserbotService):
     def __init__(
@@ -540,6 +565,3 @@ class EnhancedUserbotService(UserbotService):
             aisettings_service=self.aisettings_service
         )
         return await processor.process(text, user.id)
-
-    # async def _process_media(self, media_items: List[Dict]) -> List[Dict]:
-    #     return media_items
