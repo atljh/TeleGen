@@ -51,7 +51,6 @@ async def on_channel_selected(
             "channel_flow": channel_flow
         })
         
-        
         await manager.switch_to(SettingsMenu.channel_settings)
         
     except Exception as e:
