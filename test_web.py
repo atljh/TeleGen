@@ -1,110 +1,116 @@
-import feedparser
+import requests
+import webbrowser
 import json
-import asyncio
 import os
-from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode, LLMConfig
-from crawl4ai.extraction_strategy import LLMExtractionStrategy
-from pydantic import BaseModel
-from typing import Optional
+from urllib.parse import urlparse, parse_qs
 
-DATA_FILE = "sources.json"
-OUTPUT_FILE = "news_posts.json"
+# === CONFIGURATION ===
+CLIENT_ID = 'YOUR_CLIENT_ID'
+CLIENT_SECRET = 'YOUR_CLIENT_SECRET'
+REDIRECT_URI = 'http://localhost'
+TOKEN_FILE = 'tokens.json'
 
-class NewsPost(BaseModel):
-    title: str
-    date: Optional[str]
-    source: Optional[str]
-    summary: str
-    url: str
+# === STEP 1: Authorize if no token ===
+def authorize():
+    auth_url = (
+        f"https://www.inoreader.com/oauth2/auth"
+        f"?client_id={CLIENT_ID}"
+        f"&redirect_uri={REDIRECT_URI}"
+        f"&response_type=code"
+        f"&scope=read"
+    )
+    print("Откройте ссылку и авторизуйтесь:")
+    print(auth_url)
+    webbrowser.open(auth_url)
 
-def load_sources():
-    with open(DATA_FILE, "r") as f:
+    code = input("Вставьте значение `code` из URL после авторизации: ").strip()
+    token_data = exchange_code_for_token(code)
+    save_tokens(token_data)
+    return token_data['access_token']
+
+
+def exchange_code_for_token(code):
+    url = "https://www.inoreader.com/oauth2/token"
+    data = {
+        'code': code,
+        'client_id': CLIENT_ID,
+        'client_secret': CLIENT_SECRET,
+        'redirect_uri': REDIRECT_URI,
+        'grant_type': 'authorization_code',
+    }
+    response = requests.post(url, data=data)
+    response.raise_for_status()
+    return response.json()
+
+
+def refresh_token(refresh_token):
+    url = "https://www.inoreader.com/oauth2/token"
+    data = {
+        'refresh_token': refresh_token,
+        'client_id': CLIENT_ID,
+        'client_secret': CLIENT_SECRET,
+        'grant_type': 'refresh_token',
+    }
+    response = requests.post(url, data=data)
+    response.raise_for_status()
+    return response.json()
+
+
+# === Helpers ===
+
+def save_tokens(data):
+    with open(TOKEN_FILE, 'w') as f:
+        json.dump(data, f)
+
+
+def load_tokens():
+    if not os.path.exists(TOKEN_FILE):
+        return None
+    with open(TOKEN_FILE) as f:
         return json.load(f)
 
-def save_sources(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=2)
 
-def load_news_posts():
-    if not os.path.exists("new_posts.json"):
-        return []
-    with open("new_posts.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+def get_access_token():
+    tokens = load_tokens()
+    if not tokens:
+        return authorize()
 
-def save_news_posts(data):
-    with open("new_posts.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    # try to refresh
+    try:
+        new_tokens = refresh_token(tokens['refresh_token'])
+        save_tokens(new_tokens)
+        return new_tokens['access_token']
+    except Exception as e:
+        print("Ошибка при обновлении токена:", e)
+        print("Придется авторизоваться заново")
+        return authorize()
 
-async def parse_with_llm(url: str):
-    llm_strat = LLMExtractionStrategy(
-        llmConfig=LLMConfig(
-            provider="openai/gpt-4o-mini",
-            api_token=os.getenv("OPENAI_API_KEY")
-        ),
-        schema=NewsPost.model_json_schema(),
-        extraction_type="schema",
-        instruction=(
-            "From this HTML page, extract a single structured news post with the following fields:\n"
-            "- title (headline)\n"
-            "- date (if present)\n"
-            "- source (domain name or publication name)\n"
-            "- summary (2–4 sentence overview of the content)\n"
-            "- url (original page URL)\n"
-            "Respond only with a valid JSON matching the schema."
-        ),
-        chunk_token_threshold=1400,
-        apply_chunking=False,
-        input_format="html",
-        extra_args={"temperature": 0.1, "max_tokens": 1000}
-    )
+# === USAGE ===
 
-    crawl_config = CrawlerRunConfig(
-        extraction_strategy=llm_strat,
-        cache_mode=CacheMode.BYPASS
-    )
+def list_subscriptions(access_token):
+    headers = {'Authorization': f'Bearer {access_token}'}
+    r = requests.get("https://www.inoreader.com/reader/api/0/subscription/list", headers=headers)
+    r.raise_for_status()
+    for sub in r.json().get("subscriptions", []):
+        print(f"- {sub['title']}\n  Feed ID: {sub['id']}\n")
 
-    async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-        result = await crawler.arun(url=url, config=crawl_config)
-        if result.success:
-            news_post = json.loads(result.extracted_content)
-            return news_post
-        else:
-            print(f"❌ Crawl failed: {result.error_message}")
-            return None
 
-async def check_rss_updates():
-    sources = load_sources()
-    updated_sources = []
+def get_feed_items(feed_id, access_token, count=5):
+    headers = {'Authorization': f'Bearer {access_token}'}
+    url = f"https://www.inoreader.com/reader/api/0/stream/contents/{feed_id}"
+    r = requests.get(url, headers=headers, params={'n': count})
+    r.raise_for_status()
+    for item in r.json().get('items', []):
+        print(f"📌 {item['title']}")
+        print(f"🔗 {item['canonical'][0]['href']}\n")
 
-    news_posts = load_news_posts()
-
-    for item in sources:
-        print(f"🔍 Checking RSS for {item['rss']}")
-        feed = feedparser.parse(item['rss'])
-
-        if not feed.entries:
-            print("⚠️ No entries in RSS feed.")
-            updated_sources.append(item)
-            continue
-
-        latest_entries = feed.entries[:10]
-
-        for entry in latest_entries:
-            latest_link = entry.link
-            if item.get("last_link") != latest_link:
-                print(f"[+] New article found: {entry.title}")
-                news_post = await parse_with_llm(latest_link)
-                if news_post:
-                    news_posts.append(news_post)
-                    print(f"✅ New post added: {news_post[0]['title']}")
-                item["last_link"] = latest_link
-            else:
-                print("[-] No new updates.")
-
-        updated_sources.append(item)
-
-    save_sources(updated_sources)
-    save_news_posts(news_posts)
 
 if __name__ == "__main__":
-    asyncio.run(check_rss_updates())
+    token = get_access_token()
+
+    print("\n🔍 Ваши подписки:")
+    list_subscriptions(token)
+
+    feed_id = input("\n👉 Введите `Feed ID`, чтобы получить элементы: ").strip()
+    print("\n📥 Последние элементы:")
+    get_feed_items(feed_id, token)
