@@ -218,5 +218,4 @@ class ChatGPTContentProcessor(ContentProcessor):
             "to_300": "300 characters",
             "to_1000": "1000 characters"
         }
-        logging.info(f"CONTENT LENGH {self.flow.content_length}")
         return length_mapping.get(self.flow.content_length, "300 characters")

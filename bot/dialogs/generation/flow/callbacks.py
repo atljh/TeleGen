@@ -88,7 +88,7 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
 
         await asyncio.sleep(1)
         await manager.switch_to(FlowMenu.posts_list)
-        await callback.answer("Пост успішно опубліковано!")
+        await callback.message.answer("✅ Пост успішно опубліковано!")
         
     except InvalidOperationError as e:
         logging.error(f"Invalid operation: {e}")
