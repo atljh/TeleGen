@@ -90,6 +90,7 @@ def flow_dialog() -> Dialog:
             getter=paging_getter,
             state=FlowMenu.posts_list,
             parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
         ),
         Window(
             Format(

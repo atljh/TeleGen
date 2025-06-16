@@ -66,8 +66,11 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     async def _get_or_create_user_prompt(self, text: str, flow: FlowDTO) -> str:
         try:
-            aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
-            return aisettings.prompt
+            default_prompt = await self._build_system_prompt(text, flow)
+            return default_prompt
+        
+            # aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
+            # return aisettings.prompt
             
         except AISettingsNotFoundError:
             default_prompt = await self._build_system_prompt(text, flow)
@@ -218,4 +221,5 @@ class ChatGPTContentProcessor(ContentProcessor):
             "to_300": "300 characters",
             "to_1000": "1000 characters"
         }
+        logging.info(f'CONTENT LENGH {self.flow.content_length}')
         return length_mapping.get(self.flow.content_length, "300 characters")
