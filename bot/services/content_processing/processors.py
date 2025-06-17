@@ -129,19 +129,20 @@ class ChatGPTContentProcessor(ContentProcessor):
             return text
 
     async def _call_ai_with_retry(self, text: str, system_prompt: str, flow) -> str:
-        aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
         
         messages = [
             {"role": "system", "content": system_prompt},
         ]
+
+        # aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
         
-        if aisettings.role and aisettings.role.strip():
-            valid_roles = {"system", "assistant", "user", "function", "tool", "developer"}
-            if aisettings.role.lower() in valid_roles:
-                messages.append({
-                    "role": aisettings.role.lower(),
-                    "content": aisettings.role_content,
-                })
+        # if aisettings.role and aisettings.role.strip():
+        #     valid_roles = {"system", "assistant", "user", "function", "tool", "developer"}
+        #     if aisettings.role.lower() in valid_roles:
+        #         messages.append({
+        #             "role": aisettings.role.lower(),
+        #             "content": aisettings.role_content,
+        #         })
         
         messages.append({"role": "user", "content": text})
         
