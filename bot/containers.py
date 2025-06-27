@@ -90,7 +90,9 @@ class Container(containers.DeclarativeContainer):
         WebService,
         aisettings_service=ai_settings_service,
         user_service=user_service,
-        openai_key=os.getenv("OPENAI_API_KEY")
+        openai_key=os.getenv("OPENAI_API_KEY"),
+        rss_app_key=os.getenv("RSS_API_KEY"),
+        rss_app_secret=os.getenv("RSS_API_SECRET")
     )
 
     post_service = providers.Factory(
