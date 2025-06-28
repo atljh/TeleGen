@@ -47,7 +47,7 @@ tzdata==2025.1
 urllib3==2.3.0
 whitenoise==6.9.0
 yarl==1.18.3
-Pillow
+Pillow==10.4.0
 telethon
 celery
 django-celery-beat
@@ -57,3 +57,4 @@ openai
 langdetect
 feedparser
 pytz
+crawl4ai==0.6.3
