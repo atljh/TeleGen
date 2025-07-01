@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 from datetime import datetime
 from admin_panel.admin_panel.models import Channel, User
 # from bot.services.content_processing.processors import ContentProcessor
@@ -85,7 +85,7 @@ class PostStatus(str, Enum):
 
 class PostImageDTO(BaseModel):
     url: str
-    order: int
+    order: Optional[int] = Field(default=0)
 
 class PostDTO(BaseModel):
     id: Optional[int] = None
