@@ -2,6 +2,8 @@ import asyncio
 import os
 import logging
 import shutil
+import tempfile
+from urllib.parse import urlparse
 import uuid
 from django.conf import settings
 from datetime import datetime
@@ -10,6 +12,7 @@ from asgiref.sync import sync_to_async
 from django.db.models import Prefetch
 from django.db import IntegrityError, transaction
 from psycopg.errors import UniqueViolation
+import requests
 
 from admin_panel.admin_panel.models import Post, Flow, PostImage
 from bot.database.exceptions import PostNotFoundError
@@ -182,17 +185,34 @@ class PostRepository:
         logging.error(f"Database error: {str(error)}")
         raise error
 
-    def _store_media_permanently(self, temp_path: str, media_type: str) -> str:
+
+    async def _store_media_permanently(self, file_path_or_url: str, media_type: str) -> str:
         try:
+            if file_path_or_url.startswith(('http://', 'https://')):
+                # Download the file first
+                response = requests.get(file_path_or_url, stream=True)
+                
+                # Generate a temp file
+                ext = os.path.splitext(urlparse(file_path_or_url).path)[1] or ('.jpg' if media_type == 'images' else '.mp4')
+                temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
+                
+                # Save downloaded content to temp file
+                with open(temp_file, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                
+                file_path_or_url = temp_file
+            
             media_dir = 'posts/images' if media_type == 'images' else 'posts/videos'
             os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
             
-            ext = os.path.splitext(temp_path)[1] or ('.jpg' if media_type == 'images' else '.mp4')
+            ext = os.path.splitext(file_path_or_url)[1] or ('.jpg' if media_type == 'images' else '.mp4')
             filename = f"{uuid.uuid4()}{ext}"
             permanent_path = os.path.join(media_dir, filename)
             
-            shutil.copy2(temp_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
+            shutil.copy2(file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path))
             return permanent_path
+    
         except Exception as e:
             logging.error(f"Failed to store media: {str(e)}")
             raise
