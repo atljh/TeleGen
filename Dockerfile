@@ -30,6 +30,12 @@ WORKDIR /app
 
 COPY . .
 
+FROM base AS admin_panel
+
+WORKDIR /admin_panel
+
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
+
 FROM base AS bot
 
 WORKDIR /bot
