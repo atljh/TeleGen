@@ -1,4 +1,5 @@
-FROM python:3.11-slim as builder
+FROM python:3.11-slim-bullseye as builder
+
 
 WORKDIR /app
 
@@ -13,7 +14,8 @@ COPY requirements.txt .
 
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-FROM python:3.11-slim as base
+FROM python:3.11-slim-bullseye as base
+
 
 COPY --from=builder /root/.local /root/.local
 COPY --from=builder /app/requirements.txt .
