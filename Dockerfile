@@ -2,9 +2,11 @@ FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    gcc \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gnupg \
+        libpq-dev \
+        gcc \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
