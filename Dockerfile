@@ -1,11 +1,8 @@
-FROM python:3.11-slim-bullseye as builder
+FROM python:3.11-slim-bookworm as builder
 
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
-    update-ca-certificates && \
-    apt-get update && \
     apt-get install -y --no-install-recommends libpq-dev gcc && \
     rm -rf /var/lib/apt/lists/*
 
@@ -13,7 +10,7 @@ COPY requirements.txt .
 
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-FROM python:3.11-slim-bullseye as base
+FROM python:3.11-slim-bookworm as base
 
 COPY --from=builder /root/.local /root/.local
 COPY --from=builder /app/requirements.txt .
@@ -32,12 +29,6 @@ ENV PYTHONIOENCODING=UTF-8
 WORKDIR /app
 
 COPY . .
-
-FROM base AS admin_panel
-
-WORKDIR /admin_panel
-
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
 
 FROM base AS bot
 
