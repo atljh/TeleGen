@@ -29,7 +29,7 @@ class WebPost(BaseModel):
     date: Optional[str]
     source: Optional[str]
     url: str
-    images: Optional[List[str]]
+    images: Optional[List[str]] = None
 
 class WebService:
     def __init__(
@@ -92,20 +92,15 @@ class WebService:
                 if await self._validate_rss_feed(rss_url):
                     rss_urls.append(rss_url)
                     break
-            self.logger.info("======RSS NOT FOUND======")
             
-            if self.rss_app_key and self.rss_app_secret:
+            if not rss_urls and self.rss_app_key and self.rss_app_secret:
                 try:
                     api_url = await self._get_rss_via_api(source['link'])
                     if api_url:
                         rss_urls.append(api_url)
-                        continue
                 except Exception as e:
                     self.logger.warning(f"RSS.app API failed: {str(e)}")
             
-            else:
-                self.logger.warning(f"RSS feed not found for {source['link']}")
-                
         return rss_urls
 
     async def _get_rss_via_api(self, url: str) -> Optional[str]:
@@ -122,12 +117,8 @@ class WebService:
         ) as response:
             if response.status == 200:
                 data = await response.json()
-                self.logger.debug(f"RSS.app API response: {data.get('rss_feed_url')}")
-                
                 return data.get('rss_feed_url')
-            else:
-                self.logger.error(f"RSS.app API failed: {response.status} - {await response.text()}")
-                return None
+            return None
 
     async def _validate_rss_feed(self, url: str) -> bool:
         try:
@@ -157,10 +148,10 @@ class WebService:
                         'original_date': self._parse_rss_date(entry.get('published')),
                         'source_url': rss_url,
                         'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
-                        'images': self._extract_rss_images(entry),
+                        'images': self._extract_rss_images(entry) or [],
                         'domain': domain
                     }
-                    self.logger.info(post)
+                    
                     if entry.link:
                         enriched = await self._parse_with_llm(entry.link)
                         if enriched:
@@ -176,41 +167,41 @@ class WebService:
         return posts
 
     async def _parse_with_llm(self, url: str) -> Optional[WebPost]:
-        logging.info(f"========123213=================={self.openai_key}")
-        llm_strat = LLMExtractionStrategy(
-            llmConfig=LLMConfig(
-                provider="ollama/llama3",
-                api_token=self.openai_key
-            ),
-            schema=WebPost.model_json_schema(),
-            extraction_type="schema",
-            instruction=(
-                "From this HTML page, extract structured content with fields:\n"
-                "- title (main headline)\n"
-                "- content (full article text, 5-10 paragraphs)\n"
-                "- date (publication date if available)\n"
-                "- source (website or publisher name)\n"
-                "- url (original page URL)\n"
-                "- images (list of relevant image URLs)\n"
-                "Keep the content detailed and well-structured. "
-                "Respond only with valid JSON matching the schema."
-            ),
-            chunk_token_threshold=2000,
-            apply_chunking=False,
-            input_format="html",
-            extra_args={
-                "temperature": 0.2,
-                "max_tokens": 2000,
-                "top_p": 0.9
-            }
-        )
-
-        crawl_config = CrawlerRunConfig(
-            extraction_strategy=llm_strat,
-            cache_mode=CacheMode.BYPASS
-        )
-
         try:
+            llm_strat = LLMExtractionStrategy(
+                llmConfig=LLMConfig(
+                    provider="openai/gpt-4o-mini",
+                    api_token=self.openai_key
+                ),
+                schema=WebPost.model_json_schema(),
+                extraction_type="schema",
+                instruction=(
+                    "Extract article content with these required fields:\n"
+                    "- title (main headline)\n"
+                    "- content (full text)\n"
+                    "- url (page URL)\n"
+                    "And optional fields:\n"
+                    "- date (publication date)\n"
+                    "- source (website/publisher)\n"
+                    "- images (list of image URLs, can be empty)\n"
+                    "Return valid JSON matching this schema."
+                ),
+                chunk_token_threshold=1000,
+                apply_chunking=False,
+                input_format="html",
+                extra_args={
+                    "temperature": 0.2,
+                    "max_tokens": 1000,
+                    "top_p": 0.9,
+                    "request_timeout": 30
+                }
+            )
+
+            crawl_config = CrawlerRunConfig(
+                extraction_strategy=llm_strat,
+                cache_mode=CacheMode.BYPASS,
+            )
+
             async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
                 result = await crawler.arun(url=url, config=crawl_config)
 
@@ -228,13 +219,17 @@ class WebService:
                             self.logger.error(f"Empty list returned for {url}")
                             return None
                     
-                    if 'url' not in parsed_data:
-                        parsed_data['url'] = url
+                    if not all(field in parsed_data for field in ['title', 'content', 'url']):
+                        self.logger.error(f"Missing required fields in response for {url}")
+                        return None
                     
                     if 'images' not in parsed_data:
                         parsed_data['images'] = []
                     elif not isinstance(parsed_data['images'], list):
-                        parsed_data['images'] = [parsed_data['images']]
+                        parsed_data['images'] = [parsed_data['images']] if parsed_data['images'] else []
+                    logging.info(f'==----===={parsed_data["images"]}')
+                    if 'url' not in parsed_data:
+                        parsed_data['url'] = url
                     
                     return WebPost(**parsed_data)
                     
@@ -269,6 +264,8 @@ class WebService:
         domain = raw_post.get('domain', '')
         signature = f"{flow.signature}\n\nИсточник: {domain}" if flow.signature else f"Источник: {domain}"
         
+        images = [PostImageDTO(url=img) for img in raw_post.get('images', [])] 
+        
         post_dto = PostDTO(
             id=None,
             flow_id=flow.id,
@@ -279,8 +276,8 @@ class WebService:
             original_date=raw_post['original_date'],
             created_at=datetime.now(),
             status=PostStatus.DRAFT,
-            images=[PostImageDTO(url=img) for img in raw_post.get('images', [])],
-            media_type='image' if raw_post.get('images') else None
+            images=images,
+            media_type='image' if images else None
         )
         
         processed_text = await self._process_content(post_dto.content, flow)
@@ -331,4 +328,4 @@ class WebService:
             for link in entry.links:
                 if link.get('type', '').startswith('image/'):
                     images.append(link['href'])
-        return images[:3]
+        return images[:3] if images else []
