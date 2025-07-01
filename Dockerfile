@@ -3,6 +3,9 @@ FROM python:3.11-slim-bullseye as builder
 WORKDIR /app
 
 RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    update-ca-certificates && \
+    apt-get update && \
     apt-get install -y --no-install-recommends libpq-dev gcc && \
     rm -rf /var/lib/apt/lists/*
 
@@ -49,4 +52,4 @@ RUN apt-get update && apt-get install -y \
 
 RUN playwright install --with-deps
 
-CMD ["python", "-m", "main.py"]
+CMD ["python", "-m", "main"]
