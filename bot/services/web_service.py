@@ -62,7 +62,7 @@ class WebService:
             '/feed/atom'
         ]
         
-        self.crawler = AsyncWebCrawler()
+        self.crawler = AsyncWebCrawler(config=BrowserConfig(headless=True))
         self.session = aiohttp.ClientSession()
 
     async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
@@ -160,7 +160,7 @@ class WebService:
                         'images': self._extract_rss_images(entry),
                         'domain': domain
                     }
-                    
+                    self.logger.info(post)
                     if entry.link:
                         enriched = await self._parse_with_llm(entry.link)
                         if enriched:
@@ -176,9 +176,10 @@ class WebService:
         return posts
 
     async def _parse_with_llm(self, url: str) -> Optional[WebPost]:
+        logging.info(f"========123213=================={self.openai_key}")
         llm_strat = LLMExtractionStrategy(
             llmConfig=LLMConfig(
-                provider="openai/gpt-4o-mini",
+                provider="ollama/llama3",
                 api_token=self.openai_key
             ),
             schema=WebPost.model_json_schema(),
@@ -195,7 +196,7 @@ class WebService:
                 "Respond only with valid JSON matching the schema."
             ),
             chunk_token_threshold=2000,
-            apply_chunking=True,
+            apply_chunking=False,
             input_format="html",
             extra_args={
                 "temperature": 0.2,
@@ -210,7 +211,7 @@ class WebService:
         )
 
         try:
-            async with AsyncWebCrawler() as crawler:
+            async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
                 result = await crawler.arun(url=url, config=crawl_config)
 
                 if not result.success:

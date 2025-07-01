@@ -50,7 +50,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         api_key: str,
         flow: FlowDTO,
         aisettings_service: AISettingsService,
-        model: str = "gpt-4o-mini", 
+        model: str = "openai/gpt-4o-mini", 
         max_retries: int = 2, 
         timeout: float = 15.0,
         cache_size_limit: int = 1000
