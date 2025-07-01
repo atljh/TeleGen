@@ -2,12 +2,12 @@ FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        gnupg \
-        libpq-dev \
-        gcc \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update || true && \
+    apt-get install -y --no-install-recommends gnupg && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0xA1BCEDF1FE77E8CA && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends libpq-dev gcc && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
