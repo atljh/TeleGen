@@ -102,22 +102,21 @@ class PostRepository:
         scheduled_time: Optional[datetime] = None
     ) -> Post:
         @sync_to_async
-        def _transaction():
-            with transaction.atomic():
-                post = self._create_post(
-                    flow=flow,
-                    content=content,
-                    original_content=original_content,
-                    original_link=original_link,
-                    original_date=original_date,
-                    source_url=source_url,
-                    source_id=source_id,
-                    scheduled_time=scheduled_time
-                )
-                self._process_media_list(post, media_list)
-                return post
+        def _create_post_sync():
+            return self._create_post(
+                flow=flow,
+                content=content,
+                original_content=original_content,
+                original_link=original_link,
+                original_date=original_date,
+                source_url=source_url,
+                source_id=source_id,
+                scheduled_time=scheduled_time
+            )
         
-        return await _transaction()
+        post = await _create_post_sync()
+        await self._process_media_list(post, media_list)
+        return post
 
     def _create_post(
         self,
@@ -142,31 +141,32 @@ class PostRepository:
             scheduled_time=scheduled_time
         )
 
-    def _process_media_list(self, post: Post, media_list: List[dict]):
+    async def _process_media_list(self, post: Post, media_list: List[dict]):
         for media in media_list:
             try:
-                self._process_single_media(post, media)
+                await self._process_single_media(post, media)
             except Exception as e:
                 logging.error(f"Failed to process media: {str(e)}")
                 continue
 
-    def _process_single_media(self, post: Post, media: dict):
+    async def _process_single_media(self, post: Post, media: dict):
         media_type = media.get("type")
         local_path = media.get("path")
         
         if not local_path or not media_type:
             return
 
-        permanent_path = self._store_media_permanently(
+        permanent_path = await self._store_media_permanently(
             local_path,
             'images' if media_type == MediaType.IMAGE.value else 'videos'
         )
 
         if media_type == MediaType.IMAGE.value:
-            self._create_post_image(post, permanent_path)
+            await sync_to_async(self._create_post_image)(post, permanent_path)
         elif media_type == MediaType.VIDEO.value:
-            self._update_post_video(post, permanent_path)
+            await sync_to_async(self._update_post_video)(post, permanent_path)
 
+        
     def _create_post_image(self, post: Post, image_path: str):
         PostImage.objects.create(
             post=post,
