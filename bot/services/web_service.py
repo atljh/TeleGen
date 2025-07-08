@@ -70,7 +70,7 @@ class WebService:
             start_time = time.time()
             logging.info("____START WEB GENERATE____")
             rss_urls = await self._discover_rss_urls(flow.sources)
-            raw_posts = await self._fetch_rss_posts(rss_urls, limit)
+            raw_posts = await self._fetch_rss_posts(rss_urls, limit, flow)
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
 
             self.logger.info(f"[WEB] Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
@@ -132,7 +132,7 @@ class WebService:
         except Exception:
             return False
 
-    async def _fetch_rss_posts(self, rss_urls: List[str], limit: int) -> List[Dict]:
+    async def _fetch_rss_posts(self, rss_urls: List[str], limit: int, flow: FlowDTO) -> List[Dict]:
         posts = []
         
         for rss_url in rss_urls:
@@ -153,7 +153,7 @@ class WebService:
                     }
                     
                     if entry.link:
-                        enriched = await self._parse_with_llm(entry.link)
+                        enriched = await self._parse_with_llm(entry.link, flow)
                         if enriched:
                             post.update({
                                 'content': enriched.content,
@@ -166,8 +166,37 @@ class WebService:
                 
         return posts
 
-    async def _parse_with_llm(self, url: str) -> Optional[WebPost]:
+    async def _parse_with_llm(self, url: str, flow: FlowDTO) -> Optional[WebPost]:
         try:
+            instructions = [
+                "1. Извлеки основной текст статьи, удалив рекламу и мусор.",
+                "2. Сохрани важные изображения (только URL).",
+                "Извлеки только основной текст статьи (без комментариев/рекламы). "
+                "Сохрани 1-2 ключевых изображения. Не обрабатывай весь контент."
+                f"3. Переведи текст на украинский язык.",
+                f"4. Стиль изложения: {flow.theme}.",
+            ]
+
+            if flow.use_emojis:
+                emoji_type = "премиум" if flow.use_premium_emojis else "обычные"
+                instructions.append(f"5. Добавь {emoji_type} эмодзи где уместно.")
+
+            if flow.title_highlight:
+                instructions.append("6. Выдели заголовок тегами <b> и добавь пустую строку после него.")
+
+            if flow.cta:
+                instructions.append(f"7. Добавь призыв к действию: '{flow.cta}'")
+
+            instructions.append("8. Убедись, что текст не превышает {max_chars} символов.")
+            instructions.append("9. Верни только обработанный контент без пояснений.")
+
+            prompt = "\n".join(instructions)
+            max_chars = {
+                "to_100": 100,
+                "to_300": 300,
+                "to_1000": 1000
+            }.get(flow.content_length, 300)
+
             llm_strat = LLMExtractionStrategy(
                 llmConfig=LLMConfig(
                     provider="openai/gpt-4o-mini",
@@ -175,25 +204,15 @@ class WebService:
                 ),
                 schema=WebPost.model_json_schema(),
                 extraction_type="schema",
-                instruction=(
-                    "Extract article content with these required fields:\n"
-                    "- title (main headline)\n"
-                    "- content (full text)\n"
-                    "- url (page URL)\n"
-                    "And optional fields:\n"
-                    "- date (publication date)\n"
-                    "- source (website/publisher)\n"
-                    "- images (list of image URLs, can be empty)\n"
-                    "Return valid JSON matching this schema."
-                ),
-                chunk_token_threshold=1000,
-                apply_chunking=False,
+                instruction=prompt,
+                chunk_token_threshold=30000,
+                apply_chunking=True,
                 input_format="html",
                 extra_args={
-                    "temperature": 0.2,
-                    "max_tokens": 1000,
+                    "temperature": 0.3,
+                    "max_tokens": 2000,
                     "top_p": 0.9,
-                    "request_timeout": 30
+                    "request_timeout": 45
                 }
             )
 
@@ -212,36 +231,27 @@ class WebService:
                 try:
                     parsed_data = json.loads(result.extracted_content)
                     
-                    if isinstance(parsed_data, list):
-                        if len(parsed_data) > 0:
-                            parsed_data = parsed_data[0]
-                        else:
-                            self.logger.error(f"Empty list returned for {url}")
-                            return None
+                    if isinstance(parsed_data, list) and len(parsed_data) > 0:
+                        parsed_data = parsed_data[0]
                     
+                    logging.info(f'===*20{parsed_data}')
                     if not all(field in parsed_data for field in ['title', 'content', 'url']):
-                        self.logger.error(f"Missing required fields in response for {url}")
-                        return None
+                        raise ValueError("Missing required fields in LLM response")
                     
-                    if 'images' not in parsed_data:
-                        parsed_data['images'] = []
-                    elif not isinstance(parsed_data['images'], list):
-                        parsed_data['images'] = [parsed_data['images']] if parsed_data['images'] else []
-                    logging.info(f'==----===={parsed_data["images"]}')
-                    if 'url' not in parsed_data:
-                        parsed_data['url'] = url
+                    domain = urlparse(url).netloc
+                    if flow.signature:
+                        parsed_data['content'] = f"{parsed_data['content']}\n\n{flow.signature}\nИсточник: {domain}"
+                    else:
+                        parsed_data['content'] = f"{parsed_data['content']}\n\nИсточник: {domain}"
                     
                     return WebPost(**parsed_data)
                     
-                except json.JSONDecodeError as e:
-                    self.logger.error(f"Invalid JSON response for {url}: {str(e)}")
-                    return None
-                except Exception as e:
-                    self.logger.error(f"Error parsing LLM response for {url}: {str(e)}")
+                except (json.JSONDecodeError, ValueError) as e:
+                    self.logger.error(f"Invalid LLM response for {url}: {str(e)}")
                     return None
                     
         except Exception as e:
-            self.logger.error(f"Error during LLM parsing of {url}: {str(e)}")
+            self.logger.error(f"Error during LLM parsing of {url}: {str(e)}", exc_info=True)
             return None
 
     async def _process_posts_parallel(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
