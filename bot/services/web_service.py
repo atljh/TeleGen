@@ -187,7 +187,7 @@ class WebService:
             if flow.cta:
                 instructions.append(f"7. Добавь призыв к действию: '{flow.cta}'")
 
-            instructions.append("8. Убедись, что текст не превышает {max_chars} символов.")
+            instructions.append(f"8. Убедись, что текст не превышает {max_chars} символов.")
             instructions.append("9. Верни только обработанный контент без пояснений.")
 
             prompt = "\n".join(instructions)
@@ -221,34 +221,33 @@ class WebService:
                 cache_mode=CacheMode.BYPASS,
             )
 
-            async with AsyncWebCrawler(config=BrowserConfig(headless=True)) as crawler:
-                result = await crawler.arun(url=url, config=crawl_config)
+            result = await self.crawler.arun(url=url, config=crawl_config)
 
-                if not result.success:
-                    self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
-                    return None
+            if not result.success:
+                self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
+                return None
 
-                try:
-                    parsed_data = json.loads(result.extracted_content)
-                    
-                    if isinstance(parsed_data, list) and len(parsed_data) > 0:
-                        parsed_data = parsed_data[0]
-                    
-                    logging.info(f'===*20{parsed_data}')
-                    if not all(field in parsed_data for field in ['title', 'content', 'url']):
-                        raise ValueError("Missing required fields in LLM response")
-                    
-                    domain = urlparse(url).netloc
-                    if flow.signature:
-                        parsed_data['content'] = f"{parsed_data['content']}\n\n{flow.signature}\nИсточник: {domain}"
-                    else:
-                        parsed_data['content'] = f"{parsed_data['content']}\n\nИсточник: {domain}"
-                    
-                    return WebPost(**parsed_data)
-                    
-                except (json.JSONDecodeError, ValueError) as e:
-                    self.logger.error(f"Invalid LLM response for {url}: {str(e)}")
-                    return None
+            try:
+                parsed_data = json.loads(result.extracted_content)
+                
+                if isinstance(parsed_data, list) and len(parsed_data) > 0:
+                    parsed_data = parsed_data[0]
+                
+                logging.info(f'===*20{parsed_data}')
+                if not all(field in parsed_data for field in ['title', 'content', 'url']):
+                    raise ValueError("Missing required fields in LLM response")
+                
+                domain = urlparse(url).netloc
+                if flow.signature:
+                    parsed_data['content'] = f"{parsed_data['content']}\n\n{flow.signature}\nИсточник: {domain}"
+                else:
+                    parsed_data['content'] = f"{parsed_data['content']}\n\nИсточник: {domain}"
+                
+                return WebPost(**parsed_data)
+                
+            except (json.JSONDecodeError, ValueError) as e:
+                self.logger.error(f"Invalid LLM response for {url}: {str(e)}")
+                return None
                     
         except Exception as e:
             self.logger.error(f"Error during LLM parsing of {url}: {str(e)}", exc_info=True)
