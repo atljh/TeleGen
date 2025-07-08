@@ -11,6 +11,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 from typing import Optional, List, Dict
 from pydantic import BaseModel
+from dateutil import parser as date_parser
 
 from crawl4ai import AsyncWebCrawler
 from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig, LLMConfig, CacheMode
@@ -319,14 +320,6 @@ class WebService:
         await self.session.close()
         await self.crawler.close()
 
-    def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
-        if not date_str:
-            return None
-        try:
-            return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
-        except ValueError:
-            return None
-
     def _extract_rss_images(self, entry) -> List[str]:
         images = []
         if hasattr(entry, 'media_content'):
@@ -338,3 +331,17 @@ class WebService:
                 if link.get('type', '').startswith('image/'):
                     images.append(link['href'])
         return images[:3] if images else []
+    
+    # def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
+    #     if not date_str:
+    #         return None
+    #     try:
+    #         return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
+    #     except ValueError:
+    #         return None
+
+    def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
+        try:
+            return date_parser.parse(date_str)
+        except Exception:
+            return None
