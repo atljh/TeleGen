@@ -11,6 +11,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 from typing import Optional, List, Dict
 from pydantic import BaseModel
+from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 
 from crawl4ai import AsyncWebCrawler
@@ -188,15 +189,16 @@ class WebService:
             if flow.cta:
                 instructions.append(f"7. Добавь призыв к действию: '{flow.cta}'")
 
-            instructions.append(f"8. Убедись, что текст не превышает {max_chars} символов.")
-            instructions.append("9. Верни только обработанный контент без пояснений.")
-
-            prompt = "\n".join(instructions)
             max_chars = {
                 "to_100": 100,
                 "to_300": 300,
                 "to_1000": 1000
             }.get(flow.content_length, 300)
+
+            instructions.append(f"8. Убедись, что текст не превышает {max_chars} символов.")
+            instructions.append("9. Верни только обработанный контент без пояснений.")
+
+            prompt = "\n".join(instructions)
 
             llm_strat = LLMExtractionStrategy(
                 llmConfig=LLMConfig(
@@ -222,7 +224,36 @@ class WebService:
                 cache_mode=CacheMode.BYPASS,
             )
 
-            result = await self.crawler.arun(url=url, config=crawl_config)
+            # result = await self.crawler.arun(url=url, config=crawl_config)
+
+            await self.crawler.start()
+            
+            response = await self.crawler.crawler_strategy.crawl(url, config=crawl_config)
+            raw_html = response.html
+
+            if not raw_html:
+                return None
+
+            # --- Чистим и подрезаем HTML ---
+            raw_html = self._extract_article_only(raw_html)
+            raw_html = self._truncate_html(raw_html)
+
+            # --- Обрабатываем HTML напрямую ---
+            result = await self.crawler.aprocess_html(
+                url=url,
+                html=raw_html,
+                extracted_content=None,
+                config=crawl_config,
+                screenshot_data=response.screenshot,
+                pdf_data=response.pdf_data,
+                verbose=crawl_config.verbose,
+                redirected_url=response.redirected_url or url
+            )
+
+            if not result.extracted_content:
+                return None
+
+            self.logger.info(f'------------------------111{result}')
 
             if not result.success:
                 self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
@@ -344,4 +375,30 @@ class WebService:
         try:
             return date_parser.parse(date_str)
         except Exception:
+            return None
+        
+    def _extract_article_only(self, html: str) -> str:
+        soup = BeautifulSoup(html, "html.parser")
+        for tag in soup(["script", "style", "footer", "header", "nav", "aside"]):
+            tag.decompose()
+
+        # Сначала пробуем <article>, потом <main>
+        article = soup.find("article") or soup.find("main")
+        return str(article) if article else str(soup)
+
+    def _truncate_html(self, html: str, max_tokens: int = 30000) -> str:
+        max_chars = max_tokens * 4  # ~4 символа на токен
+        soup = BeautifulSoup(html, "html.parser")
+        text = soup.get_text()
+        if len(text) > max_chars:
+            text = text[:max_chars]
+            # Заворачиваем в <div>, чтобы сохранился формат
+            return f"<div>{text}</div>"
+        return str(soup)
+
+    async def _fetch_html(self, url: str) -> Optional[str]:
+        try:
+            return await self.crawler.fetch_page_source(url)
+        except Exception as e:
+            self.logger.error(f"Failed to fetch HTML from {url}: {str(e)}")
             return None
