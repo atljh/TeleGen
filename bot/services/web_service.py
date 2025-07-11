@@ -72,6 +72,7 @@ class WebService:
             start_time = time.time()
             logging.info("____START WEB GENERATE____")
             rss_urls = await self._discover_rss_urls(flow.sources)
+            logging.info(f"====RSS URLS: {rss_urls}")
             raw_posts = await self._fetch_rss_posts(rss_urls, limit, flow)
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
 
