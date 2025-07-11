@@ -89,12 +89,12 @@ class WebService:
             if source['type'] != 'web':
                 continue
             
-            base_url = source['link'].rstrip('/')
-            for path in self.common_rss_paths:
-                rss_url = f"{base_url}{path}"
-                if await self._validate_rss_feed(rss_url):
-                    rss_urls.append(rss_url)
-                    break
+            # base_url = source['link'].rstrip('/')
+            # for path in self.common_rss_paths:
+            #     rss_url = f"{base_url}{path}"
+            #     if await self._validate_rss_feed(rss_url):
+            #         rss_urls.append(rss_url)
+            #         break
             
             if not rss_urls and self.rss_app_key and self.rss_app_secret:
                 try:
@@ -145,9 +145,10 @@ class WebService:
                 domain = urlparse(rss_url).netloc
                 
                 for entry in feed.entries[:limit]:
+                    self.logger.info(f'-------'*10, entry)
                     post = {
                         'title': entry.title,
-                        'content': entry.description or entry.title,
+                        'content': getattr(entry, 'description', None) or getattr(entry, 'summary', None) or entry.title,
                         'original_link': entry.link,
                         'original_date': self._parse_rss_date(entry.get('published')),
                         'source_url': rss_url,
