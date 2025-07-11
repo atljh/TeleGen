@@ -119,6 +119,7 @@ class WebService:
         ) as response:
             if response.status == 200:
                 data = await response.json()
+                logging.info(f'-=-=-=-=-'*20, data)
                 return data.get('rss_feed_url')
             return None
 
@@ -175,6 +176,7 @@ class WebService:
                 "2. Сохрани важные изображения (только URL).",
                 "Извлеки только основной текст статьи (без комментариев/рекламы). "
                 "Сохрани 1-2 ключевых изображения. Не обрабатывай весь контент."
+                "Удали хэштеги из текста, если они есть. "
                 f"3. Переведи текст на украинский язык.",
                 f"4. Стиль изложения: {flow.theme}.",
             ]
@@ -253,8 +255,6 @@ class WebService:
             if not result.extracted_content:
                 return None
 
-            self.logger.info(f'------------------------111{result}')
-
             if not result.success:
                 self.logger.error(f"LLM parsing failed for {url}: {result.error_message}")
                 return None
@@ -265,7 +265,6 @@ class WebService:
                 if isinstance(parsed_data, list) and len(parsed_data) > 0:
                     parsed_data = parsed_data[0]
                 
-                logging.info(f'===*20{parsed_data}')
                 if not all(field in parsed_data for field in ['title', 'content', 'url']):
                     raise ValueError("Missing required fields in LLM response")
                 
