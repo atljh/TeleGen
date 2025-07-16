@@ -3,6 +3,7 @@ import time
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from typing import List
 
 import openai
 from psycopg.errors import UniqueViolation
@@ -53,17 +54,36 @@ class ChatGPTContentProcessor(ContentProcessor):
         model: str = "gpt-4o-mini", 
         max_retries: int = 2, 
         timeout: float = 15.0,
-        cache_size_limit: int = 1000
+        cache_size_limit: int = 1000,
     ):
         self.cache = {}
         self.flow = flow
         self.model = model
+        self.max_batch_size: int = 5
         self.max_retries = max_retries
         self.request_timeout = timeout
         self.cache_size_limit = cache_size_limit
         self.aisettings_service = aisettings_service
         self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
 
+
+    async def process_batch(self, texts: List[str], user_id: int) -> List[str]:
+        if not texts:
+            return []
+        
+        results = []
+        for i in range(0, len(texts), self.max_batch_size):
+            batch = texts[i:i + self.max_batch_size]
+            batch_results = await asyncio.gather(*[
+                self.process(text, user_id) for text in batch
+            ])
+            results.extend(batch_results)
+            
+            if i + self.max_batch_size < len(texts):
+                await asyncio.sleep(1)
+        
+        return results
+    
     async def _get_or_create_user_prompt(self, text: str, flow: FlowDTO) -> str:
         try:
             default_prompt = await self._build_system_prompt(text, flow)
