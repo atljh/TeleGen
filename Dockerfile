@@ -47,6 +47,4 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 libx11-xcb1 libxcb1 libxext6 libxi6 libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
-RUN playwright install --with-deps
-
 CMD ["python", "-m", "main"]
