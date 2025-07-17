@@ -79,20 +79,15 @@ class WebService:
         )
 
     def _generate_headers(self) -> Dict:
-        """Генерирует реалистичные браузерные заголовки с учетом современных требований"""
         user_agents = [
-            # Актуальные Chrome (Windows)
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
             'Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
             
-            # Актуальные Chrome (macOS)
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
             
-            # Актуальные Firefox
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:127.0) Gecko/20100101 Firefox/127.0',
             
-            # Safari
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
         ]
         
@@ -115,7 +110,6 @@ class WebService:
             'Cache-Control': 'max-age=0'
         }
         
-        # Адаптируем заголовки под выбранный User-Agent
         if 'Firefox' in headers['User-Agent']:
             headers.update({
                 'Sec-Ch-Ua': None,
@@ -215,7 +209,6 @@ class WebService:
                 for post in sublist]
 
     async def _fetch_posts_from_rss(self, rss_url: str, limit: int, flow: FlowDTO) -> List[Dict]:
-        """Загрузка постов из одной RSS-ленты"""
         try:
             await self._random_delay()
             
@@ -349,26 +342,32 @@ class WebService:
             return None
         
     async def _get_rss_via_api(self, url: str) -> Optional[str]:
+        if not url or not isinstance(url, str):
+            self.logger.error("Invalid URL provided for RSS API")
+            return None
+
         headers = {
             "Authorization": f"Bearer {self.rss_app_key}:{self.rss_app_secret}",
             "Content-Type": "application/json"
         }
         
         try:
+            json_data = {"url": str(url)}
+            
             async with self.session.post(
                 "https://api.rss.app/v1/feeds",
                 headers=headers,
-                json={"url": url} if url else {},
+                json=json_data,
                 timeout=10
             ) as response:
                 if response.status == 200:
                     data = await response.json()
                     return data.get('rss_feed_url')
                 else:
-                    error_data = await response.text()
-                    self.logger.error(f"API error {response.status}: {error_data}")
+                    error_text = await response.text()
+                    self.logger.error(f"RSS API error {response.status}: {error_text}")
         except Exception as e:
-            self.logger.error(f"API request failed: {str(e)}")
+            self.logger.error(f"RSS API request failed: {str(e)}", exc_info=True)
         return None
 
     async def _validate_rss_feed(self, url: str) -> bool:
