@@ -1,3 +1,4 @@
+import logging
 import time
 import cloudscraper
 import undetected_chromedriver as uc
@@ -15,6 +16,7 @@ class CloudflareBypass:
             delay=10,
             interpreter='nodejs'
         )
+        self.logger = logging.getLogger(__name__)
         self.success_count = 0
         self.fail_count = 0
         
