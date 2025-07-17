@@ -6,7 +6,7 @@ import asyncio
 from typing import Optional
 
 class CloudflareBypass:
-    def __init__(self):
+    def __init__(self, logger):
         self.scraper = cloudscraper.create_scraper(
             browser={
                 'browser': 'chrome',
@@ -16,7 +16,7 @@ class CloudflareBypass:
             delay=10,
             interpreter='nodejs'
         )
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.success_count = 0
         self.fail_count = 0
         
@@ -60,6 +60,14 @@ class CloudflareBypass:
                 driver.quit()
         return None
 
+    async def _try_methods(self, url: str) -> Optional[str]:
+        content = await self.fetch_with_cloudscraper(url)
+        if content:
+            return content
+            
+        self.logger.warning("CloudScraper failed, falling back to Selenium")
+        return await self.fetch_with_selenium(url)
+    
     async def get_page_content(self, url: str) -> Optional[str]:
         start_time = time.time()
         try:

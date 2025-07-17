@@ -38,8 +38,8 @@ class WebService:
         rss_app_key: str = None,
         rss_app_secret: str = None
     ):
-        self.cf_bypass = CloudflareBypass()
         self.logger = logging.getLogger(__name__)
+        self.cf_bypass = CloudflareBypass(self.logger)
         self.openai_key = openai_key
         self.rss_app_key = rss_app_key
         self.rss_app_secret = rss_app_secret
@@ -358,14 +358,17 @@ class WebService:
             async with self.session.post(
                 "https://api.rss.app/v1/feeds",
                 headers=headers,
-                json={"url": url},
+                json={"url": url} if url else {},
                 timeout=10
             ) as response:
                 if response.status == 200:
                     data = await response.json()
                     return data.get('rss_feed_url')
+                else:
+                    error_data = await response.text()
+                    self.logger.error(f"API error {response.status}: {error_data}")
         except Exception as e:
-            self.logger.error(f"API request failed: {str(e)} {e}")
+            self.logger.error(f"API request failed: {str(e)}")
         return None
 
     async def _validate_rss_feed(self, url: str) -> bool:
@@ -391,12 +394,14 @@ class WebService:
             async with self.session.get(url) as response:
                 if response.status == 200:
                     return await response.text()
-                    
-            return await self.cf_bypass.get_page_content(url)
-            
+                
+                if response.status == 403:
+                    self.logger.warning("Cloudflare detected, using bypass")
+                    return await self.cf_bypass.get_page_content(url)
+                
         except Exception as e:
             self.logger.error(f"Fetch error: {str(e)}")
-            return None
+        return None
 
     def _extract_rss_images(self, entry) -> List[str]:
         images = []
