@@ -1,3 +1,4 @@
+import re
 import json
 import os
 import time
@@ -63,6 +64,12 @@ class WebService:
             'download', 'app store', 'google play', 'get it on',
             'available on', 'button', 'logo', 'badge'
         }
+
+        self.news_block_classes = {
+            'post_news_photo', 'news-image', 'article-image',
+            'post-image', 'news-photo', 'story-image'
+        }
+        self.min_news_image_size = (400, 250)
 
         self.session = aiohttp.ClientSession(
             headers=self._generate_headers(),
@@ -369,23 +376,56 @@ class WebService:
     async def close(self):
         await self.session.close()
 
+    def _has_news_caption(self, img_tag) -> bool:
+        """Проверяет наличие новостной подписи к изображению"""
+        for parent in img_tag.parents:
+            # Проверка соседних элементов с подписями
+            siblings = parent.find_next_siblings()
+            for sibling in siblings:
+                sibling_classes = sibling.get('class', [])
+                if isinstance(sibling_classes, str):
+                    sibling_classes = sibling_classes.split()
+                
+                if any(cls in ['caption', 'source', 'credit', 'description'] 
+                    for cls in sibling_classes):
+                    return True
+        
+        return False
+
     def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
+        """Извлекает изображения с особым вниманием к новостным"""
         images = []
         
+        # 1. Сначала проверяем все теги picture (часто содержат новостные фото)
+        for picture in soup.find_all('picture'):
+            img = picture.find('img', src=True)
+            if img:
+                img_url = self._get_image_url(img, base_url)
+                if img_url:
+                    if not self._should_skip_image(img, img_url):
+                        self.logger.debug(f"Adding news image: {img_url}")
+                        images.append(img_url)
+                    else:
+                        self.logger.debug(f"Skipping image (news check failed): {img_url}")
+        
+        # 2. Затем обычные img (кроме уже обработанных в picture)
         for img in soup.find_all('img'):
+            if img.parent and img.parent.name == 'picture':
+                continue
+                
             img_url = self._get_image_url(img, base_url)
-            if not img_url:
-                continue
-                
-            if (self._should_skip_image(img, img_url) or 
-                self._should_skip_by_parent(img)):
-                continue
-                
-            images.append(img_url)
-            if len(images) >= 5:
-                break
-                
-        return images
+            if img_url and not self._should_skip_image(img, img_url):
+                images.append(img_url)
+        
+        # Удаляем дубликаты и ограничиваем количество
+        unique_images = list(dict.fromkeys(images))
+        return unique_images[:5]
+
+    def _is_news_image(self, img_url: str) -> bool:
+        """Проверяет, похоже ли изображение на новостное"""
+        news_paths = {'/images/', '/photos/', '/media/', '/documents/', '/news/'}
+        img_url_lower = img_url.lower()
+        return any(path in img_url_lower for path in news_paths)
 
     def _should_skip_by_parent(self, img_tag) -> bool:
         for parent in img_tag.parents:
@@ -415,51 +455,116 @@ class WebService:
         return None
 
     def _should_skip_image(self, img_tag, img_url: str) -> bool:
-        if (
-            img_url.lower().endswith('.svg') or 
+        """Определяет, нужно ли пропустить изображение с точной проверкой контекста"""
+        # 1. Абсолютные исключения (SVG, data-URL, GIF)
+        if (img_url.lower().endswith('.svg') or 
             img_url.startswith('data:') or
-            self._is_tiny_image(img_tag) or
-            img_url.lower().endswith('.gif')
-            ):
+            img_url.lower().endswith('.gif')):
             return True
         
-        skip_classes = {
-            'lozad', 'lazy', 'icon', 'logo', 'button', 
-            'app-store', 'google-play', 'download', 'badge',
-            'wrapper-authors-ava', 'avatar', 'userpic'
+        # 2. Проверка новостного контекста (если в новостном блоке - НЕ пропускаем)
+        if self._is_in_news_block(img_tag):
+            return False
+        
+        # 3. Проверка размеров (только для НЕ новостных изображений)
+        if self._is_tiny_or_decorative(img_tag):
+            return True
+        
+        # 4. Проверка по классам (только строго декоративные)
+        decorative_classes = {
+            'icon', 'logo', 'button', 'badge', 
+            'app-store', 'google-play', 'download',
+            'spinner', 'loader', 'ad', 'banner'
         }
-        class_attr = img_tag.get('class', [])
-        if isinstance(class_attr, str):
-            class_attr = class_attr.split()
+        img_classes = img_tag.get('class', [])
+        if isinstance(img_classes, str):
+            img_classes = img_classes.split()
         
-        if any(skip_class in class_attr for skip_class in skip_classes):
+        if any(cls in decorative_classes for cls in img_classes):
             return True
         
+        # 5. Проверка по alt-тексту
         alt_text = img_tag.get('alt', '').lower()
         skip_alt_words = {
-            'download', 'app store', 'google play', 'get it on',
-            'available on', 'button', 'logo', 'badge', 'автор',
-            'author', 'аватар', 'avatar'
+            'download', 'app store', 'google play', 
+            'button', 'logo', 'badge', 'реклама', 'ad'
         }
         if any(word in alt_text for word in skip_alt_words):
             return True
         
-        # Пропускаем по URL
-        skip_url_parts = {
+        # 6. Проверка URL (исключаем только явно декоративные)
+        decorative_url_parts = {
             '/buttons/', '/badges/', '/logos/', 
-            '/downloads/', '/appstore', '/googleplay',
-            'app_store', 'play_store', 'get_it_on',
-            '/userpics/', '/authors/', '/avatars/'
+            '/ads/', '/banners/', '/downloads/',
+            '/userpics/', '/avatars/'
         }
         img_url_lower = img_url.lower()
-        if any(part in img_url_lower for part in skip_url_parts):
+        if any(part in img_url_lower for part in decorative_url_parts):
             return True
         
-        # Пропускаем по стилям (маленькие изображения)
-        style = img_tag.get('style', '').lower()
-        if 'width:' in style or 'height:' in style:
-            if ('width:10px' in style or 'height:10px' in style or
-                'width:1' in style or 'height:1' in style):
+        return False
+
+    def _is_tiny_or_decorative(self, img_tag) -> bool:
+        """Проверяет, является ли изображение слишком маленьким или декоративным"""
+        if self._is_in_news_block(img_tag):
+            return False
+        
+        width = self._get_image_dimension(img_tag, 'width')
+        height = self._get_image_dimension(img_tag, 'height')
+        
+        # Минимальные размеры для новостных изображений
+        min_news_width = 400
+        min_news_height = 250
+        
+        # Если размеры не указаны, считаем что подходит
+        if not width or not height:
+            return False
+        
+        # Проверяем размеры
+        if width < min_news_width or height < min_news_height:
+            return True
+        
+        # Проверяем инлайновые стили
+        style = img_tag.get('style', '')
+        if ('width:' in style or 'height:' in style):
+            try:
+                width_match = re.search(r'width:\s*(\d+)px', style)
+                height_match = re.search(r'height:\s*(\d+)px', style)
+                
+                if width_match and height_match:
+                    style_width = int(width_match.group(1))
+                    style_height = int(height_match.group(1))
+                    if style_width < min_news_width or style_height < min_news_height:
+                        return True
+            except (AttributeError, ValueError):
+                pass
+        
+        return False
+
+    def _is_in_news_block(self, img_tag) -> bool:
+        """Проверяет, находится ли изображение в новостном блоке"""
+        news_block_classes = {
+            'post_news_photo', 'news-image', 'article-image',
+            'post-image', 'news-photo', 'story-image',
+            'article-photo', 'news-media', 'media-image'
+        }
+        
+        for parent in img_tag.parents:
+            # Проверка классов родителя
+            parent_classes = parent.get('class', [])
+            if isinstance(parent_classes, str):
+                parent_classes = parent_classes.split()
+            
+            if any(cls in news_block_classes for cls in parent_classes):
+                return True
+            
+            # Дополнительные признаки новостного блока
+            if parent.name == 'div' and any(
+                sibling.name in ['div', 'figcaption'] and 
+                any(cls in ['caption', 'source', 'credit'] 
+                    for cls in sibling.get('class', []))
+                for sibling in parent.find_next_siblings()
+            ):
                 return True
         
         return False
@@ -469,15 +574,33 @@ class WebService:
         width = self._get_image_dimension(img_tag, 'width')
         height = self._get_image_dimension(img_tag, 'height')
         
-        # Изображения меньше 50x50px считаем декоративными
-        if width and height and (width < 50 or height < 50):
+        # Минимальные размеры для новостных изображений
+        min_width = 300
+        min_height = 200
+        
+        # Если размеры не указаны, считаем что подходит
+        if not width or not height:
+            return False
+        
+        # Проверяем явно указанные размеры
+        if width < min_width or height < min_height:
             return True
         
         # Проверяем инлайновые стили
         style = img_tag.get('style', '')
-        if ('width:10px' in style or 'height:10px' in style or
-            'width:1' in style or 'height:1' in style):
-            return True
+        if ('width:' in style or 'height:' in style):
+            try:
+                # Ищем ширину в стилях
+                width_match = re.search(r'width:\s*(\d+)px', style)
+                height_match = re.search(r'height:\s*(\d+)px', style)
+                
+                if width_match and height_match:
+                    style_width = int(width_match.group(1))
+                    style_height = int(height_match.group(1))
+                    if style_width < min_width or style_height < min_height:
+                        return True
+            except (AttributeError, ValueError):
+                pass
         
         return False
 
