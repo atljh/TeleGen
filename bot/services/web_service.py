@@ -290,8 +290,10 @@ class WebService:
             article = soup.find('article') or soup.find('main') or soup.body
             text = article.get_text(separator='\n', strip=True) if article else ''
             
+            self.logger.info(f'Parse images============')
             images = self._extract_quality_images(soup, url)
             self.logger.info(f'====================={images}')
+
             return WebPost(
                 title=soup.title.string if soup.title else url,
                 content=text,
@@ -393,7 +395,6 @@ class WebService:
         return False
 
     def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
-        """Извлекает изображения с особым вниманием к новостным"""
         images = []
         
         # 1. Сначала проверяем все теги picture (часто содержат новостные фото)
