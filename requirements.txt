@@ -59,3 +59,5 @@ feedparser
 pytz
 cloudscraper==1.2.71
 beautifulsoup4==4.13.4
+selenium-wire
+undetected-chromedriver

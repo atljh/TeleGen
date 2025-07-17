@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO, PostImageDTO, PostStatus
+from bot.services.cloudflare_bypass_service import CloudflareBypass
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
@@ -37,6 +38,7 @@ class WebService:
         rss_app_key: str = None,
         rss_app_secret: str = None
     ):
+        self.cf_bypass = CloudflareBypass()
         self.logger = logging.getLogger(__name__)
         self.openai_key = openai_key
         self.rss_app_key = rss_app_key
@@ -386,30 +388,14 @@ class WebService:
 
     async def _fetch_html(self, url: str) -> Optional[str]:
         try:
-            import cloudscraper
+            async with self.session.get(url) as response:
+                if response.status == 200:
+                    return await response.text()
+                    
+            return await self.cf_bypass.get_page_content(url)
             
-            scraper = cloudscraper.create_scraper(
-                browser={
-                    'browser': 'chrome',
-                    'platform': 'windows',
-                    'desktop': True,
-                    'mobile': False
-                },
-                delay=10,
-                interpreter='nodejs'
-            )
-            
-            # Выполняем запрос через cloudscraper
-            resp = await asyncio.to_thread(scraper.get, url)
-            
-            if resp.status_code == 200:
-                return resp.text
-            else:
-                self.logger.error(f"Cloudflare challenge failed with status {resp.status_code}")
-                return None
-                
         except Exception as e:
-            self.logger.error(f"Cloudflare bypass error: {str(e)}")
+            self.logger.error(f"Fetch error: {str(e)}")
             return None
 
     def _extract_rss_images(self, entry) -> List[str]:
@@ -437,9 +423,7 @@ class WebService:
         await self.session.close()
 
     def _has_news_caption(self, img_tag) -> bool:
-        """Проверяет наличие новостной подписи к изображению"""
         for parent in img_tag.parents:
-            # Проверка соседних элементов с подписями
             siblings = parent.find_next_siblings()
             for sibling in siblings:
                 sibling_classes = sibling.get('class', [])
@@ -455,7 +439,6 @@ class WebService:
     def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
         images = []
         
-        # 1. Сначала проверяем все теги picture (часто содержат новостные фото)
         for picture in soup.find_all('picture'):
             img = picture.find('img', src=True)
             if img:
@@ -467,7 +450,6 @@ class WebService:
                     else:
                         self.logger.debug(f"Skipping image (news check failed): {img_url}")
         
-        # 2. Затем обычные img (кроме уже обработанных в picture)
         for img in soup.find_all('img'):
             if img.parent and img.parent.name == 'picture':
                 continue
@@ -476,12 +458,10 @@ class WebService:
             if img_url and not self._should_skip_image(img, img_url):
                 images.append(img_url)
         
-        # Удаляем дубликаты и ограничиваем количество
         unique_images = list(dict.fromkeys(images))
         return unique_images[:5]
 
     def _is_news_image(self, img_url: str) -> bool:
-        """Проверяет, похоже ли изображение на новостное"""
         news_paths = {'/images/', '/photos/', '/media/', '/documents/', '/news/'}
         img_url_lower = img_url.lower()
         return any(path in img_url_lower for path in news_paths)
@@ -514,7 +494,6 @@ class WebService:
         return None
 
     def _should_skip_image(self, img_tag, img_url: str) -> bool:
-        """Определяет, нужно ли пропустить изображение с точной проверкой контекста"""
         # 1. Абсолютные исключения (SVG, data-URL, GIF)
         if (img_url.lower().endswith('.svg') or 
             img_url.startswith('data:') or
@@ -564,7 +543,6 @@ class WebService:
         return False
 
     def _is_tiny_or_decorative(self, img_tag) -> bool:
-        """Проверяет, является ли изображение слишком маленьким или декоративным"""
         if self._is_in_news_block(img_tag):
             return False
         
@@ -601,7 +579,6 @@ class WebService:
         return False
 
     def _is_in_news_block(self, img_tag) -> bool:
-        """Проверяет, находится ли изображение в новостном блоке"""
         news_block_classes = {
             'post_news_photo', 'news-image', 'article-image',
             'post-image', 'news-photo', 'story-image',
@@ -629,7 +606,6 @@ class WebService:
         return False
 
     def _is_tiny_image(self, img_tag) -> bool:
-        """Проверяет, является ли изображение слишком маленьким"""
         width = self._get_image_dimension(img_tag, 'width')
         height = self._get_image_dimension(img_tag, 'height')
         
@@ -664,7 +640,6 @@ class WebService:
         return False
 
     def _normalize_image_url(self, img_url: str, base_url: str) -> str:
-        """Нормализует URL изображения"""
         if img_url.startswith(('http://', 'https://')):
             return img_url
             
@@ -677,13 +652,11 @@ class WebService:
             return f"{parsed_base.scheme}://{parsed_base.netloc}/{img_url}"
 
     def _get_image_dimension(self, img_tag, dimension: str) -> Optional[int]:
-        """Получает размер изображения из атрибутов"""
         value = img_tag.get(dimension)
         if not value:
             return None
             
         try:
-            # Удаляем 'px' если есть
             if isinstance(value, str):
                 value = value.replace('px', '')
             return int(float(value))
