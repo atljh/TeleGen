@@ -188,7 +188,6 @@ class WebService:
             return []
 
     async def _process_rss_entry(self, entry, domain: str, rss_url: str, flow: FlowDTO) -> Dict:
-        """Обработка одной записи из RSS с улучшенной обработкой изображений"""
         await self._random_delay()
         
         post = {
@@ -205,7 +204,6 @@ class WebService:
         
         if entry.link:
             enriched = await self._parse_web_page(entry.link, flow)
-            self.logger.info(f'====================={enriched.images}')
             if enriched:
                 combined_images = list({img: None for img in post['images'] + (enriched.images or [])}.keys())
                 post.update({
@@ -286,7 +284,7 @@ class WebService:
             text = article.get_text(separator='\n', strip=True) if article else ''
             
             images = self._extract_quality_images(soup, url)
-            
+            self.logger.info(f'====================={images}')
             return WebPost(
                 title=soup.title.string if soup.title else url,
                 content=text,
@@ -402,7 +400,6 @@ class WebService:
             if any(cls in parent_classes for cls in skip_parent_classes):
                 return True
             
-            # Пропускаем кнопочные элементы
             if parent.name == 'a' and 'download' in parent.get('href', '').lower():
                 return True
         
@@ -412,7 +409,6 @@ class WebService:
         for attr in ['data-src', 'src', 'data-original', 'data-srcset']:
             img_url = img_tag.get(attr)
             if img_url:
-                # Берем первый URL из srcset если нужно
                 if attr == 'data-srcset':
                     img_url = img_url.split(',')[0].split()[0]
                 return self._normalize_image_url(img_url, base_url)
