@@ -94,10 +94,10 @@ class WebService:
             self.logger.info(f"Discovered RSS URLs: {rss_urls}")
             
             if not rss_urls:
+                self.logger.warning("No RSS URLs found after all attempts")
                 return []
             
             raw_posts = await self._fetch_rss_posts_parallel(rss_urls, limit, flow)
-            
             processed_posts = await self._process_posts_batch(raw_posts, flow)
             
             self.logger.info(
@@ -109,8 +109,9 @@ class WebService:
             self.logger.error(f"Error in get_last_posts: {str(e)}", exc_info=True)
             return []
 
-    async def _discover_rss_urls_parallel(self, sources: List[Dict]) -> List[str]:
+    async def _discover_rss_urls_parallel(self, sources: List[Dict], max_retries: int = 2) -> List[str]:
         tasks = []
+        discovered_urls = []
         
         for source in sources:
             if source['type'] != 'web':
@@ -119,7 +120,20 @@ class WebService:
             tasks.append(self._discover_rss_for_source(source))
         
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        return [url for url in results if url and not isinstance(url, Exception)]
+        discovered_urls = [url for url in results if url and not isinstance(url, Exception)]
+        
+        retry_count = 0
+        while not discovered_urls and retry_count < max_retries:
+            retry_count += 1
+            self.logger.info(f"No RSS URLs found, retrying ({retry_count}/{max_retries})...")
+            
+            retry_delay = random.uniform(3.0, 5.0) * retry_count
+            await asyncio.sleep(retry_delay)
+            
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            discovered_urls = [url for url in results if url and not isinstance(url, Exception)]
+        
+        return discovered_urls
 
     async def _discover_rss_for_source(self, source: Dict) -> Optional[str]:
         await self._random_delay()
@@ -201,14 +215,11 @@ class WebService:
         return post
 
     async def _process_posts_batch(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
-        """Пакетная обработка всех постов"""
         if not raw_posts:
             return []
         
-        # 1. Подготовка контента для обработки
         contents = [post['content'] for post in raw_posts]
         
-        # 2. Параллельная обработка контента
         if self.openai_key:
             try:
                 processed_contents = await self._process_with_chatgpt_batch(contents, flow)
@@ -221,7 +232,6 @@ class WebService:
                 for content in contents
             ])
         
-        # 3. Сборка результатов
         results = []
         for raw_post, content in zip(raw_posts, processed_contents):
             if isinstance(content, Exception):
@@ -263,7 +273,6 @@ class WebService:
         return await processor.process_batch(texts, user.id)
 
     async def _parse_web_page(self, url: str, flow: FlowDTO) -> Optional[WebPost]:
-        """Парсинг веб-страницы с улучшенным извлечением изображений"""
         try:
             await self._random_delay()
             html = await self._fetch_html(url)
@@ -272,11 +281,9 @@ class WebService:
                 
             soup = BeautifulSoup(html, 'html.parser')
             
-            # Извлечение основного контента
             article = soup.find('article') or soup.find('main') or soup.body
             text = article.get_text(separator='\n', strip=True) if article else ''
             
-            # Улучшенное извлечение изображений
             images = self._extract_quality_images(soup, url)
             
             return WebPost(
@@ -292,7 +299,6 @@ class WebService:
             return None
         
     async def _get_rss_via_api(self, url: str) -> Optional[str]:
-        """Получение RSS через API"""
         headers = {
             "Authorization": f"Bearer {self.rss_app_key}:{self.rss_app_secret}",
             "Content-Type": "application/json"
@@ -313,7 +319,6 @@ class WebService:
         return None
 
     async def _validate_rss_feed(self, url: str) -> bool:
-        """Проверка валидности RSS-ленты"""
         if url in self.rss_cache:
             return self.rss_cache[url]
             
@@ -332,7 +337,6 @@ class WebService:
             return False
 
     async def _fetch_html(self, url: str) -> Optional[str]:
-        """Загрузка HTML страницы"""
         try:
             await self._random_delay()
             async with self.session.get(url) as response:
@@ -343,16 +347,13 @@ class WebService:
         return None
 
     def _extract_rss_images(self, entry) -> List[str]:
-        """Извлекает изображения из RSS записи с фильтрацией"""
         images = []
         
-        # Обрабатываем media_content
         if hasattr(entry, 'media_content'):
             for media in entry.media_content:
                 if media.get('type', '').startswith('image/') and not media.get('url', '').endswith('.svg'):
                     images.append(media['url'])
         
-        # Обрабатываем links
         if hasattr(entry, 'links'):
             for link in entry.links:
                 if link.get('type', '').startswith('image/') and not link.get('href', '').endswith('.svg'):
@@ -382,13 +383,12 @@ class WebService:
                 continue
                 
             images.append(img_url)
-            if len(images) >= 5:  # Ограничиваем количество
+            if len(images) >= 5:
                 break
                 
         return images
 
     def _should_skip_by_parent(self, img_tag) -> bool:
-        """Проверяет родительские элементы на наличие признаков декоративности"""
         for parent in img_tag.parents:
             parent_classes = parent.get('class', [])
             if isinstance(parent_classes, str):
