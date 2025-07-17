@@ -43,30 +43,33 @@ class WebService:
         self.user_service = user_service
         self.aisettings_service = aisettings_service
         
-        # Настройки параллелизма
         self.max_concurrent_requests = 10
         self.request_timeout = 30
         self.min_delay = 1.0
         self.max_delay = 3.0
         
-        # Кэширование
         self.rss_cache = {}
         self.html_cache = {}
         
-        # Общие пути RSS
         self.common_rss_paths = [
             '/feed', '/rss', '/atom.xml', '/feed.xml', '/rss.xml',
             '/blog/feed', '/news/feed', '/feed/rss', '/feed/atom'
         ]
-        
-        # HTTP клиент с рандомизированными заголовками
+        self.skip_image_classes = {
+            'icon', 'logo', 'button', 'badge', 
+            'app-store', 'google-play', 'download'
+        }
+        self.skip_alt_words = {
+            'download', 'app store', 'google play', 'get it on',
+            'available on', 'button', 'logo', 'badge'
+        }
+
         self.session = aiohttp.ClientSession(
             headers=self._generate_headers(),
             timeout=aiohttp.ClientTimeout(total=self.request_timeout)
         )
 
     def _generate_headers(self) -> Dict:
-        """Генерирует случайные заголовки для запросов"""
         user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -80,26 +83,21 @@ class WebService:
         }
 
     async def _random_delay(self):
-        """Добавляет случайную задержку между запросами"""
         await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
 
     async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
-        """Основной метод получения постов с параллельной обработкой"""
         try:
             start_time = time.time()
             self.logger.info("Starting parallel posts processing")
             
-            # 1. Параллельное обнаружение RSS-лент
             rss_urls = await self._discover_rss_urls_parallel(flow.sources)
             self.logger.info(f"Discovered RSS URLs: {rss_urls}")
             
             if not rss_urls:
                 return []
             
-            # 2. Параллельная загрузка и обработка постов
             raw_posts = await self._fetch_rss_posts_parallel(rss_urls, limit, flow)
             
-            # 3. Пакетная обработка контента
             processed_posts = await self._process_posts_batch(raw_posts, flow)
             
             self.logger.info(
@@ -143,7 +141,6 @@ class WebService:
         return None
 
     async def _fetch_rss_posts_parallel(self, rss_urls: List[str], limit: int, flow: FlowDTO) -> List[Dict]:
-        """Параллельная загрузка постов из RSS-лент"""
         tasks = []
         
         for rss_url in rss_urls:
@@ -166,7 +163,6 @@ class WebService:
                 feed = feedparser.parse(text)
                 domain = urlparse(rss_url).netloc
                 
-                # Создаем задачи для обработки каждого поста
                 post_tasks = []
                 for entry in feed.entries[:limit]:
                     post_tasks.append(self._process_rss_entry(entry, domain, rss_url, flow))
@@ -177,7 +173,7 @@ class WebService:
             return []
 
     async def _process_rss_entry(self, entry, domain: str, rss_url: str, flow: FlowDTO) -> Dict:
-        """Обработка одной записи из RSS"""
+        """Обработка одной записи из RSS с улучшенной обработкой изображений"""
         await self._random_delay()
         
         post = {
@@ -187,16 +183,19 @@ class WebService:
             'original_date': self._parse_rss_date(entry.get('published')),
             'source_url': rss_url,
             'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
-            'images': self._extract_rss_images(entry) or [],
+            # 'images': self._extract_rss_images(entry),  # Уже фильтруются
+            'images': [],
             'domain': domain
         }
         
         if entry.link:
             enriched = await self._parse_web_page(entry.link, flow)
             if enriched:
+                # Объединяем изображения из RSS и страницы, удаляем дубликаты
+                combined_images = list({img: None for img in post['images'] + (enriched.images or [])}.keys())
                 post.update({
                     'content': enriched.content,
-                    'images': list(set(post['images'] + (enriched.images or [])))
+                    'images': combined_images[:5]  # Не более 5 изображений
                 })
         
         return post
@@ -264,10 +263,7 @@ class WebService:
         return await processor.process_batch(texts, user.id)
 
     async def _parse_web_page(self, url: str, flow: FlowDTO) -> Optional[WebPost]:
-        """Парсинг веб-страницы с кэшированием"""
-        if url in self.html_cache:
-            return self.html_cache[url]
-            
+        """Парсинг веб-страницы с улучшенным извлечением изображений"""
         try:
             await self._random_delay()
             html = await self._fetch_html(url)
@@ -280,16 +276,10 @@ class WebService:
             article = soup.find('article') or soup.find('main') or soup.body
             text = article.get_text(separator='\n', strip=True) if article else ''
             
-            # Извлечение изображений
-            images = []
-            for img in soup.find_all('img', src=True)[:3]:
-                img_url = img['src']
-                if not img_url.startswith(('http', 'https')):
-                    base_url = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
-                    img_url = base_url + ('' if img_url.startswith('/') else '/') + img_url
-                images.append(img_url)
+            # Улучшенное извлечение изображений
+            images = self._extract_quality_images(soup, url)
             
-            result = WebPost(
+            return WebPost(
                 title=soup.title.string if soup.title else url,
                 content=text,
                 date=str(datetime.now()),
@@ -297,13 +287,10 @@ class WebService:
                 url=url,
                 images=images
             )
-            
-            self.html_cache[url] = result
-            return result
         except Exception as e:
             self.logger.error(f"Error parsing web page {url}: {str(e)}")
             return None
-
+        
     async def _get_rss_via_api(self, url: str) -> Optional[str]:
         """Получение RSS через API"""
         headers = {
@@ -322,7 +309,7 @@ class WebService:
                     data = await response.json()
                     return data.get('rss_feed_url')
         except Exception as e:
-            self.logger.error(f"API request failed: {str(e)}")
+            self.logger.error(f"API request failed: {str(e)} {e}")
         return None
 
     async def _validate_rss_feed(self, url: str) -> bool:
@@ -356,23 +343,170 @@ class WebService:
         return None
 
     def _extract_rss_images(self, entry) -> List[str]:
-        """Извлечение изображений из RSS записи"""
+        """Извлекает изображения из RSS записи с фильтрацией"""
         images = []
+        
+        # Обрабатываем media_content
         if hasattr(entry, 'media_content'):
-            images.extend(media['url'] for media in entry.media_content 
-                         if media.get('type', '').startswith('image/'))
+            for media in entry.media_content:
+                if media.get('type', '').startswith('image/') and not media.get('url', '').endswith('.svg'):
+                    images.append(media['url'])
+        
+        # Обрабатываем links
         if hasattr(entry, 'links'):
-            images.extend(link['href'] for link in entry.links 
-                         if link.get('type', '').startswith('image/'))
-        return images[:3]
+            for link in entry.links:
+                if link.get('type', '').startswith('image/') and not link.get('href', '').endswith('.svg'):
+                    images.append(link['href'])
+        
+        return list(dict.fromkeys(images))[:3]
 
     def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
-        """Парсинг даты из RSS"""
         try:
             return date_parser.parse(date_str)
         except Exception:
             return None
 
     async def close(self):
-        """Закрытие ресурсов"""
         await self.session.close()
+
+    def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
+        images = []
+        
+        for img in soup.find_all('img'):
+            img_url = self._get_image_url(img, base_url)
+            if not img_url:
+                continue
+                
+            if (self._should_skip_image(img, img_url) or 
+                self._should_skip_by_parent(img)):
+                continue
+                
+            images.append(img_url)
+            if len(images) >= 5:  # Ограничиваем количество
+                break
+                
+        return images
+
+    def _should_skip_by_parent(self, img_tag) -> bool:
+        """Проверяет родительские элементы на наличие признаков декоративности"""
+        for parent in img_tag.parents:
+            parent_classes = parent.get('class', [])
+            if isinstance(parent_classes, str):
+                parent_classes = parent_classes.split()
+            
+            skip_parent_classes = {
+                'footer', 'header', 'sidebar', 'ad', 'banner',
+                'app-links', 'download-section', 'badges'
+            }
+            if any(cls in parent_classes for cls in skip_parent_classes):
+                return True
+            
+            # Пропускаем кнопочные элементы
+            if parent.name == 'a' and 'download' in parent.get('href', '').lower():
+                return True
+        
+        return False
+
+    def _get_image_url(self, img_tag, base_url: str) -> Optional[str]:
+        for attr in ['data-src', 'src', 'data-original', 'data-srcset']:
+            img_url = img_tag.get(attr)
+            if img_url:
+                # Берем первый URL из srcset если нужно
+                if attr == 'data-srcset':
+                    img_url = img_url.split(',')[0].split()[0]
+                return self._normalize_image_url(img_url, base_url)
+        return None
+
+    def _should_skip_image(self, img_tag, img_url: str) -> bool:
+        if (
+            img_url.lower().endswith('.svg') or 
+            img_url.startswith('data:') or
+            self._is_tiny_image(img_tag) or
+            img_url.lower().endswith('.gif')
+            ):
+            return True
+        
+        skip_classes = {
+            'lozad', 'lazy', 'icon', 'logo', 'button', 
+            'app-store', 'google-play', 'download', 'badge',
+            'wrapper-authors-ava', 'avatar', 'userpic'
+        }
+        class_attr = img_tag.get('class', [])
+        if isinstance(class_attr, str):
+            class_attr = class_attr.split()
+        
+        if any(skip_class in class_attr for skip_class in skip_classes):
+            return True
+        
+        alt_text = img_tag.get('alt', '').lower()
+        skip_alt_words = {
+            'download', 'app store', 'google play', 'get it on',
+            'available on', 'button', 'logo', 'badge', 'автор',
+            'author', 'аватар', 'avatar'
+        }
+        if any(word in alt_text for word in skip_alt_words):
+            return True
+        
+        # Пропускаем по URL
+        skip_url_parts = {
+            '/buttons/', '/badges/', '/logos/', 
+            '/downloads/', '/appstore', '/googleplay',
+            'app_store', 'play_store', 'get_it_on',
+            '/userpics/', '/authors/', '/avatars/'
+        }
+        img_url_lower = img_url.lower()
+        if any(part in img_url_lower for part in skip_url_parts):
+            return True
+        
+        # Пропускаем по стилям (маленькие изображения)
+        style = img_tag.get('style', '').lower()
+        if 'width:' in style or 'height:' in style:
+            if ('width:10px' in style or 'height:10px' in style or
+                'width:1' in style or 'height:1' in style):
+                return True
+        
+        return False
+
+    def _is_tiny_image(self, img_tag) -> bool:
+        """Проверяет, является ли изображение слишком маленьким"""
+        width = self._get_image_dimension(img_tag, 'width')
+        height = self._get_image_dimension(img_tag, 'height')
+        
+        # Изображения меньше 50x50px считаем декоративными
+        if width and height and (width < 50 or height < 50):
+            return True
+        
+        # Проверяем инлайновые стили
+        style = img_tag.get('style', '')
+        if ('width:10px' in style or 'height:10px' in style or
+            'width:1' in style or 'height:1' in style):
+            return True
+        
+        return False
+
+    def _normalize_image_url(self, img_url: str, base_url: str) -> str:
+        """Нормализует URL изображения"""
+        if img_url.startswith(('http://', 'https://')):
+            return img_url
+            
+        parsed_base = urlparse(base_url)
+        if img_url.startswith('//'):
+            return f"{parsed_base.scheme}:{img_url}"
+        elif img_url.startswith('/'):
+            return f"{parsed_base.scheme}://{parsed_base.netloc}{img_url}"
+        else:
+            return f"{parsed_base.scheme}://{parsed_base.netloc}/{img_url}"
+
+    def _get_image_dimension(self, img_tag, dimension: str) -> Optional[int]:
+        """Получает размер изображения из атрибутов"""
+        value = img_tag.get(dimension)
+        if not value:
+            return None
+            
+        try:
+            # Удаляем 'px' если есть
+            if isinstance(value, str):
+                value = value.replace('px', '')
+            return int(float(value))
+        except (ValueError, TypeError):
+            return None
