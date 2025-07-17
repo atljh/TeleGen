@@ -57,4 +57,5 @@ openai
 langdetect
 feedparser
 pytz
-crawl4ai==0.6.3
+cloudscraper==1.2.71
+beautifulsoup4==4.13.4

@@ -77,17 +77,57 @@ class WebService:
         )
 
     def _generate_headers(self) -> Dict:
+        """Генерирует реалистичные браузерные заголовки с учетом современных требований"""
         user_agents = [
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0'
+            # Актуальные Chrome (Windows)
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            
+            # Актуальные Chrome (macOS)
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            
+            # Актуальные Firefox
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:127.0) Gecko/20100101 Firefox/127.0',
+            
+            # Safari
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
         ]
-        return {
+        
+        headers = {
             'User-Agent': random.choice(user_agents),
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
             'Referer': 'https://www.google.com/',
+            'Sec-Ch-Ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'cross-site',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
+            'Connection': 'keep-alive',
+            'DNT': '1',
+            'Cache-Control': 'max-age=0'
         }
+        
+        # Адаптируем заголовки под выбранный User-Agent
+        if 'Firefox' in headers['User-Agent']:
+            headers.update({
+                'Sec-Ch-Ua': None,
+                'Sec-Ch-Ua-Mobile': None,
+                'Sec-Ch-Ua-Platform': None
+            })
+        elif 'Safari' in headers['User-Agent']:
+            headers.update({
+                'Sec-Ch-Ua': '"Safari";v="17"',
+                'Sec-Ch-Ua-Mobile': '?0',
+                'Sec-Ch-Ua-Platform': '"macOS"'
+            })
+        
+        return headers
 
     async def _random_delay(self):
         await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
@@ -346,47 +386,31 @@ class WebService:
 
     async def _fetch_html(self, url: str) -> Optional[str]:
         try:
-            await self._random_delay()
+            import cloudscraper
             
-            self.logger.debug(f"Fetching URL: {url}")
+            scraper = cloudscraper.create_scraper(
+                browser={
+                    'browser': 'chrome',
+                    'platform': 'windows',
+                    'desktop': True,
+                    'mobile': False
+                },
+                delay=10,
+                interpreter='nodejs'
+            )
             
-            async with self.session.get(
-                url,
-                timeout=aiohttp.ClientTimeout(total=30),
-                headers=self._generate_headers(),
-                allow_redirects=True
-            ) as response:
-                self.logger.debug(f"Response status for {url}: {response.status}")
+            # Выполняем запрос через cloudscraper
+            resp = await asyncio.to_thread(scraper.get, url)
+            
+            if resp.status_code == 200:
+                return resp.text
+            else:
+                self.logger.error(f"Cloudflare challenge failed with status {resp.status_code}")
+                return None
                 
-                if response.status == 200:
-                    content_type = response.headers.get('Content-Type', '')
-                    self.logger.debug(f"Content-Type: {content_type}")
-                    
-                    if 'text/html' not in content_type:
-                        self.logger.warning(f"Non-HTML content at {url}: {content_type}")
-                        return None
-                    
-                    try:
-                        text = await response.text()
-                        self.logger.debug(f"Successfully fetched {len(text)} bytes from {url}")
-                        return text
-                    except UnicodeDecodeError as e:
-                        self.logger.error(f"Encoding error at {url}: {str(e)}")
-                        return None
-                        
-                elif response.status in [403, 404, 500, 502, 503]:
-                    self.logger.warning(f"HTTP error {response.status} at {url}")
-                else:
-                    self.logger.warning(f"Unexpected HTTP status {response.status} at {url}")
-                    
-        except asyncio.TimeoutError:
-            self.logger.error(f"Timeout while fetching {url}")
-        except aiohttp.ClientError as e:
-            self.logger.error(f"Client error fetching {url}: {str(e)}")
         except Exception as e:
-            self.logger.error(f"Unexpected error fetching {url}: {str(e)}", exc_info=True)
-            
-        return None
+            self.logger.error(f"Cloudflare bypass error: {str(e)}")
+            return None
 
     def _extract_rss_images(self, entry) -> List[str]:
         images = []
