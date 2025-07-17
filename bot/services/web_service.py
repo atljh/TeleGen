@@ -97,6 +97,8 @@ class WebService:
                 self.logger.warning("No RSS URLs found after all attempts")
                 return []
             
+            await self._random_delay()
+            
             raw_posts = await self._fetch_rss_posts_parallel(rss_urls, limit, flow)
             processed_posts = await self._process_posts_batch(raw_posts, flow)
             
@@ -109,7 +111,7 @@ class WebService:
             self.logger.error(f"Error in get_last_posts: {str(e)}", exc_info=True)
             return []
 
-    async def _discover_rss_urls_parallel(self, sources: List[Dict], max_retries: int = 2) -> List[str]:
+    async def _discover_rss_urls_parallel(self, sources: List[Dict], max_retries: int = 3) -> List[str]:
         tasks = []
         discovered_urls = []
         
@@ -136,7 +138,6 @@ class WebService:
         return discovered_urls
 
     async def _discover_rss_for_source(self, source: Dict) -> Optional[str]:
-        await self._random_delay()
         
         base_url = source['link'].rstrip('/')
         
@@ -204,12 +205,12 @@ class WebService:
         
         if entry.link:
             enriched = await self._parse_web_page(entry.link, flow)
+            self.logger.info(f'====================={enriched.images}')
             if enriched:
-                # Объединяем изображения из RSS и страницы, удаляем дубликаты
                 combined_images = list({img: None for img in post['images'] + (enriched.images or [])}.keys())
                 post.update({
                     'content': enriched.content,
-                    'images': combined_images[:5]  # Не более 5 изображений
+                    'images': combined_images[:5]
                 })
         
         return post
@@ -225,7 +226,7 @@ class WebService:
                 processed_contents = await self._process_with_chatgpt_batch(contents, flow)
             except Exception as e:
                 self.logger.error(f"Error in batch ChatGPT processing: {str(e)}")
-                processed_contents = contents  # Возвращаем оригиналы в случае ошибки
+                processed_contents = contents
         else:
             processed_contents = await asyncio.gather(*[
                 DefaultContentProcessor().process(content) 
