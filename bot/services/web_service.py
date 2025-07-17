@@ -198,8 +198,8 @@ class WebService:
             'original_date': self._parse_rss_date(entry.get('published')),
             'source_url': rss_url,
             'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
-            # 'images': self._extract_rss_images(entry),  # Уже фильтруются
-            'images': [],
+            'images': self._extract_rss_images(entry),
+            # 'images': [],
             'domain': domain
         }
         
