@@ -347,11 +347,45 @@ class WebService:
     async def _fetch_html(self, url: str) -> Optional[str]:
         try:
             await self._random_delay()
-            async with self.session.get(url) as response:
+            
+            self.logger.debug(f"Fetching URL: {url}")
+            
+            async with self.session.get(
+                url,
+                timeout=aiohttp.ClientTimeout(total=30),
+                headers=self._generate_headers(),
+                allow_redirects=True
+            ) as response:
+                self.logger.debug(f"Response status for {url}: {response.status}")
+                
                 if response.status == 200:
-                    return await response.text()
+                    content_type = response.headers.get('Content-Type', '')
+                    self.logger.debug(f"Content-Type: {content_type}")
+                    
+                    if 'text/html' not in content_type:
+                        self.logger.warning(f"Non-HTML content at {url}: {content_type}")
+                        return None
+                    
+                    try:
+                        text = await response.text()
+                        self.logger.debug(f"Successfully fetched {len(text)} bytes from {url}")
+                        return text
+                    except UnicodeDecodeError as e:
+                        self.logger.error(f"Encoding error at {url}: {str(e)}")
+                        return None
+                        
+                elif response.status in [403, 404, 500, 502, 503]:
+                    self.logger.warning(f"HTTP error {response.status} at {url}")
+                else:
+                    self.logger.warning(f"Unexpected HTTP status {response.status} at {url}")
+                    
+        except asyncio.TimeoutError:
+            self.logger.error(f"Timeout while fetching {url}")
+        except aiohttp.ClientError as e:
+            self.logger.error(f"Client error fetching {url}: {str(e)}")
         except Exception as e:
-            self.logger.error(f"Failed to fetch HTML from {url}: {str(e)}")
+            self.logger.error(f"Unexpected error fetching {url}: {str(e)}", exc_info=True)
+            
         return None
 
     def _extract_rss_images(self, entry) -> List[str]:
