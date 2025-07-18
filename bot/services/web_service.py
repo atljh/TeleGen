@@ -1,6 +1,6 @@
+import os
 import re
 import json
-import os
 import time
 import asyncio
 import logging
@@ -82,12 +82,9 @@ class WebService:
         user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
             'Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:127.0) Gecko/20100101 Firefox/127.0',
-            
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
         ]
         
@@ -111,11 +108,9 @@ class WebService:
         }
         
         if 'Firefox' in headers['User-Agent']:
-            headers.update({
-                'Sec-Ch-Ua': None,
-                'Sec-Ch-Ua-Mobile': None,
-                'Sec-Ch-Ua-Platform': None
-            })
+            headers.pop('Sec-Ch-Ua', None)
+            headers.pop('Sec-Ch-Ua-Mobile', None)
+            headers.pop('Sec-Ch-Ua-Platform', None)
         elif 'Safari' in headers['User-Agent']:
             headers.update({
                 'Sec-Ch-Ua': '"Safari";v="17"',
@@ -123,7 +118,8 @@ class WebService:
                 'Sec-Ch-Ua-Platform': '"macOS"'
             })
         
-        return headers
+        return {k: str(v) for k, v in headers.items() if k and v is not None}
+
 
     async def _random_delay(self):
         await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
@@ -300,7 +296,6 @@ class WebService:
         return results
 
     async def _process_with_chatgpt_batch(self, texts: List[str], flow: FlowDTO) -> List[str]:
-        """Пакетная обработка текстов через ChatGPT"""
         user = await self.user_service.get_user_by_flow(flow)
         processor = ChatGPTContentProcessor(
             api_key=self.openai_key,
@@ -341,7 +336,7 @@ class WebService:
             self.logger.error(f"Error parsing web page {url}: {str(e)}")
             return None
         
-    async def _get_rss_via_api(self, url: str) -> Optional[str]:
+    async def _get_rss_via_api(self, url: str, max_retries: int = 2) -> Optional[str]:
         if not url or not isinstance(url, str):
             self.logger.error("Invalid URL provided for RSS API")
             return None
@@ -351,23 +346,43 @@ class WebService:
             "Content-Type": "application/json"
         }
         
-        try:
-            json_data = {"url": str(url)}
-            
-            async with self.session.post(
-                "https://api.rss.app/v1/feeds",
-                headers=headers,
-                json=json_data,
-                timeout=10
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data.get('rss_feed_url')
-                else:
-                    error_text = await response.text()
-                    self.logger.error(f"RSS API error {response.status}: {error_text}")
-        except Exception as e:
-            self.logger.error(f"RSS API request failed: {str(e)}", exc_info=True)
+        json_data = {"url": str(url)}
+        last_exception = None
+
+        for attempt in range(max_retries + 1):
+            try:
+                async with self.session.post(
+                    "https://api.rss.app/v1/feeds",
+                    headers=headers,
+                    json=json_data,
+                    timeout=10
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get('rss_feed_url')
+                    else:
+                        error_text = await response.text()
+                        self.logger.error(f"RSS API error {response.status}: {error_text}")
+                        if response.status >= 500:
+                            continue
+
+            except TypeError as e:
+                if "Cannot serialize non-str key None" in str(e):
+                    self.logger.warning(f"Attempt {attempt + 1}: Header serialization error, retrying...")
+                    headers = {k: str(v) for k, v in headers.items() if v is not None}
+                    last_exception = e
+                    continue
+                raise
+            except Exception as e:
+                self.logger.error(f"Attempt {attempt + 1} failed: {str(e)}", exc_info=True)
+                last_exception = e
+                await asyncio.sleep(1)
+                continue
+
+            break
+
+        if last_exception:
+            self.logger.error(f"All {max_retries + 1} attempts failed. Last error: {str(last_exception)}")
         return None
 
     async def _validate_rss_feed(self, url: str) -> bool:
