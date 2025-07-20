@@ -46,10 +46,10 @@ class WebService:
         self.user_service = user_service
         self.aisettings_service = aisettings_service
         
-        self.max_concurrent_requests = 10
-        self.request_timeout = 30
         self.min_delay = 1.0
         self.max_delay = 3.0
+        self.request_timeout = 30
+        self.max_concurrent_requests = 10
         
         self.rss_cache = {}
         self.html_cache = {}
@@ -58,15 +58,20 @@ class WebService:
             '/feed', '/rss', '/atom.xml', '/feed.xml', '/rss.xml',
             '/blog/feed', '/news/feed', '/feed/rss', '/feed/atom'
         ]
-        self.skip_image_classes = {
-            'icon', 'logo', 'button', 'badge', 
-            'app-store', 'google-play', 'download'
+        self.decorative_classes = {
+            'icon', 'logo', 'button', 'badge',
+            'app-store', 'google-play', 'download',
+            'spinner', 'loader', 'ad', 'banner'
         }
         self.skip_alt_words = {
             'download', 'app store', 'google play', 'get it on',
-            'available on', 'button', 'logo', 'badge'
+            'available on', 'button', 'logo', 'badge', 'реклама', 'ad'
         }
-
+        self.decorative_url_parts = {
+            '/buttons/', '/badges/', '/logos/',
+            '/ads/', '/banners/', '/downloads/',
+            '/userpics/', '/avatars/'
+        }
         self.news_block_classes = {
             'post_news_photo', 'news-image', 'article-image',
             'post-image', 'news-photo', 'story-image'
@@ -136,7 +141,11 @@ class WebService:
         
         return source_limits
 
-    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
+    async def get_last_posts(
+        self,
+        flow: FlowDTO,
+        limit: int = 10
+    ) -> List[PostDTO]:
         try:
             start_time = time.time()
             self.logger.info("Starting parallel posts processing")
@@ -160,7 +169,11 @@ class WebService:
             self.logger.error(f"Error in get_last_posts: {str(e)}", exc_info=True)
             return []
 
-    async def _discover_rss_urls_parallel(self, sources: List[Dict], max_retries: int = 3) -> List[str]:
+    async def _discover_rss_urls_parallel(
+        self,
+        sources: List[Dict],
+        max_retries: int = 3
+    ) -> List[str]:
         tasks = []
         discovered_urls = []
         
@@ -311,8 +324,6 @@ class WebService:
             max_retries=2,
             timeout=30.0
         )
-        
-        # Обрабатываем весь список текстов сразу (внутри process_batch будет разбивка на батчи)
         return await processor.process_batch(texts, user.id)
 
     async def _parse_web_page(self, url: str, flow: FlowDTO, rss_images) -> Optional[WebPost]:
@@ -326,8 +337,6 @@ class WebService:
             
             article = soup.find('article') or soup.find('main') or soup.body
             text = article.get_text(separator='\n', strip=True) if article else ''
-            
-            self.logger.info(f'Parse images============')
             
             if rss_images:
                 images = []
@@ -533,53 +542,40 @@ class WebService:
         return None
 
     def _should_skip_image(self, img_tag, img_url: str) -> bool:
-        # 1. Абсолютные исключения (SVG, data-URL, GIF)
-        if (img_url.lower().endswith('.svg') or 
-            img_url.startswith('data:') or
-            img_url.lower().endswith('.gif')):
+        # 1. Absolute exclusions (SVG, inline data URLs, GIFs)
+        img_url_lower = img_url.lower()
+        if img_url_lower.endswith('.svg') or img_url.startswith('data:') or img_url_lower.endswith('.gif'):
             return True
-        
-        # 2. Проверка новостного контекста (если в новостном блоке - НЕ пропускаем)
+
+        # 2. If the image is within a news content block - never skip it
         if self._is_in_news_block(img_tag):
             return False
-        
-        # 3. Проверка размеров (только для НЕ новостных изображений)
+
+        # 3. Skip tiny or decorative images (only for non-news images)
         if self._is_tiny_or_decorative(img_tag):
             return True
-        
-        # 4. Проверка по классам (только строго декоративные)
-        decorative_classes = {
-            'icon', 'logo', 'button', 'badge', 
-            'app-store', 'google-play', 'download',
-            'spinner', 'loader', 'ad', 'banner'
-        }
+
+        # 4. Check by class names (decorative UI elements)
+
         img_classes = img_tag.get('class', [])
         if isinstance(img_classes, str):
             img_classes = img_classes.split()
-        
-        if any(cls in decorative_classes for cls in img_classes):
+
+        if any(cls in self.decorative_classes for cls in img_classes):
             return True
-        
-        # 5. Проверка по alt-тексту
+
+        # 5. Check by alt text for decorative keywords
         alt_text = img_tag.get('alt', '').lower()
-        skip_alt_words = {
-            'download', 'app store', 'google play', 
-            'button', 'logo', 'badge', 'реклама', 'ad'
-        }
-        if any(word in alt_text for word in skip_alt_words):
+
+        if any(keyword in alt_text for keyword in self.skip_alt_words):
             return True
-        
-        # 6. Проверка URL (исключаем только явно декоративные)
-        decorative_url_parts = {
-            '/buttons/', '/badges/', '/logos/', 
-            '/ads/', '/banners/', '/downloads/',
-            '/userpics/', '/avatars/'
-        }
-        img_url_lower = img_url.lower()
-        if any(part in img_url_lower for part in decorative_url_parts):
+
+        # 6. Check URL path for decorative assets
+        if any(part in img_url_lower for part in self.decorative_url_parts):
             return True
-        
+
         return False
+
 
     def _is_tiny_or_decorative(self, img_tag) -> bool:
         if self._is_in_news_block(img_tag):
