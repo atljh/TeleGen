@@ -124,6 +124,18 @@ class WebService:
     async def _random_delay(self):
         await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
 
+    def _calculate_source_limits(self, sources: List[Dict], limit: int) -> Dict[str, int]:
+        source_limits = {}
+        base_limit = max(1, limit // len(sources))
+        for source in sources:
+            source_limits[source['link']] = base_limit
+        
+        remaining = limit - base_limit * len(sources)
+        for source in sources[:remaining]:
+            source_limits[source['link']] += 1
+        
+        return source_limits
+
     async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
         try:
             start_time = time.time()
@@ -232,12 +244,11 @@ class WebService:
             'source_url': rss_url,
             'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
             'images': self._extract_rss_images(entry),
-            # 'images': [],
             'domain': domain
         }
         
         if entry.link:
-            enriched = await self._parse_web_page(entry.link, flow)
+            enriched = await self._parse_web_page(entry.link, flow, post['images'])
             if enriched:
                 combined_images = list({img: None for img in post['images'] + (enriched.images or [])}.keys())
                 post.update({
@@ -304,7 +315,7 @@ class WebService:
         # Обрабатываем весь список текстов сразу (внутри process_batch будет разбивка на батчи)
         return await processor.process_batch(texts, user.id)
 
-    async def _parse_web_page(self, url: str, flow: FlowDTO) -> Optional[WebPost]:
+    async def _parse_web_page(self, url: str, flow: FlowDTO, rss_images) -> Optional[WebPost]:
         try:
             await self._random_delay()
             html = await self._fetch_html(url)
@@ -317,7 +328,11 @@ class WebService:
             text = article.get_text(separator='\n', strip=True) if article else ''
             
             self.logger.info(f'Parse images============')
-            # images = self._extract_quality_images(soup, url)
+            
+            if rss_images:
+                images = []
+            else:
+                images = self._extract_quality_images(soup, url)
 
             return WebPost(
                 title=soup.title.string if soup.title else url,
@@ -325,8 +340,7 @@ class WebService:
                 date=str(datetime.now()),
                 source=urlparse(url).netloc,
                 url=url,
-                images=[]
-                # images=images
+                images=images
             )
         except Exception as e:
             self.logger.error(f"Error parsing web page {url}: {str(e)}")
