@@ -136,8 +136,6 @@ class WebService:
                 self.logger.warning("No RSS URLs found after all attempts")
                 return []
             
-            await self._random_delay()
-            
             raw_posts = await self._fetch_rss_posts_parallel(rss_urls, limit, flow)
             processed_posts = await self._process_posts_batch(raw_posts, flow)
             
@@ -187,7 +185,6 @@ class WebService:
         
         if self.rss_app_key and self.rss_app_secret:
             try:
-                await self._random_delay()
                 return await self._get_rss_via_api(base_url)
             except Exception as e:
                 self.logger.warning(f"RSS.app API failed for {base_url}: {str(e)}")
@@ -206,7 +203,6 @@ class WebService:
 
     async def _fetch_posts_from_rss(self, rss_url: str, limit: int, flow: FlowDTO) -> List[Dict]:
         try:
-            await self._random_delay()
             
             async with self.session.get(rss_url) as response:
                 if response.status != 200:
@@ -321,8 +317,7 @@ class WebService:
             text = article.get_text(separator='\n', strip=True) if article else ''
             
             self.logger.info(f'Parse images============')
-            images = self._extract_quality_images(soup, url)
-            self.logger.info(f'====================={images}')
+            # images = self._extract_quality_images(soup, url)
 
             return WebPost(
                 title=soup.title.string if soup.title else url,
@@ -330,7 +325,8 @@ class WebService:
                 date=str(datetime.now()),
                 source=urlparse(url).netloc,
                 url=url,
-                images=images
+                images=[]
+                # images=images
             )
         except Exception as e:
             self.logger.error(f"Error parsing web page {url}: {str(e)}")
@@ -419,18 +415,28 @@ class WebService:
 
     def _extract_rss_images(self, entry) -> List[str]:
         images = []
-        
+
         if hasattr(entry, 'media_content'):
             for media in entry.media_content:
                 if media.get('type', '').startswith('image/') and not media.get('url', '').endswith('.svg'):
                     images.append(media['url'])
-        
+
         if hasattr(entry, 'links'):
             for link in entry.links:
                 if link.get('type', '').startswith('image/') and not link.get('href', '').endswith('.svg'):
                     images.append(link['href'])
-        
-        return list(dict.fromkeys(images))[:3]
+
+        desc = getattr(entry, 'description', '')
+        if desc:
+            soup = BeautifulSoup(desc, "html.parser")
+            for img_tag in soup.find_all("img"):
+                src = img_tag.get("src")
+                if src and not src.endswith(".svg"):
+                    images.append(src)
+
+        images = list(dict.fromkeys(images))[:3]
+        self.logger.info(f'===IMAGES RSS=== {images}')
+        return images
 
     def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
         try:
