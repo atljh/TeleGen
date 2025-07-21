@@ -77,6 +77,10 @@ class WebService:
             'post_news_photo', 'news-image', 'article-image',
             'post-image', 'news-photo', 'story-image'
         }
+        self.sponsor_indicators = {
+            'sponsor', 'partner', 'supported-by', 
+            'sponsored', 'presented-by', 'powered-by'
+        }
         self.min_news_image_size = (400, 250)
 
         self.session = aiohttp.ClientSession(
@@ -521,11 +525,14 @@ class WebService:
 
     def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
         images = []
-
+        domain = urlparse(base_url).netloc
+        
         for picture in soup.find_all('picture'):
             img = picture.find('img', src=True)
             if img:
                 img_url = self._get_image_url(img, base_url)
+                if self._is_sponsor_image(img, domain):
+                    continue
                 if img_url and not self._should_skip_image(img, img_url):
                     self.logger.debug(f"Adding news image: {img_url}")
                     return [img_url]
@@ -605,8 +612,51 @@ class WebService:
         if any(part in img_url_lower for part in self.decorative_url_parts):
             return True
 
+        alt_text = img_tag.get('alt', '').lower()
+        if any(keyword in alt_text for keyword in self.sponsor_indicators):
+            return True
+            
+        # Check for sponsor in parent elements
+        for parent in img_tag.parents:
+            parent_classes = parent.get('class', [])
+            if isinstance(parent_classes, str):
+                parent_classes = parent_classes.split()
+                
+            if any(indicator in ' '.join(parent_classes).lower() 
+                for indicator in self.sponsor_indicators):
+                return True
+                
+        # Check URL paths for sponsor indicators
+        if any(indicator in img_url.lower() 
+            for indicator in self.sponsor_indicators):
+            return True
+
         return False
 
+
+    def _is_sponsor_image(self, img_tag, domain: str) -> bool:
+        domain_rules = {
+            'pgatour.com': {
+                'url_patterns': ['/temp/legendSponsors/'],
+                'class_patterns': ['legendSponsors']
+            }
+        }
+        
+        if domain in domain_rules:
+            rules = domain_rules[domain]
+            img_url = self._get_image_url(img_tag, '')
+            
+            if img_url and any(pattern in img_url for pattern in rules['url_patterns']):
+                return True
+                
+            classes = img_tag.get('class', [])
+            if isinstance(classes, str):
+                classes = classes.split()
+                
+            if any(pattern in ' '.join(classes) for pattern in rules['class_patterns']):
+                return True
+        
+        return False
 
     def _is_tiny_or_decorative(self, img_tag) -> bool:
         if self._is_in_news_block(img_tag):
