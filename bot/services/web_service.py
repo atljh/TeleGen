@@ -130,14 +130,12 @@ class WebService:
         await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
 
     def _calculate_source_limits(self, sources: List[Dict], limit: int) -> Dict[str, int]:
-        source_limits = {}
-        base_limit = max(1, limit // len(sources))
-        for source in sources:
-            source_limits[source['link']] = base_limit
+        source_links = [s['link'] for s in sources]
+        source_limits = {link: limit // len(sources) for link in source_links}
         
-        remaining = limit - base_limit * len(sources)
-        for source in sources[:remaining]:
-            source_limits[source['link']] += 1
+        remaining = limit % len(sources)
+        for link in source_links[:remaining]:
+            source_limits[link] += 1
         
         return source_limits
 
@@ -217,13 +215,23 @@ class WebService:
 
     async def _fetch_rss_posts_parallel(self, rss_urls: List[str], limit: int, flow: FlowDTO) -> List[Dict]:
         tasks = []
-        
+
+        limits_per_url = self._calculate_source_limits(
+            [{'link': url, 'type': 'web'} for url in rss_urls],
+            limit
+        )
+
         for rss_url in rss_urls:
-            tasks.append(self._fetch_posts_from_rss(rss_url, limit, flow))
-        
+            url_limit = limits_per_url.get(rss_url, 1)
+            self.logger.info(f"Fetching {url_limit} posts from {rss_url}")
+            tasks.append(self._fetch_posts_from_rss(rss_url, url_limit, flow))
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        return [post for sublist in results if not isinstance(sublist, Exception) 
-                for post in sublist]
+        return [
+            post for sublist in results if not isinstance(sublist, Exception)
+            for post in sublist
+        ]
+
 
     async def _fetch_posts_from_rss(self, rss_url: str, limit: int, flow: FlowDTO) -> List[Dict]:
         try:
