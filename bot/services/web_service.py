@@ -451,28 +451,59 @@ class WebService:
 
     def _extract_rss_images(self, entry) -> List[str]:
         images = []
-
+        image_extensions = {'.jpg', '.jpeg', '.png'}
+        
         if hasattr(entry, 'media_content'):
             for media in entry.media_content:
-                if media.get('type', '').startswith('image/') and not media.get('url', '').endswith('.svg'):
-                    images.append(media['url'])
+                url = media.get('url', '')
+                if (media.get('type', '').startswith('image/') and 
+                    not url.endswith('.svg') and
+                    self._is_valid_image_url(url)):
+                    images.append(url)
 
         if hasattr(entry, 'links'):
             for link in entry.links:
-                if link.get('type', '').startswith('image/') and not link.get('href', '').endswith('.svg'):
-                    images.append(link['href'])
+                url = link.get('href', '')
+                if (link.get('type', '').startswith('image/') and 
+                    not url.endswith('.svg') and
+                    self._is_valid_image_url(url)):
+                    images.append(url)
 
         desc = getattr(entry, 'description', '')
         if desc:
             soup = BeautifulSoup(desc, "html.parser")
             for img_tag in soup.find_all("img"):
                 src = img_tag.get("src")
-                if src and not src.endswith(".svg"):
+                if src and not src.endswith(".svg") and self._is_valid_image_url(src):
                     images.append(src)
 
         images = list(dict.fromkeys(images))[:3]
         self.logger.info(f'===IMAGES RSS=== {images}')
         return images
+
+    def _is_valid_image_url(self, url: str) -> bool:
+        if not url:
+            return False
+        
+        parsed = urlparse(url)
+        path = parsed.path.lower()
+        
+        image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp'}
+        if any(path.endswith(ext) for ext in image_extensions):
+            return True
+        
+        image_paths = {'/media/', '/images/', '/img/', '/photo/', '/uploads/'}
+        if any(img_path in path for img_path in image_paths):
+            return True
+        
+        if 'image/' in (parsed.query.lower() + parsed.fragment.lower()):
+            return True
+        
+        resize_params = {'w=', 'h=', 'width=', 'height=', 'resize=', 'crop=', 'fit='}
+        if any(param in parsed.query.lower() for param in resize_params):
+            return False
+        
+        return False
 
     def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
         try:
@@ -526,7 +557,7 @@ class WebService:
     def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
         images = []
         domain = urlparse(base_url).netloc
-        
+
         for picture in soup.find_all('picture'):
             img = picture.find('img', src=True)
             if img:
