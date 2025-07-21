@@ -132,7 +132,7 @@ class UserbotService:
                     
                     messages = await client.get_messages(
                         entity,
-                        limit=remaining_for_source * 2
+                        limit=remaining_for_source * 3
                     )
                     for msg in messages:
                         if len(result) >= total_posts_needed:
