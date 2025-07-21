@@ -180,7 +180,6 @@ class WebService:
         for source in sources:
             if source['type'] != 'web':
                 continue
-                
             tasks.append(self._discover_rss_for_source(source))
         
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -369,6 +368,7 @@ class WebService:
         last_exception = None
 
         for attempt in range(max_retries + 1):
+            await self._random_delay()
             try:
                 async with self.session.post(
                     "https://api.rss.app/v1/feeds",

@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import datetime
 from urllib.parse import unquote
-from typing import Optional, List
+from typing import Dict, Optional, List
 from django.utils import timezone
 from aiogram import Bot
 from aiogram.enums import ParseMode
@@ -79,11 +79,31 @@ class PostService:
         if not flow:
             return []
 
-        userbot_posts = await self.userbot_service.get_last_posts(flow, flow.flow_volume)
-        web_posts = await self.web_service.get_last_posts(flow, flow.flow_volume)
-        
+        total_volume = flow.flow_volume
+        sources = flow.sources
+
+        count_telegram = sum(1 for item in sources if item['type'] == 'telegram')
+        count_web = sum(1 for item in sources if item['type'] == 'web')
+
+        total_sources = count_telegram + count_web
+        if total_sources == 0:
+            return []
+
+        base_volume = total_volume // total_sources
+        remainder = total_volume % total_sources
+
+        userbot_volume = base_volume * count_telegram
+        web_volume = base_volume * count_web
+
+        if remainder:
+            web_volume += remainder
+
+        logging.info(f"Generating posts: userbot={userbot_volume}, web={web_volume}")
+
+        userbot_posts = await self.userbot_service.get_last_posts(flow, userbot_volume)
+        web_posts = await self.web_service.get_last_posts(flow, web_volume)
+
         combined_posts = userbot_posts + web_posts
-        
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
         
         generated_posts = []

@@ -113,6 +113,7 @@ class UserbotService:
         source_limits = self._calculate_source_limits(sources, limit)
         total_posts_needed = limit
         total_posts_collected = 0
+
         async with self.get_client() as client:
             for source in telegram_sources:
                 if len(result) >= total_posts_needed:
