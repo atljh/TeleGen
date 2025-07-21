@@ -61,7 +61,8 @@ class WebService:
         self.decorative_classes = {
             'icon', 'logo', 'button', 'badge',
             'app-store', 'google-play', 'download',
-            'spinner', 'loader', 'ad', 'banner'
+            'spinner', 'loader', 'ad', 'banner',
+            'block_texts__content'
         }
         self.skip_alt_words = {
             'download', 'app store', 'google play', 'get it on',
@@ -492,30 +493,52 @@ class WebService:
         
         return False
 
+    # def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
+    #     images = []
+        
+    #     for picture in soup.find_all('picture'):
+    #         img = picture.find('img', src=True)
+    #         if img:
+    #             img_url = self._get_image_url(img, base_url)
+    #             if img_url:
+    #                 if not self._should_skip_image(img, img_url):
+    #                     self.logger.debug(f"Adding news image: {img_url}")
+    #                     images.append(img_url)
+    #                 else:
+    #                     self.logger.debug(f"Skipping image (news check failed): {img_url}")
+        
+    #     for img in soup.find_all('img'):
+    #         if img.parent and img.parent.name == 'picture':
+    #             continue
+                
+    #         img_url = self._get_image_url(img, base_url)
+    #         if img_url and not self._should_skip_image(img, img_url):
+    #             images.append(img_url)
+        
+    #     unique_images = list(dict.fromkeys(images))
+    #     return unique_images[:5]
+
+
     def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
         images = []
-        
+
         for picture in soup.find_all('picture'):
             img = picture.find('img', src=True)
             if img:
                 img_url = self._get_image_url(img, base_url)
-                if img_url:
-                    if not self._should_skip_image(img, img_url):
-                        self.logger.debug(f"Adding news image: {img_url}")
-                        images.append(img_url)
-                    else:
-                        self.logger.debug(f"Skipping image (news check failed): {img_url}")
-        
+                if img_url and not self._should_skip_image(img, img_url):
+                    self.logger.debug(f"Adding news image: {img_url}")
+                    return [img_url]
+
         for img in soup.find_all('img'):
             if img.parent and img.parent.name == 'picture':
                 continue
-                
+
             img_url = self._get_image_url(img, base_url)
             if img_url and not self._should_skip_image(img, img_url):
-                images.append(img_url)
-        
-        unique_images = list(dict.fromkeys(images))
-        return unique_images[:5]
+                return [img_url]
+
+        return []
 
     def _is_news_image(self, img_url: str) -> bool:
         news_paths = {'/images/', '/photos/', '/media/', '/documents/', '/news/'}
