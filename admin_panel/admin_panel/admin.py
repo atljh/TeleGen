@@ -54,7 +54,7 @@ class PostImageInline(admin.TabularInline):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('flow', 'publication_date', 'status', 'created_at')
+    list_display = ('flow', 'original_link', 'source_url', 'publication_date', 'status', 'created_at')
     readonly_fields = ('created_at',)
     search_fields = ('content', 'source_url')
     list_filter = ('status', 'created_at')
