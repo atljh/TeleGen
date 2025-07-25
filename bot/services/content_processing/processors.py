@@ -142,6 +142,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             
         except openai.APIError as e:
             logging.error(f"OpenAI API error: {str(e)}")
+            await self._notify_admin(f"OpenAI API error: {str(e)}")
             return text
             
         except Exception as e:
