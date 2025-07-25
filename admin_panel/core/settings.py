@@ -121,10 +121,10 @@ CELERY_WORKER_CONCURRENCY = 10
 CELERY_BEAT_SCHEDULE = {
     'check-scheduled-posts': {
         'task': 'bot.tasks.check_scheduled_posts',
-        'schedule': 1800.0,
+        'schedule': 60.0,
     },
     'check-flows-generation': {
         'task': 'bot.tasks.check_flows_generation',
-        'schedule': 1800.0,
+        'schedule': 360.0,
     },
 }
