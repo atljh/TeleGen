@@ -205,10 +205,10 @@ class WebService:
         
         base_url = source['link'].rstrip('/')
         
-        for path in self.common_rss_paths:
-            rss_url = f"{base_url}{path}"
-            if await self._validate_rss_feed(rss_url):
-                return rss_url
+        # for path in self.common_rss_paths:
+        #     rss_url = f"{base_url}{path}"
+        #     if await self._validate_rss_feed(rss_url):
+        #         return rss_url
         
         if self.rss_app_key and self.rss_app_secret:
             try:
