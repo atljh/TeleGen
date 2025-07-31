@@ -204,7 +204,7 @@ class WebService:
     async def _discover_rss_for_source(self, source: Dict) -> Optional[str]:
         
         base_url = source['link'].rstrip('/')
-        
+
         # for path in self.common_rss_paths:
         #     rss_url = f"{base_url}{path}"
         #     if await self._validate_rss_feed(rss_url):
@@ -215,7 +215,9 @@ class WebService:
                 return await self._get_rss_via_api(base_url)
             except Exception as e:
                 self.logger.warning(f"RSS.app API failed for {base_url}: {str(e)}")
-        
+        else:
+            self.logger.error(f"RSS_APP_KEY or RSS_APP_SECRET not found")
+
         return None
 
     async def _fetch_rss_posts_parallel(self, rss_urls: List[str], limit: int, flow: FlowDTO) -> List[Dict]:
