@@ -20,6 +20,7 @@ from bot.services.cloudflare_bypass_service import CloudflareBypass
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
+from bot.utils.notifications import notify_admins
 
 class WebPost(BaseModel):
     title: str
@@ -183,6 +184,7 @@ class WebService:
         for source in sources:
             if source['type'] != 'web':
                 continue
+            self.logger.info(source)
             tasks.append(self._discover_rss_for_source(source))
         
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -395,8 +397,18 @@ class WebService:
                         data = await response.json()
                         return data.get('rss_feed_url')
                     else:
-                        error_text = await response.text()
-                        self.logger.error(f"RSS API error {response.status}: {error_text}")
+                        error_json = await response.json()
+                        self.logger.error(f"RSS API error {response.status}: {error_json}")
+                        error_message = (
+                            "🚨 *RSS Feed Creation Failed* 🚨\n"
+                            f"🔻 *Status Code:* `{response.status}`\n"
+                            f"🔻 *Error Type:* `Plan Limit Reached`\n"
+                            f"🔻 *Message:* _{error_json.get('message', 'N/A')}_\n\n"
+                            f"💡 *Details:*\n"
+                            f"```\n{error_json.get('errors', [{}])[0].get('title', 'No details')}\n```"
+                        )
+                        await notify_admins(error_message, parse_mode="Markdown")
+
                         if response.status >= 500:
                             continue
 
