@@ -1,11 +1,16 @@
 import asyncio
+import logging
 from bot.database.dtos.dtos import FlowDTO
 from bot.services.content_processing.processors import (
     ChatGPTContentProcessor, DefaultContentProcessor
 )
 
 class ContentProcessorService:
-    def __init__(self, openai_key: str = None):
+    def __init__(
+            self,
+            openai_key: str = None,
+            logger: logging.Logger | None = None
+        ):
         self.openai_key = openai_key
         self.default_processor = DefaultContentProcessor()
         

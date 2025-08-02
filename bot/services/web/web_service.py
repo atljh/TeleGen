@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Dict, Optional
+from typing import Awaitable, Callable, List, Dict, Optional
 
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
@@ -11,7 +11,7 @@ from bot.database.dtos.dtos import FlowDTO, PostDTO, PostStatus
 class WebService:
     def __init__(
         self,
-        rss_service: 'RssService',
+        rss_service_factory: Callable[[], Awaitable['RssService']],
         content_processor: 'ContentProcessorService',
         user_service: 'UserService',
         flow_service: 'FlowService',
@@ -19,9 +19,10 @@ class WebService:
         aisettings_service: 'AISettingsService',
         image_extractor: 'ImageExtractorService',
         post_builder: 'PostBuilderService',
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
+
     ):
-        self.rss_service = rss_service
+        self.rss_service_factory = rss_service_factory
         self.content_processor = content_processor
         self.user_service = user_service
         self.flow_service = flow_service
@@ -36,20 +37,22 @@ class WebService:
         flow: FlowDTO, 
         limit: int = 10
     ) -> List[PostDTO]:
-        try:
-            raw_posts = await self._get_raw_posts(flow, limit)
-            enriched_posts = await self._enrich_posts(raw_posts)
-            return await self._process_and_build_posts(enriched_posts, flow)
-        except Exception as e:
-            self.logger.error(f"Failed to get posts: {e}", exc_info=True)
-            return []
+        async with self.rss_service_factory() as rss_service:
+            try:
+                raw_posts = await self._get_raw_posts(rss_service, flow, limit)
+                enriched_posts = await self._enrich_posts(raw_posts)
+                return await self._process_and_build_posts(enriched_posts, flow)
+            except Exception as e:
+                self.logger.error(f"Failed to get posts: {e}", exc_info=True)
+                return []
 
     async def _get_raw_posts(
         self, 
+        rss_service: 'RssService',
         flow: FlowDTO, 
         limit: int
     ) -> List[Dict]:
-        return await self.rss_service.get_posts_for_flow(flow, limit)
+        return await rss_service.get_posts_for_flow(flow, limit)
 
     async def _enrich_posts(
         self, 

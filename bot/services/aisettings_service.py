@@ -8,10 +8,10 @@ from bot.database.repositories import AISettingsRepository, UserRepository
 class AISettingsService:
     def __init__(
         self,
-        aisettings_repository: AISettingsRepository,
+        repository: AISettingsRepository,
         user_repository: UserRepository,
     ):
-        self.aisettings_repository = aisettings_repository
+        self.aisettings_repository = repository
         self.user_repository = user_repository
 
     async def create_aisettings(
