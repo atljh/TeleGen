@@ -13,6 +13,7 @@ class ContentProcessorService:
         ):
         self.openai_key = openai_key
         self.default_processor = DefaultContentProcessor()
+        self.logger = logger or logging.getLogger(__name__)
         
     async def process_batch(
         self,

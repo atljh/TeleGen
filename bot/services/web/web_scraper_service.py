@@ -11,10 +11,14 @@ from bot.database.models.web_post import WebPost
 
 
 class WebScraperService:
-    def __init__(self, cf_bypass: CloudflareBypass) -> None:
+    def __init__(
+        self,
+        cf_bypass: CloudflareBypass,
+        logger: logging.Logger | None = None
+    ) -> None:
         self.cf_bypass = cf_bypass
         self.session = aiohttp.ClientSession()
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger or logging.getLogger(__name__)
 
     async def __aenter__(self) -> Self:
         return self
