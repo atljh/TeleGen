@@ -1,12 +1,17 @@
+import logging
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 
 
 class ImageExtractorService:
-    def __init__(self):
+    def __init__(
+        self,
+        logger: logging.Logger | None = None
+    ):
         self.decorative_classes = {'icon', 'logo', 'button'}
         self.min_size = (400, 250)
-
+        logger: logging.Logger | None = None
+    
     def extract_images(self, soup: BeautifulSoup, base_url: str) -> list[str]:
         images = []
         for img in soup.find_all('img'):
