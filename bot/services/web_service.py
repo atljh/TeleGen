@@ -20,7 +20,9 @@ from bot.services.cloudflare_bypass_service import CloudflareBypass
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
+from bot.services.flow_service import FlowService
 from bot.utils.notifications import notify_admins
+
 
 class WebPost(BaseModel):
     title: str
@@ -35,6 +37,7 @@ class WebService:
         self,
         aisettings_service: AISettingsService,
         user_service: UserService,
+        flow_service: FlowService,
         openai_key: str = None,
         rss_app_key: str = None,
         rss_app_secret: str = None
@@ -46,7 +49,8 @@ class WebService:
         self.rss_app_secret = rss_app_secret
         self.user_service = user_service
         self.aisettings_service = aisettings_service
-        
+        self.flow_service = flow_service
+
         self.min_delay = 1.0
         self.max_delay = 3.0
         self.request_timeout = 30

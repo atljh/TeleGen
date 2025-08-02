@@ -33,7 +33,6 @@ class ChannelRepository:
         except Channel.DoesNotExist:
             raise ChannelNotFoundError(f"Channel with id={id} not found.")
 
-
     async def get_channel_by_id(self, channel_id: str) -> Channel:
         try:
             return await Channel.objects.aget(channel_id=channel_id)
