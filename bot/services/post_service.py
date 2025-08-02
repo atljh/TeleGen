@@ -25,12 +25,14 @@ class PostService:
         userbot_service: UserbotService,
         post_repository: PostRepository,
         flow_repository: FlowRepository,
+        logger: logging.Logger | None = None
     ):
         self.post_repo = post_repository
         self.flow_repo = flow_repository
         self.bot = bot
         self.userbot_service = userbot_service
         self.web_service = web_service
+        self.logger = logger or logging.getLogger(__name__)
 
     async def get_all_posts_in_flow(self, flow_id: int) -> List[Post]:
         return await sync_to_async(list)(

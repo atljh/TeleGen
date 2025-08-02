@@ -1,3 +1,4 @@
+import logging
 from django.db import transaction
 from asgiref.sync import sync_to_async
 from bot.database.dtos.dtos import FlowDTO
@@ -10,9 +11,11 @@ class AISettingsService:
         self,
         repository: AISettingsRepository,
         user_repository: UserRepository,
+        logger: logging.Logger | None = None
     ):
         self.aisettings_repository = repository
         self.user_repository = user_repository
+        self.logger = logger or logging.getLogger(__name__)
 
     async def create_aisettings(
         self,

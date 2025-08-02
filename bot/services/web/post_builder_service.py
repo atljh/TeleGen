@@ -1,8 +1,15 @@
 from datetime import datetime
+import logging
 from bot.database.dtos.dtos import FlowDTO, PostDTO, PostImageDTO, PostStatus
 
 
 class PostBuilderService:
+    def __init__(
+        self,
+        logger: logging.Logger | None = None
+    ):
+        self.logger = logger or logging.getLogger(__name__)
+
     def build_post(
         self,
         raw_data: dict,

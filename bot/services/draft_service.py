@@ -1,3 +1,4 @@
+import logging
 from bot.database.dtos import DraftDTO, PostDTO, UserDTO
 from bot.database.repositories import DraftRepository, PostRepository, UserRepository
 from bot.database.exceptions import UserNotFoundError, PostNotFoundError
@@ -8,11 +9,13 @@ class DraftService:
         self,
         draft_repository: DraftRepository,
         post_repository: PostRepository,
-        user_repository: UserRepository
+        user_repository: UserRepository,
+        logger: logging.Logger | None = None
     ):
         self.draft_repository = draft_repository
         self.post_repository = post_repository 
         self.user_repository = user_repository
+        self.logger = logger or logging.getLogger(__name__)
 
     async def create_draft(self, telegram_id: int, post_id: int) -> DraftDTO:
         try:

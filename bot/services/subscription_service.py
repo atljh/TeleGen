@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from bot.database.dtos import SubscriptionDTO
 from bot.database.repositories import SubscriptionRepository, ChannelRepository, UserRepository
@@ -8,11 +9,13 @@ class SubscriptionService:
         self,
         subscription_repository: SubscriptionRepository,
         channel_repository: ChannelRepository,
-        user_repository: UserRepository
+        user_repository: UserRepository,
+        logger: logging.Logger | None = None
     ):
         self.subscription_repository = subscription_repository
         self.channel_repository = channel_repository
         self.user_repository = user_repository
+        self.logger = logger or logging.getLogger(__name__)
 
     async def create_subscription(
         self,

@@ -1,3 +1,4 @@
+import logging
 from bot.database.dtos import StatisticsDTO
 from bot.database.repositories import StatisticsRepository, UserRepository, ChannelRepository
 
@@ -8,11 +9,13 @@ class StatisticsService:
         self,
         statistics_repository: StatisticsRepository,
         user_repository: UserRepository,
-        channel_repository: ChannelRepository
+        channel_repository: ChannelRepository,
+        logger: logging.Logger | None = None
     ):
         self.statistics_repository = statistics_repository
         self.user_repository = user_repository
         self.channel_repository = channel_repository
+        self.logger = logger or logging.getLogger(__name__)
     
     async def get_statistics_by_id(self, statistics_id: int) -> StatisticsDTO:
         statistics = await self.statistics_repository.get_statistics_by_id(statistics_id)

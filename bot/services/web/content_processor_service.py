@@ -7,10 +7,10 @@ from bot.services.content_processing.processors import (
 
 class ContentProcessorService:
     def __init__(
-            self,
-            openai_key: str = None,
-            logger: logging.Logger | None = None
-        ):
+        self,
+        openai_key: str = None,
+        logger: logging.Logger | None = None
+    ):
         self.openai_key = openai_key
         self.default_processor = DefaultContentProcessor()
         self.logger = logger or logging.getLogger(__name__)

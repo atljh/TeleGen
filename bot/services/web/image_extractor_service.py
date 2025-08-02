@@ -10,8 +10,8 @@ class ImageExtractorService:
     ):
         self.decorative_classes = {'icon', 'logo', 'button'}
         self.min_size = (400, 250)
-        logger: logging.Logger | None = None
-    
+        self.logger = logger or logging.getLogger(__name__)
+
     def extract_images(self, soup: BeautifulSoup, base_url: str) -> list[str]:
         images = []
         for img in soup.find_all('img'):

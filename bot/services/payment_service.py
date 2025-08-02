@@ -1,3 +1,4 @@
+import logging
 from bot.database.dtos import PaymentDTO
 from bot.database.repositories import PaymentRepository, UserRepository
 
@@ -5,10 +6,12 @@ class PaymentService:
     def __init__(
         self,
         payment_repository: PaymentRepository,
-        user_repository: UserRepository
+        user_repository: UserRepository,
+        logger: logging.Logger | None = None
     ):
         self.payment_repository = payment_repository
         self.user_repository = user_repository
+        self.logger = logger or logging.getLogger(__name__)
 
     async def create_payment(
             self,
