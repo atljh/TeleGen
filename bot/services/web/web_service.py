@@ -6,31 +6,29 @@ from pydantic import BaseModel
 from bs4 import BeautifulSoup
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO, PostStatus
-from bot.services.web.content_processor_service import ContentProcessorService
-from bot.services.web.image_extractor_service import ImageExtractorService
-from bot.services.web.post_builder_service import PostBuilderService
-from bot.services.web.rss_service import RssService
-from bot.services.web.web_scraper_service import WebScraperService
-from bot.services.user_service import UserService
 
 
 class WebService:
     def __init__(
         self,
-        rss_service: RssService,
-        content_processor: ContentProcessorService,
-        web_scraper: WebScraperService,
-        image_extractor: ImageExtractorService,
-        post_builder: PostBuilderService,
-        user_service: UserService,
+        rss_service: 'RssService',
+        content_processor: 'ContentProcessorService',
+        user_service: 'UserService',
+        flow_service: 'FlowService',
+        web_scraper: 'WebScraperService',
+        aisettings_service: 'AISettingsService',
+        image_extractor: 'ImageExtractorService',
+        post_builder: 'PostBuilderService',
         logger: Optional[logging.Logger] = None
     ):
         self.rss_service = rss_service
         self.content_processor = content_processor
+        self.user_service = user_service
+        self.flow_service = flow_service
         self.web_scraper = web_scraper
+        self.aisettings_service = aisettings_service
         self.image_extractor = image_extractor
         self.post_builder = post_builder
-        self.user_service = user_service
         self.logger = logger or logging.getLogger(__name__)
 
     async def get_last_posts(

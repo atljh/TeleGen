@@ -1,6 +1,8 @@
-from dependency_injector import containers, providers
+import os
 from aiogram import Bot
 from aiogram.client.session.aiohttp import AiohttpSession
+from dependency_injector import containers, providers
+
 from bot.database.repositories import (
     UserRepository,
     ChannelRepository,
@@ -22,11 +24,15 @@ from bot.services import (
     PaymentService,
     AISettingsService,
     StatisticsService,
-    UserbotService,
     EnhancedUserbotService,
-    WebService
+    WebService,
+    ContentProcessorService,
+    RssService,
+    CloudflareBypass,
+    WebScraperService,
+    ImageExtractorService,
+    PostBuilderService
 )
-import os
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
@@ -85,15 +91,36 @@ class Container(containers.DeclarativeContainer):
         flow_repository=flow_repository,
         channel_repository=channel_repository
     )
+    content_processor = providers.Factory(
+        ContentProcessorService,
+        openai_key=os.getenv("OPENAI_API_KEY"),
+    )
+    rss_service = providers.Factory(
+        RssService,
+        rss_app_key=os.getenv("RSS_API_KEY"),
+        rss_app_secret=os.getenv("RSS_API_SECRET")
+    )
+    image_extractor_service = providers.Factory(
+        ImageExtractorService
+    )
+    web_scraper_service = providers.Factory(
+        WebScraperService,
+        cf_bypass=CloudflareBypass
+    )
+    post_builder_service = providers.Factory(
+        PostBuilderService
+    )
 
     web_service = providers.Factory(
         WebService,
-        aisettings_service=ai_settings_service,
+        rss_service=rss_service,
+        content_processor=content_processor,
         user_service=user_service,
         flow_service=flow_service,
-        openai_key=os.getenv("OPENAI_API_KEY"),
-        rss_app_key=os.getenv("RSS_API_KEY"),
-        rss_app_secret=os.getenv("RSS_API_SECRET")
+        web_scraper=web_scraper_service,
+        aisettings_service=ai_settings_service,
+        image_extractor=image_extractor_service,
+        post_builder=post_builder_service,
     )
 
     post_service = providers.Factory(

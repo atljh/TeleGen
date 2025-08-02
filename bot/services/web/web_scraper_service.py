@@ -6,7 +6,7 @@ from typing import Self
 import aiohttp
 from bs4 import BeautifulSoup
 
-from bot.services.cloudflare_bypass_service import CloudflareBypass
+from bot.services.web.cloudflare_bypass_service import CloudflareBypass
 from bot.database.models.web_post import WebPost
 
 

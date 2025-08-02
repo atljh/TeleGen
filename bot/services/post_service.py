@@ -16,16 +16,15 @@ from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 
 from bot.services.userbot_service import UserbotService
-from bot.services.web_service import WebService
 
 class PostService:
     def __init__(
         self,
+        bot: Bot,
+        web_service: 'WebService',
+        userbot_service: UserbotService,
         post_repository: PostRepository,
         flow_repository: FlowRepository,
-        bot: Bot,
-        userbot_service: UserbotService,
-        web_service: WebService
     ):
         self.post_repo = post_repository
         self.flow_repo = flow_repository

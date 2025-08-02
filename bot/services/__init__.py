@@ -9,15 +9,43 @@ if not settings.configured:
     django.setup()
 
 from admin_panel.admin_panel.models import User, Channel, Flow, Post
-from bot.services.user_service import UserService
-from bot.services.channel_service import ChannelService
-from bot.services.flow_service import FlowService
-from bot.services.post_service import PostService
-from bot.services.post_service import PostRepository
-from bot.services.draft_service import DraftService
-from bot.services.aisettings_service import AISettingsService
-from bot.services.subscription_service import SubscriptionService
-from bot.services.payment_service import PaymentService
-from bot.services.statistics_service import StatisticsService
-from bot.services.userbot_service import UserbotService, EnhancedUserbotService
-from bot.services.web_service import WebService
+
+from .user_service import UserService
+from .channel_service import ChannelService
+from .flow_service import FlowService
+from .post_service import PostService
+from .draft_service import DraftService
+from .aisettings_service import AISettingsService
+from .subscription_service import SubscriptionService
+from .payment_service import PaymentService
+from .statistics_service import StatisticsService
+from .userbot_service import UserbotService, EnhancedUserbotService
+
+from .web.web_service import WebService
+from .web.rss_service import RssService
+from .web.cloudflare_bypass_service import CloudflareBypass
+from .web.web_scraper_service import WebScraperService
+from .web.image_extractor_service import ImageExtractorService
+from .web.post_builder_service import PostBuilderService
+from .web.content_processor_service import ContentProcessorService
+
+__all__ = [
+    'WebService',
+    'UserService',
+    'ChannelService',
+    'FlowService',
+    'PostService',
+    'DraftService',
+    'AISettingsService',
+    'SubscriptionService',
+    'PaymentService',
+    'StatisticsService',
+    'UserbotService',
+    'EnhancedUserbotService',
+    'RssService',
+    'CloudflareBypass',
+    'WebScraperService',
+    'ImageExtractorService',
+    'PostBuilderService',
+    'ContentProcessorService'
+]

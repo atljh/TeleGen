@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 from pydantic import BaseModel
 
-from bot.services.cloudflare_bypass_service import CloudflareBypass
+from bot.services.web.cloudflare_bypass_service import CloudflareBypass
 
 class RssPost(BaseModel):
     title: str
@@ -26,10 +26,17 @@ class RssPost(BaseModel):
 
 
 class RssService:
-    def __init__(self, logger: logging.Logger = None):
+    def __init__(
+            self,
+            rss_app_key: str | None,
+            rss_app_secret: str | None,
+            logger: logging.Logger = None
+        ):
+        self.rss_app_key = rss_app_key
+        self.rss_app_secret = rss_app_secret
         self.logger = logger or logging.getLogger(__name__)
         self.cf_bypass = CloudflareBypass(self.logger)
-        
+
         self.min_delay = 1.0
         self.max_delay = 3.0
         self.request_timeout = 30
