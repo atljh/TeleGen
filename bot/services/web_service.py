@@ -1,19 +1,13 @@
-import os
-import re
-import json
-import time
 import asyncio
 import logging
-import hashlib
-import feedparser
-import aiohttp
 import random
 from datetime import datetime
+from typing import List, Dict, Optional
 from urllib.parse import urlparse
-from typing import Optional, List, Dict, Tuple
-from pydantic import BaseModel
+
+import aiohttp
 from bs4 import BeautifulSoup
-from dateutil import parser as date_parser
+from pydantic import BaseModel
 
 from bot.database.dtos.dtos import FlowDTO, PostDTO, PostImageDTO, PostStatus
 from bot.services.cloudflare_bypass_service import CloudflareBypass
@@ -35,18 +29,16 @@ class WebPost(BaseModel):
 class WebService:
     def __init__(
         self,
+        rss_service,
         aisettings_service: AISettingsService,
         user_service: UserService,
         flow_service: FlowService,
-        openai_key: str = None,
-        rss_app_key: str = None,
-        rss_app_secret: str = None
+        openai_key: str = None
     ):
         self.logger = logging.getLogger(__name__)
         self.cf_bypass = CloudflareBypass(self.logger)
+        self.rss_service = rss_service
         self.openai_key = openai_key
-        self.rss_app_key = rss_app_key
-        self.rss_app_secret = rss_app_secret
         self.user_service = user_service
         self.aisettings_service = aisettings_service
         self.flow_service = flow_service
@@ -54,15 +46,9 @@ class WebService:
         self.min_delay = 1.0
         self.max_delay = 3.0
         self.request_timeout = 30
-        self.max_concurrent_requests = 10
         
-        self.rss_cache = {}
         self.html_cache = {}
         
-        self.common_rss_paths = [
-            '/feed', '/rss', '/atom.xml', '/feed.xml', '/rss.xml',
-            '/blog/feed', '/news/feed', '/feed/rss', '/feed/atom'
-        ]
         self.decorative_classes = {
             'icon', 'logo', 'button', 'badge',
             'app-store', 'google-play', 'download',
@@ -93,62 +79,6 @@ class WebService:
             timeout=aiohttp.ClientTimeout(total=self.request_timeout)
         )
 
-    def _generate_headers(self) -> Dict:
-        user_agents = [
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:127.0) Gecko/20100101 Firefox/127.0',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
-        ]
-        
-        headers = {
-            'User-Agent': random.choice(user_agents),
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
-            'Accept-Encoding': 'gzip, deflate, br, zstd',
-            'Referer': 'https://www.google.com/',
-            'Sec-Ch-Ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"Windows"',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'cross-site',
-            'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1',
-            'Connection': 'keep-alive',
-            'DNT': '1',
-            'Cache-Control': 'max-age=0'
-        }
-        
-        if 'Firefox' in headers['User-Agent']:
-            headers.pop('Sec-Ch-Ua', None)
-            headers.pop('Sec-Ch-Ua-Mobile', None)
-            headers.pop('Sec-Ch-Ua-Platform', None)
-        elif 'Safari' in headers['User-Agent']:
-            headers.update({
-                'Sec-Ch-Ua': '"Safari";v="17"',
-                'Sec-Ch-Ua-Mobile': '?0',
-                'Sec-Ch-Ua-Platform': '"macOS"'
-            })
-        
-        return {k: str(v) for k, v in headers.items() if k and v is not None}
-
-
-    async def _random_delay(self):
-        await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
-
-    def _calculate_source_limits(self, sources: List[Dict], limit: int) -> Dict[str, int]:
-        source_links = [s['link'] for s in sources]
-        source_limits = {link: limit // len(sources) for link in source_links}
-        
-        remaining = limit % len(sources)
-        for link in source_links[:remaining]:
-            source_limits[link] += 1
-        
-        return source_limits
-
     async def get_last_posts(
         self,
         flow: FlowDTO,
@@ -156,142 +86,102 @@ class WebService:
     ) -> List[PostDTO]:
         try:
             start_time = time.time()
-            self.logger.info("Starting parallel posts processing")
+            self.logger.info("Starting posts processing")
             
-            rss_urls = await self._discover_rss_urls_parallel(flow.sources)
-            self.logger.info(f"Discovered RSS URLs: {rss_urls}")
+            # Get raw posts from RSS service
+            raw_posts = await self.rss_service.get_posts_for_flow(flow, limit)
             
-            if not rss_urls:
-                self.logger.warning("No RSS URLs found after all attempts")
-                return []
+            # Enrich with web data
+            enriched_posts = await self._enrich_posts_with_web_data(raw_posts, flow)
             
-            raw_posts = await self._fetch_rss_posts_parallel(rss_urls, limit, flow)
-            processed_posts = await self._process_posts_batch(raw_posts, flow)
+            # Process content
+            processed_posts = await self._process_posts_batch(enriched_posts, flow)
             
             self.logger.info(
-                f"Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s, "
-                f"avg {len(processed_posts)/(time.time()-start_time):.2f} posts/sec"
+                f"Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s"
             )
             return processed_posts[:limit]
         except Exception as e:
             self.logger.error(f"Error in get_last_posts: {str(e)}", exc_info=True)
             return []
 
-    async def _discover_rss_urls_parallel(
+    async def _enrich_posts_with_web_data(
+        self, 
+        raw_posts: List[Dict],
+        flow: FlowDTO
+    ) -> List[Dict]:
+        """Enhance RSS posts with additional web data"""
+        tasks = []
+        for post in raw_posts:
+            if post.get('original_link'):
+                tasks.append(self._enrich_single_post(post, flow))
+            else:
+                tasks.append(post)
+        
+        return await asyncio.gather(*tasks)
+
+    async def _enrich_single_post(
         self,
-        sources: List[Dict],
-        max_retries: int = 3
-    ) -> List[str]:
-        tasks = []
-        discovered_urls = []
-        
-        for source in sources:
-            if source['type'] != 'web':
-                continue
-            self.logger.info(source)
-            tasks.append(self._discover_rss_for_source(source))
-        
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        discovered_urls = [url for url in results if url and not isinstance(url, Exception)]
-        
-        retry_count = 0
-        while not discovered_urls and retry_count < max_retries:
-            retry_count += 1
-            self.logger.info(f"No RSS URLs found, retrying ({retry_count}/{max_retries})...")
-            
-            retry_delay = random.uniform(3.0, 5.0) * retry_count
-            await asyncio.sleep(retry_delay)
-            
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            discovered_urls = [url for url in results if url and not isinstance(url, Exception)]
-        
-        return discovered_urls
-
-    async def _discover_rss_for_source(self, source: Dict) -> Optional[str]:
-        
-        base_url = source['link'].rstrip('/')
-
-        # for path in self.common_rss_paths:
-        #     rss_url = f"{base_url}{path}"
-        #     if await self._validate_rss_feed(rss_url):
-        #         return rss_url
-        
-        if self.rss_app_key and self.rss_app_secret:
-            try:
-                return await self._get_rss_via_api(base_url)
-            except Exception as e:
-                self.logger.warning(f"RSS.app API failed for {base_url}: {str(e)}")
-        else:
-            self.logger.error(f"RSS_APP_KEY or RSS_APP_SECRET not found")
-
-        return None
-
-    async def _fetch_rss_posts_parallel(self, rss_urls: List[str], limit: int, flow: FlowDTO) -> List[Dict]:
-        tasks = []
-
-        limits_per_url = self._calculate_source_limits(
-            [{'link': url, 'type': 'web'} for url in rss_urls],
-            limit
-        )
-
-        for rss_url in rss_urls:
-            url_limit = limits_per_url.get(rss_url, 1)
-            self.logger.info(f"Fetching {url_limit} posts from {rss_url}")
-            tasks.append(self._fetch_posts_from_rss(rss_url, url_limit, flow))
-
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        return [
-            post for sublist in results if not isinstance(sublist, Exception)
-            for post in sublist
-        ]
-
-
-    async def _fetch_posts_from_rss(self, rss_url: str, limit: int, flow: FlowDTO) -> List[Dict]:
+        post: Dict,
+        flow: FlowDTO
+    ) -> Dict:
+        """Enrich single post with web page data"""
         try:
-            
-            async with self.session.get(rss_url) as response:
-                if response.status != 200:
-                    return []
-                
-                text = await response.text()
-                feed = feedparser.parse(text)
-                domain = urlparse(rss_url).netloc
-                
-                post_tasks = []
-                for entry in feed.entries[:limit]:
-                    post_tasks.append(self._process_rss_entry(entry, domain, rss_url, flow))
-                
-                return await asyncio.gather(*post_tasks)
-        except Exception as e:
-            self.logger.error(f"Error parsing RSS feed {rss_url}: {str(e)}")
-            return []
-
-    async def _process_rss_entry(self, entry, domain: str, rss_url: str, flow: FlowDTO) -> Dict:
-        await self._random_delay()
-        
-        post = {
-            'title': entry.title,
-            'content': getattr(entry, 'description', None) or getattr(entry, 'summary', None) or entry.title,
-            'original_link': entry.link,
-            'original_date': self._parse_rss_date(entry.get('published')),
-            'source_url': rss_url,
-            'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
-            'images': self._extract_rss_images(entry),
-            'domain': domain
-        }
-        
-        if entry.link:
-            enriched = await self._parse_web_page(entry.link, flow, post['images'])
+            enriched = await self._parse_web_page(post['original_link'], flow, post.get('images', []))
             if enriched:
-                combined_images = list({img: None for img in post['images'] + (enriched.images or [])}.keys())
-                post.update({
-                    'content': enriched.content,
+                combined_images = list(
+                    {img: None for img in post.get('images', []) + (enriched.images or [])}.keys()
+                )
+                return {
+                    **post,
+                    'content': enriched.content or post['content'],
                     'images': combined_images[:5]
-                })
+                }
+        except Exception as e:
+            self.logger.error(f"Error enriching post {post['original_link']}: {str(e)}")
         
         return post
 
-    async def _process_posts_batch(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
+    async def _parse_web_page(
+        self, 
+        url: str, 
+        flow: FlowDTO, 
+        existing_images: List[str] = None
+    ) -> Optional[WebPost]:
+        """Parse web page to extract additional content"""
+        try:
+            await self._random_delay()
+            html = await self._fetch_html(url)
+            if not html:
+                return None
+                
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            article = soup.find('article') or soup.find('main') or soup.body
+            text = article.get_text(separator='\n', strip=True) if article else ''
+            
+            images = []
+            if not existing_images:
+                images = self._extract_quality_images(soup, url)
+
+            return WebPost(
+                title=soup.title.string if soup.title else url,
+                content=text,
+                date=str(datetime.now()),
+                source=urlparse(url).netloc,
+                url=url,
+                images=images
+            )
+        except Exception as e:
+            self.logger.error(f"Error parsing web page {url}: {str(e)}")
+            return None
+
+    async def _process_posts_batch(
+        self, 
+        raw_posts: List[Dict], 
+        flow: FlowDTO
+    ) -> List[PostDTO]:
+        """Process batch of posts through content processors"""
         if not raw_posts:
             return []
         
@@ -335,7 +225,12 @@ class WebService:
         
         return results
 
-    async def _process_with_chatgpt_batch(self, texts: List[str], flow: FlowDTO) -> List[str]:
+    async def _process_with_chatgpt_batch(
+        self, 
+        texts: List[str], 
+        flow: FlowDTO
+    ) -> List[str]:
+        """Process texts with ChatGPT in batch"""
         user = await self.user_service.get_user_by_flow(flow)
         processor = ChatGPTContentProcessor(
             api_key=self.openai_key,
@@ -346,114 +241,8 @@ class WebService:
         )
         return await processor.process_batch(texts, user.id)
 
-    async def _parse_web_page(self, url: str, flow: FlowDTO, rss_images) -> Optional[WebPost]:
-        try:
-            await self._random_delay()
-            html = await self._fetch_html(url)
-            if not html:
-                return None
-                
-            soup = BeautifulSoup(html, 'html.parser')
-            
-            article = soup.find('article') or soup.find('main') or soup.body
-            text = article.get_text(separator='\n', strip=True) if article else ''
-            
-            if rss_images:
-                images = []
-            else:
-                images = self._extract_quality_images(soup, url)
-
-            return WebPost(
-                title=soup.title.string if soup.title else url,
-                content=text,
-                date=str(datetime.now()),
-                source=urlparse(url).netloc,
-                url=url,
-                images=images
-            )
-        except Exception as e:
-            self.logger.error(f"Error parsing web page {url}: {str(e)}")
-            return None
-        
-    async def _get_rss_via_api(self, url: str, max_retries: int = 2) -> Optional[str]:
-        if not url or not isinstance(url, str):
-            self.logger.error("Invalid URL provided for RSS API")
-            return None
-
-        headers = {
-            "Authorization": f"Bearer {self.rss_app_key}:{self.rss_app_secret}",
-            "Content-Type": "application/json"
-        }
-        
-        json_data = {"url": str(url)}
-        last_exception = None
-
-        for attempt in range(max_retries + 1):
-            await self._random_delay()
-            try:
-                async with self.session.post(
-                    "https://api.rss.app/v1/feeds",
-                    headers=headers,
-                    json=json_data,
-                    timeout=10
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return data.get('rss_feed_url')
-                    else:
-                        error_json = await response.json()
-                        self.logger.error(f"RSS API error {response.status}: {error_json}")
-                        error_message = (
-                            "🚨 *RSS Feed Creation Failed* 🚨\n"
-                            f"🔻 *Status Code:* `{response.status}`\n"
-                            f"🔻 *Error Type:* `Plan Limit Reached`\n"
-                            f"🔻 *Message:* _{error_json.get('message', 'N/A')}_\n\n"
-                            f"💡 *Details:*\n"
-                            f"```\n{error_json.get('errors', [{}])[0].get('title', 'No details')}\n```"
-                        )
-                        await notify_admins(error_message, parse_mode="Markdown")
-
-                        if response.status >= 500:
-                            continue
-
-            except TypeError as e:
-                if "Cannot serialize non-str key None" in str(e):
-                    self.logger.warning(f"Attempt {attempt + 1}: Header serialization error, retrying...")
-                    headers = {k: str(v) for k, v in headers.items() if v is not None}
-                    last_exception = e
-                    continue
-                raise
-            except Exception as e:
-                self.logger.error(f"Attempt {attempt + 1} failed: {str(e)}", exc_info=True)
-                last_exception = e
-                await asyncio.sleep(1)
-                continue
-
-            break
-
-        if last_exception:
-            self.logger.error(f"All {max_retries + 1} attempts failed. Last error: {str(last_exception)}")
-        return None
-
-    async def _validate_rss_feed(self, url: str) -> bool:
-        if url in self.rss_cache:
-            return self.rss_cache[url]
-            
-        try:
-            await self._random_delay()
-            async with self.session.get(url) as response:
-                if response.status != 200:
-                    return False
-                
-                text = await response.text()
-                feed = feedparser.parse(text)
-                is_valid = len(feed.entries) > 0
-                self.rss_cache[url] = is_valid
-                return is_valid
-        except Exception:
-            return False
-
     async def _fetch_html(self, url: str) -> Optional[str]:
+        """Fetch HTML content from URL"""
         try:
             async with self.session.get(url) as response:
                 if response.status == 200:
@@ -464,115 +253,11 @@ class WebService:
                     return await self.cf_bypass.get_page_content(url)
                 
         except Exception as e:
-            self.logger.error(f"Fetch error: {str(e)}")
+            self.logger.error(f"Fetch error for {url}: {str(e)}")
         return None
 
-    def _extract_rss_images(self, entry) -> List[str]:
-        images = []
-        image_extensions = {'.jpg', '.jpeg', '.png'}
-        
-        if hasattr(entry, 'media_content'):
-            for media in entry.media_content:
-                url = media.get('url', '')
-                if (media.get('type', '').startswith('image/') and 
-                    not url.endswith('.svg') and
-                    self._is_valid_image_url(url)):
-                    images.append(url)
-
-        if hasattr(entry, 'links'):
-            for link in entry.links:
-                url = link.get('href', '')
-                if (link.get('type', '').startswith('image/') and 
-                    not url.endswith('.svg') and
-                    self._is_valid_image_url(url)):
-                    images.append(url)
-
-        desc = getattr(entry, 'description', '')
-        if desc:
-            soup = BeautifulSoup(desc, "html.parser")
-            for img_tag in soup.find_all("img"):
-                src = img_tag.get("src")
-                if src and not src.endswith(".svg") and self._is_valid_image_url(src):
-                    images.append(src)
-
-        images = list(dict.fromkeys(images))[:3]
-        self.logger.info(f'===IMAGES RSS=== {images}')
-        return images
-
-    def _is_valid_image_url(self, url: str) -> bool:
-        if not url:
-            return False
-        
-        parsed = urlparse(url)
-        path = parsed.path.lower()
-        
-        image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp'}
-        if any(path.endswith(ext) for ext in image_extensions):
-            return True
-        
-        image_paths = {'/media/', '/images/', '/img/', '/photo/', '/uploads/'}
-        if any(img_path in path for img_path in image_paths):
-            return True
-        
-        if 'image/' in (parsed.query.lower() + parsed.fragment.lower()):
-            return True
-        
-        resize_params = {'w=', 'h=', 'width=', 'height=', 'resize=', 'crop=', 'fit='}
-        if any(param in parsed.query.lower() for param in resize_params):
-            return False
-        
-        return False
-
-    def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
-        try:
-            return date_parser.parse(date_str)
-        except Exception:
-            return None
-
-    async def close(self):
-        await self.session.close()
-
-    def _has_news_caption(self, img_tag) -> bool:
-        for parent in img_tag.parents:
-            siblings = parent.find_next_siblings()
-            for sibling in siblings:
-                sibling_classes = sibling.get('class', [])
-                if isinstance(sibling_classes, str):
-                    sibling_classes = sibling_classes.split()
-                
-                if any(cls in ['caption', 'source', 'credit', 'description'] 
-                    for cls in sibling_classes):
-                    return True
-        
-        return False
-
-    # def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
-    #     images = []
-        
-    #     for picture in soup.find_all('picture'):
-    #         img = picture.find('img', src=True)
-    #         if img:
-    #             img_url = self._get_image_url(img, base_url)
-    #             if img_url:
-    #                 if not self._should_skip_image(img, img_url):
-    #                     self.logger.debug(f"Adding news image: {img_url}")
-    #                     images.append(img_url)
-    #                 else:
-    #                     self.logger.debug(f"Skipping image (news check failed): {img_url}")
-        
-    #     for img in soup.find_all('img'):
-    #         if img.parent and img.parent.name == 'picture':
-    #             continue
-                
-    #         img_url = self._get_image_url(img, base_url)
-    #         if img_url and not self._should_skip_image(img, img_url):
-    #             images.append(img_url)
-        
-    #     unique_images = list(dict.fromkeys(images))
-    #     return unique_images[:5]
-
-
     def _extract_quality_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
+        """Extract high-quality relevant images from page"""
         images = []
         domain = urlparse(base_url).netloc
 
@@ -596,94 +281,8 @@ class WebService:
 
         return []
 
-    def _is_news_image(self, img_url: str) -> bool:
-        news_paths = {'/images/', '/photos/', '/media/', '/documents/', '/news/'}
-        img_url_lower = img_url.lower()
-        return any(path in img_url_lower for path in news_paths)
-
-    def _should_skip_by_parent(self, img_tag) -> bool:
-        for parent in img_tag.parents:
-            parent_classes = parent.get('class', [])
-            if isinstance(parent_classes, str):
-                parent_classes = parent_classes.split()
-            
-            skip_parent_classes = {
-                'footer', 'header', 'sidebar', 'ad', 'banner',
-                'app-links', 'download-section', 'badges'
-            }
-            if any(cls in parent_classes for cls in skip_parent_classes):
-                return True
-            
-            if parent.name == 'a' and 'download' in parent.get('href', '').lower():
-                return True
-        
-        return False
-
-    def _get_image_url(self, img_tag, base_url: str) -> Optional[str]:
-        for attr in ['data-src', 'src', 'data-original', 'data-srcset']:
-            img_url = img_tag.get(attr)
-            if img_url:
-                if attr == 'data-srcset':
-                    img_url = img_url.split(',')[0].split()[0]
-                return self._normalize_image_url(img_url, base_url)
-        return None
-
-    def _should_skip_image(self, img_tag, img_url: str) -> bool:
-        # 1. Absolute exclusions (SVG, inline data URLs, GIFs)
-        img_url_lower = img_url.lower()
-        if img_url_lower.endswith('.svg') or img_url.startswith('data:') or img_url_lower.endswith('.gif'):
-            return True
-
-        # 2. If the image is within a news content block - never skip it
-        if self._is_in_news_block(img_tag):
-            return False
-
-        # 3. Skip tiny or decorative images (only for non-news images)
-        if self._is_tiny_or_decorative(img_tag):
-            return True
-
-        # 4. Check by class names (decorative UI elements)
-
-        img_classes = img_tag.get('class', [])
-        if isinstance(img_classes, str):
-            img_classes = img_classes.split()
-
-        if any(cls in self.decorative_classes for cls in img_classes):
-            return True
-
-        # 5. Check by alt text for decorative keywords
-        alt_text = img_tag.get('alt', '').lower()
-
-        if any(keyword in alt_text for keyword in self.skip_alt_words):
-            return True
-
-        # 6. Check URL path for decorative assets
-        if any(part in img_url_lower for part in self.decorative_url_parts):
-            return True
-
-        alt_text = img_tag.get('alt', '').lower()
-        if any(keyword in alt_text for keyword in self.sponsor_indicators):
-            return True
-            
-        # Check for sponsor in parent elements
-        for parent in img_tag.parents:
-            parent_classes = parent.get('class', [])
-            if isinstance(parent_classes, str):
-                parent_classes = parent_classes.split()
-                
-            if any(indicator in ' '.join(parent_classes).lower() 
-                for indicator in self.sponsor_indicators):
-                return True
-                
-        # Check URL paths for sponsor indicators
-        if any(indicator in img_url.lower() 
-            for indicator in self.sponsor_indicators):
-            return True
-
-        return False
-
-
     def _is_sponsor_image(self, img_tag, domain: str) -> bool:
+        """Check if image is sponsored content"""
         domain_rules = {
             'pgatour.com': {
                 'url_patterns': ['/temp/legendSponsors/'],
@@ -707,26 +306,88 @@ class WebService:
         
         return False
 
+    def _should_skip_image(self, img_tag, img_url: str) -> bool:
+        """Determine if image should be skipped"""
+        img_url_lower = img_url.lower()
+        if img_url_lower.endswith('.svg') or img_url.startswith('data:') or img_url_lower.endswith('.gif'):
+            return True
+
+        if self._is_in_news_block(img_tag):
+            return False
+
+        if self._is_tiny_or_decorative(img_tag):
+            return True
+
+        img_classes = img_tag.get('class', [])
+        if isinstance(img_classes, str):
+            img_classes = img_classes.split()
+
+        if any(cls in self.decorative_classes for cls in img_classes):
+            return True
+
+        alt_text = img_tag.get('alt', '').lower()
+        if any(keyword in alt_text for keyword in self.skip_alt_words):
+            return True
+
+        if any(part in img_url_lower for part in self.decorative_url_parts):
+            return True
+
+        alt_text = img_tag.get('alt', '').lower()
+        if any(keyword in alt_text for keyword in self.sponsor_indicators):
+            return True
+            
+        for parent in img_tag.parents:
+            parent_classes = parent.get('class', [])
+            if isinstance(parent_classes, str):
+                parent_classes = parent_classes.split()
+                
+            if any(indicator in ' '.join(parent_classes).lower() 
+                for indicator in self.sponsor_indicators):
+                return True
+                
+        if any(indicator in img_url.lower() 
+            for indicator in self.sponsor_indicators):
+            return True
+
+        return False
+
+    def _is_in_news_block(self, img_tag) -> bool:
+        """Check if image is in news content block"""
+        for parent in img_tag.parents:
+            parent_classes = parent.get('class', [])
+            if isinstance(parent_classes, str):
+                parent_classes = parent_classes.split()
+            
+            if any(cls in self.news_block_classes for cls in parent_classes):
+                return True
+            
+            if parent.name == 'div' and any(
+                sibling.name in ['div', 'figcaption'] and 
+                any(cls in ['caption', 'source', 'credit'] 
+                    for cls in sibling.get('class', []))
+                for sibling in parent.find_next_siblings()
+            ):
+                return True
+        
+        return False
+
     def _is_tiny_or_decorative(self, img_tag) -> bool:
+        """Check if image is too small or decorative"""
         if self._is_in_news_block(img_tag):
             return False
         
         width = self._get_image_dimension(img_tag, 'width')
         height = self._get_image_dimension(img_tag, 'height')
         
-        # Минимальные размеры для новостных изображений
         min_news_width = 400
         min_news_height = 250
         
-        # Если размеры не указаны, считаем что подходит
         if not width or not height:
             return False
         
-        # Проверяем размеры
         if width < min_news_width or height < min_news_height:
             return True
         
-        # Проверяем инлайновые стили
         style = img_tag.get('style', '')
         if ('width:' in style or 'height:' in style):
             try:
@@ -743,68 +404,18 @@ class WebService:
         
         return False
 
-    def _is_in_news_block(self, img_tag) -> bool:
-        news_block_classes = {
-            'post_news_photo', 'news-image', 'article-image',
-            'post-image', 'news-photo', 'story-image',
-            'article-photo', 'news-media', 'media-image'
-        }
-        
-        for parent in img_tag.parents:
-            # Проверка классов родителя
-            parent_classes = parent.get('class', [])
-            if isinstance(parent_classes, str):
-                parent_classes = parent_classes.split()
-            
-            if any(cls in news_block_classes for cls in parent_classes):
-                return True
-            
-            # Дополнительные признаки новостного блока
-            if parent.name == 'div' and any(
-                sibling.name in ['div', 'figcaption'] and 
-                any(cls in ['caption', 'source', 'credit'] 
-                    for cls in sibling.get('class', []))
-                for sibling in parent.find_next_siblings()
-            ):
-                return True
-        
-        return False
-
-    def _is_tiny_image(self, img_tag) -> bool:
-        width = self._get_image_dimension(img_tag, 'width')
-        height = self._get_image_dimension(img_tag, 'height')
-        
-        # Минимальные размеры для новостных изображений
-        min_width = 300
-        min_height = 200
-        
-        # Если размеры не указаны, считаем что подходит
-        if not width or not height:
-            return False
-        
-        # Проверяем явно указанные размеры
-        if width < min_width or height < min_height:
-            return True
-        
-        # Проверяем инлайновые стили
-        style = img_tag.get('style', '')
-        if ('width:' in style or 'height:' in style):
-            try:
-                # Ищем ширину в стилях
-                width_match = re.search(r'width:\s*(\d+)px', style)
-                height_match = re.search(r'height:\s*(\d+)px', style)
-                
-                if width_match and height_match:
-                    style_width = int(width_match.group(1))
-                    style_height = int(height_match.group(1))
-                    if style_width < min_width or style_height < min_height:
-                        return True
-            except (AttributeError, ValueError):
-                pass
-        
-        return False
+    def _get_image_url(self, img_tag, base_url: str) -> Optional[str]:
+        """Extract image URL from img tag"""
+        for attr in ['data-src', 'src', 'data-original', 'data-srcset']:
+            img_url = img_tag.get(attr)
+            if img_url:
+                if attr == 'data-srcset':
+                    img_url = img_url.split(',')[0].split()[0]
+                return self._normalize_image_url(img_url, base_url)
+        return None
 
     def _normalize_image_url(self, img_url: str, base_url: str) -> str:
+        """Convert relative URLs to absolute"""
         if img_url.startswith(('http://', 'https://')):
             return img_url
             
@@ -817,6 +428,7 @@ class WebService:
             return f"{parsed_base.scheme}://{parsed_base.netloc}/{img_url}"
 
     def _get_image_dimension(self, img_tag, dimension: str) -> Optional[int]:
+        """Get image dimension from tag attributes"""
         value = img_tag.get(dimension)
         if not value:
             return None
@@ -827,3 +439,26 @@ class WebService:
             return int(float(value))
         except (ValueError, TypeError):
             return None
+
+    def _generate_headers(self) -> Dict[str, str]:
+        """Generate random request headers"""
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0'
+        ]
+        
+        return {
+            'User-Agent': random.choice(user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
+            'Referer': 'https://www.google.com/'
+        }
+
+    async def _random_delay(self):
+        """Random delay between requests"""
+        await asyncio.sleep(random.uniform(self.min_delay, self.max_delay))
+
+    async def close(self):
+        """Cleanup resources"""
+        await self.session.close()
