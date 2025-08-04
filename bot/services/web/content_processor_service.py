@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from bot.database.dtos.dtos import FlowDTO
+from bot.services.aisettings_service import AISettingsService
 from bot.services.content_processing.processors import (
     ChatGPTContentProcessor, DefaultContentProcessor
 )
@@ -8,10 +9,12 @@ from bot.services.content_processing.processors import (
 class ContentProcessorService:
     def __init__(
         self,
+        aisettings_service: AISettingsService,
         openai_key: str = None,
-        logger: logging.Logger | None = None
+        logger: logging.Logger | None = None,
     ):
         self.openai_key = openai_key
+        self.aisettings_service = aisettings_service
         self.default_processor = DefaultContentProcessor()
         self.logger = logger or logging.getLogger(__name__)
         
@@ -25,6 +28,7 @@ class ContentProcessorService:
             processor = ChatGPTContentProcessor(
                 api_key=self.openai_key,
                 flow=flow,
+                aisettings_service=self.aisettings_service,
                 max_retries=2,
                 timeout=30.0
             )

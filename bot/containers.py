@@ -127,6 +127,7 @@ class Container(containers.DeclarativeContainer):
     
     content_processor_service = providers.Factory(
         ContentProcessorService,
+        aisettings_service=ai_settings_service,
         openai_key=os.getenv("OPENAI_API_KEY"),
         logger=providers.Singleton(logging.getLogger, "content_processor")
     )

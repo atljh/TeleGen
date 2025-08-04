@@ -39,9 +39,14 @@ class WebService:
     ) -> List[PostDTO]:
         async with self.rss_service_factory() as rss_service:
             try:
-                raw_posts = await self._get_raw_posts(rss_service, flow, limit)
+                raw_posts = [
+                    post async for post in 
+                    rss_service.get_posts_for_flow(flow, limit)
+                ][:limit]
+                
                 enriched_posts = await self._enrich_posts(raw_posts)
                 return await self._process_and_build_posts(enriched_posts, flow)
+                
             except Exception as e:
                 self.logger.error(f"Failed to get posts: {e}", exc_info=True)
                 return []
@@ -52,7 +57,10 @@ class WebService:
         flow: FlowDTO, 
         limit: int
     ) -> List[Dict]:
-        return await rss_service.get_posts_for_flow(flow, limit)
+        return [
+            post async for post in 
+            rss_service.get_posts_for_flow(flow, limit)
+        ][:limit]
 
     async def _enrich_posts(
         self, 
