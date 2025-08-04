@@ -26,7 +26,7 @@ class SourceDict(TypedDict):
 class RssPost(BaseModel):
     title: str = Field(..., min_length=1)
     content: str
-    date: datetime | None = None
+    original_date: datetime | None = None
     source_url: str = Field(..., pattern=r'^https?://')
     original_link: str = Field(..., pattern=r'^https?://')
     images: list[str] = Field(default_factory=list)
@@ -194,7 +194,7 @@ class RssService:
             'title': post.title,
             'content': post.content,
             'original_link': post.original_link,
-            'original_date': post.date,
+            'original_date': post.original_date,
             'source_url': post.source_url,
             'source_id': post.source_id,
             'images': post.images,
