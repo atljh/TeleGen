@@ -84,12 +84,16 @@ class RssService:
         flow_service: 'FlowService',
         limit: int = 10,
         *,
+        post_repository: Optional['PostRepository'] = None,
         timeout: Optional[int] = None
     ) -> AsyncIterator[dict[str, Any]]:
         try:
             rss_urls = await self._get_flow_rss_urls(flow, flow_service)
             
-            async for post in self._stream_posts(rss_urls, limit, timeout):
+            async for post in self._stream_posts(
+                rss_urls, limit, timeout,
+                post_repository=post_repository
+            ):
                 yield self._convert_to_web_service_format(post)
                 
         except asyncio.TimeoutError:
@@ -177,7 +181,8 @@ class RssService:
         self,
         rss_urls: list[str],
         limit: int,
-        timeout: int | None = None
+        timeout: int | None = None,
+        post_repository: Optional['PostRepository'] = None,
     ) -> AsyncIterator[RssPost]:
         if not rss_urls:
             return
@@ -185,7 +190,10 @@ class RssService:
         limits_per_url = self._calculate_limits_per_url(rss_urls, limit)
         for url, url_limit in limits_per_url.items():
             try:
-                async for post in self._fetch_feed_posts_stream(url, url_limit, timeout):
+                async for post in self._fetch_feed_posts_stream(
+                    url, url_limit, timeout,
+                    post_repository=post_repository
+                ):
                     yield post
             except Exception as e:
                 self.logger.warning(f"Error streaming posts from {url}: {e}")
@@ -194,7 +202,8 @@ class RssService:
         self,
         rss_url: str,
         limit: int,
-        timeout: int | None = None
+        timeout: int | None = None,
+        post_repository: Optional['PostRepository'] = None,
     ) -> AsyncIterator[RssPost]:
         try:
             async with self.session.get(rss_url) as response:
@@ -210,7 +219,10 @@ class RssService:
 
                 for entry in feed.entries[:limit]:
                     try:
-                        yield await self._parse_rss_entry(entry, domain, rss_url)
+                        yield await self._parse_rss_entry(
+                            entry, domain, rss_url,
+                            post_repository=post_repository
+                        )
                     except Exception as e:
                         self.logger.warning(f"Error parsing entry: {e}")
 
@@ -219,16 +231,17 @@ class RssService:
             raise
 
     def _convert_to_web_service_format(self, post: RssPost) -> dict[str, Any]:
-        return {
-            'title': post.title,
-            'content': post.content,
-            'original_link': post.original_link,
-            'original_date': post.original_date,
-            'source_url': post.source_url,
-            'source_id': post.source_id,
-            'images': post.images,
-            'domain': post.domain
-        }
+        if post:
+            return {
+                'title': post.title,
+                'content': post.content,
+                'original_link': post.original_link,
+                'original_date': post.original_date,
+                'source_url': post.source_url,
+                'source_id': post.source_id,
+                'images': post.images,
+                'domain': post.domain
+            }
 
     async def _discover_rss_for_source(
         self,
@@ -261,6 +274,7 @@ class RssService:
         rss_url: str,
         limit: int,
         *,
+        post_repository: Optional['PostRepository'] = None,
         retry: int = 0
     ) -> list[RssPost]:
         try:
@@ -283,21 +297,43 @@ class RssService:
             self.logger.error(f"Failed to fetch posts from {rss_url} after {retry} retries: {e}")
             return []
 
-    async def _parse_rss_entry(self, entry: feedparser.FeedParserDict, domain: str, rss_url: str) -> RssPost:
+    async def _parse_rss_entry(
+        self,
+        entry: feedparser.FeedParserDict,
+        domain: str,
+        rss_url: str,
+        *,
+        post_repository: Optional['PostRepository'] = None,
+        check_existing: bool = True
+    ) -> Optional[RssPost]:
         await self._random_delay()
         
-        post_data = {
-            'title': entry.title,
-            'content': getattr(entry, 'description', '') or getattr(entry, 'summary', '') or entry.title,
-            'original_link': entry.link,
-            'original_date': self._parse_rss_date(entry.get('published')),
-            'source_url': rss_url,
-            'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
-            'images': self._extract_rss_images(entry),
-            'domain': domain
-        }
-        
-        return await self._process_post_data(post_data)
+        try:
+            source_id = f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}"
+            
+            if check_existing and post_repository:
+                if await post_repository._post_exists(source_id=source_id):
+                    self.logger.debug(f"STOP | Post already exists: {source_id}")
+                    return None
+
+            post_data = {
+                'title': entry.title,
+                'content': getattr(entry, 'description', '') 
+                        or getattr(entry, 'summary', '') 
+                        or entry.title,
+                'original_link': entry.link,
+                'original_date': self._parse_rss_date(entry.get('published')),
+                'source_url': rss_url,
+                'source_id': source_id,
+                'images': self._extract_rss_images(entry),
+                'domain': domain
+            }
+            
+            return RssPost(**post_data)
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing RSS entry: {e}", exc_info=True)
+            return None
 
     async def _process_post_data(self, post_data: dict) -> RssPost:
         return RssPost(**post_data)

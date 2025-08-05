@@ -141,6 +141,7 @@ class Container(containers.DeclarativeContainer):
     
     web_service = providers.Factory(
         WebService,
+        post_repository=post_repository,
         rss_service_factory=rss_service_factory.provider,
         content_processor=content_processor_service,
         user_service=user_service,
