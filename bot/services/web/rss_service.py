@@ -5,7 +5,7 @@ import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, TypedDict, NotRequired
+from typing import Any, Optional, TypedDict, NotRequired
 from urllib.parse import urlparse
 
 import aiohttp
@@ -22,6 +22,7 @@ from bot.utils.notifications import notify_admins
 class SourceDict(TypedDict):
     link: str
     type: str
+    rss_url: str
 
 class RssPost(BaseModel):
     title: str = Field(..., min_length=1)
@@ -80,18 +81,40 @@ class RssService:
     async def get_posts_for_flow(
         self,
         flow: FlowDTO,
+        flow_service: 'FlowService',
         limit: int = 10,
         *,
-        timeout: int | None = None
+        timeout: Optional[int] = None
     ) -> AsyncIterator[dict[str, Any]]:
         try:
-            rss_urls = await self.discover_rss_urls(flow.sources)
+            rss_urls = await self._get_flow_rss_urls(flow, flow_service)
+            
             async for post in self._stream_posts(rss_urls, limit, timeout):
                 yield self._convert_to_web_service_format(post)
+                
         except asyncio.TimeoutError:
-            self.logger.warning(f"Timeout while getting posts for flow {flow.id}")
+            self.logger.warning(f"Timeout getting posts for flow {flow.id}")
         except Exception as e:
             self.logger.error(f"Error getting posts: {e}", exc_info=True)
+
+    async def _get_flow_rss_urls(
+        self,
+        flow: FlowDTO,
+        flow_service: 'FlowService'
+    ) -> list[str]:
+        rss_urls = []
+        for source in flow.sources:
+            try:
+                if url := await flow_service.get_or_set_source_rss_url(
+                    flow.id,
+                    source['link']
+                ):
+                    rss_urls.append(url)
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to get RSS URL for source {source.get('link')}: {e}"
+                )
+        return rss_urls
 
     async def discover_rss_urls(
         self,
@@ -100,10 +123,16 @@ class RssService:
         parallel: bool = True
     ) -> list[str]:
         tasks = [self._discover_rss_for_source(source) for source in sources]
+        
         if parallel:
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            return [url for url in results if url and not isinstance(url, Exception)]
+            return [
+                url for url in results 
+                if url and not isinstance(url, Exception)
+            ]
+            
         return [await task for task in tasks]
+
 
     async def fetch_posts(
         self,
@@ -254,24 +283,24 @@ class RssService:
             self.logger.error(f"Failed to fetch posts from {rss_url} after {retry} retries: {e}")
             return []
 
-    async def _parse_rss_entry(
-        self,
-        entry: feedparser.FeedParserDict,
-        domain: str,
-        rss_url: str
-    ) -> RssPost:
+    async def _parse_rss_entry(self, entry: feedparser.FeedParserDict, domain: str, rss_url: str) -> RssPost:
         await self._random_delay()
         
-        return RssPost(
-            title=entry.title,
-            content=getattr(entry, 'description', '') or getattr(entry, 'summary', '') or entry.title,
-            original_link=entry.link,
-            original_date=self._parse_rss_date(entry.get('published')),
-            source_url=rss_url,
-            source_id=f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
-            images=self._extract_rss_images(entry),
-            domain=domain
-        )
+        post_data = {
+            'title': entry.title,
+            'content': getattr(entry, 'description', '') or getattr(entry, 'summary', '') or entry.title,
+            'original_link': entry.link,
+            'original_date': self._parse_rss_date(entry.get('published')),
+            'source_url': rss_url,
+            'source_id': f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}",
+            'images': self._extract_rss_images(entry),
+            'domain': domain
+        }
+        
+        return await self._process_post_data(post_data)
+
+    async def _process_post_data(self, post_data: dict) -> RssPost:
+        return RssPost(**post_data)
 
     def _extract_rss_images(self, entry: feedparser.FeedParserDict) -> list[str]:
         images: set[str] = set()
@@ -338,18 +367,28 @@ class RssService:
         if not url:
             return False
         
-        parsed = urlparse(url)
-        path = parsed.path.lower()
-        
-        valid_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
-        if any(path.endswith(ext) for ext in valid_extensions):
-            return True
-        
-        image_paths = {'/media/', '/images/', '/img/', '/photo/'}
-        if any(img_path in path for img_path in image_paths):
-            return True
+        try:
+            parsed = urlparse(url)
+            if not parsed.scheme in ('http', 'https'):
+                return False
+                
+            path = parsed.path.lower()
             
-        return False
+            valid_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+            if any(path.endswith(ext) for ext in valid_extensions):
+                return True
+            
+            image_paths = {'/media/', '/images/', '/img/', '/photo/', '/wp-content/uploads/'}
+            if any(img_path in path for img_path in image_paths):
+                return True
+                
+            cdn_domains = {'cdn.', 'images.', 'img.', 'media.'}
+            if any(domain in parsed.netloc for domain in cdn_domains):
+                return True
+                
+            return False
+        except Exception:
+            return False
 
     def _generate_headers(self) -> dict[str, str]:
         user_agents = [

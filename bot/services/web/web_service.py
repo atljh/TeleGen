@@ -41,7 +41,7 @@ class WebService:
             try:
                 raw_posts = [
                     post async for post in 
-                    rss_service.get_posts_for_flow(flow, limit)
+                    rss_service.get_posts_for_flow(flow, self.flow_service, limit)
                 ][:limit]
                 
                 enriched_posts = await self._enrich_posts(raw_posts)
@@ -59,7 +59,7 @@ class WebService:
     ) -> List[Dict]:
         return [
             post async for post in 
-            rss_service.get_posts_for_flow(flow, limit)
+            rss_service.get_posts_for_flow(flow, self.flow_service, limit)
         ][:limit]
 
     async def _enrich_posts(

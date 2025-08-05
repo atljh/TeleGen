@@ -477,7 +477,6 @@ class EnhancedUserbotService(UserbotService):
         try:
             start_time = time.time()
             raw_posts = await super().get_last_posts(flow.sources, limit)
-            logging.info(f'==+=-== raw posts {len(raw_posts)}')
             processed_posts = await self._process_posts_parallel(raw_posts, flow)
             self.logger.info(f"[Telegram] Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
             return processed_posts

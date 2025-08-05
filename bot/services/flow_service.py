@@ -6,13 +6,20 @@ from bot.database.dtos import FlowDTO
 from bot.database.dtos import ContentLength, GenerationFrequency
 from bot.database.repositories import FlowRepository, ChannelRepository
 from bot.database.exceptions import ChannelNotFoundError, FlowNotFoundError
+from bot.services.web.rss_service import RssService
 
 logger = logging.getLogger(__name__)
 
 class FlowService:
-    def __init__(self, flow_repository: FlowRepository, channel_repository: ChannelRepository):
+    def __init__(
+        self,
+        flow_repository: FlowRepository,
+        channel_repository: ChannelRepository,
+        rss_service: RssService
+    ):
         self.flow_repository = flow_repository
         self.channel_repository = channel_repository
+        self.rss_service = rss_service
 
     async def create_flow(
         self,
@@ -141,60 +148,24 @@ class FlowService:
         )
 
     async def get_or_set_source_rss_url(self, flow_id: int, link: str) -> str | None:
-        try:
-            flow = await self.flow_repository.get_flow_by_id(flow_id)
-            if not flow:
-                raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
+        flow = await self.flow_repository.get_flow_by_id(flow_id)
+        if not flow:
+            raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
 
-            source_to_update = None
-            for source in flow.sources:
-                if source.get("link") == link:
-                    if "rss_url" in source and source["rss_url"]:
-                        return source["rss_url"]
-                    source_to_update = source
-                    break
+        source = next((s for s in flow.sources if s.get("link") == link), None)
+        if not source:
+            raise ValueError(f"Source with link {link} not found in flow {flow_id}")
+        if source.get("rss_url"):
+            return source["rss_url"]
 
-            if not source_to_update:
-                raise ValueError(f"Source with link {link} not found in flow {flow_id}")
-
-            rss_url = await self._discover_rss_for_source(source_to_update)
-            if not rss_url:
-                logger.warning(f"No RSS feed found for link {link}")
-                return None
-
-            updated_sources = []
-            for source in flow.sources:
-                if source.get("link") == link:
-                    source["rss_url"] = rss_url
-                updated_sources.append(source)
-
-            await self.update_flow(flow_id, sources=updated_sources)
-            logger.info(f"Set and returned rss_url for source {link} in flow {flow_id}")
-            return rss_url
-
-        except Exception as e:
-            logger.error(f"Error in get_or_set_source_rss_url for flow {flow_id}: {e}", exc_info=True)
+        rss_url = await self.rss_service._discover_rss_for_source(source)
+        if not rss_url:
+            logger.warning(f"No RSS feed found for link {link}")
             return None
 
-
-    async def _discover_rss_for_source(self, source: dict) -> str | None:
-        
-        base_url = source['link'].rstrip('/')
-
-        '''
-        Disabled because of multuplty website inner rss bugs
-        '''
-        # for path in self.common_rss_paths:
-        #     rss_url = f"{base_url}{path}"
-        #     if await self._validate_rss_feed(rss_url):
-        #         return rss_url
-        
-        if self.rss_app_key and self.rss_app_secret:
-            try:
-                return await self._get_rss_via_api(base_url)
-            except Exception as e:
-                self.logger.warning(f"RSS.app API failed for {base_url}: {str(e)}")
-        else:
-            self.logger.error(f"RSS_APP_KEY or RSS_APP_SECRET not found")
-
-        return None
+        updated_sources = [
+            {**s, "rss_url": rss_url} if s.get("link") == link else s
+            for s in flow.sources
+        ]
+        await self.update_flow(flow_id, sources=updated_sources)
+        return rss_url

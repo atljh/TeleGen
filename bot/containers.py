@@ -35,6 +35,7 @@ from bot.services import (
     ImageExtractorService,
     PostBuilderService
 )
+from bot.services.web.rss_url_manager import RssUrlManager
 
 
 class Container(containers.DeclarativeContainer):
@@ -91,22 +92,28 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository
     )
     
-    flow_service = providers.Factory(
-        FlowService,
-        flow_repository=flow_repository,
-        channel_repository=channel_repository
-    )
-    
-    cloudflare_bypass = providers.Factory(
-        CloudflareBypass,
-        logger=providers.Singleton(logging.getLogger, "cloudflare_bypass")
-    )
-    
     rss_service_factory = providers.Factory(
         RssService,
         rss_app_key=os.getenv("RSS_API_KEY"),
         rss_app_secret=os.getenv("RSS_API_SECRET"),
         logger=providers.Singleton(logging.getLogger, "rss_service")
+    )
+
+    flow_service = providers.Factory(
+        FlowService,
+        rss_service=rss_service_factory,
+        flow_repository=flow_repository,
+        channel_repository=channel_repository
+    )
+    
+    rss_url_manager = providers.Factory(
+        RssUrlManager,
+        rss_service=rss_service_factory,
+        flow_service=flow_service
+    )
+    cloudflare_bypass = providers.Factory(
+        CloudflareBypass,
+        logger=providers.Singleton(logging.getLogger, "cloudflare_bypass")
     )
     
     web_scraper_service = providers.Factory(
