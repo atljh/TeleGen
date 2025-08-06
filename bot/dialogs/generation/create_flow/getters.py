@@ -22,19 +22,6 @@ async def signature_getter(dialog_manager: DialogManager, **kwargs):
         "current_signature": current_signature,
     }
 
-async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
-    flow_data = dialog_manager.dialog_data.get("created_flow", {})
-    
-
-    return {
-        "frequency": flow_data.get("frequency", "не встановлено"),
-        "char_limit": flow_data.get("char_limit", "не встановлено"),
-        "title_highlight": "так" if flow_data.get("title_highlight") else "ні",
-        "signature": flow_data.get("signature", "немає підпису"),
-        "flow_id": flow_data.get("id", "---")
-    }
-
-
 async def source_type_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data
     selected_channel = dialog_manager.start_data.get("selected_channel") 

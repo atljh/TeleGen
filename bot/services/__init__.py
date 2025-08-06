@@ -28,7 +28,6 @@ from .web.web_scraper_service import WebScraperService
 from .web.image_extractor_service import ImageExtractorService
 from .web.post_builder_service import PostBuilderService
 from .web.content_processor_service import ContentProcessorService
-from .web.rss_url_manager import RssUrlManager
 
 __all__ = [
     'WebService',
