@@ -3,10 +3,12 @@ import re
 import logging
 import subprocess
 import sys
+from html import escape as escape_html
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.input import TextInput
+from aiogram.enums import ParseMode
 
 from bot.database.dtos import ContentLength, GenerationFrequency
 from bot.database.exceptions import ChannelNotFoundError
@@ -195,20 +197,75 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 # ==================SIGNATURE======================
 
 
+# async def handle_signature_input(message: Message, widget, manager: DialogManager):
+#     try:
+#         manager.dialog_data["signature_raw"] = message.html_text
+#         manager.dialog_data["signature"] = message.text
+
+#         flow = await create_new_flow(manager)
+
+#         await manager.switch_to(CreateFlowMenu.confirmation)
+        
+#     except Exception as e:
+#         logger.error(f"Signature input error: {e}")
+#         await message.answer("❌ Помилка збереження підпису")
+#         await manager.switch_to(CreateFlowMenu.select_theme)
+
+
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     try:
-        manager.dialog_data["signature_raw"] = message.html_text
-        manager.dialog_data["signature"] = message.text
+        message_text = message.text or message.caption or ""
+        entities = message.entities or message.caption_entities or []
 
+        html_parts = []
+        last_offset = 0
+
+        for entity in entities:
+            if entity.offset > last_offset:
+                html_parts.append(escape_html(message_text[last_offset:entity.offset]))
+
+            if entity.type == "text_link":
+                text = message_text[entity.offset:entity.offset + entity.length]
+                url = entity.url
+                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(text)}</a>')
+                last_offset = entity.offset + entity.length
+            elif entity.type == "url":
+                url = message_text[entity.offset:entity.offset + entity.length]
+                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(url)}</a>')
+                last_offset = entity.offset + entity.length
+
+        html_parts.append(escape_html(message_text[last_offset:]))
+        
+        import re
+        text_with_links = "".join(html_parts)
+        text_with_links = re.sub(
+            r'\[([^\]]+)\]\(([^)]+)\)',
+            lambda m: f'<a href="{escape_html(m.group(2))}">{escape_html(m.group(1))}</a>',
+            text_with_links
+        )
+
+        new_signature = text_with_links.strip()
+
+        if len(new_signature) > 200:
+            await message.answer(
+                "⚠️ <b>Підпис занадто довгий</b>\nМаксимум 200 символів",
+                parse_mode=ParseMode.HTML
+            )
+            return
+
+        manager.dialog_data["signature"] = new_signature
+        
         flow = await create_new_flow(manager)
-
+        
         await manager.switch_to(CreateFlowMenu.confirmation)
         
-    except Exception as e:
-        logger.error(f"Signature input error: {e}")
-        await message.answer("❌ Помилка збереження підпису")
-        await manager.switch_to(CreateFlowMenu.select_theme)
 
+    except Exception as e:
+        logging.error(f"Signature processing error: {str(e)}")
+        await message.answer(
+            "⚠️ <b>Помилка!</b> Не вдалось обробити підпис",
+            parse_mode=ParseMode.HTML
+        )
 
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
