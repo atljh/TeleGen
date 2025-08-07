@@ -100,7 +100,7 @@ class WebService:
                         post['original_link']
                     )
 
-            return {**post, **web_data.model_dump()}
+            return {**post, **web_data.to_dict()}
         except Exception as e:
             self.logger.warning(f"Failed to enrich post: {e}")
             return post
