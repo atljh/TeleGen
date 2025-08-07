@@ -92,7 +92,7 @@ class WebService:
                 return post
 
             if not post.get('images'):
-                html = await self.web_scraper.fetch_html(post['original_link'])
+                html = await self.web_scraper._fetch_html(post['original_link'])
                 soup = BeautifulSoup(html, 'html.parser') if html else None
                 if soup:
                     web_data.images = self.image_extractor.extract_images(
