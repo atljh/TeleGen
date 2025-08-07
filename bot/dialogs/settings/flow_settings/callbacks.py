@@ -214,7 +214,37 @@ async def set_flow_volume(callback: CallbackQuery, button: Button, manager: Dial
 
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
+async def input_custom_volume(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.answer("Введіть кількість постів у флоу (число від 1 до 100):")
+    await manager.switch_to(FlowSettingsMenu.waiting_for_custom_volume)
 
+async def handle_custom_volume_input(
+        message: Message,
+        dialog: Dialog,
+        manager: DialogManager,
+        volume: int
+    ):
+    try:
+        new_volume = int(message.text)
+        if new_volume < 1 or new_volume > 100:
+            raise ValueError
+    except ValueError:
+        await message.answer("Будь ласка, введіть коректне число від 1 до 100")
+        return
+
+    if "channel_flow" not in manager.dialog_data:
+        manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
+
+    manager.dialog_data["channel_flow"].flow_volume = new_volume
+
+    flow_service = Container.flow_service()
+    await flow_service.update_flow(
+        flow_id=manager.dialog_data["channel_flow"].id,
+        flow_volume=new_volume
+    )
+    await message.answer(f"✅ Лiмiт оновлено до {new_volume} постів")
+
+    await manager.switch_to(FlowSettingsMenu.flow_settings)
 
 async def to_add_source(c: CallbackQuery, b: Button, m: DialogManager):
     await m.switch_to(FlowSettingsMenu.add_source_type)

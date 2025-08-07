@@ -25,6 +25,8 @@ from .callbacks import (
     cancel_delete_source,
     character_limit,
     confirm_delete_source,
+    handle_custom_volume_input,
+    input_custom_volume,
     on_new_type_selected,
     on_source_link_entered,
     on_source_new_link_entered,
@@ -152,20 +154,25 @@ def create_character_limit_window():
 
 def create_posts_in_flow_window():
     return Window(
-        Format("📊 <b>Кількість постів у флоу</b>\n\nПоточне значення: {posts_count}"),
+        Format(
+            "📊 <b>Кількість постів у флоу</b>\n\n"
+            "Поточне значення: <code>{posts_count}</code>\n\n"
+            "Вибери одне з типових значень або введи своє:"
+        ),
         Column(
             Button(Const("5"), id="volume_5", on_click=set_flow_volume),
             Button(Const("10"), id="volume_10", on_click=set_flow_volume),
             Button(Const("20"), id="volume_20", on_click=set_flow_volume),
+            Button(Const("🔢 Ввести вручну"), id="custom_volume_input", on_click=input_custom_volume),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),        
+            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.posts_in_flow,
         parse_mode=ParseMode.HTML,
-        getter=posts_in_flow_getter
+        getter=posts_in_flow_getter,
     )
-    
+
 def create_sources_dialog():
     return Window(
         Format(
@@ -184,6 +191,30 @@ def create_sources_dialog():
         getter=get_sources_data
     )
 
+def create_custom_volume_window():
+    return Window(
+        Format(
+            "🔢 <b>Введи свою кількість постів у флоу</b>\n\n"
+            "Вкажи число від 1 до 100:"
+        ),
+        TextInput(
+            id="handle_custom_volume_input",
+            on_success=handle_custom_volume_input,
+            filter=volume_filter,
+        ),
+        Row(
+            Button(Const("🔙 Назад"), id="back_to_flow_window", on_click=lambda c, b, m: m.switch_to(FlowSettingsMenu.posts_in_flow)),
+        ),
+        state=FlowSettingsMenu.waiting_for_custom_volume,
+        parse_mode=ParseMode.HTML,
+    )
+
+async def volume_filter(message: Message):
+    text = message.text
+    if not text.isdigit():
+        await message.answer("❗ Значення має бути числом")
+        return False
+    return True
 
 #=======================================ADD FLOW===========================================
 
@@ -193,6 +224,7 @@ async def link_filter(message: Message):
         await message.answer("❗ Посилання має починатися з http:// або https://")
         return False
     return True
+
 
 def create_select_source_type():
     return Window(
@@ -346,7 +378,7 @@ def create_flow_settings_dialog():
         create_character_limit_window(),
         # create_ad_block_settings_window(),
         create_posts_in_flow_window(),
-
+        create_custom_volume_window(),
         create_sources_dialog(),
         create_select_source_type(),
         create_input_source_link(),

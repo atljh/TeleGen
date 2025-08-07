@@ -7,7 +7,7 @@ class FlowSettingsMenu(StatesGroup):
     character_limit = State()
     ad_block_settings = State()
     posts_in_flow = State()
-
+    waiting_for_custom_volume = State()
     source_settings = State()
     add_source = State()
     add_source_type = State()             
