@@ -197,25 +197,33 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     "id": str(post.id) if hasattr(post, 'id') else "",
                     "idx": idx,
                     "content": content,
+                    "full_content": content,
                     "pub_time": pub_time,
                     "created_time": created_time,
-                    "status": post_stats[post.status],
-                    "full_content": content,
+                    "status": post_stats.get(post.status, "Невідомо"),
                     "has_media": bool(images or video_url),
                     "images_count": len(images),
                     "images": images,
                     "video_url": video_url,
                     "is_album": is_album,
-                    "original_date": original_date if original_date else "Без дати",
+                    "original_date": original_date or "Без дати",
                     "original_link": original_link,
                     "scheduled_time": scheduled_time,
-                    "source_url": source_url
+                    "source_url": source_url,
                 }
 
                 if is_album:
                     post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
                 else:
-                    post_dict["content_preview"] = content[:1000] + ("..." if len(content) > 1000 else "")
+                    truncated_content = content[:1000]
+                    if len(content) > 1000:
+                        truncated_content += "..."
+                    
+                    post_dict["content_preview"] = (
+                        f"{truncated_content}"
+                        "\n\n\n"
+                        f"<b>Заплановано на: {scheduled_time}</b>"
+                    )
 
                 posts.append(post_dict)
 
