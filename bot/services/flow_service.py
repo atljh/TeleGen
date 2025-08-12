@@ -148,24 +148,28 @@ class FlowService:
         )
 
     async def get_or_set_source_rss_url(self, flow_id: int, link: str) -> str | None:
-        flow = await self.flow_repository.get_flow_by_id(flow_id)
-        if not flow:
-            raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
+            flow = await self.flow_repository.get_flow_by_id(flow_id)
+            if not flow:
+                raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
 
-        source = next((s for s in flow.sources if s.get("link") == link), None)
-        if not source:
-            raise ValueError(f"Source with link {link} not found in flow {flow_id}")
-        if source.get("rss_url"):
-            return source["rss_url"]
+            source = next((s for s in flow.sources if s.get("link") == link), None)
+            if not source:
+                raise ValueError(f"Source with link {link} not found in flow {flow_id}")
+            
+            if source.get("type") != "web":
+                return None
 
-        rss_url = await self.rss_service._discover_rss_for_source(source)
-        if not rss_url:
-            logger.warning(f"No RSS feed found for link {link}")
-            return None
+            if source.get("rss_url"):
+                return source["rss_url"]
 
-        updated_sources = [
-            {**s, "rss_url": rss_url} if s.get("link") == link else s
-            for s in flow.sources
-        ]
-        await self.update_flow(flow_id, sources=updated_sources)
-        return rss_url
+            rss_url = await self.rss_service._discover_rss_for_source(source)
+            if not rss_url:
+                logger.warning(f"No RSS feed found for web link {link}")
+                return None
+
+            updated_sources = [
+                {**s, "rss_url": rss_url} if s.get("link") == link and s.get("type") == "web" else s
+                for s in flow.sources
+            ]
+            await self.update_flow(flow_id, sources=updated_sources)
+            return rss_url
