@@ -103,7 +103,6 @@ class PostService:
 
         userbot_posts = await self.userbot_service.get_last_posts(flow, userbot_volume)
         web_posts = await self.web_service.get_last_posts(flow, web_volume)
-
         combined_posts = userbot_posts + web_posts
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
         

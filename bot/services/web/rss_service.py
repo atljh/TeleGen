@@ -94,6 +94,7 @@ class RssService:
                 rss_urls, limit, timeout,
                 post_repository=post_repository
             ):
+                
                 yield self._convert_to_web_service_format(post)
                 
         except asyncio.TimeoutError:
@@ -328,7 +329,6 @@ class RssService:
                 'images': self._extract_rss_images(entry),
                 'domain': domain
             }
-            
             return RssPost(**post_data)
             
         except Exception as e:
@@ -341,24 +341,41 @@ class RssService:
     def _extract_rss_images(self, entry: feedparser.FeedParserDict) -> list[str]:
         images: set[str] = set()
         
+        # 1. Проверка media_content (стандартный способ)
         if hasattr(entry, 'media_content'):
             images.update(
                 media['url'] for media in entry.media_content
-                if media.get('type', '').startswith('image/')
+                if media.get('medium') == 'image' or media.get('type', '').startswith('image/')
             )
         
+        # 2. Проверка links
         if hasattr(entry, 'links'):
             images.update(
                 link['href'] for link in entry.links
                 if link.get('type', '').startswith('image/')
             )
         
+        # 3. Проверка media_thumbnail (если есть)
+        if hasattr(entry, 'media_thumbnail'):
+            images.update(
+                thumb['url'] for thumb in entry.media_thumbnail
+                if thumb.get('url')
+            )
+        
+        # 4. Проверка описания (HTML парсинг)
         if hasattr(entry, 'description'):
             soup = BeautifulSoup(entry.description, "html.parser")
             images.update(
                 img['src'] for img in soup.find_all("img", src=True)
             )
         
+        # 5. Дополнительная проверка для media:content
+        if hasattr(entry, 'enclosures'):
+            images.update(
+                enc['href'] for enc in entry.enclosures
+                if enc.get('type', '').startswith('image/')
+            )
+
         return sorted(
             url for url in images
             if url and not url.endswith('.svg') and self._is_valid_image_url(url)

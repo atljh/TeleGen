@@ -49,7 +49,6 @@ class WebService:
                         post_repository=self.post_repository
                     )
                 ][:limit]
-                
                 enriched_posts = await self._enrich_posts(raw_posts)
                 return await self._process_and_build_posts(enriched_posts, flow)
                 
@@ -85,7 +84,6 @@ class WebService:
             return
         if not post.get('original_link'):
             return post
-
         try:
             web_data = await self.web_scraper.scrape_page(post['original_link'])
             if not web_data:
@@ -99,7 +97,8 @@ class WebService:
                         soup, 
                         post['original_link']
                     )
-
+            else:
+                web_data.images = post.get('images')
             return {**post, **web_data.to_dict()}
         except Exception as e:
             self.logger.warning(f"Failed to enrich post: {e}")
