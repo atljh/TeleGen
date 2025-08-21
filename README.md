@@ -167,3 +167,19 @@ make coverage   # Coverage report
 make clean      # Clean cache
 ```
 
+
+## 🚀 Performance
+
+**Optimizations:**
+
+- Fully asynchronous I/O
+- Database connection pooling
+- Redis caching for frequent queries
+- Batch processing for heavy operations
+- Indexed queries for speed
+
+**Monitoring goals:**
+
+- <100ms response time (95% of requests)
+- <20ms DB latency
+- <50ms queue processing
