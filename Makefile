@@ -9,6 +9,9 @@ up:
 run:
 	$(DOCKER_COMPOSE) up
 
+build:
+	$(DOCKER_COMPOSE) build
+
 down:
 	$(DOCKER_COMPOSE) down
 
