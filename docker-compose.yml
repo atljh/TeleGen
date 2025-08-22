@@ -12,9 +12,9 @@ services:
       - db
       - redis
     volumes:
-      - ./src/bot:/bot
+      - ./bot:/bot
       - ./media:/app/media
-      - ./src/admin_panel/media:/app/admin_panel/media
+      - ./admin_panel/media:/app/admin_panel/media
       - ./sessions:/app/sessions 
       - ./tmp:/tmp
       - ./logs:/app/logs
@@ -23,6 +23,7 @@ services:
       - SESSION_PATH=/app/sessions/userbot.session
     command: >
       bash -c "python watcher.py"
+
 
   db:
     image: postgres:15
@@ -58,7 +59,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./src/admin_panel:/admin_panel
+      - ./admin_panel:/admin_panel
       - ./media:/app/media
       - ./staticfiles:/admin/staticfiles
     command: ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
@@ -78,8 +79,8 @@ services:
     volumes:
       - ./sessions:/app/sessions
       - ./tmp:/tmp
-      - ./src/admin_panel:/admin_panel
-      - ./src/bot:/bot
+      - ./admin_panel:/admin_panel
+      - ./bot:/bot
       - ./logs:/app/logs
     command: >
       sh -c "cd / && 
@@ -102,8 +103,8 @@ services:
       - db
       - redis
     volumes:
-      - ./src/admin_panel:/admin_panel
-      - ./src/bot:/bot
+      - ./admin_panel:/admin_panel
+      - ./bot:/bot
     command: >
       sh -c "cd /bot &&
       PYTHONPATH=/:/admin_panel 
