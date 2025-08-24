@@ -20,12 +20,13 @@ async def start_flow_settings(callback: CallbackQuery, button: Button, manager: 
     start_data = manager.start_data or {}
     dialog_data = manager.dialog_data or {}
     selected_channel = (
-        start_data.get("selected_channel", False)
-        or dialog_data.get('selected_channel', False)
+        dialog_data.get("selected_channel", False)
+        or start_data.get('selected_channel', False)
     )
+
     channel_flow = (
-        start_data.get("channel_flow", False)
-        or dialog_data.get("channel_flow", False)
+        dialog_data.get("channel_flow", False)
+        or start_data.get("channel_flow", False)
     )
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")

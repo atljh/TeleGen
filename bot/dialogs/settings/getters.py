@@ -7,16 +7,21 @@ from aiogram_dialog.widgets.text import Const, Format
 from bot.containers import Container
 from bot.dialogs.settings.callbacks import toggle_emoji, toggle_notification
 
+
+logger = logging.getLogger(__name__)
+
+
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
     selected_channel = (
-        start_data.get("selected_channel") 
-        or dialog_data.get("selected_channel")
+        dialog_data.get("selected_channel", False)
+        or start_data.get('selected_channel', False)
     )
+
     channel_flow = (
-        start_data.get("channel_flow", False)
-        or dialog_data.get("channel_flow", False)
+        dialog_data.get("channel_flow", False)
+        or start_data.get("channel_flow", False)
     )
     
     dialog_manager.dialog_data['selected_channel'] = selected_channel

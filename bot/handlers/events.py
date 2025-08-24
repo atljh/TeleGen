@@ -20,35 +20,6 @@ from bot.dialogs.generation.add_channel.states import AddChannelMenu
 
 channel_router = Router()
 
-# @channel_router.my_chat_member(
-#     ChatMemberUpdatedFilter(IS_NOT_MEMBER >> ADMINISTRATOR)
-# )
-# async def bot_added_as_admin(event: ChatMemberUpdated, dialog_manager: DialogManager):
-#     if event.new_chat_member.user.id == event.bot.id:
-#         channel_service = Container.channel_service()
-
-#         channel = await channel_service.get_or_create_channel(
-#             user_telegram_id=event.from_user.id,
-#             channel_id=str(event.chat.id),
-#             name=event.chat.title
-#         )
-
-#         me = await event.bot.get_me()
-
-#         user_dm = dialog_manager.bg(user_id=event.from_user.id, chat_id=event.from_user.id)
-
-#         await user_dm.start(
-#             AddChannelMenu.success,
-#             data={
-#                 "channel_id": str(event.chat.id),
-#                 "channel_name": event.chat.title,
-#                 "channel_username": event.chat.username or "",
-#                 "bot_url": f"https://t.me/{me.username}",
-#                 "bot_username": me.username
-#             },
-#             mode=StartMode.RESET_STACK
-#         )
-
 @channel_router.my_chat_member(
     ChatMemberUpdatedFilter(
         member_status_changed=IS_NOT_MEMBER >> ADMINISTRATOR

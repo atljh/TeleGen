@@ -23,22 +23,12 @@ async def on_channel_selected(
     item_id: str
 ):
     try:
-        start_data = manager.start_data or {}
-        dialog_data = manager.dialog_data or {}
+        channel_id = int(item_id)
+
+        channel_service = Container.channel_service()
         
-        selected_channel = (
-            start_data.get("selected_channel") 
-            or dialog_data.get("selected_channel")
-        )
-        channels = (
-            start_data.get("channels", [])
-            or dialog_data.get("channels", [])
-        )
-        
-        selected_channel = next(
-            (channel for channel in channels if str(channel.id) == item_id),
-            None
-        )
+        selected_channel = await channel_service.get_channel_by_id(channel_id)
+
         if not selected_channel:
             await callback.answer("Channel not found!")
             return
