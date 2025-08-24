@@ -25,8 +25,8 @@ async def main():
     register_dialogs(dp)
     setup_dialogs(dp)
     
-    setup_logging()
-    
+    await setup_logging(bot)
+
     await dp.start_polling(
         bot,
         allowed_updates=["my_chat_member", "message", "callback_query"],

@@ -1,6 +1,17 @@
 import logging
+from bot.services.logger_service import LogEvent, LogLevel, init_logger, get_logger
 
-def setup_logging():
+async def setup_logging(bot):
+
+    init_logger(bot)
+    logger = get_logger()
+    
+    if logger and logger.enabled:
+        await logger.log(LogEvent(
+            level=LogLevel.INFO,
+            message="Bot started"
+        ))
+        
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
