@@ -4,8 +4,8 @@ from bot.database.repositories import (
     ChannelRepository,
     UserRepository
 )
+from bot.services.logger_service import get_logger
 
-logger = logging.getLogger(__name__)
 
 class ChannelService:
     def __init__(
@@ -15,6 +15,8 @@ class ChannelService:
     ):
         self.channel_repository = channel_repository
         self.user_repository = user_repository
+        self.logger = get_logger()
+
 
     async def get_or_create_channel(
         self,
@@ -34,12 +36,14 @@ class ChannelService:
             if not user:
                 raise ValueError(f"Користувача з Telegram ID {user_telegram_id} не знайдено")
             
+            
             channel, created = await self.channel_repository.get_or_create_channel(
                 user=user,
                 channel_id=channel_id,
                 name=name,
                 description=description or ""
             )
+            await self.logger.user_created_channel(user, name, channel_id)
             
             if not channel:
                 raise RuntimeError("Не вдалося створити або отримати канал")
@@ -75,7 +79,7 @@ class ChannelService:
             return ChannelDTO.from_orm(updated_channel)
             
         except Exception as e:
-            logger.error(f"Error updating channel {channel_id}: {e}")
+            logging.error(f"Error updating channel {channel_id}: {e}")
             raise
 
 

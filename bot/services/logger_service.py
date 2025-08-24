@@ -116,7 +116,7 @@ class TelegramLogger:
         event = LogEvent(
             level=LogLevel.CHANNEL,
             message="User created a new channel",
-            user_id=user.user_id,
+            user_id=user.id,
             username=user.username,
             additional_data={
                 "Channel ID": channel_id,
@@ -130,7 +130,7 @@ class TelegramLogger:
         event = LogEvent(
             level=LogLevel.GENERATION,
             message="User started content generation",
-            user_id=user.user_id,
+            user_id=user.id,
             username=user.username,
             additional_data={
                 "Flow ID": flow_id,
