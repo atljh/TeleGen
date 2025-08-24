@@ -32,13 +32,8 @@ def create_add_channel_dialog():
     return Dialog(
         Window(
             Format(
-                "📝 <b>Інструкція з додавання бота до каналу</b>\n\n"
-                "1. Додайте @{bot_username} як адміністратора\n\n"
-                "2. <b>Надайте боту такі права:</b>\n"
-                "   • Надсилання повідомлень\n"
-                "   • Редагування повідомлень\n"
-                "   • Видалення повідомлень\n\n"
-                "3. Натисніть кнопку <b>'Перевірити права'</b>",
+                "📝 *Інструкція з додавання бота до каналу*\n\n"
+                "> Додайте канал, натиснувши на кнопку нижче👇\n\n",
                 when=lambda data, widget, manager: not data.get("is_admin")
             ),
             Format(
@@ -60,7 +55,7 @@ def create_add_channel_dialog():
             Row(
                 Button(Const("🔙 Назад"), id="go_back", on_click=go_back_to_generation),
             ),
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN_V2,
             state=AddChannelMenu.instructions,
             getter=channel_data_getter
         ),
