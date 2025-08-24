@@ -46,11 +46,6 @@ def create_add_channel_dialog():
                     text=Const("📲 Додати бота автоматично"),
                     url=Jinja("{{bot_url}}")
                 ),
-                # Button(
-                #     Const("🔄 Перевірити права"), 
-                #     id="check_rights", 
-                #     on_click=check_admin_rights
-                # ),
             ),
             Row(
                 Button(Const("🔙 Назад"), id="go_back", on_click=go_back_to_generation),

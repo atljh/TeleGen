@@ -5,7 +5,6 @@ import asyncio
 import logging
 import tempfile
 from datetime import datetime
-from tqdm.asyncio import tqdm_asyncio
 from typing import Optional, List, Dict, AsyncGenerator, Tuple, Union
 from contextlib import asynccontextmanager
 

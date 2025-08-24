@@ -10,47 +10,40 @@ dependencies = [
     "asgiref==3.8.1",
     "sqlparse==0.5.3",
     "whitenoise==6.9.0",
-    
     # Database
     "psycopg==3.2.9",
     "redis==5.2.1",
-    
     # Async
     "aiohttp==3.10.11 ",
     "aiofiles==24.1.0",
     "aiosignal==1.3.2",
-    
     # Telegram
     "aiogram==3.19.0",
     "aiogram_dialog==2.3.1",
     "telethon",
-    
     # API & HTTP
     "httpx==0.28.1",
     "requests==2.32.3",
-    
     # Data validation
     "pydantic==2.10.6",
-    
     # Utilities
     "python-dotenv==1.0.1",
     "cachetools==5.5.2",
-    
     # Content processing
     "Pillow==10.4.0",
     "langdetect",
     "feedparser",
-    
     # Web scraping
     "beautifulsoup4==4.13.4",
     "cloudscraper==1.2.71",
-    
     # Celery
     "celery",
     "django-celery-beat",
-    
     # Dependency injection
     "dependency-injector==4.46.0",
+    "openai>=1.101.0",
+    "watchdog>=4.0.0",
+    "pytz>=2025.2",
 ]
 
 [project.optional-dependencies]
@@ -85,7 +78,3 @@ docs = [
     "mkdocs==1.5.3",
     "mkdocs-material==9.5.3",
 ]
-
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
