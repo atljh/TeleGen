@@ -9,8 +9,9 @@ from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog import DialogManager, StartMode, Dialog, Window
 from aiogram_dialog import Window, DialogManager
 from aiogram_dialog.widgets.kbd import Back, Button, Column, Row
-from bot.containers import Container
 
+from bot.containers import Container
+from bot.utils.formatting import parse_entities_to_html
 from .states import SettingsMenu
 
 logger = logging.getLogger(__name__)
@@ -121,37 +122,7 @@ async def open_signature_editor(callback: CallbackQuery, button: Button, manager
 
 async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogManager):
     try:
-        message_text = message.text or message.caption or ""
-        entities = message.entities or message.caption_entities or []
-
-        html_parts = []
-        last_offset = 0
-
-        for entity in entities:
-            if entity.offset > last_offset:
-                html_parts.append(escape_html(message_text[last_offset:entity.offset]))
-
-            if entity.type == "text_link":
-                text = message_text[entity.offset:entity.offset + entity.length]
-                url = entity.url
-                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(text)}</a>')
-                last_offset = entity.offset + entity.length
-            elif entity.type == "url":
-                url = message_text[entity.offset:entity.offset + entity.length]
-                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(url)}</a>')
-                last_offset = entity.offset + entity.length
-
-        html_parts.append(escape_html(message_text[last_offset:]))
-        
-        import re
-        text_with_links = "".join(html_parts)
-        text_with_links = re.sub(
-            r'\[([^\]]+)\]\(([^)]+)\)',
-            lambda m: f'<a href="{escape_html(m.group(2))}">{escape_html(m.group(1))}</a>',
-            text_with_links
-        )
-
-        new_signature = text_with_links.strip()
+        new_signature = parse_entities_to_html(message)
 
         if len(new_signature) > 200:
             await message.answer(
@@ -177,6 +148,7 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
             "⚠️ <b>Помилка!</b> Не вдалось обробити підпис",
             parse_mode=ParseMode.HTML
         )
+
 
 def escape_markdown(text: str) -> str:
     to_escape = r"_*[]()~`>#+-=|{}.!"
