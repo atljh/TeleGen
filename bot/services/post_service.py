@@ -16,6 +16,7 @@ from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 
 from bot.services.userbot_service import UserbotService
+from bot.services.logger_service import get_logger
 
 class PostService:
     def __init__(
@@ -32,7 +33,7 @@ class PostService:
         self.bot = bot
         self.userbot_service = userbot_service
         self.web_service = web_service
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = get_logger()
 
     async def get_all_posts_in_flow(self, flow_id: int) -> List[Post]:
         return await sync_to_async(list)(

@@ -41,7 +41,7 @@ async def view_generated_posts(
             logger.warning(f"Flow not found for ID: {flow_id}")
             await callback.answer("Флоу не знайдено")
             return
-        channel = await channel_service.get_channel_by_id(flow.channel_id)
+        channel = await channel_service.get_channel_by_db_id(flow.channel_id)
         if not channel:
             logger.warning(f"Channel not found for flow ID: {flow_id}")
             await callback.answer("Канал не знайдено")

@@ -48,12 +48,12 @@ async def setup_logging(bot: Bot):
         ]
     )
     
-    telegram_handler = TelegramLogHandler(bot)
-    telegram_handler.set_logger_service(telegram_logger)
-    telegram_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
+    # telegram_handler = TelegramLogHandler(bot)
+    # telegram_handler.set_logger_service(telegram_logger)
+    # telegram_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
     
     root_logger = logging.getLogger()
-    root_logger.addHandler(telegram_handler)
+    # root_logger.addHandler(telegram_handler)
     root_logger.setLevel(logging.INFO)
     
     logging.getLogger("aiogram").setLevel(logging.WARNING)
