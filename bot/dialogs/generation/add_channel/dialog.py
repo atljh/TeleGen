@@ -20,7 +20,7 @@ from utils.buttons import (
 async def channel_success_getter(dialog_manager: DialogManager, **kwargs):
     channel_id = dialog_manager.start_data.get("channel_id")
     channel_service = Container.channel_service()
-    channel = await channel_service.get_channel(channel_id)
+    channel = await channel_service.get_channel_by_telegram_id(channel_id)
     dialog_manager.dialog_data['selected_channel'] = channel
     return {
         "channel_id": channel_id,
