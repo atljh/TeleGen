@@ -30,16 +30,6 @@ async def main():
     register_dialogs(dp)
     setup_dialogs(dp)
     
-    if telegram_logger and telegram_logger.enabled:
-        await telegram_logger.log(LogEvent(
-            level=LogLevel.SUCCESS,
-            message="Bot started and ready to receive updates",
-            additional_data={
-                "Status": "Online",
-                "Updates": "message, callback_query, my_chat_member"
-            }
-        ))
-    
     try:
         await dp.start_polling(
             bot,
@@ -61,16 +51,6 @@ async def main():
         raise
     finally:
         logging.info("Bot shutdown completed")
-        
-        if telegram_logger and telegram_logger.enabled:
-            await telegram_logger.log(LogEvent(
-                level=LogLevel.INFO,
-                message="Bot shutdown completed",
-                additional_data={
-                    "Status": "Offline",
-                    "Shutdown Time": "Graceful"
-                }
-            ))
 
 if __name__ == "__main__":
     asyncio.run(main())

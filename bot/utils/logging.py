@@ -39,16 +39,6 @@ async def setup_logging(bot: Bot):
     init_logger(bot)
     telegram_logger = get_logger()
     
-    if telegram_logger and telegram_logger.enabled:
-        await telegram_logger.log(LogEvent(
-            level=LogLevel.SYSTEM,
-            message="Bot instance starting up",
-            additional_data={
-                "Status": "Initializing",
-                "Log Level": "INFO"
-            }
-        ))
-    
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

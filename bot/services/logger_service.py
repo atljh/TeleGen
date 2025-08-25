@@ -87,7 +87,6 @@ class TelegramLogger:
                     message_parts.extend(["", "📊 *Details:*", formatted_data])
             
             message_parts.append("")
-            message_parts.append("━" * 30)
             
             full_message = "\n".join(message_parts)
             
