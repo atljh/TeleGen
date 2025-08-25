@@ -70,8 +70,6 @@ class ChannelService:
             if self.logger:
                 await self.logger.user_created_channel(user, name, channel_id)
             
-            logging.info(f"Channel {channel_id} {'created' if created else 'retrieved'} for user {user_telegram_id}")
-            
             return ChannelDTO.from_orm(channel), created
             
         except Exception as e:
@@ -179,8 +177,6 @@ class ChannelService:
                     channel_name=channel.name,
                     channel_id=channel.id
                 )
-            
-            logging.info(f"Channel {channel_id} deleted successfully")
             
         except Exception as e:
             logging.error(f"Error deleting channel {channel_id}: {e}")
