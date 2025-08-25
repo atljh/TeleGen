@@ -66,7 +66,7 @@ class TelegramLogger:
             escaped_message = self._escape_markdown(event.message)
             
             message_parts = [
-                f"{event.level.value} *{event.level.name.title()}* \\| `{escaped_timestamp}`",
+                f" \\| `{escaped_timestamp}`",
                 f"",
                 f"📝 *Message:* {escaped_message}"
             ]
@@ -125,6 +125,21 @@ class TelegramLogger:
         )
         return await self.log(event)
     
+    async def user_deleted_channel(self, user: BotUser, channel_name: str, channel_id: int) -> bool:
+        event = LogEvent(
+            level=LogLevel.CHANNEL,
+            message="User deleted channel",
+            user_id=user.id,
+            username=user.username,
+            additional_data={
+                "Channel ID": channel_id,
+                "Channel Name": channel_name,
+                "Channel Title": channel_name
+            }
+        )
+        return await self.log(event)
+    
+
     async def user_started_generation(self, user: BotUser, flow_name: str, flow_id: int) -> bool:
         event = LogEvent(
             level=LogLevel.GENERATION,

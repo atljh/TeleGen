@@ -28,7 +28,7 @@ async def on_channel_selected(
 
         channel_service = Container.channel_service()
         
-        selected_channel = await channel_service.get_channel_by_id(channel_id)
+        selected_channel = await channel_service.get_channel_by_db_id(channel_id)
 
         if not selected_channel:
             await callback.answer("Channel not found!")
@@ -76,7 +76,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     selected_channel_id = dialog_manager.dialog_data["selected_channel"].id
     
     try:
-        channel = await channel_service.get_channel_by_id(selected_channel_id)
+        channel = await channel_service.get_channel_by_db_id(selected_channel_id)
         
         return {
             "selected_channel": channel,
@@ -97,7 +97,7 @@ async def delete_channel(callback: CallbackQuery, button: Button, manager: Dialo
     
     try:
         await channel_service.delete_channel(selected_channel.channel_id)
-        
+    
         bot = manager.middleware_data["bot"]
         try:
             await bot.leave_chat(chat_id=selected_channel.channel_id)

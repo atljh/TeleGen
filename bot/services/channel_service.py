@@ -1,4 +1,7 @@
 import logging
+from typing import List, Optional
+from asgiref.sync import sync_to_async
+
 from bot.database.dtos import ChannelDTO
 from bot.database.repositories import (
     ChannelRepository,
@@ -17,25 +20,42 @@ class ChannelService:
         self.user_repository = user_repository
         self.logger = get_logger()
 
-
     async def get_or_create_channel(
         self,
         user_telegram_id: int,
         channel_id: str,
         name: str,
-        description: str | None = None
+        description: Optional[str] = None
     ) -> tuple[ChannelDTO, bool]:
+        """
+        Get or create channel for user
+        
+        Args:
+            user_telegram_id: User's Telegram ID
+            channel_id: Channel ID (from Telegram)
+            name: Channel name
+            description: Optional channel description
+            
+        Returns:
+            Tuple of (ChannelDTO, created_flag)
+            
+        Raises:
+            ValueError: Invalid input parameters
+            RuntimeError: Failed to create/get channel
+        """
         try:
             if not isinstance(user_telegram_id, int) or user_telegram_id <= 0:
-                raise ValueError("Невірний Telegram ID користувача")
+                raise ValueError("Invalid user Telegram ID")
             
             if not channel_id or not isinstance(channel_id, str):
-                raise ValueError("Невірний ID каналу")
+                raise ValueError("Invalid channel ID")
+            
+            if not name or not isinstance(name, str):
+                raise ValueError("Invalid channel name")
             
             user = await self.user_repository.get_user_by_telegram_id(user_telegram_id)
             if not user:
-                raise ValueError(f"Користувача з Telegram ID {user_telegram_id} не знайдено")
-            
+                raise ValueError(f"User with Telegram ID {user_telegram_id} not found")
             
             channel, created = await self.channel_repository.get_or_create_channel(
                 user=user,
@@ -43,46 +63,130 @@ class ChannelService:
                 name=name,
                 description=description or ""
             )
-            await self.logger.user_created_channel(user, name, channel_id)
             
             if not channel:
-                raise RuntimeError("Не вдалося створити або отримати канал")
+                raise RuntimeError("Failed to create or get channel")
+            
+            if self.logger:
+                await self.logger.user_created_channel(user, name, channel_id)
+            
+            logging.info(f"Channel {channel_id} {'created' if created else 'retrieved'} for user {user_telegram_id}")
             
             return ChannelDTO.from_orm(channel), created
             
         except Exception as e:
-            raise e
-    
-    async def get_user_channels(self, user_telegram_id: int) -> list[ChannelDTO]:
-        user = await self.user_repository.get_user_by_telegram_id(user_telegram_id)
-        channels = await self.channel_repository.get_user_channels(user)
-        return [ChannelDTO.from_orm(channel) for channel in channels]
-    
-    async def get_channel_by_id(self, channel_id: int) -> ChannelDTO:
-        return await self.channel_repository.get_channel(channel_id)
+            logging.error(f"Error in get_or_create_channel for user {user_telegram_id}: {e}")
+            if self.logger:
+                await self.logger.error_occurred(
+                    error_message=f"Channel creation failed: {e}",
+                    user=user if 'user' in locals() else None,
+                    context={
+                        "user_telegram_id": user_telegram_id,
+                        "channel_id": channel_id,
+                        "channel_name": name
+                    }
+                )
+            raise
 
-    async def get_channel(self, channel_id: str) -> ChannelDTO:
-        channel = await self.channel_repository.get_channel_by_id(channel_id)
-        return ChannelDTO.from_orm(channel)
+    async def get_user_channels(self, user_telegram_id: int) -> List[ChannelDTO]:
+        try:
+            user = await self.user_repository.get_user_by_telegram_id(user_telegram_id)
+            if not user:
+                raise ValueError(f"User with Telegram ID {user_telegram_id} not found")
+            
+            channels = await self.channel_repository.get_user_channels(user)
+            
+            return [ChannelDTO.from_orm(channel) for channel in channels]
+            
+        except Exception as e:
+            logging.error(f"Error getting channels for user {user_telegram_id}: {e}")
+            raise
+
+    async def get_channel_by_db_id(self, channel_id: int) -> ChannelDTO:
+        try:
+            channel = await self.channel_repository.get_channel(channel_id)
+            if not channel:
+                raise ValueError(f"Channel with ID {channel_id} not found")
+            
+            return ChannelDTO.from_orm(channel)
+            
+        except Exception as e:
+            logging.error(f"Error getting channel by ID {channel_id}: {e}")
+            raise
+
+    async def get_channel_by_telegram_id(self, channel_id: str) -> ChannelDTO:
+        try:
+            channel = await self.channel_repository.get_channel_by_id(channel_id)
+            if not channel:
+                raise ValueError(f"Channel with Telegram ID {channel_id} not found")
+            
+            return ChannelDTO.from_orm(channel)
+            
+        except Exception as e:
+            logging.error(f"Error getting channel by Telegram ID {channel_id}: {e}")
+            raise
 
     async def update_channel(self, channel_id: int, **kwargs) -> ChannelDTO:
         try:
             channel = await self.channel_repository.get_channel(channel_id)
-
             if not channel:
-                raise ValueError(f"Flow with ID {channel_id} not found")
+                raise ValueError(f"Channel with ID {channel_id} not found")
+            
+            # valid_fields = {'name', 'description', 'is_active'}
+            # for field in kwargs.keys():
+            #     if field not in valid_fields:
+            #         raise ValueError(f"Invalid field for update: {field}")
             
             for field, value in kwargs.items():
                 setattr(channel, field, value)
             
             updated_channel = await self.channel_repository.update_channel(channel)
+            
+            if self.logger:
+                await self.logger.settings_updated(
+                    user=channel.user,
+                    setting_type="channel",
+                    old_value="",
+                    new_value=str(kwargs)
+                )
+            
+            logging.info(f"Channel {channel_id} updated with: {kwargs}")
+            
             return ChannelDTO.from_orm(updated_channel)
             
         except Exception as e:
             logging.error(f"Error updating channel {channel_id}: {e}")
+            if self.logger:
+                await self.logger.error_occurred(
+                    error_message=f"Channel update failed: {e}",
+                    context={"channel_id": channel_id, "updates": kwargs}
+                )
             raise
 
-
     async def delete_channel(self, channel_id: str):
-        channel =  await self.channel_repository.get_channel_by_id(channel_id)
-        await self.channel_repository.delete_channel(channel)
+        try:
+            channel = await self.channel_repository.get_channel_by_id(channel_id)
+            if not channel:
+                raise ValueError(f"Channel with ID {channel_id} not found")
+            
+            user = await sync_to_async(lambda: channel.user)()
+            
+            await self.channel_repository.delete_channel(channel)
+            
+            if self.logger:
+                await self.logger.user_deleted_channel(
+                    user=user,
+                    channel_name=channel.name,
+                    channel_id=channel.id
+                )
+            
+            logging.info(f"Channel {channel_id} deleted successfully")
+            
+        except Exception as e:
+            logging.error(f"Error deleting channel {channel_id}: {e}")
+            if self.logger:
+                await self.logger.error_occurred(
+                    error_message=f"Channel deletion failed: {e}",
+                    context={"channel_id": channel_id}
+                )
+            raise
