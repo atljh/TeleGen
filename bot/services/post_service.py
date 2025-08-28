@@ -16,7 +16,7 @@ from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 
 from bot.services.userbot_service import UserbotService
-from bot.services.logger_service import get_logger
+from bot.services.logger_service import TelegramLogger, get_logger
 
 class PostService:
     def __init__(
@@ -26,14 +26,19 @@ class PostService:
         userbot_service: UserbotService,
         post_repository: PostRepository,
         flow_repository: FlowRepository,
-        logger: logging.Logger | None = None
     ):
         self.post_repo = post_repository
         self.flow_repo = flow_repository
         self.bot = bot
         self.userbot_service = userbot_service
         self.web_service = web_service
-        self.logger = get_logger()
+        self._logger = None
+
+    @property
+    def logger(self):
+        if self._logger is None:
+            self._logger = get_logger()
+        return self._logger
 
     async def get_all_posts_in_flow(self, flow_id: int) -> List[Post]:
         return await sync_to_async(list)(
@@ -77,6 +82,7 @@ class PostService:
         return await self.post_repo.count_posts_in_flow(flow_id=flow_id)
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
+
         flow = await self.flow_repo.get_flow_by_id(flow_id)
         if not flow:
             return []
@@ -100,7 +106,16 @@ class PostService:
         if remainder:
             web_volume += remainder
 
-        logging.info(f"Generating posts: userbot={userbot_volume}, web={web_volume}")
+        user = await sync_to_async(lambda: flow.channel.user)()
+
+        logging.info(f"Generating posts: userbot={userbot_volume}, web={web_volume}, user: {user}")
+
+        if self.logger:
+            await self.logger.user_started_generation(
+                user=user,
+                flow_name=flow.name,
+                flow_id=flow.id
+            )
 
         userbot_posts = await self.userbot_service.get_last_posts(flow, userbot_volume)
         web_posts = await self.web_service.get_last_posts(flow, web_volume)

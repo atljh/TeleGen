@@ -36,6 +36,7 @@ from bot.services import (
     PostBuilderService
 )
 from bot.services.web.rss_url_manager import RssUrlManager
+from bot.services.logger_service import get_logger
 
 
 class Container(containers.DeclarativeContainer):
@@ -160,7 +161,6 @@ class Container(containers.DeclarativeContainer):
         bot=bot,
         userbot_service=userbot_service,
         web_service=web_service,
-        logger=providers.Singleton(logging.getLogger, "post_service")
     )
     
     draft_service = providers.Factory(

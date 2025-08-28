@@ -122,6 +122,7 @@ async def open_signature_editor(callback: CallbackQuery, button: Button, manager
 
 async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogManager):
     try:
+        logging.info(message.entities)
         new_signature = parse_entities_to_html(message)
 
         if len(new_signature) > 200:
