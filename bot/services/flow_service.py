@@ -177,9 +177,8 @@ class FlowService:
         return rss_url
     
     async def get_user_by_flow_id(self, flow_id: int) -> UserDTO:
-        flow = self.get_flow_by_id(flow_id)
-        user = await sync_to_async(lambda: flow.channel)()
-        logging.info(user)
-        user1 = await sync_to_async(lambda: flow.channel.user)()
-        logging.info(user1)
+        flow = await self.get_flow_by_id(flow_id) 
+        channel = await self.channel_repository.get_channel(flow.channel_id)
+        user = await sync_to_async(lambda: channel.user)()
+        return UserDTO.from_orm(user)
 
