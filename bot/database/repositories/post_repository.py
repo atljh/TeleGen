@@ -189,14 +189,11 @@ class PostRepository:
     async def _store_media_permanently(self, file_path_or_url: str, media_type: str) -> str:
         try:
             if file_path_or_url.startswith(('http://', 'https://')):
-                # Download the file first
                 response = requests.get(file_path_or_url, stream=True)
                 
-                # Generate a temp file
                 ext = os.path.splitext(urlparse(file_path_or_url).path)[1] or ('.jpg' if media_type == 'images' else '.mp4')
                 temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
                 
-                # Save downloaded content to temp file
                 with open(temp_file, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
@@ -259,7 +256,7 @@ class PostRepository:
 
     async def get_posts_by_flow_id(self, flow_id: int, status: PostStatus = None) -> List[PostDTO]:
         posts = await self._fetch_posts_from_db(flow_id, status=status)
-        await self._preload_media_for_posts(posts)
+        # await self._preload_media_for_posts(posts)
         return posts
     
     @sync_to_async
@@ -283,11 +280,12 @@ class PostRepository:
             )\
             .order_by('-created_at')
         
-        return [
-            PostDTO.from_orm(post)
-            for post in posts
-        ]
-    
+        # return [
+        #     PostDTO.from_orm(post)
+        #     for post in posts
+        # ]
+        return posts
+
     async def _preload_media_for_posts(self, posts: List[PostDTO]):
         tasks = []
         

@@ -131,67 +131,67 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
 
     if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
         post_service = Container.post_service()
-        try:
-            raw_posts = await post_service.get_posts_by_flow_id(flow.id, status=PostStatus.DRAFT)
-            posts = []
-            
-            for idx, post in enumerate(raw_posts):
-                images = post.images if hasattr(post, 'images') else []
-                video_url = post.video_url if hasattr(post, 'video_url') else None
-                content = post.content if hasattr(post, 'content') else ''
+        # try:
+        raw_posts = await post_service.get_posts_by_flow_id(flow.id, status=PostStatus.DRAFT)
+        posts = []
+        
+        for idx, post in enumerate(raw_posts):
+            images = post.images if hasattr(post, 'images') else []
+            video_url = post.video_url if hasattr(post, 'video_url') else None
+            content = post.content if hasattr(post, 'content') else ''
 
-                original_link = post.original_link if hasattr(post, 'original_link') else ''
-                original_date = post.original_date if hasattr(post, 'original_date') else ''
-                source_url = post.source_url if hasattr(post, 'source_url') else ''
+            original_link = post.original_link if hasattr(post, 'original_link') else ''
+            original_date = post.original_date if hasattr(post, 'original_date') else ''
+            source_url = post.source_url if hasattr(post, 'source_url') else ''
 
-                pub_time = await sync_to_async(
-                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
-                    if hasattr(post, 'publication_date') and post.publication_date 
-                    else "Без дати"
-                )()
-                created_time = await sync_to_async(
-                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M") 
-                    if hasattr(post, 'created_at') and post.created_at 
-                    else "Без дати"
-                )()
+            pub_time = await sync_to_async(
+                lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
+                if hasattr(post, 'publication_date') and post.publication_date 
+                else "Без дати"
+            )()
+            created_time = await sync_to_async(
+                lambda: post.created_at.strftime("%d.%m.%Y %H:%M") 
+                if hasattr(post, 'created_at') and post.created_at 
+                else "Без дати"
+            )()
 
-                post_stats = {
-                    PostStatus.DRAFT: "Чернетка",
-                    PostStatus.SCHEDULED: "Заплановано",
-                    PostStatus.PUBLISHED: "Опублiковано"
-                }
-                is_album = len(images) > 1
-                post_dict = {
-                    "id": str(post.id) if hasattr(post, 'id') else "",
-                    "idx": idx,
-                    "content": content,
-                    "pub_time": pub_time,
-                    "created_time": created_time,
-                    "status": post_stats[post.status],
-                    "full_content": content,
-                    "has_media": bool(images or video_url),
-                    "images_count": len(images),
-                    "images": images,
-                    "video_url": video_url,
-                    "is_album": is_album,
+            post_stats = {
+                PostStatus.DRAFT: "Чернетка",
+                PostStatus.SCHEDULED: "Заплановано",
+                PostStatus.PUBLISHED: "Опублiковано"
+            }
+            is_album = len(images) > 1
+            post_dict = {
+                "id": str(post.id) if hasattr(post, 'id') else "",
+                "idx": idx,
+                "content": content,
+                "pub_time": pub_time,
+                "created_time": created_time,
+                "status": post_stats[post.status],
+                "full_content": content,
+                "has_media": bool(images or video_url),
+                "images_count": len(images),
+                "images": images,
+                "video_url": video_url,
+                "is_album": is_album,
 
-                    "original_date": original_date,
-                    "original_link": original_link,
-                    "source_url": source_url
-                }
+                "original_date": original_date,
+                "original_link": original_link,
+                "source_url": source_url
+            }
 
-                if is_album:
-                    post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
-                else:
-                    post_dict["content_preview"] = content[:1024]
+            if is_album:
+                post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
+            else:
+                post_dict["content_preview"] = content[:1024]
 
-                posts.append(post_dict)
+            posts.append(post_dict)
 
-            dialog_data["all_posts"] = posts
-            dialog_data["total_posts"] = len(posts)
+        dialog_data["all_posts"] = posts
+        dialog_data["total_posts"] = len(posts)
 
-        except Exception as e:
-            logging.error(f"Помилка завантаження постів: {str(e)}")
+        # except Exception as e:
+        #     logging.error(f"Помилка завантаження постів: {str(e)}")
     else:
         posts = dialog_data.get("all_posts", [])
 
