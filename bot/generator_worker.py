@@ -14,57 +14,66 @@ from bot.database.models import FlowDTO
 from bot.services.flow_service import FlowService
 from bot.services.post_service import PostService
 from bot.utils.notifications import send_telegram_notification
-from bot.services.logger_service import LogEvent, LogLevel, TelegramLogger, get_logger
+from bot.services.logger_service import (
+    LogEvent, LogLevel, TelegramLogger,
+    init_logger, get_logger
+)
 
 class TelegramLogHandler(logging.Handler):
     def __init__(self, bot: Bot):
         super().__init__()
         self.bot = bot
         self.logger_service = get_logger()
-    
-    def emit(self, record):
+
+    def emit(self, record: logging.LogRecord):
         if not self.logger_service or not self.logger_service.enabled:
             return
 
-        loop = asyncio.get_running_loop()
-        log_level = {
-            logging.INFO: LogLevel.INFO,
-            logging.WARNING: LogLevel.WARNING,
-            logging.ERROR: LogLevel.ERROR,
-            logging.CRITICAL: LogLevel.ERROR,
-        }.get(record.levelno, LogLevel.INFO)
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(self._send_log(record))
+            else:
+                loop.run_until_complete(self._send_log(record))
+        except Exception as e:
+            sys.stderr.write(f"[TelegramLogHandler ERROR] {e}\n")
 
-        event = LogEvent(level=log_level, message=self.format(record))
-        loop.create_task(self.logger_service.log(event))
+    async def _send_log(self, record: logging.LogRecord):
+        try:
+            log_level = {
+                logging.INFO: LogLevel.INFO,
+            }.get(record.levelno, LogLevel.INFO)
+
+            event = LogEvent(
+                level=log_level,
+                message=self.format(record)
+            )
+            await self.logger_service.log(event)
+        except Exception as e:
+            sys.stderr.write(f"[TelegramLogHandler async ERROR] {e}\n")
 
 
 def setup_logging(bot: Bot = None):
     logger = logging.getLogger()
+    logger.handlers.clear()
     logger.setLevel(logging.INFO)
-    
-    telegram_logger = get_logger()
-    
+
     class FlushingStreamHandler(logging.StreamHandler):
         def emit(self, record):
             super().emit(record)
             self.flush()
-    
+
     console_handler = FlushingStreamHandler(sys.stdout)
     formatter = logging.Formatter(
-        '[%(asctime)s] %(message)s',
+        '[%(asctime)s] %(levelname)s | %(message)s',
         datefmt='%d.%m.%Y %H:%M:%S'
     )
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-    
-    if bot:
-        telegram_handler = TelegramLogHandler(bot)
-        telegram_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', '%d.%m.%Y %H:%M:%S'))
-        logger.addHandler(telegram_handler)
-    
+
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
-
+    return logger
 
 async def generate_flow(
     flow_id: int,
@@ -73,7 +82,7 @@ async def generate_flow(
     status_msg_id: int
 ) -> List:
     try:
-        setup_logging(bot)
+        logger = setup_logging(bot)
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         flow_service = Container.flow_service()
         post_service = Container.post_service()
@@ -112,17 +121,20 @@ async def _start_telegram_generations(
     post_service: PostService,
 ) -> List:
 
+    logger = get_logger()
+
     existing_posts = await post_service.get_all_posts_in_flow(flow.id)
     existing_count = len(existing_posts)
         
-    await flow_service.get_user_by_flow_id(flow.id)
-    # user = await sync_to_async(lambda: flow.channel.user)()
-    # if logger:
-    #     await logger.user_started_generation(
-    #         user=user,
-    #         flow_name=flow.name,
-    #         flow_id=flow.id
-    #     )
+    user = await flow_service.get_user_by_flow_id(flow.id)
+    logger = get_logger()
+    if logger:
+        await logger.user_started_generation(
+            user=user,
+            flow_name=flow.name,
+            flow_id=flow.id
+        )
+
     generated_posts = await post_service.generate_auto_posts(flow.id)
     if not generated_posts:
         logging.info(f"No posts generated for flow {flow.id}")
@@ -153,6 +165,7 @@ if __name__ == "__main__":
     bot = Bot(token=bot_token)
 
     async def main():
+        init_logger(bot)
         await generate_flow(flow_id, chat_id, bot, status_msg_id)
 
     asyncio.run(main())
