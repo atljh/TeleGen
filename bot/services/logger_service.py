@@ -158,7 +158,7 @@ class TelegramLogger:
         event = LogEvent(
             level=LogLevel.SUCCESS,
             message="Content generation completed successfully",
-            user_id=user.user_id,
+            user_id=user.id,
             username=user.username,
             additional_data={
                 "Flow ID": flow_id,
