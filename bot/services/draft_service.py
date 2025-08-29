@@ -1,5 +1,5 @@
 import logging
-from bot.database.dtos import DraftDTO, PostDTO, UserDTO
+from bot.database.models import DraftDTO, PostDTO, UserDTO
 from bot.database.repositories import DraftRepository, PostRepository, UserRepository
 from bot.database.exceptions import UserNotFoundError, PostNotFoundError
 from admin_panel.admin_panel.models import User

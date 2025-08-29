@@ -19,7 +19,7 @@ from telethon.tl.types import (
     Chat,
     User
 )
-from bot.database.dtos.dtos import FlowDTO, PostDTO
+from bot.database.models import FlowDTO, PostDTO
 from admin_panel.admin_panel.models import PostImage, Post
 from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
 from bot.services.aisettings_service import AISettingsService

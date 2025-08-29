@@ -5,7 +5,7 @@ from typing import Awaitable, Callable, List, Dict, Optional
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
 
-from bot.database.dtos.dtos import FlowDTO, PostDTO, PostStatus
+from bot.database.models import FlowDTO, PostDTO, PostStatus
 from bot.database.repositories.post_repository import PostRepository
 
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-from bot.database.dtos.dtos import FlowDTO, PostDTO, PostImageDTO, PostStatus
+from bot.database.models import FlowDTO, PostDTO, PostImageDTO, PostStatus
 
 
 class PostBuilderService:

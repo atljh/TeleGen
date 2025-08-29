@@ -17,7 +17,7 @@ from asgiref.sync import sync_to_async
 from functools import lru_cache
 
 from bot.containers import Container
-from bot.database.dtos.dtos import PostStatus
+from bot.database.models import PostStatus
 
 
 @lru_cache(maxsize=100)

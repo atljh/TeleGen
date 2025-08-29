@@ -1,5 +1,5 @@
 import logging
-from bot.database.dtos import StatisticsDTO
+from bot.database.models import StatisticsDTO
 from bot.database.repositories import StatisticsRepository, UserRepository, ChannelRepository
 
 

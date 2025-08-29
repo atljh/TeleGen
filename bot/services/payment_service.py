@@ -1,5 +1,5 @@
 import logging
-from bot.database.dtos import PaymentDTO
+from bot.database.models import PaymentDTO
 from bot.database.repositories import PaymentRepository, UserRepository
 
 class PaymentService:

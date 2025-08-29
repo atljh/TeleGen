@@ -2,8 +2,10 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from django.utils import timezone
-from bot.database.dtos import FlowDTO
-from bot.database.dtos import ContentLength, GenerationFrequency
+from asgiref.sync import sync_to_async
+
+from bot.database.models.flow import ContentLength, FlowDTO, GenerationFrequency
+from bot.database.models.user import UserDTO
 from bot.database.repositories import FlowRepository, ChannelRepository
 from bot.database.exceptions import ChannelNotFoundError, FlowNotFoundError
 from bot.services.web.rss_service import RssService
@@ -148,28 +150,36 @@ class FlowService:
         )
 
     async def get_or_set_source_rss_url(self, flow_id: int, link: str) -> str | None:
-            flow = await self.flow_repository.get_flow_by_id(flow_id)
-            if not flow:
-                raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
+        flow = await self.flow_repository.get_flow_by_id(flow_id)
+        if not flow:
+            raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
 
-            source = next((s for s in flow.sources if s.get("link") == link), None)
-            if not source:
-                raise ValueError(f"Source with link {link} not found in flow {flow_id}")
-            
-            if source.get("type") != "web":
-                return None
+        source = next((s for s in flow.sources if s.get("link") == link), None)
+        if not source:
+            raise ValueError(f"Source with link {link} not found in flow {flow_id}")
+        
+        if source.get("type") != "web":
+            return None
 
-            if source.get("rss_url"):
-                return source["rss_url"]
+        if source.get("rss_url"):
+            return source["rss_url"]
 
-            rss_url = await self.rss_service._discover_rss_for_source(source)
-            if not rss_url:
-                logger.warning(f"No RSS feed found for web link {link}")
-                return None
+        rss_url = await self.rss_service._discover_rss_for_source(source)
+        if not rss_url:
+            logger.warning(f"No RSS feed found for web link {link}")
+            return None
 
-            updated_sources = [
-                {**s, "rss_url": rss_url} if s.get("link") == link and s.get("type") == "web" else s
-                for s in flow.sources
-            ]
-            await self.update_flow(flow_id, sources=updated_sources)
-            return rss_url
+        updated_sources = [
+            {**s, "rss_url": rss_url} if s.get("link") == link and s.get("type") == "web" else s
+            for s in flow.sources
+        ]
+        await self.update_flow(flow_id, sources=updated_sources)
+        return rss_url
+    
+    async def get_user_by_flow_id(self, flow_id: int) -> UserDTO:
+        flow = self.get_flow_by_id(flow_id)
+        user = await sync_to_async(lambda: flow.channel)()
+        logging.info(user)
+        user1 = await sync_to_async(lambda: flow.channel.user)()
+        logging.info(user1)
+

@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 from pydantic import BaseModel, Field, ConfigDict
 
-from bot.database.dtos.dtos import FlowDTO
+from bot.database.models import FlowDTO
 from bot.services.web.cloudflare_bypass_service import CloudflareBypass
 from bot.utils.notifications import notify_admins
 

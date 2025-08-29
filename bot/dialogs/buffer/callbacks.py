@@ -10,7 +10,7 @@ from aiogram_dialog import DialogManager, StartMode
 from django.conf import settings
 
 from bot.containers import Container
-from bot.database.dtos.dtos import MediaType, PostImageDTO
+from bot.database.models import MediaType, PostImageDTO
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 
 from bot.dialogs.buffer.states import BufferMenu

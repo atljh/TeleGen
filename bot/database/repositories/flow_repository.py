@@ -8,9 +8,9 @@ from typing import List, Optional
 from asgiref.sync import sync_to_async
 
 from admin_panel.admin_panel.models import Flow
-from bot.database.dtos import GenerationFrequency
+from bot.database.models import GenerationFrequency
 from bot.database.exceptions import FlowNotFoundError
-from bot.database.dtos.dtos import FlowDTO
+from bot.database.models.flow import FlowDTO
 
 
 class FlowRepository:

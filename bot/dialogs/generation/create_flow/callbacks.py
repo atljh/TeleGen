@@ -10,7 +10,7 @@ from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.input import TextInput
 from aiogram.enums import ParseMode
 
-from bot.database.dtos import ContentLength, GenerationFrequency
+from bot.database.models import ContentLength, GenerationFrequency
 from bot.database.exceptions import ChannelNotFoundError
 
 from bot.dialogs.generation.callbacks import show_generated_posts

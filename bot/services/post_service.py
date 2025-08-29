@@ -11,7 +11,7 @@ from django.conf import settings
 from aiogram.types import FSInputFile, URLInputFile, InputMediaPhoto
 
 from admin_panel.admin_panel.models import PostImage, Post
-from bot.database.dtos import PostDTO, PostStatus
+from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 
@@ -109,13 +109,6 @@ class PostService:
         user = await sync_to_async(lambda: flow.channel.user)()
 
         logging.info(f"Generating posts: userbot={userbot_volume}, web={web_volume}, user: {user}")
-
-        if self.logger:
-            await self.logger.user_started_generation(
-                user=user,
-                flow_name=flow.name,
-                flow_id=flow.id
-            )
 
         userbot_posts = await self.userbot_service.get_last_posts(flow, userbot_volume)
         web_posts = await self.web_service.get_last_posts(flow, web_volume)

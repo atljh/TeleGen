@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional
-from bot.database.dtos.dtos import PostDTO
+from bot.database.models import PostDTO
 from bot.services.content_processing.processors import ContentProcessor
 import logging
 

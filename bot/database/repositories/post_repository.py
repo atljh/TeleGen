@@ -16,7 +16,7 @@ import requests
 
 from admin_panel.admin_panel.models import Post, Flow, PostImage
 from bot.database.exceptions import PostNotFoundError
-from bot.database.dtos.dtos import MediaType, PostDTO, PostImageDTO, PostStatus
+from bot.database.models import MediaType, PostDTO, PostImageDTO, PostStatus
 
 
 class PostRepository:

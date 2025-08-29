@@ -8,7 +8,7 @@ from bot.containers import Container
 from bot.dialogs.generation.flow.states import FlowMenu
 from bot.services.flow_service import FlowService
 from bot.services.channel_service import ChannelService
-from bot.database.dtos import FlowDTO, ChannelDTO
+from bot.database.models import FlowDTO, ChannelDTO
 
 logger = logging.getLogger(__name__)
 

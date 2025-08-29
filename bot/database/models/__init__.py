@@ -4,6 +4,8 @@ from .flow import FlowDTO, ContentLength, GenerationFrequency
 from .post import PostDTO, PostImageDTO, PostStatus, MediaType
 from .ai_settings import AISettingsDTO
 from .statistics import StatisticsDTO
+from .payment import PaymentDTO
+from .subscription import SubscriptionDTO
 
 __all__ = [
     'UserDTO',
@@ -16,5 +18,7 @@ __all__ = [
     'AISettingsDTO',
     'StatisticsDTO',
     'ContentLength',
-    'GenerationFrequency'
+    'GenerationFrequency',
+    'PaymentDTO',
+    'SubscriptionDTO'
 ]

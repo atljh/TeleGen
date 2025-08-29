@@ -2,7 +2,7 @@ import logging
 from typing import List, Optional
 from asgiref.sync import sync_to_async
 
-from bot.database.dtos import ChannelDTO
+from bot.database.models.channel import ChannelDTO
 from bot.database.repositories import (
     ChannelRepository,
     UserRepository

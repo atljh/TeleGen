@@ -21,7 +21,6 @@ from bot.services import (
     ChannelService,
     FlowService,
     PostService,
-    DraftService,
     SubscriptionService,
     PaymentService,
     AISettingsService,
@@ -163,11 +162,6 @@ class Container(containers.DeclarativeContainer):
         web_service=web_service,
     )
     
-    draft_service = providers.Factory(
-        DraftService,
-        draft_repository=draft_repository,
-        logger=providers.Singleton(logging.getLogger, "draft_service")
-    )
     
     subscription_service = providers.Factory(
         SubscriptionService,

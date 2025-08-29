@@ -159,7 +159,8 @@ async def on_force_generate(
                 "python", "generator_worker.py",
                 str(flow.id),
                 str(callback.message.chat.id),
-                str(status_msg.message_id)
+                str(status_msg.message_id),
+                bot.token
             ],
             stdout=sys.stdout,
             stderr=sys.stderr,

@@ -1,5 +1,4 @@
-from bot.database.dtos import UserDTO
-from bot.database.dtos.dtos import FlowDTO
+from bot.database.models import UserDTO, FlowDTO
 from bot.database.repositories.user_repository import UserRepository
 from bot.database.repositories.channel_repository import ChannelRepository
 
