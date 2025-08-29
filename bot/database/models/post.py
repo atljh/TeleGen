@@ -31,7 +31,7 @@ class PostDTO(BaseModel):
     scheduled_time: datetime | None = None
     media_type: MediaType | None = None
     media_url: str | None = None
-    images: list[PostImageDTO] = []
+    images: list[PostImageDTO] = Field(default_factory=list, alias="images_list")
     video_url: str | None = None
 
     @property
@@ -40,7 +40,29 @@ class PostDTO(BaseModel):
     
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
+        populate_by_name = True
 
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
-        return super().model_validate(obj)
+        data = {}
+        for field in cls.model_fields:
+            value = getattr(obj, field, None)
+
+            if field == "images":
+                value = [
+                    PostImageDTO(url=img.image.url, order=img.order)
+                    for img in obj.images.all()
+                ]
+
+            elif field == "media_url":
+                value = obj.first_image_url or (obj.video.url if obj.video else None)
+
+            elif field == "video_url":
+                value = obj.video.url if obj.video else None
+
+            else:
+                value = getattr(obj, field, None)
+
+            data[field] = value
+
+        return cls.model_validate(data, from_attributes=True)

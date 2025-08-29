@@ -280,11 +280,10 @@ class PostRepository:
             )\
             .order_by('-created_at')
         
-        # return [
-        #     PostDTO.from_orm(post)
-        #     for post in posts
-        # ]
-        return posts
+        return [
+            PostDTO.from_orm(post)
+            for post in posts
+        ]
 
     async def _preload_media_for_posts(self, posts: List[PostDTO]):
         tasks = []

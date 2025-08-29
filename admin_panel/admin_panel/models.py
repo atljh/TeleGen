@@ -205,6 +205,10 @@ class Post(models.Model):
     def image_urls(self):
         return [img.image.url for img in self.images.all()]
 
+    @property
+    def images_list(self):
+        return list(self.images.all())
+
     def save(self, *args, **kwargs):
         if self.status == self.PUBLISHED and not self.publication_date:
             self.publication_date = timezone.now()
