@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 from pydantic import BaseModel, Field
-from typing import Any, Self
+from typing import Any, Dict, Self
 
 class MediaType(StrEnum):
     IMAGE = "image"
@@ -42,6 +42,39 @@ class PostDTO(BaseModel):
         json_encoders = {datetime: lambda v: v.isoformat()}
         populate_by_name = True
 
+    @classmethod
+    def from_raw_post(cls, raw_post: Dict) -> 'PostDTO':
+        images = [
+            PostImageDTO(url=media['path'], order=i)
+            for i, media in enumerate(raw_post.get('media', []))
+            if media['type'] == 'image'
+        ]
+        
+        video_url = next(
+            (media['path'] for media in raw_post.get('media', [])
+            if media['type'] == 'video'),
+            None
+        )
+
+        status = PostStatus.DRAFT
+        if raw_post.get('is_published', False):
+            status = PostStatus.PUBLISHED
+        elif raw_post.get('scheduled_time'):
+            status = PostStatus.SCHEDULED
+
+        return cls(
+            content=raw_post.get('text', ''),
+            source_url=raw_post.get('source', {}).get('link'),
+            images=images,
+            video_url=video_url,
+            status=status,
+            original_link=raw_post.get('original_link'),
+            original_date=raw_post.get('original_date'),
+            source_id=raw_post.get('source_id'),
+            flow_id=0,
+            created_at=datetime.now()
+        )
+    
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
         data = {}
