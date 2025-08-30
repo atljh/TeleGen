@@ -96,16 +96,20 @@ async def delete_channel(callback: CallbackQuery, button: Button, manager: Dialo
     selected_channel = manager.dialog_data["selected_channel"]
     
     try:
-        await channel_service.delete_channel(selected_channel.channel_id)
+        await channel_service.delete_channel(
+            selected_channel.channel_id
+        )
     
         bot = manager.middleware_data["bot"]
         try:
             await bot.leave_chat(chat_id=selected_channel.channel_id)
+            logger.info(f"Successfully left Telegram channel: {selected_channel.channel_id}")
         except Exception as leave_error:
-            logger.warning(f"Couldn't leave channel {selected_channel.channel_id}: {leave_error}")
+            logger.warning(f"Couldn't leave Telegram channel {selected_channel.channel_id}: {leave_error}")
         
         await callback.message.answer("✅ Канал успішно видалено!")
         await manager.switch_to(SettingsMenu.main)
+        
     except Exception as e:
         logger.error(f"Error deleting channel: {e}")
         await callback.answer("❌ Помилка при видаленні каналу")

@@ -86,17 +86,17 @@ class Container(containers.DeclarativeContainer):
         openai_key=os.getenv("OPENAI_API_KEY"),
     )
     
-    channel_service = providers.Factory(
-        ChannelService,
-        channel_repository=channel_repository,
-        user_repository=user_repository
-    )
-    
     rss_service_factory = providers.Factory(
         RssService,
         rss_app_key=os.getenv("RSS_API_KEY"),
         rss_app_secret=os.getenv("RSS_API_SECRET"),
         logger=providers.Singleton(logging.getLogger, "rss_service")
+    )
+    channel_service = providers.Factory(
+        ChannelService,
+        channel_repository=channel_repository,
+        user_repository=user_repository,
+        rss_service=rss_service_factory,
     )
 
     flow_service = providers.Factory(
