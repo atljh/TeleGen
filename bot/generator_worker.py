@@ -82,21 +82,12 @@ async def generate_flow(
     status_msg_id: int
 ) -> List:
     try:
-        setup_logging(bot)
-        init_logger(bot)
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         flow_service = Container.flow_service()
         post_service = Container.post_service()
         flow = await flow_service.get_flow_by_id(flow_id)
         user = await flow_service.get_user_by_flow_id(flow.id)
 
-        logger = get_logger()
-        if logger and flow:
-            await logger.user_started_generation(
-                user,
-                flow_name=flow.name,
-                flow_id=flow.id
-            )
         logging.info(f"User {user.username} started generation for flow {flow.name} ({flow.id})")
 
         if not flow:
@@ -115,13 +106,6 @@ async def generate_flow(
         )
         posts_count = len(posts) if posts else 0
         logging.info(f"Generated {posts_count} posts for flow {flow.id} for {time.time() - start_time:.2f} sec")
-        if logger:
-            await logger.generation_completed(
-                user=user,
-                flow_name=flow.name,
-                flow_id=flow.id,
-                result=f"{posts_count} posts generated"
-            )
 
     except Exception as e:
         logging.error(f"Помилка генерації: {str(e)}", exc_info=True)
@@ -132,8 +116,6 @@ async def generate_flow(
             f"_{str(e)}_",
             parse_mode="Markdown"
         )
-        if logger:
-            await logger.error_occurred(str(e))
         raise
 
 

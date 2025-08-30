@@ -140,7 +140,14 @@ class TelegramLogger:
         return await self.log(event)
     
 
-    async def user_started_generation(self, user: BotUser, flow_name: str, flow_id: int) -> bool:
+    async def user_started_generation(
+        self,
+        user: BotUser,
+        flow_name: str,
+        flow_id: int,
+        telegram_volume,
+        web_volume,
+    ) -> bool:
         event = LogEvent(
             level=LogLevel.GENERATION,
             message="User started content generation",
@@ -149,6 +156,8 @@ class TelegramLogger:
             additional_data={
                 "Flow ID": flow_id,
                 "Flow Name": flow_name,
+                "Telegram Volume": telegram_volume,
+                "Web Volume": web_volume,
                 "Status": "Started"
             }
         )

@@ -7,6 +7,10 @@ from bot.database.repositories import FlowRepository
 from bot.services.post import PostBaseService
 from bot.services.telegram_userbot import EnhancedUserbotService
 from bot.services.web.web_service import WebService
+from bot.services.logger_service import (
+    LogEvent, LogLevel, TelegramLogger,
+    init_logger, get_logger
+)
 
 
 class PostGenerationService:
@@ -22,23 +26,39 @@ class PostGenerationService:
         self.web_service = web_service
         self.flow_repo = flow_repository
         self.post_service = post_base_service
+        self.logger = get_logger()
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
         flow = await self.flow_repo.get_flow_by_id(flow_id)
         if not flow:
             return []
 
-        userbot_volume, web_volume = self._calculate_volumes(flow)
+        telegram_userbot_volume, web_volume = self._calculate_volumes(flow)
         user = await sync_to_async(lambda: flow.channel.user)()
 
-        logging.info(f"Generating posts: userbot={userbot_volume}, web={web_volume}, user: {user}")
+        logging.info(
+            f"Generating posts: userbot={telegram_userbot_volume}, web={web_volume}, user: {user}"
+        )
 
-        userbot_posts = await self.userbot_service.get_last_posts(flow, userbot_volume)
+        await self.logger.user_started_generation(
+            user,
+            flow_name=flow.name,
+            flow_id=flow.id,
+            telegram_volume=telegram_userbot_volume,
+            web_volume=web_volume
+        )
+        userbot_posts = await self.userbot_service.get_last_posts(flow, telegram_userbot_volume)
         web_posts = await self.web_service.get_last_posts(flow, web_volume)
         
         combined_posts = userbot_posts + web_posts
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
         
+        await self.logger.generation_completed(
+            user=user,
+            flow_name=flow.name,
+            flow_id=flow.id,
+            result=f"{len(combined_posts)} posts generated"
+        )
         return await self._create_posts_from_dtos(flow, combined_posts)
 
     def _calculate_volumes(self, flow) -> tuple[int, int]:
@@ -55,13 +75,13 @@ class PostGenerationService:
         base_volume = total_volume // total_sources
         remainder = total_volume % total_sources
 
-        userbot_volume = base_volume * count_telegram
+        telegram_userbot_volume = base_volume * count_telegram
         web_volume = base_volume * count_web
 
         if remainder:
             web_volume += remainder
 
-        return (userbot_volume, web_volume)
+        return (telegram_userbot_volume, web_volume)
 
     async def _create_posts_from_dtos(self, flow, post_dtos: list) -> list[PostDTO]:
         generated_posts = []
