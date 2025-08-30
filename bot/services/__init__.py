@@ -8,17 +8,15 @@ if not settings.configured:
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", DJANGO_SETTINGS_MODULE)
     django.setup()
 
-from admin_panel.admin_panel.models import User, Channel, Flow, Post
-
 from .user_service import UserService
 from .channel_service import ChannelService
 from .flow_service import FlowService
-from .post_service import PostService
+from .post import PostService
 from .aisettings_service import AISettingsService
 from .subscription_service import SubscriptionService
 from .payment_service import PaymentService
 from .statistics_service import StatisticsService
-from .userbot_service import UserbotService, EnhancedUserbotService
+from .telegram_userbot import EnhancedUserbotService
 
 from .web.web_service import WebService
 from .web.rss_service import RssService
@@ -38,7 +36,6 @@ __all__ = [
     'SubscriptionService',
     'PaymentService',
     'StatisticsService',
-    'UserbotService',
     'EnhancedUserbotService',
     'RssService',
     'CloudflareBypass',

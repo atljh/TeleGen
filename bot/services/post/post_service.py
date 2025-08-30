@@ -18,7 +18,6 @@ from bot.services.post import (
     PostBaseService, PostGenerationService,
     PostPublishingService, PostSchedulingService
 )
-from bot.services.userbot_service import UserbotService
 from bot.services.web.web_service import WebService
 
 class PostService:
@@ -27,7 +26,7 @@ class PostService:
         self,
         bot: Bot,
         web_service: WebService,
-        userbot_service: UserbotService,
+        userbot_service: 'EnhancedUserbotService',
         post_repository: PostRepository,
         flow_repository: FlowRepository,
     ):

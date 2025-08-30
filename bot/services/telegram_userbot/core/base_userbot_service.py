@@ -4,31 +4,17 @@ import atexit
 import asyncio
 import logging
 import tempfile
+from typing import Optional, List, Dict, Tuple
 from datetime import datetime
-from typing import Optional, List, Dict, AsyncGenerator, Tuple, Union
-from contextlib import asynccontextmanager
-
-import openai
 
 from telethon import TelegramClient
-from telethon.tl.functions.messages import ImportChatInviteRequest
-from telethon.errors import SessionPasswordNeededError
-from telethon.tl.types import MessageEntityTextUrl, MessageEntityUrl
-from telethon.tl.types import (
-    Channel,
-    Chat,
-    User
-)
-from bot.database.models import FlowDTO, PostDTO
-from admin_panel.admin_panel.models import PostImage, Post
-from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
-from bot.services.aisettings_service import AISettingsService
-from bot.services.user_service import UserService
-from bot.utils.notifications import notify_admins
 
-TelegramEntity = Union[Channel, Chat, User]
+from admin_panel.admin_panel.models import Post
+from bot.database.models import PostDTO
+from .client_manager import TelegramClientManager
 
-class UserbotService:
+class BaseUserbotService:
+    
     def __init__(
         self,
         api_id: int,
@@ -37,18 +23,16 @@ class UserbotService:
         session_path: Optional[str] = None,
     ):
         self.phone = phone
-        self.api_id = api_id
-        self.api_hash = api_hash
-        self.session_path = session_path or os.getenv("SESSION_PATH", "userbot.session")
         self.download_semaphore = asyncio.Semaphore(10)
         self._temp_files = set()
+        self.logger = logging.getLogger(__name__)
         
-        if not os.path.isabs(self.session_path):
-            self.session_path = os.path.join('/app/sessions', self.session_path)
-        
-        os.makedirs(os.path.dirname(self.session_path), exist_ok=True)
-
-        atexit.register(self.cleanup_temp_files)
+        self.client_manager = TelegramClientManager(
+            api_id=api_id,
+            api_hash=api_hash,
+            phone=phone,
+            session_path=session_path
+        )
 
     def cleanup_temp_files(self):
         for file_path in self._temp_files:
@@ -56,47 +40,8 @@ class UserbotService:
                 if os.path.exists(file_path):
                     os.unlink(file_path)
             except Exception as e:
-                logging.error(f"Error deleting temp file {file_path}: {str(e)}")
+                self.logger.error(f"Error deleting temp file {file_path}: {str(e)}")
         self._temp_files.clear()
-
-    @asynccontextmanager
-    async def get_client(self) -> AsyncGenerator[TelegramClient, None]:
-        client = TelegramClient(
-            session=self.session_path,
-            api_id=self.api_id,
-            api_hash=self.api_hash,
-            connection_retries=5,
-            auto_reconnect=True,
-            use_ipv6=False,
-            proxy=None 
-        )
-        try:
-            await client.connect()
-            
-            if not await client.is_user_authorized():
-                try:
-                    await client.start(
-                        phone=self.phone,
-                        code_callback=lambda: None,
-                        password=lambda: None
-                    )
-                except SessionPasswordNeededError:
-                    await notify_admins("🔐 Потрібна двофакторна аутентифікація для Userbot!")
-                    raise
-                except EOFError:
-                    await notify_admins("⚠️ Userbot потребує повторної авторизації!")
-                    raise
-                except Exception as e:
-                    await notify_admins(f"❌ Помилка авторизації Userbot: {str(e)}")
-                    raise
-            
-            yield client
-            
-        except Exception as e:
-            self.logger.error(f"Помилка Telegram клієнта: {str(e)}")
-            raise
-        finally:
-            await client.disconnect()
 
     async def get_last_posts(
         self,
@@ -111,68 +56,64 @@ class UserbotService:
         processed_albums = set()
         source_limits = self._calculate_source_limits(sources, limit)
         total_posts_needed = limit
-        total_posts_collected = 0
 
-        async with self.get_client() as client:
+        async with self.client_manager.get_client() as client:
             for source in telegram_sources:
                 if len(result) >= total_posts_needed:
                     break
 
                 try:
                     remaining_for_source = source_limits[source['link']]
-                    logging.info(f"Remaining for source {source} | {remaining_for_source}")
-
                     if remaining_for_source <= 0:
                         continue
 
-                    entity = await self._get_entity(client, source)
+                    entity = await self.client_manager.get_entity(client, source['link'])
                     if not entity:
                         continue
                     
-                    messages = await client.get_messages(
-                        entity,
-                        limit=remaining_for_source * 3
+                    await self._process_source_messages(
+                        client, entity, source, remaining_for_source, 
+                        result, processed_albums, total_posts_needed
                     )
-                    for msg in messages:
-                        if len(result) >= total_posts_needed:
-                            logging.info(f'break {len(result)}\{total_posts_collected}')
-                            break
-                            
-                        if await self._contains_external_links(client, msg, entity):
-                            logging.info("Post contain external link. PASS")
-                            continue
-
-                        process_result = await self._process_message_or_album(
-                            client, entity, msg, source['link'], processed_albums
-                        )
-                        if process_result is None:
-                            continue
-                            
-                        post_data, post_count = process_result
-                        
-                        if post_data is None:
-                            continue
-                        result.append(post_data)
-                        total_posts_collected += post_count
-                        
-                        logging.info(
-                            f"Added {'album' if post_count > 1 else 'post'} "
-                            f"(size {post_count}). Result: {len(result)}/{total_posts_needed}"
-                        )
 
                 except Exception as e:
-                    logging.error(f"Error processing source {source['link']}: {str(e)}")
+                    self.logger.error(f"Error processing source {source['link']}: {str(e)}")
                     continue
 
-        if len(result) < total_posts_needed:
-            logging.warning(
-                f"Could not collect enough posts. Requested: {total_posts_needed}, "
-                f"collected: {len(result)}"
-            )
-        
-        logging.info(f"=======FINAL RESULT LEN: {len(result)}")
+        self.logger.info(f"Final result length: {len(result)}")
         return result[:total_posts_needed]
 
+    async def _process_source_messages(
+        self, client, entity, source, remaining_for_source, 
+        result, processed_albums, total_posts_needed
+    ):
+        messages = await client.get_messages(
+            entity,
+            limit=remaining_for_source * 3
+        )
+        
+        for msg in messages:
+            if len(result) >= total_posts_needed:
+                break
+                
+            if await self._contains_external_links(client, msg, entity):
+                self.logger.info("Post contains external link. PASS")
+                continue
+
+            process_result = await self._process_message_or_album(
+                client, entity, msg, source['link'], processed_albums
+            )
+            
+            if process_result is None:
+                continue
+                
+            post_data, post_count = process_result
+            result.append(post_data)
+            
+            self.logger.info(
+                f"Added {'album' if post_count > 1 else 'post'} "
+                f"(size {post_count}). Result: {len(result)}/{total_posts_needed}"
+            )
 
     async def _contains_external_links(self, client, message, channel_entity) -> bool:
         if not message.entities:
@@ -207,21 +148,6 @@ class UserbotService:
                                 return True
         
         return False
-
-    async def _get_entity(self, client, source) -> Optional[TelegramEntity]:
-        try:
-            return await client.get_entity(source['link'])
-        except Exception as e:
-            if 't.me/+' in source['link']:
-                invite_hash = source['link'].split('+')[-1]
-                try:
-                    await client(ImportChatInviteRequest(invite_hash))
-                    return await client.get_entity(source['link'])
-                except Exception as join_err:
-                    logging.error(f"Failed to join private chat {source['link']}: {join_err}")
-            else:
-                logging.error(f"Failed to get entity for {source['link']}: {e}")
-            return None
 
     async def _process_message_or_album(
         self,
@@ -441,126 +367,9 @@ class UserbotService:
                     except:
                         pass
                 return None
-              
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.cleanup_temp_files()
 
     def __del__(self):
         self.cleanup_temp_files()
-
-class EnhancedUserbotService(UserbotService):
-    def __init__(
-            self,
-            api_id: int,
-            api_hash: str,
-            aisettings_service: AISettingsService,
-            user_service: UserService,
-            openai_key: str = None,
-            **kwargs
-        ):
-        super().__init__(api_id, api_hash, **kwargs)
-        self.logger = logging.getLogger(__name__)
-        self.openai_key = openai_key
-        self._openai_client = None
-        self._semaphore = asyncio.Semaphore(10)
-        self.user_service = user_service
-        self.aisettings_service = aisettings_service
-
-    @property
-    def openai_client(self):
-        if not self._openai_client and self.openai_key:
-            self._openai_client = openai.AsyncOpenAI(api_key=self.openai_key)
-        return self._openai_client
-
-    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
-        try:
-            start_time = time.time()
-            raw_posts = await super().get_last_posts(flow.sources, limit)
-            processed_posts = await self._process_posts_parallel(raw_posts, flow)
-            self.logger.info(f"[Telegram] Processed {len(processed_posts)} posts in {time.time() - start_time:.2f}s")
-            return processed_posts
-        except Exception as e:
-            self.logger.error(f"Error getting posts: {str(e)}", exc_info=True)
-            return []
-
-    async def _process_posts_parallel(self, raw_posts: List[Dict], flow: FlowDTO) -> List[PostDTO]:
-        tasks = []
-        for raw_post in raw_posts:
-            if not raw_post:
-                logging.info('pass')
-                continue
-            task = self._safe_process_post(raw_post, flow)
-            tasks.append(task)
-        
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        return [r for r in results if isinstance(r, PostDTO)]
-
-    async def _safe_process_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:
-        try:
-            return await self._process_single_post(raw_post, flow)
-        except Exception as e:
-            self.logger.warning(f"Telegram Post processing failed: {str(e)}")
-            return None
-
-    async def _process_single_post(self, raw_post: Dict, flow: FlowDTO) -> Optional[PostDTO]:
-        post_dto = PostDTO.from_raw_post(raw_post)
-        
-        if not post_dto.content:
-            return None
-
-        if isinstance(post_dto.content, list):
-            post_dto.content = " ".join(filter(None, post_dto.content))
-        
-        if 'original_link' in raw_post:
-            post_dto.original_link = raw_post['original_link']
-        if 'original_date' in raw_post:
-            post_dto.original_date = raw_post['original_date']
-        if 'source_url' in raw_post:
-            post_dto.source_url = raw_post['source_url']   
-        if 'source_id' in raw_post:
-            post_dto.source_id = raw_post['source_id']
-        if 'original_content' in raw_post:
-            post_dto.original_content = raw_post['original_content']
-
-        try:
-            processed_text = await self._process_content(post_dto.content, flow)
-            if isinstance(processed_text, list):
-                processed_text = " ".join(filter(None, processed_text))
-                
-            return post_dto.copy(update={
-                'content': processed_text,
-                'flow_id': flow.id,
-                'original_content': post_dto.original_content,
-                'source_url': post_dto.source_url,
-                'source_id': post_dto.source_id,
-                'original_link': post_dto.original_link,
-                'original_date': post_dto.original_date
-            })
-        except Exception as e:
-            self.logger.error(f"Error processing post: {str(e)}")
-            return None
-
-    async def _process_content(self, text: str, flow: FlowDTO) -> str:
-        text = await DefaultContentProcessor().process(text)
-        
-        if self.openai_key:
-            async with self._semaphore:
-                text = await self._process_with_chatgpt(text, flow)
-        
-        if flow.signature:
-            text = f"{text}\n\n{flow.signature}"
-        
-        return text
-
-
-    async def _process_with_chatgpt(self, text: str, flow: FlowDTO) -> str:
-
-        user = await self.user_service.get_user_by_flow(flow)
-        processor = ChatGPTContentProcessor(
-            api_key=self.openai_key,
-            flow=flow,
-            max_retries=2,
-            timeout=15.0,
-            aisettings_service=self.aisettings_service
-        )
-        return await processor.process(text, user.id)

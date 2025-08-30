@@ -57,7 +57,6 @@ class PostBaseService:
         return await self.get_post(post_id)
 
     async def _update_post_images(self, post: Post, images: List[dict]):
-        """Обновляет изображения поста"""
         await sync_to_async(lambda: post.images.all().delete())()
         
         for img_data in images:

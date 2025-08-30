@@ -4,7 +4,7 @@ from typing import List
 from celery import shared_task
 from bot.containers import Container
 from bot.generator_worker import _start_telegram_generations
-from bot.services.post_service import PostService
+from bot.services.post import PostService
 from bot.celery_app import app
 
 

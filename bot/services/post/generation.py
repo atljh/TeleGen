@@ -15,7 +15,7 @@ from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 from bot.services.post import PostBaseService
-from bot.services.userbot_service import UserbotService
+from bot.services.telegram_userbot import EnhancedUserbotService
 from bot.services.web.web_service import WebService
 
 
@@ -23,7 +23,7 @@ class PostGenerationService:
     
     def __init__(
         self,
-        userbot_service: UserbotService,
+        userbot_service: EnhancedUserbotService,
         web_service: WebService,
         flow_repository: FlowRepository,
         post_base_service: PostBaseService

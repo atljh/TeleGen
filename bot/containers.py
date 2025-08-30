@@ -43,7 +43,7 @@ class Container(containers.DeclarativeContainer):
         modules=[
             "handlers",
             "dialogs",
-            "bot.services.post_service"
+            "bot.services.post.post_service"
         ]
     )
     

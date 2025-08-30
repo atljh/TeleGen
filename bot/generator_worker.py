@@ -12,7 +12,7 @@ from asgiref.sync import sync_to_async
 from bot.containers import Container
 from bot.database.models import FlowDTO
 from bot.services.flow_service import FlowService
-from bot.services.post_service import PostService
+from bot.services.post import PostService
 from bot.utils.notifications import send_telegram_notification
 from bot.services.logger_service import (
     LogEvent, LogLevel, TelegramLogger,
