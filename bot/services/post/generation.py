@@ -8,8 +8,7 @@ from bot.services.post import PostBaseService
 from bot.services.telegram_userbot import EnhancedUserbotService
 from bot.services.web.web_service import WebService
 from bot.services.logger_service import (
-    LogEvent, LogLevel, TelegramLogger,
-    init_logger, get_logger
+    get_logger
 )
 
 

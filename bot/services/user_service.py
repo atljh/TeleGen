@@ -1,14 +1,26 @@
 from bot.database.models import UserDTO, FlowDTO
 from bot.database.repositories.user_repository import UserRepository
 from bot.database.repositories.channel_repository import ChannelRepository
-
+from bot.services.logger_service import (
+    get_logger
+)
 class UserService:
-    def __init__(self, user_repository: UserRepository, channel_repository: ChannelRepository):
+    def __init__(
+        self,
+        user_repository: UserRepository,
+        channel_repository: ChannelRepository
+    ):
         self.user_repository = user_repository
         self.channel_repository = channel_repository
+        self.logger = get_logger()
 
     async def create_or_get_user(self, telegram_id: int, username: str | None = None) -> tuple[UserDTO, bool]:
-        user, created = await self.user_repository.get_or_create_user(telegram_id, username)
+        user, created = await self.user_repository.get_or_create_user(
+            telegram_id, username
+        )
+        await self.logger.user_registered(
+            user
+        )
         return UserDTO.from_orm(user), created
 
     async def get_user(self, telegram_id: int) -> UserDTO:

@@ -182,12 +182,11 @@ class TelegramLogger:
         event = LogEvent(
             level=LogLevel.USER,
             message="New user registered in the system",
-            user_id=user.user_id,
+            user_id=user.id,
             username=user.username,
             additional_data={
                 "First Name": user.first_name,
                 "Last Name": user.last_name,
-                "Language": user.language_code,
                 "Registration Date": datetime.now().strftime("%Y-%m-%d")
             }
         )
