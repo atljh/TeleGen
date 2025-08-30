@@ -1,18 +1,10 @@
-import os
 import logging
 from datetime import datetime
-from urllib.parse import unquote
-from typing import Dict, Optional, List
-from django.utils import timezone
-from aiogram import Bot
-from aiogram.enums import ParseMode
+from typing import List
 from asgiref.sync import sync_to_async
-from django.conf import settings
-from aiogram.types import FSInputFile, URLInputFile, InputMediaPhoto
 
-from admin_panel.admin_panel.models import PostImage, Post
+from admin_panel.admin_panel.models import Post
 from bot.database.models import PostDTO, PostStatus
-from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 from bot.services.post.base import PostBaseService
 from bot.services.post.publish import PostPublishingService
