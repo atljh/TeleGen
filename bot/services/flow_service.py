@@ -9,8 +9,7 @@ from bot.database.models.user import UserDTO
 from bot.database.repositories import FlowRepository, ChannelRepository
 from bot.database.exceptions import ChannelNotFoundError, FlowNotFoundError
 from bot.services.web.rss_service import RssService
-
-logger = logging.getLogger(__name__)
+from bot.services.logger_service import get_logger
 
 class FlowService:
     def __init__(
@@ -22,6 +21,8 @@ class FlowService:
         self.flow_repository = flow_repository
         self.channel_repository = channel_repository
         self.rss_service = rss_service
+        self.logger = get_logger()
+
 
     async def create_flow(
         self,
@@ -63,12 +64,12 @@ class FlowService:
                 ad_time=ad_time,
             )
         except Exception as e:
-            logger.error(f"Flow error {e}", exc_info=True)
+            logging.error(f"Flow error {e}", exc_info=True)
             return
         try:
             flow_dto = FlowDTO.from_orm(flow)
         except Exception as e:
-            logger.error(f"DTO conversion error: {e}", exc_info=True)
+            logging.error(f"DTO conversion error: {e}", exc_info=True)
             return
         return FlowDTO.from_orm(flow)
 
@@ -83,7 +84,7 @@ class FlowService:
             flow = await self.flow_repository.get_flow_by_id(flow_id)
             return FlowDTO.from_orm(flow)
         except Exception as e:
-            logger.error(f"Error getting flow {flow_id}: {e}")
+            logging.error(f"Error getting flow {flow_id}: {e}")
             raise
 
     async def get_user_flows(self, user_id: int) -> list[FlowDTO]:
@@ -91,7 +92,7 @@ class FlowService:
             flows = await self.flow_repository.get_user_flows(user_id)
             return [FlowDTO.from_orm(f) for f in flows]
         except Exception as e:
-            logger.error(f"Error getting flows for user {user_id}: {e}")
+            logging.error(f"Error getting flows for user {user_id}: {e}")
             raise
 
     async def update_flow(self, flow_id: int, **kwargs) -> FlowDTO:
@@ -104,19 +105,29 @@ class FlowService:
                 setattr(flow, field, value)
             
             updated_flow = await self.flow_repository.update_flow(flow)
+            channel = await self.channel_repository.get_channel(flow.channel_id)
+            user = await sync_to_async(lambda: channel.user)()
+
+            if self.logger:
+                await self.logger.settings_updated(
+                    user=user,
+                    setting_type="flow",
+                    old_value="",
+                    new_value=str(kwargs)
+                )
             return FlowDTO.from_orm(updated_flow)
             
         except Exception as e:
-            logger.error(f"Error updating flow {flow_id}: {e}")
+            logging.error(f"Error updating flow {flow_id}: {e}")
             raise
 
     async def delete_flow(self, flow_id: int):
         try:
             flow = await self.flow_repository.get_flow_by_id(flow_id)
             await self.flow_repository.delete_flow(flow)
-            logger.info(f"Deleted flow {flow_id}")
+            logging.info(f"Deleted flow {flow_id}")
         except Exception as e:
-            logger.error(f"Error deleting flow {flow_id}: {e}")
+            logging.error(f"Error deleting flow {flow_id}: {e}")
             raise
 
     async def get_flows_due_for_generation(self) -> List[FlowDTO]:
@@ -166,7 +177,7 @@ class FlowService:
 
         rss_url = await self.rss_service._discover_rss_for_source(source)
         if not rss_url:
-            logger.warning(f"No RSS feed found for web link {link}")
+            logging.warning(f"No RSS feed found for web link {link}")
             return None
 
         updated_sources = [

@@ -211,7 +211,7 @@ class TelegramLogger:
         event = LogEvent(
             level=LogLevel.SETTINGS,
             message="User updated settings",
-            user_id=user.user_id,
+            user_id=user.id,
             username=user.username,
             additional_data={
                 "Setting Type": setting_type,

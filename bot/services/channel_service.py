@@ -139,10 +139,11 @@ class ChannelService:
                 setattr(channel, field, value)
             
             updated_channel = await self.channel_repository.update_channel(channel)
+            user = await sync_to_async(lambda: channel.user)()
             
             if self.logger:
                 await self.logger.settings_updated(
-                    user=channel.user,
+                    user=user,
                     setting_type="channel",
                     old_value="",
                     new_value=str(kwargs)
