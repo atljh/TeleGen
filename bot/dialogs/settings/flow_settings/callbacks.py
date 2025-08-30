@@ -456,7 +456,6 @@ async def on_source_selected_for_delete(callback: CallbackQuery, select, manager
     await manager.switch_to(FlowSettingsMenu.confirm_delete_source)
 
 
-
 async def confirm_delete_source(callback: CallbackQuery, button: Button, manager: DialogManager):
     flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
     item_id = manager.dialog_data["source_to_delete"]
@@ -464,6 +463,17 @@ async def confirm_delete_source(callback: CallbackQuery, button: Button, manager
     
     deleted_source = flow.sources[idx]
     flow.sources.pop(idx)
+    
+    if deleted_source['type'] == 'web' and 'rss_url' in deleted_source:
+        rss_service = Container.rss_service_factory()
+        success = await rss_service.delete_feed_by_url(deleted_source['rss_url'])
+        
+        if not success:
+            await callback.answer(
+                "⚠️ Не вдалося видалити RSS джерело. Спробуйте пізніше.",
+                show_alert=True
+            )
+            return
     
     flow_service = Container.flow_service()
     updated_flow = await flow_service.update_flow(

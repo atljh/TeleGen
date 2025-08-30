@@ -5,7 +5,7 @@ import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Optional, TypedDict, NotRequired
+from typing import Any, Dict, List, Optional, TypedDict, NotRequired
 from urllib.parse import urlparse
 
 import aiohttp
@@ -55,6 +55,7 @@ class RssService:
     ):
         self.rss_app_key = rss_app_key
         self.rss_app_secret = rss_app_secret
+        self.base_url = "https://api.rss.app/v1"
         self.logger = logger or logging.getLogger(__name__)
         self.cf_bypass = CloudflareBypass(self.logger)
         self.request_timeout = request_timeout
@@ -67,6 +68,10 @@ class RssService:
             '/blog/feed', '/news/feed', '/feed/rss', '/feed/atom'
         ]
 
+        self.headers = {
+            "Authorization": f"Bearer {self.rss_app_key}:{self.rss_app_secret}",
+            "Content-Type": "application/json"
+        }
         self._session: aiohttp.ClientSession | None = None
 
     @property
@@ -78,6 +83,9 @@ class RssService:
             )
         return self._session
 
+    def is_configured(self) -> bool:
+        return bool(self.rss_app_key and self.rss_app_secret)
+    
     async def get_posts_for_flow(
         self,
         flow: FlowDTO,
@@ -491,14 +499,9 @@ class RssService:
     async def _make_api_request(self, url: str, attempt: int) -> str | None:
         await self._random_delay()
         
-        headers = {
-            "Authorization": f"Bearer {self.rss_app_key}:{self.rss_app_secret}",
-            "Content-Type": "application/json"
-        }
-        
         async with self.session.post(
             "https://api.rss.app/v1/feeds",
-            headers=self._prepare_api_headers(headers),
+            headers=self._prepare_api_headers(self.headers),
             json={"url": url},
             timeout=10
         ) as response:
@@ -544,3 +547,138 @@ class RssService:
         else:
             self.logger.error(f"Attempt {attempt} failed for {url}: {error_msg}", exc_info=True)
         await asyncio.sleep(attempt * 2)
+
+    
+
+    async def delete_feed_by_url(self, rss_url: str) -> bool:
+        """
+        Delete RSS feed by URL
+        Returns True if succesfully deleter or feed not found
+        """
+        if not self.is_configured():
+            self.logger.warning("RSS service not configured - skipping feed deletion")
+            return True
+            
+        try:
+            feed_id = await self._find_feed_id_by_url(rss_url)
+            if not feed_id:
+                self.logger.info(f"RSS feed not found for URL: {rss_url}")
+                return True
+            await asyncio.sleep(2)
+            return await self._delete_feed(feed_id)
+            
+        except Exception as e:
+            self.logger.error(f"Error deleting RSS feed {rss_url}: {str(e)}")
+            return False
+    
+    async def _find_feed_id_by_url(self, rss_url: str) -> Optional[str]:
+        try:
+            async with aiohttp.ClientSession() as session:
+                page = 1
+                while True:
+                    url = f"{self.base_url}/feeds?page={page}&limit=100"
+                    
+                    async with session.get(url, headers=self.headers) as response:
+                        if response.status != 200:
+                            self.logger.error(f"Failed to fetch feeds: {response.status}")
+                            return None
+                            
+                        data = await response.json()
+                        feeds = data.get("data", [])
+                        if not feeds:
+                            return None
+                            
+                        for feed in feeds:
+                            feed_url = feed.get("rss_feed_url", "")
+                            if feed_url == rss_url:
+                                return feed.get("id")
+                        
+                        if len(feeds) < 100:
+                            return None
+                            
+                        page += 1
+                        
+        except Exception as e:
+            self.logger.error(f"Error searching for feed: {str(e)}")
+            return None
+    
+    async def _delete_feed(self, feed_id: str) -> bool:
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"{self.base_url}/feeds/{feed_id}"
+                
+                async with session.delete(url, headers=self.headers) as response:
+                    if response.status == 200:
+                        self.logger.info(f"Successfully deleted RSS feed: {feed_id}")
+                        return True
+                    elif response.status == 404:
+                        self.logger.info(f"RSS feed not found (already deleted?): {feed_id}")
+                        return True
+                    else:
+                        error_text = await response.text()
+                        self.logger.error(f"Failed to delete RSS feed {feed_id}: {response.status} - {error_text}")
+                        return False
+                        
+        except Exception as e:
+            self.logger.error(f"Error deleting feed {feed_id}: {str(e)}")
+            return False
+    
+    async def create_feed(self, source_url: str) -> Optional[Dict]:
+        if not self.is_configured():
+            return None
+            
+        try:
+            async with aiohttp.ClientSession() as session:
+                url = f"{self.base_url}/feeds"
+                payload = {
+                    "url": source_url,
+                    "format": "json"
+                }
+                
+                async with session.post(url, headers=self.headers, json=payload) as response:
+                    if response.status == 201:
+                        data = await response.json()
+                        return data.get("data")
+                    else:
+                        error_text = await response.text()
+                        self.logger.error(f"Failed to create RSS feed: {response.status} - {error_text}")
+                        return None
+                        
+        except Exception as e:
+            self.logger.error(f"Error creating RSS feed: {str(e)}")
+            return None
+    
+    async def get_all_feeds(self) -> List[Dict]:
+        if not self.is_configured():
+            return []
+            
+        try:
+            all_feeds = []
+            page = 1
+            
+            async with aiohttp.ClientSession() as session:
+                while True:
+                    url = f"{self.base_url}/feeds?page={page}&limit=100"
+                    
+                    async with session.get(url, headers=self.headers) as response:
+                        if response.status != 200:
+                            break
+                            
+                        data = await response.json()
+                        feeds = data.get("data", [])
+                        
+                        if not feeds:
+                            break
+                            
+                        all_feeds.extend(feeds)
+                        
+                        if len(feeds) < 100:
+                            break
+                            
+                        page += 1
+            
+            return all_feeds
+            
+        except Exception as e:
+            self.logger.error(f"Error fetching feeds: {str(e)}")
+            return []
