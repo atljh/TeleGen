@@ -37,7 +37,10 @@ superuser:
 	$(MANAGE) createsuperuser
 
 test:
-	$(MANAGE) test
+	$(MANAGE) generate_test_data --users 3
+
+make clean-test:
+	$(MANAGE) cleanup_test_data
 
 seed:
 	$(MANAGE) seed_data

@@ -30,7 +30,7 @@ class PostService:
         self.publishing_service = PostPublishingService(bot, self.base_service)
         self.scheduling_service = PostSchedulingService(self.base_service, self.publishing_service)
         self.generation_service = PostGenerationService(
-            userbot_service, web_service, flow_repository, self.base_service
+            userbot_service, web_service, flow_repository, self.base_service, self.bot
         )
 
     async def get_post(self, post_id: int) -> PostDTO:

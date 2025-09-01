@@ -1,4 +1,5 @@
 import logging
+from aiogram import Bot
 from asgiref.sync import sync_to_async
 
 from admin_panel.admin_panel.models import Post
@@ -8,7 +9,7 @@ from bot.services.post import PostBaseService
 from bot.services.telegram_userbot import EnhancedUserbotService
 from bot.services.web.web_service import WebService
 from bot.services.logger_service import (
-    get_logger
+    get_logger, init_logger
 )
 
 
@@ -19,12 +20,14 @@ class PostGenerationService:
         userbot_service: EnhancedUserbotService,
         web_service: WebService,
         flow_repository: FlowRepository,
-        post_base_service: PostBaseService
+        post_base_service: PostBaseService,
+        bot: Bot
     ):
         self.userbot_service = userbot_service
         self.web_service = web_service
         self.flow_repo = flow_repository
         self.post_service = post_base_service
+        self.bot = bot
         self.logger = get_logger()
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
@@ -38,6 +41,10 @@ class PostGenerationService:
         logging.info(
             f"Generating posts: userbot={telegram_userbot_volume}, web={web_volume}, user: {user}"
         )
+        
+        if not self.logger:
+            init_logger(self.bot)
+            self.logger = get_logger()
 
         await self.logger.user_started_generation(
             user,
@@ -52,13 +59,14 @@ class PostGenerationService:
         combined_posts = userbot_posts + web_posts
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
         
-        await self.logger.generation_completed(
-            user=user,
-            flow_name=flow.name,
-            flow_id=flow.id,
-            result=f"{len(combined_posts)} posts generated"
-        )
-        return await self._create_posts_from_dtos(flow, combined_posts)
+        if self.logger:
+            await self.logger.generation_completed(
+                user=user,
+                flow_name=flow.name,
+                flow_id=flow.id,
+                result=f"{len(combined_posts)} posts generated"
+            )
+            return await self._create_posts_from_dtos(flow, combined_posts)
 
     def _calculate_volumes(self, flow) -> tuple[int, int]:
         total_volume = flow.flow_volume

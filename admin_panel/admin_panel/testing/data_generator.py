@@ -5,6 +5,7 @@ import logging
 from typing import List, Dict, Any
 from datetime import datetime
 from faker import Faker
+from admin_panel.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -43,25 +44,20 @@ class TestDataGenerator:
     async def create_test_users(self, count: int = 10) -> List[Any]:
         await self._setup_django()
         
-        from django.contrib.auth import get_user_model
         from asgiref.sync import sync_to_async
         
-        User = get_user_model()
         users = []
         
         for i in range(count):
             try:
+
                 username = f"test_user_{i}_{self.fake.user_name()}"
-                email = f"test_{i}_{self.fake.email()}"
-                
+                telegram_id = random.randint(1, 999999)
+
                 user, created = await sync_to_async(User.objects.get_or_create)(
                     username=username,
                     defaults={
-                        'email': email,
-                        'password': 'testpassword123',
-                        'first_name': self.fake.first_name(),
-                        'last_name': self.fake.last_name(),
-                        'is_active': True
+                        'telegram_id': telegram_id,
                     }
                 )
                 
@@ -113,7 +109,7 @@ class TestDataGenerator:
     async def create_test_flows_for_channel(self, channel: Any, min_flows: int = 1, max_flows: int = 2) -> List[Any]:
         await self._setup_django()
         
-        from admin_panel.admin_panel.models import Flow
+        from admin_panel.models import Flow
         from asgiref.sync import sync_to_async
         
         flows = []
@@ -128,10 +124,9 @@ class TestDataGenerator:
                     name=flow_name,
                     flow_volume=flow_volume,
                     channel=channel,
+                    content_length='to_300',
+                    frequency='hourly',
                     signature=self.fake.sentence(),
-                    is_active=True,
-                    auto_generate=True,
-                    auto_publish=random.choice([True, False])
                 )
                 
                 logger.info(f"Created flow: {flow_name} for channel {channel.name}")
@@ -238,10 +233,8 @@ class TestDataGenerator:
         try:
             await self._setup_django()
             
-            from django.contrib.auth import get_user_model
             from asgiref.sync import sync_to_async
             
-            User = get_user_model()
             
             users_to_delete = await sync_to_async(list)(
                 User.objects.filter(username__startswith=username_prefix)
