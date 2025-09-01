@@ -117,6 +117,8 @@ class RssService:
     ) -> list[str]:
         rss_urls = []
         for source in flow.sources:
+            if source['type'] != 'web':
+                continue
             try:
                 if url := await flow_service.get_or_set_source_rss_url(
                     flow.id,

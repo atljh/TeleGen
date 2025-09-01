@@ -59,6 +59,10 @@ class BaseUserbotService:
 
         async with self.client_manager.get_client() as client:
             for source in telegram_sources:
+
+                if source['type'] != 'telegram':
+                    continue
+
                 if len(result) >= total_posts_needed:
                     break
 
