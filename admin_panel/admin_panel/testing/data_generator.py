@@ -5,28 +5,20 @@ import logging
 from typing import List, Dict, Any
 from datetime import datetime
 from faker import Faker
+
 from admin_panel.models import User
+from .source_lists import WEB_SOURCES, TELEGRAM_SOURCES
 
 logger = logging.getLogger(__name__)
+
 
 class TestDataGenerator:
     
     def __init__(self):
         self.fake = Faker()
         
-        self.telegram_channels = [
-            "https://t.me/ukraine_news", "https://t.me/world_news", 
-            "https://t.me/tech_news", "https://t.me/sports_news",
-            "https://t.me/business_news", "https://t.me/entertainment_news",
-            "https://t.me/science_news", "https://t.me/health_news"
-        ]
-        
-        self.web_sources = [
-            "https://www.bbc.com/news", "https://www.cnn.com", 
-            "https://www.reuters.com", "https://apnews.com",
-            "https://www.nytimes.com", "https://www.washingtonpost.com",
-            "https://www.theguardian.com", "https://www.bloomberg.com"
-        ]
+        self.telegram_channels = WEB_SOURCES
+        self.web_sources = TELEGRAM_SOURCES
     
     async def _setup_django(self):
         try:
