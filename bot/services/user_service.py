@@ -18,9 +18,10 @@ class UserService:
         user, created = await self.user_repository.get_or_create_user(
             telegram_id, username
         )
-        await self.logger.user_registered(
-            user
-        )
+        if created:
+            await self.logger.user_registered(
+                user
+            )
         return UserDTO.from_orm(user), created
 
     async def get_user(self, telegram_id: int) -> UserDTO:
