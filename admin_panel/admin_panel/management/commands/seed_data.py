@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from admin_panel.models import User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics
+from admin_panel.admin_panel.models import User, Channel, Flow, Post, Draft, Subscription, Payment, AISettings, Statistics
 from faker import Faker
 import random
 from django.utils import timezone

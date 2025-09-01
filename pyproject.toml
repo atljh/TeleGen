@@ -45,6 +45,7 @@ dependencies = [
     "watchdog>=4.0.0",
     "pytz>=2025.2",
     "gunicorn>=23.0.0",
+    "faker>=37.0.0",
 ]
 
 [project.optional-dependencies]
