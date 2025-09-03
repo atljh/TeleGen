@@ -16,6 +16,7 @@ from bot.database.exceptions import ChannelNotFoundError
 from bot.dialogs.generation.callbacks import show_generated_posts
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from bot.containers import Container
+from bot.utils.formatting import parse_entities_to_html
 
 logger = logging.getLogger(__name__)
 
@@ -212,39 +213,10 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 #         await manager.switch_to(CreateFlowMenu.select_theme)
 
 
+
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     try:
-        message_text = message.text or message.caption or ""
-        entities = message.entities or message.caption_entities or []
-
-        html_parts = []
-        last_offset = 0
-
-        for entity in entities:
-            if entity.offset > last_offset:
-                html_parts.append(escape_html(message_text[last_offset:entity.offset]))
-
-            if entity.type == "text_link":
-                text = message_text[entity.offset:entity.offset + entity.length]
-                url = entity.url
-                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(text)}</a>')
-                last_offset = entity.offset + entity.length
-            elif entity.type == "url":
-                url = message_text[entity.offset:entity.offset + entity.length]
-                html_parts.append(f'<a href="{escape_html(url)}">{escape_html(url)}</a>')
-                last_offset = entity.offset + entity.length
-
-        html_parts.append(escape_html(message_text[last_offset:]))
-        
-        import re
-        text_with_links = "".join(html_parts)
-        text_with_links = re.sub(
-            r'\[([^\]]+)\]\(([^)]+)\)',
-            lambda m: f'<a href="{escape_html(m.group(2))}">{escape_html(m.group(1))}</a>',
-            text_with_links
-        )
-
-        new_signature = text_with_links.strip()
+        new_signature = parse_entities_to_html(message)
 
         if len(new_signature) > 200:
             await message.answer(
@@ -253,12 +225,15 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
             )
             return
 
+        await message.answer(
+            f"✅ <b>Підпис:</b>\n{new_signature}",
+            parse_mode=ParseMode.HTML
+        )
         manager.dialog_data["signature"] = new_signature
         
         flow = await create_new_flow(manager)
         
         await manager.switch_to(CreateFlowMenu.confirmation)
-        
 
     except Exception as e:
         logging.error(f"Signature processing error: {str(e)}")
