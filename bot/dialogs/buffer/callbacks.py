@@ -171,7 +171,7 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
         await manager.switch_to(BufferMenu.channel_main)
     except Exception as e:
         logging.exception("Помилка при публікації посту")
-        await callback.message.edit_text(f"❌ Сталася неочікувана помилка: {str(e)}")
+        await callback.answer(f"❌ Сталася неочікувана помилка: {str(e)}")
         await manager.switch_to(BufferMenu.channel_main)
 
 

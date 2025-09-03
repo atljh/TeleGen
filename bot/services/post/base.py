@@ -18,7 +18,7 @@ class PostBaseService:
             raise PostNotFoundError(f"Post with id {post_id} not found")
         
         images_qs = await sync_to_async(lambda: list(post.images.all().order_by('order')))()
-        return PostDTO.from_orm(post, images=images_qs)
+        return PostDTO.from_orm(post)
 
     async def update_post(
         self,
