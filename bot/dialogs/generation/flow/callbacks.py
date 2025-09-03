@@ -301,7 +301,7 @@ async def confirm_schedule(callback: CallbackQuery, button: Button, manager: Dia
         post_service = Container.post_service()
         await post_service.schedule_post(post_id, scheduled_datetime)
         
-        await callback.answer(
+        await callback.message.answer(
             f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
         )
         await manager.switch_to(FlowMenu.posts_list)
