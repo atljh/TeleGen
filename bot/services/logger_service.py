@@ -1,12 +1,14 @@
 import asyncio
-from datetime import datetime
-from typing import Optional
-from dataclasses import dataclass
-from enum import Enum
-import html
-
+import logging
 from aiogram import Bot
+from typing import Optional, Dict, Any
+from datetime import datetime
+from dataclasses import dataclass
 from django.conf import settings
+from enum import Enum
+
+import requests
+
 from bot.database.models.user import UserDTO as BotUser
 
 
@@ -268,3 +270,125 @@ def init_logger(bot: Bot) -> TelegramLogger:
     global _logger_instance
     _logger_instance = TelegramLogger(bot)
     return _logger_instance
+
+
+
+class SyncTelegramLogger:
+    
+    def __init__(self, bot_token: Optional[str] = None):
+        self.bot_token = bot_token
+        self.log_channel_id = settings.TELEGRAM_LOG_CHANNEL_ID
+        self.enabled = bool(bot_token)
+        self.api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+
+    def _escape_markdown(self, text: str) -> str:
+        if not text:
+            return ""
+        escape_chars = r'_*[]()~`>#+-=|{}.!'
+        for char in escape_chars:
+            text = text.replace(char, f'\\{char}')
+        return text
+    
+    def _format_additional_data(self, data: Dict) -> str:
+        if not data:
+            return ""
+        
+        lines = []
+        for key, value in data.items():
+            if value is not None:
+                escaped_key = self._escape_markdown(str(key))
+                escaped_value = self._escape_markdown(str(value))
+                lines.append(f"• *{escaped_key}:* `{escaped_value}`")
+        
+        return "\n".join(lines)
+    
+    def _send_log_sync(self, event_data: Dict) -> bool:
+        logging.info(f'============{self.enabled}')        
+        if not self.enabled:
+            return False
+        
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            escaped_timestamp = self._escape_markdown(timestamp)
+            escaped_message = self._escape_markdown(event_data.get('message', ''))
+            
+            message_parts = [
+                f" \\| `{escaped_timestamp}`",
+                f"",
+                f"📝 *Message:* {escaped_message}"
+            ]
+            
+            if event_data.get('user_id') or event_data.get('username'):
+                user_parts = []
+                if event_data.get('user_id'):
+                    user_parts.append(f"ID: `{event_data['user_id']}`")
+                if event_data.get('username'):
+                    escaped_username = self._escape_markdown(f"@{event_data['username']}")
+                    user_parts.append(escaped_username)
+                
+                message_parts.append(f"👤 *User:* {', '.join(user_parts)}")
+            
+            if event_data.get('additional_data'):
+                formatted_data = self._format_additional_data(event_data['additional_data'])
+                if formatted_data:
+                    message_parts.extend(["", "📊 *Details:*", formatted_data])
+            
+            message_parts.append("")
+            
+            full_message = "\n".join(message_parts)
+            
+            payload = {
+                'chat_id': self.log_channel_id,
+                'text': full_message,
+                'parse_mode': 'MarkdownV2',
+                'disable_web_page_preview': True
+            }
+            
+            response = requests.post(self.api_url, json=payload, timeout=10)
+            response.raise_for_status()
+            print(response.status_code)
+            
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to send log to Telegram: {e}")
+            return False
+    
+    def user_started_generation(self, user, flow_name: str, flow_id: int, 
+                              telegram_volume: int, web_volume: int) -> bool:
+        event_data = {
+            'message': 'User started content generation',
+            'user_id': getattr(user, 'id', None),
+            'username': getattr(user, 'username', None),
+            'additional_data': {
+                'Flow': flow_name,
+                'Flow ID': flow_id,
+                'Telegram Volume': telegram_volume,
+                'Web Volume': web_volume
+            }
+        }
+        return self._send_log_sync(event_data)
+    
+    def generation_completed(self, user, flow_name: str, flow_id: int, 
+                           result: str) -> bool:
+        event_data = {
+            'message': 'Content generation completed',
+            'user_id': getattr(user, 'id', None),
+            'username': getattr(user, 'username', None),
+            'additional_data': {
+                'Flow': flow_name,
+                'Flow ID': flow_id,
+                'Result': result
+            }
+        }
+        return self._send_log_sync(event_data)
+    
+    def generation_failed(self, flow_id: int, error_message: str) -> bool:
+        event_data = {
+            'message': 'Content generation failed',
+            'additional_data': {
+                'Flow ID': flow_id,
+                'Error': error_message
+            }
+        }
+        return self._send_log_sync(event_data)

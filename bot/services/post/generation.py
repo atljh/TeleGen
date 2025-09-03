@@ -11,7 +11,7 @@ from bot.services.web.web_service import WebService
 from bot.services.logger_service import (
     get_logger, init_logger
 )
-
+from bot.services.logger_service import SyncTelegramLogger
 
 class PostGenerationService:
     
@@ -28,6 +28,7 @@ class PostGenerationService:
         self.flow_repo = flow_repository
         self.post_service = post_base_service
         self.bot = bot
+        self.sync_logger = SyncTelegramLogger(bot.token)
         self.logger = get_logger()
 
     async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
@@ -46,7 +47,14 @@ class PostGenerationService:
             init_logger(self.bot)
             self.logger = get_logger()
 
-        await self.logger.user_started_generation(
+        # await self.logger.user_started_generation(
+        #     user,
+        #     flow_name=flow.name,
+        #     flow_id=flow.id,
+        #     telegram_volume=telegram_userbot_volume,
+        #     web_volume=web_volume
+        # )
+        self.sync_logger.user_started_generation(
             user,
             flow_name=flow.name,
             flow_id=flow.id,
