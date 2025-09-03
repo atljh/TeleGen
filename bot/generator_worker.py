@@ -125,8 +125,6 @@ async def _start_telegram_generations(
     post_service: PostService,
 ) -> List:
 
-    logger = get_logger()
-
     existing_posts = await post_service.get_all_posts_in_flow(flow.id)
     existing_count = len(existing_posts)
         
@@ -136,6 +134,7 @@ async def _start_telegram_generations(
     generated_count = len(generated_posts) if generated_posts else 0
 
     if not generated_posts:
+        await flow_service.update_next_generation_time(flow.id)
         return []
 
     total_after_generation = existing_count + generated_count

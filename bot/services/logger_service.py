@@ -303,7 +303,6 @@ class SyncTelegramLogger:
         return "\n".join(lines)
     
     def _send_log_sync(self, event_data: Dict) -> bool:
-        logging.info(f'============{self.enabled}')        
         if not self.enabled:
             return False
         
@@ -346,7 +345,6 @@ class SyncTelegramLogger:
             
             response = requests.post(self.api_url, json=payload, timeout=10)
             response.raise_for_status()
-            print(response.status_code)
             
             return True
             

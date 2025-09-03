@@ -65,16 +65,24 @@ class PostGenerationService:
         web_posts = await self.web_service.get_last_posts(flow, web_volume)
         
         combined_posts = userbot_posts + web_posts
-        combined_posts.sort(key=lambda x: x.created_at, reverse=True)
-        
-        if self.logger:
-            await self.logger.generation_completed(
-                user=user,
-                flow_name=flow.name,
-                flow_id=flow.id,
-                result=f"{len(combined_posts)} posts generated"
-            )
-            return await self._create_posts_from_dtos(flow, combined_posts)
+        combined_posts.sort(key=lambda x: x.created_at, reverse=True)        
+
+        self.sync_logger.generation_completed(
+            user=user,
+            flow_name=flow.name,
+            flow_id=flow.id,
+            result=f"{len(combined_posts)} posts generated"
+        )
+        return await self._create_posts_from_dtos(flow, combined_posts)
+
+        # if self.logger:
+            # await self.logger.generation_completed(
+            #     user=user,
+            #     flow_name=flow.name,
+            #     flow_id=flow.id,
+            #     result=f"{len(combined_posts)} posts generated"
+            # )
+            # return await self._create_posts_from_dtos(flow, combined_posts)
 
     def _calculate_volumes(self, flow) -> tuple[int, int]:
         total_volume = flow.flow_volume
