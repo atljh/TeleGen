@@ -93,7 +93,8 @@ def create_flow_dialog():
             ),
             state=CreateFlowMenu.select_source,
             parse_mode=ParseMode.HTML,
-            getter=source_type_getter
+            getter=source_type_getter,
+            disable_web_page_preview=True
         ),
         Window(
             Format("🔗 <b>Додавання {source_name}</b>\n\n"
@@ -110,7 +111,8 @@ def create_flow_dialog():
             ),
             state=CreateFlowMenu.add_source_link,
             parse_mode=ParseMode.HTML,
-            getter=source_link_getter
+            getter=source_link_getter,
+            disable_web_page_preview=True
         ),
         Window(
             Format("✅ <b>Джерело додано</b>\n\n"
@@ -283,7 +285,8 @@ def create_flow_dialog():
             ),
             state=CreateFlowMenu.confirmation,
             parse_mode=ParseMode.HTML,
-            getter=flow_confirmation_getter
+            getter=flow_confirmation_getter,
+            disable_web_page_preview=True
         ),
         Window(
             Format("✏️ <b>Введіть власну тему каналу:</b>"),
