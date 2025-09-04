@@ -32,8 +32,10 @@ from .callbacks import (
     on_edit_media,
     on_edit_post,
     on_edit_text,
+    on_hide_details,
     on_post_info,
     on_publish_post,
+    on_toggle_details,
     process_edit_input,
     show_publish_confirm,
 )
@@ -66,7 +68,7 @@ def create_buffer_dialog():
         manager: DialogManager, 
     ):
         data = await paging_getter(manager)
-        if data["post"].get("is_album"):
+        if data["post"].get("is_selected") and data["post"].get("is_album"):
             await send_media_album(manager, data["post"])
             return
 
@@ -88,18 +90,58 @@ def create_buffer_dialog():
             getter=get_user_channels_data,
         ),
         Window(
-            Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
-            Format("Альбом {post[images_count]} зобр.", when=lambda data, widget, manager: data["post"].get("is_album")),
-            DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
+            Format(
+                "{post[content_preview]}\n\n"
+                "<b>Заплановано:</b> {post[scheduled_time]}\n"
+                "{media_indicator}",
+                when=lambda data, widget, manager: not data["post"].get("is_selected")
+            ),
+            Format(
+                "{post[full_content]}\n\n"
+                "<b>Заплановано:</b> {post[scheduled_time]}\n" 
+                "{media_indicator}",
+                when=lambda data, widget, manager: data["post"].get("is_selected")
+            ),
+            DynamicMedia(
+                "media_content", 
+                when=lambda data, widget, manager: data["post"].get("is_selected") and not data["post"].get("is_album")
+            ),
             StubScroll(id="stub_scroll", pages="pages", on_page_changed=on_page_changed),
             Group(
                 NumberedPager(scroll="stub_scroll"),
                 width=5,
             ),
             Group(
-                Button(Const("✅ Опублікувати"), id="publish_post", on_click=show_publish_confirm, when=lambda data, widget, manager: data["post"].get("content")),
-                Button(Const("✏️ Редагувати"), id="edit_post", on_click=on_edit_post, when=lambda data, widget, manager: data["post"].get("content")),
-                Button(Const("ℹ️ Пост iнфо"), id="post_info", on_click=on_post_info, when=lambda data, widget, manager: data["post"].get("content")),
+                Button(
+                    Const("👀 Деталi"), 
+                    id="toggle_details", 
+                    on_click=on_toggle_details,
+                    when=lambda data, widget, manager: not data["post"].get("is_selected")
+                ),
+                Button(
+                    Const("📋 Сховати"),
+                    id="hide_details", 
+                    on_click=on_hide_details,
+                    when=lambda data, widget, manager: data["post"].get("is_selected")
+                ),
+                Button(
+                    Const("✅ Опублікувати"), 
+                    id="publish_post", 
+                    on_click=show_publish_confirm, 
+                    when=lambda data, widget, manager: data["post"].get("content")
+                ),
+                Button(
+                    Const("✏️ Редагувати"), 
+                    id="edit_post", 
+                    on_click=on_edit_post, 
+                    when=lambda data, widget, manager: data["post"].get("content")
+                ),
+                Button(
+                    Const("ℹ️ Пост iнфо"), 
+                    id="post_info", 
+                    on_click=on_post_info, 
+                    when=lambda data, widget, manager: data["post"].get("content")
+                ),
                 width=2
             ),
             Row(

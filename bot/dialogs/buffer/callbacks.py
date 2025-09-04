@@ -98,16 +98,36 @@ async def on_channel_selected(
         await callback.answer("Error processing selection")
 
 
-
-
-async def on_back_to_posts(
+async def on_toggle_details(
     callback: CallbackQuery, 
     button: Button, 
     manager: DialogManager
 ):
+    data = await paging_getter(manager)
+    current_post = data["post"]
+
+    await delete_album_messages(manager)
+
+    manager.dialog_data["selected_post_id"] = current_post["id"]
     manager.dialog_data["needs_refresh"] = True
-    original_page = manager.dialog_data.get("original_page", 0)
     
+    # await manager.show()
+
+async def on_hide_details(
+    callback: CallbackQuery, 
+    button: Button, 
+    manager: DialogManager
+):
+    await delete_album_messages(manager)
+
+    manager.dialog_data.pop("selected_post_id", None)
+    manager.dialog_data["needs_refresh"] = True
+    
+    # await manager.show()
+
+async def delete_album_messages(
+        manager: DialogManager
+):
     message_ids = manager.dialog_data.get("message_ids", [])
     if message_ids:
         bot = manager.middleware_data['bot']
@@ -118,6 +138,16 @@ async def on_back_to_posts(
             except:
                 pass
         manager.dialog_data["message_ids"] = []
+
+async def on_back_to_posts(
+    callback: CallbackQuery, 
+    button: Button, 
+    manager: DialogManager
+):
+    manager.dialog_data["needs_refresh"] = True
+    original_page = manager.dialog_data.get("original_page", 0)
+    
+    await delete_album_messages(manager)
     
     manager.dialog_data.pop("all_posts", None)
     await paging_getter(manager)
