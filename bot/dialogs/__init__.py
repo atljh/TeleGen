@@ -10,6 +10,7 @@ from .buffer import create_buffer_dialog
 from .settings import create_settings_dialog
 from .settings.flow_settings import create_flow_settings_dialog, create_sources_dialog
 from .support import create_support_dialog
+from .settings.payment import create_payment_dialog
 
 def register_dialogs(dp: Dispatcher):
     generation_dialog = create_generation_dialog()
@@ -24,6 +25,8 @@ def register_dialogs(dp: Dispatcher):
 
     support_dialog = create_support_dialog()
     
+    payment_dialog = create_payment_dialog()
+
     dp.include_router(generation_dialog)
     dp.include_router(add_channel_dialog)
     dp.include_router(d_flow_dialog)
@@ -35,3 +38,4 @@ def register_dialogs(dp: Dispatcher):
     dp.include_router(flow_settings_dialog)
 
     dp.include_router(support_dialog)
+    dp.include_router(payment_dialog)

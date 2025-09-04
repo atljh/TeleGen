@@ -11,6 +11,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.containers import Container
+from bot.dialogs.settings.payment.states import PaymentMenu
 from .states import SettingsMenu
 
 from .getters import emoji_button_getter, emoji_getter, notification_button_getter, notification_getter, selected_channel_getter, timezone_getter
@@ -60,7 +61,7 @@ def create_settings_dialog():
                 width=2,
             ),
             Row(
-                Button(Const("💳 Оплата підписки"), id="pay_subscription", on_click=pay_subscription),
+                Button(Const("💳 Оплата підписки"), id="pay_subscription", on_click=lambda c, b, m: m.start(PaymentMenu.main)),
             ),
 
             state=SettingsMenu.main,
