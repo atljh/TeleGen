@@ -74,7 +74,12 @@ async def _async_check_flows_generation():
     for flow in flows:
         logger.info(f"Processing flow {flow.id} (volume: {flow.flow_volume})")
         try:
-            await _start_telegram_generations(flow, flow_service, post_service)
+            await _start_telegram_generations(
+                flow,
+                flow_service,
+                post_service,
+                auto_generate=True
+            )
             # await process_single_flow(flow, post_service, flow_service)
         except Exception as e:
             logger.error(f"Failed to process flow {flow.id}: {e}")

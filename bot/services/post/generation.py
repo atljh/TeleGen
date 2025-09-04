@@ -31,7 +31,11 @@ class PostGenerationService:
         self.sync_logger = SyncTelegramLogger(bot.token)
         self.logger = get_logger()
 
-    async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
+    async def generate_auto_posts(
+        self,
+        flow_id: int,
+        auto_generate: bool = False
+    ) -> list[PostDTO]:
         flow = await self.flow_repo.get_flow_by_id(flow_id)
         if not flow:
             return []
@@ -47,19 +51,13 @@ class PostGenerationService:
             init_logger(self.bot)
             self.logger = get_logger()
 
-        # await self.logger.user_started_generation(
-        #     user,
-        #     flow_name=flow.name,
-        #     flow_id=flow.id,
-        #     telegram_volume=telegram_userbot_volume,
-        #     web_volume=web_volume
-        # )
         self.sync_logger.user_started_generation(
             user,
             flow_name=flow.name,
             flow_id=flow.id,
             telegram_volume=telegram_userbot_volume,
-            web_volume=web_volume
+            web_volume=web_volume,
+            auto_generate=auto_generate
         )
         userbot_posts = await self.userbot_service.get_last_posts(flow, telegram_userbot_volume)
         web_posts = await self.web_service.get_last_posts(flow, web_volume)
@@ -71,18 +69,10 @@ class PostGenerationService:
             user=user,
             flow_name=flow.name,
             flow_id=flow.id,
-            result=f"{len(combined_posts)} posts generated"
+            result=f"{len(combined_posts)} posts generated",
+            auto_generate=auto_generate
         )
         return await self._create_posts_from_dtos(flow, combined_posts)
-
-        # if self.logger:
-            # await self.logger.generation_completed(
-            #     user=user,
-            #     flow_name=flow.name,
-            #     flow_id=flow.id,
-            #     result=f"{len(combined_posts)} posts generated"
-            # )
-            # return await self._create_posts_from_dtos(flow, combined_posts)
 
     def _calculate_volumes(self, flow) -> tuple[int, int]:
         total_volume = flow.flow_volume

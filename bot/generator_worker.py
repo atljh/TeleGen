@@ -123,6 +123,7 @@ async def _start_telegram_generations(
     flow: FlowDTO,
     flow_service: FlowService,
     post_service: PostService,
+    auto_generate = False
 ) -> List:
 
     existing_posts = await post_service.get_all_posts_in_flow(flow.id)
@@ -130,7 +131,10 @@ async def _start_telegram_generations(
         
     user = await flow_service.get_user_by_flow_id(flow.id)
 
-    generated_posts = await post_service.generate_auto_posts(flow.id)
+    generated_posts = await post_service.generate_auto_posts(
+        flow.id,
+        auto_generate
+    )
     generated_count = len(generated_posts) if generated_posts else 0
 
     if not generated_posts:

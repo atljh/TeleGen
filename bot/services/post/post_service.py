@@ -51,8 +51,10 @@ class PostService:
     async def publish_scheduled_posts(self) -> List[PostDTO]:
         return await self.scheduling_service.publish_scheduled_posts()
 
-    async def generate_auto_posts(self, flow_id: int) -> list[PostDTO]:
-        return await self.generation_service.generate_auto_posts(flow_id)
+    async def generate_auto_posts(self, flow_id: int, auto_generate: bool = False) -> list[PostDTO]:
+        return await self.generation_service.generate_auto_posts(
+            flow_id, auto_generate
+        )
 
     async def get_all_posts_in_flow(self, flow_id: int) -> List[Post]:
         return await sync_to_async(list)(

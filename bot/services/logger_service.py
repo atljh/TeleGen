@@ -6,7 +6,6 @@ from datetime import datetime
 from dataclasses import dataclass
 from django.conf import settings
 from enum import Enum
-
 import requests
 
 from bot.database.models.user import UserDTO as BotUser
@@ -352,13 +351,23 @@ class SyncTelegramLogger:
             logging.error(f"Failed to send log to Telegram: {e}")
             return False
     
-    def user_started_generation(self, user, flow_name: str, flow_id: int, 
-                              telegram_volume: int, web_volume: int) -> bool:
+    def user_started_generation(
+        self,
+        user,
+        flow_name: str,
+        flow_id: int, 
+        telegram_volume: int,
+        web_volume: int,
+        auto_generate: bool = False,
+
+    ) -> bool:
         event_data = {
             'message': 'User started content generation',
             'user_id': getattr(user, 'id', None),
             'username': getattr(user, 'username', None),
             'additional_data': {
+                'Generation_type': 'Auto generation' \
+                  if auto_generate else 'Force generation',
                 'Flow': flow_name,
                 'Flow ID': flow_id,
                 'Telegram Volume': telegram_volume,
@@ -367,16 +376,24 @@ class SyncTelegramLogger:
         }
         return self._send_log_sync(event_data)
     
-    def generation_completed(self, user, flow_name: str, flow_id: int, 
-                           result: str) -> bool:
+    def generation_completed(
+        self,
+        user: BotUser,
+        flow_name: str,
+        flow_id: int, 
+        result: str,
+        auto_generate: bool = False,
+    ) -> bool:
         event_data = {
             'message': 'Content generation completed',
             'user_id': getattr(user, 'id', None),
             'username': getattr(user, 'username', None),
             'additional_data': {
+                'Generation_type': 'Auto generation' \
+                  if auto_generate else 'Force generation',
                 'Flow': flow_name,
                 'Flow ID': flow_id,
-                'Result': result
+                'Result': result,
             }
         }
         return self._send_log_sync(event_data)
