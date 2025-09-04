@@ -29,14 +29,38 @@ async def packages_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, 
     }
 
 async def periods_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
-    selected_package = dialog_manager.dialog_data.get("selected_package")
+    selected_package = dialog_manager.dialog_data.get("selected_package", {})
     periods = [
-        {"id": "1", "name": "1 місяць", "price": "100 грн", "discount": "0"},
-        {"id": "6", "name": "6 місяців", "price": "500 грн", "discount": "-17%"},
-        {"id": "9", "name": "9 місяців", "price": "750 грн", "discount": "-25%"},
-        {"id": "12", "name": "1 рік", "price": "900 грн", "discount": "-33%"}
+        {
+            "id": "1",
+            "name": "1 місяць",
+            "price": "100 грн",
+            "discount_display": ""
+        },
+        {
+            "id": "6",
+            "name": "6 місяців",
+            "price": "500 грн",
+            "discount_display": " -17%"
+        },
+        {
+            "id": "9",
+            "name": "9 місяців",
+            "price": "750 грн",
+            "discount_display": " -25%"
+        },
+        {
+            "id": "12",
+            "name": "1 рік",
+            "price": "900 грн",
+            "discount_display": " -33%"
+        },
     ]
-    return {"periods": periods, "selected_package": selected_package}
+    return {
+        "periods": periods,
+        "selected_package": selected_package,
+    }
+
 
 async def methods_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     selected_package = dialog_manager.dialog_data.get("selected_package")

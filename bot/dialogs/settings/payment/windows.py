@@ -6,16 +6,11 @@ from aiogram_dialog.widgets.kbd import (
 from aiogram.enums import ParseMode
 
 from bot.dialogs.settings.payment.states import PaymentMenu
-
-from .getters import (
-    packages_getter, 
-    periods_getter, methods_getter, success_getter
-)
+from .getters import packages_getter, periods_getter, methods_getter, success_getter
 from .callbacks import (
     on_payment_start, on_package_selected, on_period_selected,
-    on_method_selected, on_promo_code_apply, on_card_payment_confirm,
-    on_crypto_payment_confirm, on_back_to_main, on_back_to_methods,
-    on_back_to_periods, on_back_to_packages
+    on_method_selected, on_card_payment_confirm, on_crypto_payment_confirm,
+    on_back_to_main, on_back_to_methods, on_back_to_periods
 )
 
 def create_payment_dialog():
@@ -55,26 +50,24 @@ def create_payment_dialog():
         
         Window(
             Multi(
-                Format("📅 *Оберіть термін підписки*"),
+                Format("*Оберіть термін підписки*"),
                 Format(""),
-                Format("📦 *Обраний пакет:* {selected_package[name]}"),
+                Format("*Обраний пакет:* {selected_package[name]}"),
                 Format(""),
                 sep="\n"
             ),
-            ScrollingGroup(
+            Group(
                 Select(
-                    text=Format("{item[name]} - {item[price]} {item[discount] if item.get('discount') else ''}"),
+                    text=Format("{item[name]} - {item[price]}{item[discount_display]}"),
                     item_id_getter=lambda item: item["id"],
                     items="periods",
                     id="period_select",
-                    on_click=on_period_selected
+                    on_click=on_period_selected,
                 ),
                 width=2,
-                height=4,
                 id="periods_scroll"
             ),
             Back(Const("🔙 До пакетів")),
-            Cancel(Const("❌ Скасувати")),
             state=PaymentMenu.choose_period,
             getter=periods_getter,
             parse_mode=ParseMode.MARKDOWN
@@ -84,9 +77,9 @@ def create_payment_dialog():
             Multi(
                 Format("💳 *Оберіть спосіб оплати*"),
                 Format(""),
-                Format("📦 *Пакет:* {package[name]}"),
-                Format("⏰ *Термін:* {period[name]}"),
-                Format("💰 *Загальна сума:* {total_price}"),
+                Format("*Пакет:* {package[name]}"),
+                Format("*Термін:* {period[name]}"),
+                Format("*Загальна сума:* {total_price}"),
                 Format(""),
                 sep="\n"
             ),
@@ -96,7 +89,6 @@ def create_payment_dialog():
                 width=2
             ),
             Back(Const("🔙 До термінів")),
-            Cancel(Const("❌ Скасувати")),
             state=PaymentMenu.choose_method,
             getter=methods_getter,
             parse_mode=ParseMode.MARKDOWN
@@ -104,11 +96,11 @@ def create_payment_dialog():
         
         Window(
             Multi(
-                Format("💳 *Оплата карткою*"),
+                Format("*Оплата карткою*"),
                 Format(""),
-                Format("📦 *Пакет:* {package[name]}"),
-                Format("⏰ *Термін:* {period[name]}"), 
-                Format("💰 *Сума:* {total_price}"),
+                Format("*Пакет:* {package[name]}"),
+                Format("*Термін:* {period[name]}"), 
+                Format("*Сума:* {total_price}"),
                 Format(""),
                 Format("➡️ *Перейдіть за посиланням для оплати:*"),
                 Format("[Посилання на оплату](https://payment.example.com)"),
@@ -127,11 +119,11 @@ def create_payment_dialog():
             Multi(
                 Format("₿ *Оплата криптовалютою*"),
                 Format(""),
-                Format("📦 *Пакет:* {package[name]}"),
-                Format("⏰ *Термін:* {period[name]}"),
-                Format("💰 *Сума:* {crypto_amount}"),
+                Format("*Пакет:* {package[name]}"),
+                Format("*Термін:* {period[name]}"),
+                Format("*Сума:* {crypto_amount}"),
                 Format(""),
-                Format("🔷 *Адреса для оплати:*"),
+                Format("*Адреса для оплати:*"),
                 Format("`{crypto_address}`"),
                 Format(""),
                 Format("💡 *Надішліть точну суму на вказану адресу*"),
@@ -149,11 +141,11 @@ def create_payment_dialog():
                 Format("🎉 *Дякуємо за оплату!*"),
                 Format(""),
                 Format("✅ *Підписка активована*"),
-                Format("📦 *Пакет:* {package[name]}"),
-                Format("⏰ *Термін:* {period[name]}"),
-                Format("💰 *Сума:* {total_price}"),
+                Format("*Пакет:* {package[name]}"),
+                Format("*Термін:* {period[name]}"),
+                Format("*Сума:* {total_price}"),
                 Format(""),
-                Format("⏳ *Термін дії до:* 01.01.2025"),
+                Format("*Термін дії до:* 01.01.2025"),
                 Format(""),
                 Format("💫 *Насолоджуйтесь повним доступом!*"),
                 sep="\n"
