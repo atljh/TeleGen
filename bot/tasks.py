@@ -11,26 +11,6 @@ from bot.celery_app import app
 logger = logging.getLogger()
 
 
-async def process_single_flow(flow, post_service, flow_service):
-    try:
-        existing_count = await post_service.count_posts_in_flow(flow.id)
-        posts_dto = await post_service.generate_auto_posts(flow.id)
-        
-        if not posts_dto:
-            logger.info(f"No posts generated for flow {flow.id}")
-            return False
-        
-        if existing_count >= flow.flow_volume:
-            await remove_old_posts(flow.id, len(posts_dto), post_service)
-        
-        await create_new_posts(flow.id, posts_dto, post_service)
-        await flow_service.update_next_generation_time(flow.id)
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error processing flow {flow.id}: {str(e)}", exc_info=True)
-        raise
-
 async def remove_old_posts(flow_id: int, count: int, post_service):
     old_posts = await post_service.get_oldest_posts(flow_id, count)
     logger.info(f"Removing {len(old_posts)} old posts for flow {flow_id}")
@@ -80,7 +60,6 @@ async def _async_check_flows_generation():
                 post_service,
                 auto_generate=True
             )
-            # await process_single_flow(flow, post_service, flow_service)
         except Exception as e:
             logger.error(f"Failed to process flow {flow.id}: {e}")
             continue
