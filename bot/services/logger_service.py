@@ -208,20 +208,72 @@ class TelegramLogger:
         )
         return await self.log(event)
     
-    async def settings_updated(self, user: BotUser, setting_type: str, old_value: str, new_value: str) -> bool:
-        event = LogEvent(
-            level=LogLevel.SETTINGS,
-            message="User updated settings",
-            user_id=user.id,
-            username=user.username,
-            additional_data={
-                "Setting Type": setting_type,
-                "Old Value": old_value,
-                "New Value": new_value,
-                "Update Time": datetime.now().strftime("%H:%M:%S")
-            }
-        )
-        return await self.log(event)
+    async def settings_updated(
+        self, 
+        user: Any, 
+        setting_type: str, 
+        old_value: str, 
+        new_value: str,
+        additional_data: Optional[Dict] = None
+    ) -> bool:
+        if not self.enabled:
+            return False
+        
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+            escaped_timestamp = self._escape_markdown(timestamp)
+            
+            message_parts = [
+                f"⚙️ *Settings Updated* \\| `{escaped_timestamp}`",
+                f"",
+                f"*Type:* {self._escape_markdown(setting_type)}"
+            ]
+            
+            if user:
+                user_parts = []
+                if hasattr(user, 'id'):
+                    user_parts.append(f"ID: `{user.id}`")
+                if hasattr(user, 'username'):
+                    escaped_username = self._escape_markdown(f"@{user.username}")
+                    user_parts.append(escaped_username)
+                
+                if user_parts:
+                    message_parts.append(f"*User:* {', '.join(user_parts)}")
+            
+            if old_value:
+                message_parts.extend([
+                    "",
+                    "*Old Values:*",
+                    f"```\n{self._escape_markdown(old_value)}\n```"
+                ])
+            
+            if new_value:
+                message_parts.extend([
+                    "",
+                    "*New Values:*", 
+                    f"```\n{self._escape_markdown(new_value)}\n```"
+                ])
+            
+            if additional_data:
+                formatted_data = self._format_additional_data(additional_data)
+                if formatted_data:
+                    message_parts.extend(["", "*Details:*", formatted_data])
+            
+            message_parts.append("")
+            
+            full_message = "\n".join(message_parts)
+            
+            await self.bot.send_message(
+                chat_id=self.log_channel_id,
+                text=full_message,
+                parse_mode="MarkdownV2",
+                disable_web_page_preview=True
+            )
+            return True
+            
+        except Exception as e:
+            print(f"Failed to send settings update log: {e}")
+            return False
     
     async def error_occurred(self, error_message: str, user: Optional[BotUser] = None, context: Optional[dict] = None) -> bool:
         event = LogEvent(

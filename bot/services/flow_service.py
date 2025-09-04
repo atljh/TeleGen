@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from django.utils import timezone
 from asgiref.sync import sync_to_async
 
@@ -99,27 +99,92 @@ class FlowService:
         try:
             flow = await self.flow_repository.get_flow_by_id(flow_id)
             if not flow:
-                raise ValueError(f"Flow with ID {flow_id} not found")
+                raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
+            
+            old_values = self._get_old_values(flow, kwargs.keys())
             
             for field, value in kwargs.items():
                 setattr(flow, field, value)
             
             updated_flow = await self.flow_repository.update_flow(flow)
-            channel = await self.channel_repository.get_channel(flow.channel_id)
-            user = await sync_to_async(lambda: channel.user)()
-
-            if self.logger:
-                await self.logger.settings_updated(
-                    user=user,
-                    setting_type="flow",
-                    old_value="",
-                    new_value=str(kwargs)
-                )
+            
+            await self._log_flow_update(flow, old_values, kwargs)
+            
             return FlowDTO.from_orm(updated_flow)
             
         except Exception as e:
             logging.error(f"Error updating flow {flow_id}: {e}")
             raise
+
+    def _get_old_values(self, flow, fields_to_update) -> Dict[str, Any]:
+        old_values = {}
+        for field in fields_to_update:
+            if hasattr(flow, field):
+                old_values[field] = getattr(flow, field)
+        return old_values
+    
+
+    async def _log_flow_update(self, flow, old_values: Dict, new_values: Dict):
+        if not self.logger:
+            return
+            
+        try:
+            channel = await self.channel_repository.get_channel(flow.channel_id)
+            user = await sync_to_async(lambda: channel.user)()
+            
+            changes = self._format_changes_for_log(old_values, new_values)
+            
+            if changes:
+                await self.logger.settings_updated(
+                    user=user,
+                    setting_type="flow",
+                    old_value=changes['old'],
+                    new_value=changes['new'],
+                    additional_data={
+                        'flow_id': flow.id,
+                        'flow_name': flow.name,
+                        'changed_fields': list(new_values.keys())
+                    }
+                )
+                
+        except Exception as e:
+            logging.error(f"Error logging flow update: {e}")
+
+    def _format_changes_for_log(self, old_values: Dict, new_values: Dict) -> Optional[Dict]:
+        if not old_values or not new_values:
+            return None
+        
+        formatted_old = []
+        formatted_new = []
+        
+        for field, new_value in new_values.items():
+            old_value = old_values.get(field)
+            
+            if old_value == new_value:
+                continue
+                
+            formatted_old.append(f"{field}: {self._format_value(old_value)}")
+            formatted_new.append(f"{field}: {self._format_value(new_value)}")
+        
+        if not formatted_old or not formatted_new:
+            return None
+            
+        return {
+            'old': "\n".join(formatted_old),
+            'new': "\n".join(formatted_new)
+        }
+
+    def _format_value(self, value) -> str:
+        if value is None:
+            return "None"
+        elif isinstance(value, bool):
+            return "✅" if value else "❌"
+        elif isinstance(value, (list, dict)):
+            return str(len(value)) if value else "Empty"
+        elif isinstance(value, str) and len(value) > 50:
+            return f"{value[:50]}..."
+        else:
+            return str(value)
 
     async def delete_flow(self, flow_id: int):
         try:
