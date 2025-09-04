@@ -1,17 +1,18 @@
 from aiogram_dialog import Window, Dialog
 from aiogram_dialog.widgets.text import Const, Format, Multi
 from aiogram_dialog.widgets.kbd import (
-    Button, Row, Column, Back, Cancel, Select, Group, ScrollingGroup
+    Button, Row, Column, Back, Cancel, Select, Group, Url
 )
 from aiogram.enums import ParseMode
 
 from bot.dialogs.settings.payment.states import PaymentMenu
 from .getters import packages_getter, periods_getter, methods_getter, success_getter
 from .callbacks import (
-    on_payment_start, on_package_selected, on_period_selected,
-    on_method_selected, on_card_payment_confirm, on_crypto_payment_confirm,
+    on_package_selected, on_period_selected,
+    on_method_selected, on_monobank_confirm, on_cryptobot_confirm,
     on_back_to_main, on_back_to_methods, on_back_to_periods
 )
+
 
 def create_payment_dialog():
     return Dialog(
@@ -29,25 +30,25 @@ def create_payment_dialog():
             Column(
                 Select(
                     text=Format(
-                        "{item[name]}"
-                        " • {item[price]}" 
-                        " • {item[features]}"
+                        "{item[name]} • {item[price]} • {item[features]}"
                     ),
                     item_id_getter=lambda item: item["id"],
-                    items="packages", 
+                    items="packages",
                     id="package_select",
                     on_click=on_package_selected
                 ),
             ),
             Row(
-                Button(Const("🎫 Маю промокод"), id="enter_promo", on_click=on_method_selected),
-                Back(Const("🔙 Назад")),
+                Button(Const("Маю промокод"), id='input_promocode'),
+            ),
+            Row(
+                Cancel(Const("🔙 Назад")),
             ),
             state=PaymentMenu.main,
             getter=packages_getter,
             parse_mode=ParseMode.MARKDOWN
         ),
-        
+
         Window(
             Multi(
                 Format("*Оберіть термін підписки*"),
@@ -72,7 +73,7 @@ def create_payment_dialog():
             getter=periods_getter,
             parse_mode=ParseMode.MARKDOWN
         ),
-        
+
         Window(
             Multi(
                 Format("💳 *Оберіть спосіб оплати*"),
@@ -84,8 +85,9 @@ def create_payment_dialog():
                 sep="\n"
             ),
             Group(
-                Button(Const("💳 Картка"), id="card_pay", on_click=on_method_selected),
-                Button(Const("₿ Криптовалюта"), id="crypto_pay", on_click=on_method_selected),
+                # Url(Const("💳 Monobank"), url="https://send.monobank.ua/XXXXXX"),
+                Button(Const("💳 Monobank"), id="monobank_pay", on_click=on_method_selected),
+                Button(Const("₿ CryptoBot"), id="cryptobot_pay", on_click=on_method_selected),
                 width=2
             ),
             Back(Const("🔙 До термінів")),
@@ -93,49 +95,49 @@ def create_payment_dialog():
             getter=methods_getter,
             parse_mode=ParseMode.MARKDOWN
         ),
-        
+
         Window(
             Multi(
-                Format("*Оплата карткою*"),
+                Format("💳 *Оплата через Monobank*"),
                 Format(""),
                 Format("*Пакет:* {package[name]}"),
-                Format("*Термін:* {period[name]}"), 
+                Format("*Термін:* {period[name]}"),
                 Format("*Сума:* {total_price}"),
                 Format(""),
-                Format("➡️ *Перейдіть за посиланням для оплати:*"),
-                Format("[Посилання на оплату](https://payment.example.com)"),
+                Format("➡️ [Перейдіть за посиланням для оплати](https://pay.monobank.ua/example)"),
                 Format(""),
                 Format("✅ *Після оплати натисніть кнопку нижче*"),
                 sep="\n"
             ),
-            Button(Const("✅ Я сплатив"), id="confirm_card", on_click=on_card_payment_confirm),
+            Button(Const("✅ Я сплатив"), id="confirm_monobank", on_click=on_monobank_confirm),
             Back(Const("🔙 До способів")),
-            state=PaymentMenu.card_payment,
+            state=PaymentMenu.monobank_payment,
             getter=methods_getter,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=True
         ),
-        
+
         Window(
             Multi(
-                Format("₿ *Оплата криптовалютою*"),
+                Format("₿ *Оплата через CryptoBot*"),
                 Format(""),
                 Format("*Пакет:* {package[name]}"),
                 Format("*Термін:* {period[name]}"),
-                Format("*Сума:* {crypto_amount}"),
+                Format("*Сума:* {total_price}"),
                 Format(""),
-                Format("*Адреса для оплати:*"),
-                Format("`{crypto_address}`"),
+                Format("➡️ [Оплатити через CryptoBot](https://t.me/CryptoBot?start=example)"),
                 Format(""),
-                Format("💡 *Надішліть точну суму на вказану адресу*"),
+                Format("✅ *Після оплати натисніть кнопку нижче*"),
                 sep="\n"
             ),
-            Button(Const("✅ Я сплатив"), id="confirm_crypto", on_click=on_crypto_payment_confirm),
+            Button(Const("✅ Я сплатив"), id="confirm_cryptobot", on_click=on_cryptobot_confirm),
             Back(Const("🔙 До способів")),
-            state=PaymentMenu.crypto_payment,
+            state=PaymentMenu.cryptobot_payment,
             getter=methods_getter,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=True
         ),
-        
+
         Window(
             Multi(
                 Format("🎉 *Дякуємо за оплату!*"),
@@ -144,8 +146,6 @@ def create_payment_dialog():
                 Format("*Пакет:* {package[name]}"),
                 Format("*Термін:* {period[name]}"),
                 Format("*Сума:* {total_price}"),
-                Format(""),
-                Format("*Термін дії до:* 01.01.2025"),
                 Format(""),
                 Format("💫 *Насолоджуйтесь повним доступом!*"),
                 sep="\n"

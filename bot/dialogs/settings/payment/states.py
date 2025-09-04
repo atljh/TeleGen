@@ -1,11 +1,9 @@
-from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.state import StatesGroup, State
 
 class PaymentMenu(StatesGroup):
     main = State()
-    choose_package = State()
     choose_period = State()
     choose_method = State()
-    card_payment = State() 
-    crypto_payment = State()
-    promo_code = State() 
+    monobank_payment = State()
+    cryptobot_payment = State()
     success = State()
