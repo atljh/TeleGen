@@ -12,9 +12,7 @@ from bot.database.models.web_post import WebPost
 
 class WebScraperService:
     def __init__(
-        self,
-        cf_bypass: CloudflareBypass,
-        logger: logging.Logger | None = None
+        self, cf_bypass: CloudflareBypass, logger: logging.Logger | None = None
     ) -> None:
         self.cf_bypass = cf_bypass
         self.session = aiohttp.ClientSession()
@@ -41,7 +39,7 @@ class WebScraperService:
             if not html:
                 return None
 
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
             article = self._find_main_content(soup)
 
             return WebPost(
@@ -49,7 +47,7 @@ class WebScraperService:
                 content=self._extract_text(article),
                 url=url,
                 source=urlparse(url).netloc,
-                date=self._find_publication_date(soup)
+                date=self._find_publication_date(soup),
             )
         except Exception as e:
             self.logger.error(f"Scraping error for {url}: {str(e)}", exc_info=True)
@@ -73,27 +71,27 @@ class WebScraperService:
 
     def _find_main_content(self, soup: BeautifulSoup) -> BeautifulSoup | None:
         return (
-            soup.find('article')
-            or soup.find('main')
-            or soup.find(class_='main-content')
+            soup.find("article")
+            or soup.find("main")
+            or soup.find(class_="main-content")
             or soup.body
         )
 
     def _get_title(self, soup: BeautifulSoup, fallback: str) -> str:
         return (
             soup.title.string
-            or soup.find('meta', property='og:title')['content']
+            or soup.find("meta", property="og:title")["content"]
             or fallback
         )
 
     def _extract_text(self, element: BeautifulSoup | None) -> str:
-        return element.get_text(separator='\n', strip=True) if element else ''
+        return element.get_text(separator="\n", strip=True) if element else ""
 
     def _find_publication_date(self, soup: BeautifulSoup) -> datetime | None:
-        for meta in soup.find_all('meta'):
-            if meta.get('property') in ('article:published_time', 'date'):
+        for meta in soup.find_all("meta"):
+            if meta.get("property") in ("article:published_time", "date"):
                 try:
-                    return datetime.fromisoformat(meta['content'])
+                    return datetime.fromisoformat(meta["content"])
                 except (ValueError, KeyError):
                     continue
         return None

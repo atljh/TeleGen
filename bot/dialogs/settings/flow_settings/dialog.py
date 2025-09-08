@@ -48,13 +48,14 @@ from .callbacks import (
     open_main_settings,
     open_source_settings,
     set_character_limit,
-    set_flow_volume
+    set_flow_volume,
 )
+
 
 def create_flow_settings_window():
     return Window(
         Format(
-        """
+            """
         <b>Канал:</b> {channel_name}
 
         <b>Параметри Flow</b>
@@ -69,24 +70,42 @@ def create_flow_settings_window():
         """
         ),
         Column(
-            Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),
-            Button(Const("🔠 Обмеження по символам"), id="character_limit", on_click=character_limit),
+            Button(
+                Const("⏱ Частота генерації"),
+                id="generation_frequency",
+                on_click=set_generation_frequency,
+            ),
+            Button(
+                Const("🔠 Обмеження по символам"),
+                id="character_limit",
+                on_click=character_limit,
+            ),
             Button(
                 Format("📌 Виділення заголовку: {title_highlight}"),
                 id="title_highlight",
-                on_click=toggle_title_highlight
+                on_click=toggle_title_highlight,
             ),
             # Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
-            Button(Const("📊 Кількість постів у флоу"), id="posts_in_flow", on_click=set_posts_in_flow),
-            Button(Const("📚 Налаштування джерел"), id="source_settings", on_click=open_source_settings),
+            Button(
+                Const("📊 Кількість постів у флоу"),
+                id="posts_in_flow",
+                on_click=set_posts_in_flow,
+            ),
+            Button(
+                Const("📚 Налаштування джерел"),
+                id="source_settings",
+                on_click=open_source_settings,
+            ),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_main_settings", on_click=open_main_settings),
+            Button(
+                Const("🔙 Назад"), id="open_main_settings", on_click=open_main_settings
+            ),
         ),
         state=FlowSettingsMenu.flow_settings,
         parse_mode=ParseMode.HTML,
         getter=flow_settings_getter,
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
     )
 
 
@@ -95,38 +114,42 @@ def create_ad_block_settings_window():
         Const("📢 Налаштування рекламного блоку</b>"),
         Column(
             Button(
-                Const("✅ Включити рекламу"),
-                id="enable_ads",
-                on_click=toggle_ad_block
+                Const("✅ Включити рекламу"), id="enable_ads", on_click=toggle_ad_block
             ),
             Button(
-                Const("❌ Вимкнути рекламу"),
-                id="disable_ads",
-                on_click=toggle_ad_block
+                Const("❌ Вимкнути рекламу"), id="disable_ads", on_click=toggle_ad_block
             ),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.ad_block_settings,
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
     )
+
 
 def create_frequency_settings_window():
     return Window(
-        Const("⏱ <b>Налаштування частоти генерації</b>\n\n"
-             "Оберіть як часто бот буде генерувати пости:"),
+        Const(
+            "⏱ <b>Налаштування частоти генерації</b>\n\n"
+            "Оберіть як часто бот буде генерувати пости:"
+        ),
         Column(
             Button(Const("Кожну годину"), id="freq_1h", on_click=set_frequency),
             Button(Const("Кожні 12 годин"), id="freq_12h", on_click=set_frequency),
             Button(Const("Раз на день"), id="freq_24h", on_click=set_frequency),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.generation_frequency,
         parse_mode=ParseMode.HTML,
     )
+
 
 def create_character_limit_window():
     return Window(
@@ -142,15 +165,14 @@ def create_character_limit_window():
         ),
         Row(
             Button(
-                Const("🔙 Назад"),
-                id="open_flow_settings",
-                on_click=open_flow_settings
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
             ),
         ),
         state=FlowSettingsMenu.character_limit,
         parse_mode=ParseMode.HTML,
-        getter=character_limit_getter
+        getter=character_limit_getter,
     )
+
 
 def create_posts_in_flow_window():
     return Window(
@@ -163,15 +185,22 @@ def create_posts_in_flow_window():
             Button(Const("5"), id="volume_5", on_click=set_flow_volume),
             Button(Const("10"), id="volume_10", on_click=set_flow_volume),
             Button(Const("20"), id="volume_20", on_click=set_flow_volume),
-            Button(Const("🔢 Ввести вручну"), id="custom_volume_input", on_click=input_custom_volume),
+            Button(
+                Const("🔢 Ввести вручну"),
+                id="custom_volume_input",
+                on_click=input_custom_volume,
+            ),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.posts_in_flow,
         parse_mode=ParseMode.HTML,
         getter=posts_in_flow_getter,
     )
+
 
 def create_sources_dialog():
     return Window(
@@ -182,14 +211,23 @@ def create_sources_dialog():
         ),
         Column(
             Button(Const("➕ Додати джерело"), id="add_source", on_click=to_add_source),
-            Button(Const("✏️ Редагувати джерело"), id="edit_source", on_click=to_select_source_to_edit),
-            Button(Const("🗑 Видалити джерело"), id="delete_source", on_click=to_select_source_to_delete),
+            Button(
+                Const("✏️ Редагувати джерело"),
+                id="edit_source",
+                on_click=to_select_source_to_edit,
+            ),
+            Button(
+                Const("🗑 Видалити джерело"),
+                id="delete_source",
+                on_click=to_select_source_to_delete,
+            ),
         ),
         Button(Const("🔙 Назад"), id="back_to_settings", on_click=open_flow_settings),
         state=FlowSettingsMenu.source_settings,
         parse_mode=ParseMode.HTML,
-        getter=get_sources_data
+        getter=get_sources_data,
     )
+
 
 def create_custom_volume_window():
     return Window(
@@ -203,11 +241,16 @@ def create_custom_volume_window():
             filter=volume_filter,
         ),
         Row(
-            Button(Const("🔙 Назад"), id="back_to_flow_window", on_click=lambda c, b, m: m.switch_to(FlowSettingsMenu.posts_in_flow)),
+            Button(
+                Const("🔙 Назад"),
+                id="back_to_flow_window",
+                on_click=lambda c, b, m: m.switch_to(FlowSettingsMenu.posts_in_flow),
+            ),
         ),
         state=FlowSettingsMenu.waiting_for_custom_volume,
         parse_mode=ParseMode.HTML,
     )
+
 
 async def volume_filter(message: Message):
     text = message.text
@@ -216,11 +259,13 @@ async def volume_filter(message: Message):
         return False
     return True
 
-#=======================================ADD FLOW===========================================
+
+# =======================================ADD FLOW===========================================
+
 
 async def link_filter(message: Message):
     text = message.text
-    if not (text.startswith('http://') or text.startswith('https://')):
+    if not (text.startswith("http://") or text.startswith("https://")):
         await message.answer("❗ Посилання має починатися з http:// або https://")
         return False
     return True
@@ -230,16 +275,29 @@ def create_select_source_type():
     return Window(
         Const("📚 Виберіть тип джерела:"),
         Column(
-            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_source_type_selected),
-            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected),
-            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_source_type_selected),
+            Button(
+                Const("📷 Instagram"),
+                id="source_instagram",
+                on_click=on_source_type_selected,
+            ),
+            Button(
+                Const("🌐 Веб-сайт"), id="source_web", on_click=on_source_type_selected
+            ),
+            Button(
+                Const("✈️ Telegram"),
+                id="source_telegram",
+                on_click=on_source_type_selected,
+            ),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.add_source_type,
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
     )
+
 
 def create_input_source_link():
     return Window(
@@ -250,17 +308,20 @@ def create_input_source_link():
         TextInput(
             id="source_link_input",
             on_success=on_source_link_entered,
-            filter=link_filter
+            filter=link_filter,
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.add_source_link,
         parse_mode=ParseMode.HTML,
-        getter=get_source_type_data
+        getter=get_source_type_data,
     )
-#=======================================EDIT FLOW===========================================
 
+
+# =======================================EDIT FLOW===========================================
 
 
 def create_select_edit_source():
@@ -279,41 +340,60 @@ def create_select_edit_source():
             height=5,
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.edit_select_source,
         parse_mode=ParseMode.HTML,
-        getter=get_sources_list
+        getter=get_sources_list,
     )
+
 
 def create_edit_source():
     return Window(
         Format("Редагування джерела:\nТип: {source_type}\nПосилання: {source_link}"),
         Column(
-            Button(Const("✏️ Змінити посилання"), id="edit_link", on_click=to_edit_link),
+            Button(
+                Const("✏️ Змінити посилання"), id="edit_link", on_click=to_edit_link
+            ),
             Button(Const("♻️ Змінити тип"), id="edit_type", on_click=to_edit_type),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.edit_source,
-        getter=get_current_source
+        getter=get_current_source,
     )
+
 
 def create_edit_source_type():
     return Window(
         Const("📚 Виберіть тип джерела:"),
         Column(
-            Button(Const("📷 Instagram"), id="source_instagram", on_click=on_new_type_selected),
+            Button(
+                Const("📷 Instagram"),
+                id="source_instagram",
+                on_click=on_new_type_selected,
+            ),
             Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_new_type_selected),
-            Button(Const("✈️ Telegram"), id="source_telegram", on_click=on_new_type_selected),
+            Button(
+                Const("✈️ Telegram"),
+                id="source_telegram",
+                on_click=on_new_type_selected,
+            ),
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.edit_source_type,
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
     )
+
 
 def create_edit_source_link():
     return Window(
@@ -324,18 +404,21 @@ def create_edit_source_link():
         TextInput(
             id="source_link_input",
             on_success=on_source_new_link_entered,
-            filter=link_filter
+            filter=link_filter,
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.edit_source_link,
         parse_mode=ParseMode.HTML,
-        getter=get_source_type_data
+        getter=get_source_type_data,
     )
 
 
-#=======================================DELETE FLOW===========================================
+# =======================================DELETE FLOW===========================================
+
 
 def create_select_delete_source():
     return Window(
@@ -350,24 +433,29 @@ def create_select_delete_source():
             ),
             width=1,
             height=5,
-            id='delete_select'
+            id="delete_select",
         ),
         Row(
-            Button(Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings),
+            Button(
+                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
+            ),
         ),
         state=FlowSettingsMenu.select_source_to_delete,
-        getter=get_sources_data
+        getter=get_sources_data,
     )
+
 
 def create_confirm_delete_source():
     return Window(
-        Format("Ви впевнені, що хочете видалити джерело {source_to_delete[type]} - {source_to_delete[link]}?"),
+        Format(
+            "Ви впевнені, що хочете видалити джерело {source_to_delete[type]} - {source_to_delete[link]}?"
+        ),
         Row(
             Button(Const("✅ Так"), id="confirm_delete", on_click=confirm_delete_source),
             Button(Const("❌ Ні"), id="cancel_delete", on_click=cancel_delete_source),
         ),
         state=FlowSettingsMenu.confirm_delete_source,
-        getter=get_source_to_delete_data
+        getter=get_source_to_delete_data,
     )
 
 

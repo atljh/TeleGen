@@ -19,18 +19,17 @@ from .getters import paging_getter, send_media_album
 
 logger = logging.getLogger()
 
+
 async def on_back_to_posts(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     manager.dialog_data["needs_refresh"] = True
     original_page = manager.dialog_data.get("original_page", 0)
 
     message_ids = manager.dialog_data.get("message_ids", [])
     if message_ids:
-        bot = manager.middleware_data['bot']
-        chat_id = manager.middleware_data['event_chat'].id
+        bot = manager.middleware_data["bot"]
+        chat_id = manager.middleware_data["event_chat"].id
         for msg_id in message_ids:
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg_id)
@@ -53,20 +52,32 @@ async def on_back_to_posts(
     # else:
     #     await manager.show()
 
-#===========================================PUBLISH===========================================
 
-async def show_publish_confirm(callback: CallbackQuery, button: Button, manager: DialogManager):
+# ===========================================PUBLISH===========================================
+
+
+async def show_publish_confirm(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowMenu.publish_confirm)
 
-async def back_to_post_view(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def back_to_post_view(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowMenu.posts_list)
 
-async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def on_publish_post(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     dialog_data = await paging_getter(manager)
     start_data = manager.start_data or {}
     current_post = dialog_data["post"]
     post_id = current_post["id"]
-    channel = start_data.get("selected_channel", '') or dialog_data.get("selected_channel", '')
+    channel = start_data.get("selected_channel", "") or dialog_data.get(
+        "selected_channel", ""
+    )
     if not channel:
         await callback.answer("Канал не вибрано!")
         return
@@ -80,7 +91,7 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
             **current_post,
             "status": "✅ Опубліковано",
             "pub_time": updated_post.publication_date.strftime("%d.%m.%Y %H:%M"),
-            "is_published": True
+            "is_published": True,
         }
 
         manager.dialog_data["needs_refresh"] = True
@@ -99,12 +110,9 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
         await callback.answer(f"❌ Сталася неочікувана помилка: {str(e)}")
         await manager.switch_to(FlowMenu.posts_list)
 
-#===========================================EDIT===========================================
-async def on_edit_post(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
-):
+
+# ===========================================EDIT===========================================
+async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     data = await paging_getter(manager)
     current_page = data["current_page"] - 1
     posts = manager.dialog_data.get("all_posts", [])
@@ -114,23 +122,28 @@ async def on_edit_post(
         manager.dialog_data["original_page"] = current_page
     await manager.switch_to(FlowMenu.edit_post)
 
+
 async def on_edit_text(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.answer(
         "Надішліть новий текст для поста:",
     )
     manager.dialog_data["awaiting_input"] = "text"
 
-async def on_edit_media(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def on_edit_media(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await callback.message.answer(
         "Надішліть нове фото або відео для поста:",
     )
     manager.dialog_data["awaiting_input"] = "media"
 
+
 async def process_edit_input(message: Message, widget, manager: DialogManager):
     input_type = manager.dialog_data.get("awaiting_input")
     post_data = manager.dialog_data.get("editing_post", {})
     post_id = post_data.get("id")
-    flow = manager.dialog_data.get('channel_flow')
+    flow = manager.dialog_data.get("channel_flow")
     if not post_id:
         await message.answer("Помилка: ID поста не знайдено")
         return
@@ -140,14 +153,11 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
     try:
         if input_type == "text":
             new_text = message.text
-            text = new_text + f'\n\n{flow.signature}'
+            text = new_text + f"\n\n{flow.signature}"
 
             manager.dialog_data["edited_content"] = text
             manager.dialog_data["needs_refresh"] = True
-            await post_service.update_post(
-                post_id=post_id,
-                content=text
-            )
+            await post_service.update_post(post_id=post_id, content=text)
             await message.answer("Текст успішно оновлено!")
 
         elif input_type == "media":
@@ -163,12 +173,12 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 updated_post = await post_service.update_post(
                     post_id=post_id,
                     images=[{"file_path": file_path, "order": 0}],
-                    video_url=None
+                    video_url=None,
                 )
 
                 manager.dialog_data["edited_media"] = {
-                    "type": 'photo',
-                    "url": os.path.join(settings.MEDIA_URL, file_path)
+                    "type": "photo",
+                    "url": os.path.join(settings.MEDIA_URL, file_path),
                 }
                 manager.dialog_data["needs_refresh"] = True
 
@@ -186,12 +196,12 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 await post_service.update_post(
                     post_id=post_id,
                     video_url=os.path.join(settings.MEDIA_URL, file_path),
-                    images=[]
+                    images=[],
                 )
 
                 manager.dialog_data["edited_media"] = {
-                    "type": 'video',
-                    "url": os.path.join(settings.MEDIA_URL, file_path)
+                    "type": "video",
+                    "url": os.path.join(settings.MEDIA_URL, file_path),
                 }
                 manager.dialog_data["needs_refresh"] = True
                 await message.answer("Відео успішно збережено!")
@@ -208,13 +218,14 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 ]
                 manager.dialog_data["editing_post"]["video_url"] = None
             else:
-                manager.dialog_data["editing_post"]["video_url"] = os.path.join(settings.MEDIA_URL, file_path)
+                manager.dialog_data["editing_post"]["video_url"] = os.path.join(
+                    settings.MEDIA_URL, file_path
+                )
                 manager.dialog_data["editing_post"]["images"] = []
 
         try:
             await message.bot.delete_message(
-                chat_id=message.chat.id,
-                message_id=message.message_id - 1
+                chat_id=message.chat.id, message_id=message.message_id - 1
             )
         except:
             pass
@@ -228,34 +239,54 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
         logging.error(f"Помилка збереження: {str(e)}")
         await message.answer("Помилка при збереженні змін")
 
-async def on_save_to_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def on_save_to_buffer(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     post_id = manager.dialog_data.get("current_post_id")
     # post_service = Container.post_service()
     # await post_service.save_to_buffer(post_id)
     await callback.answer("Пост збережено в буфер!")
 
-#===========================================SCHEDULE===========================================
 
-async def on_schedule_post(callback: CallbackQuery, button: Button, manager: DialogManager):
+# ===========================================SCHEDULE===========================================
+
+
+async def on_schedule_post(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowMenu.select_date)
 
-async def back_to_select_type(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def back_to_select_type(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowMenu.select_type)
 
-async def select_date(callback: CallbackQuery, widget, manager: DialogManager, selected_date):
+
+async def select_date(
+    callback: CallbackQuery, widget, manager: DialogManager, selected_date
+):
     try:
-        manager.dialog_data["scheduled_date_str"] = selected_date.strftime('%d.%m.%Y')
+        manager.dialog_data["scheduled_date_str"] = selected_date.strftime("%d.%m.%Y")
         manager.dialog_data["scheduled_date_obj"] = selected_date
         await manager.switch_to(FlowMenu.select_type)
     except Exception as e:
         logging.error(f"Error in select_date: {e}")
         await callback.answer("❌ Помилка при виборі дати")
 
-async def show_time_buttons(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def show_time_buttons(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowMenu.select_time)
 
-async def on_input_time(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def on_input_time(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowMenu.input_time)
+
 
 async def set_time(callback: CallbackQuery, button: Button, manager: DialogManager):
     hours = int(button.widget_id.split("_")[0])
@@ -264,31 +295,38 @@ async def set_time(callback: CallbackQuery, button: Button, manager: DialogManag
     manager.dialog_data["selected_minute"] = minutes
     await process_time_selection(manager)
 
+
 async def time_input_handler(message: Message, widget, manager: DialogManager):
-    if not re.match(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', message.text):
+    if not re.match(r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", message.text):
         await message.answer("❌ Невірний формат часу")
         return
 
-    hours, minutes = map(int, message.text.split(':'))
+    hours, minutes = map(int, message.text.split(":"))
     manager.dialog_data["selected_hour"] = hours
     manager.dialog_data["selected_minute"] = minutes
     await process_time_selection(manager)
+
 
 async def process_time_selection(manager: DialogManager):
     date_obj = manager.dialog_data["scheduled_date_obj"]
     hour = manager.dialog_data.get("selected_hour", 12)
     minute = manager.dialog_data.get("selected_minute", 0)
 
-    ukraine_tz = pytz.timezone('Europe/Kiev')
+    ukraine_tz = pytz.timezone("Europe/Kiev")
     naive_datetime = datetime.combine(date_obj, time(hour=hour, minute=minute))
     scheduled_datetime = ukraine_tz.localize(naive_datetime)
 
     manager.dialog_data["scheduled_datetime"] = scheduled_datetime
-    manager.dialog_data["scheduled_datetime_str"] = scheduled_datetime.strftime('%d.%m.%Y о %H:%M')
+    manager.dialog_data["scheduled_datetime_str"] = scheduled_datetime.strftime(
+        "%d.%m.%Y о %H:%M"
+    )
 
     await manager.switch_to(FlowMenu.confirm_schedule)
 
-async def confirm_schedule(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def confirm_schedule(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     try:
         dialog_data = await paging_getter(manager)
         start_data = manager.start_data or {}
@@ -310,6 +348,6 @@ async def confirm_schedule(callback: CallbackQuery, button: Button, manager: Dia
         await callback.answer(f"❌ Помилка: {str(e)}")
         await manager.switch_to(FlowMenu.select_date)
 
+
 async def on_post_info(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowMenu.post_info)
-

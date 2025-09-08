@@ -3,8 +3,8 @@ import logging
 from aiogram import Bot
 from bot.services.logger_service import LogEvent, LogLevel, init_logger, get_logger
 
-class TelegramLogHandler(logging.Handler):
 
+class TelegramLogHandler(logging.Handler):
     def __init__(self, bot: Bot):
         super().__init__()
         self.bot = bot
@@ -34,8 +34,8 @@ class TelegramLogHandler(logging.Handler):
             except:
                 pass
 
-async def setup_logging(bot: Bot):
 
+async def setup_logging(bot: Bot):
     init_logger(bot)
     telegram_logger = get_logger()
 
@@ -45,12 +45,14 @@ async def setup_logging(bot: Bot):
         handlers=[
             logging.StreamHandler(),
             # logging.FileHandler('bot.log', encoding='utf-8')
-        ]
+        ],
     )
 
     telegram_handler = TelegramLogHandler(bot)
     telegram_handler.set_logger_service(telegram_logger)
-    telegram_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
+    telegram_handler.setFormatter(
+        logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+    )
 
     root_logger = logging.getLogger()
     # root_logger.addHandler(telegram_handler)
@@ -60,6 +62,5 @@ async def setup_logging(bot: Bot):
     logging.getLogger("aiohttp").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
-
 
     return telegram_logger

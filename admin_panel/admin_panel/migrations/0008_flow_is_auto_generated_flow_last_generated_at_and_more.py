@@ -4,35 +4,54 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0007_post_video'),
+        ("admin_panel", "0007_post_video"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='flow',
-            name='is_auto_generated',
-            field=models.BooleanField(default=False, verbose_name='Автогенерація'),
+            model_name="flow",
+            name="is_auto_generated",
+            field=models.BooleanField(default=False, verbose_name="Автогенерація"),
         ),
         migrations.AddField(
-            model_name='flow',
-            name='last_generated_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Остання генерація'),
+            model_name="flow",
+            name="last_generated_at",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Остання генерація"
+            ),
         ),
         migrations.AddField(
-            model_name='flow',
-            name='next_generation_time',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Наступна генерація'),
+            model_name="flow",
+            name="next_generation_time",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Наступна генерація"
+            ),
         ),
         migrations.AlterField(
-            model_name='flow',
-            name='content_length',
-            field=models.CharField(choices=[('to_100', 'До 300 знаків'), ('to_300', 'До 300 знаків'), ('to_1000', 'До 1000 знаків')], max_length=50, verbose_name='Обсяг тексту'),
+            model_name="flow",
+            name="content_length",
+            field=models.CharField(
+                choices=[
+                    ("to_100", "До 300 знаків"),
+                    ("to_300", "До 300 знаків"),
+                    ("to_1000", "До 1000 знаків"),
+                ],
+                max_length=50,
+                verbose_name="Обсяг тексту",
+            ),
         ),
         migrations.AlterField(
-            model_name='flow',
-            name='frequency',
-            field=models.CharField(choices=[('hourly', 'Кожну годину'), ('12h', 'Раз на 12 год'), ('daily', 'Раз на день')], max_length=50, verbose_name='Частота генерації'),
+            model_name="flow",
+            name="frequency",
+            field=models.CharField(
+                choices=[
+                    ("hourly", "Кожну годину"),
+                    ("12h", "Раз на 12 год"),
+                    ("daily", "Раз на день"),
+                ],
+                max_length=50,
+                verbose_name="Частота генерації",
+            ),
         ),
     ]

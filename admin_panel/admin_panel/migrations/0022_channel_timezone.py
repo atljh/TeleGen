@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0021_channel_notifications'),
+        ("admin_panel", "0021_channel_notifications"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='channel',
-            name='timezone',
-            field=models.CharField(choices=[('Europe/Kiev', '🇺🇦 Київ (UTC+2)'), ('Europe/London', '🇪🇺 Лондон (UTC+0)'), ('America/New_York', '🇺🇸 Нью-Йорк (UTC-4)')], default='Europe/Kiev', max_length=50, verbose_name='Часовий пояс'),
+            model_name="channel",
+            name="timezone",
+            field=models.CharField(
+                choices=[
+                    ("Europe/Kiev", "🇺🇦 Київ (UTC+2)"),
+                    ("Europe/London", "🇪🇺 Лондон (UTC+0)"),
+                    ("America/New_York", "🇺🇸 Нью-Йорк (UTC-4)"),
+                ],
+                default="Europe/Kiev",
+                max_length=50,
+                verbose_name="Часовий пояс",
+            ),
         ),
     ]

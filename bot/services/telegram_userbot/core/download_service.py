@@ -7,8 +7,8 @@ from telethon import TelegramClient
 
 from ..types import MediaInfo, DownloadError
 
-class DownloadService:
 
+class DownloadService:
     def __init__(self, max_retries: int = 3, retry_delay: float = 1.0):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
@@ -20,7 +20,7 @@ class DownloadService:
         media: Any,
         file_path: str,
         max_retries: Optional[int] = None,
-        retry_delay: Optional[float] = None
+        retry_delay: Optional[float] = None,
     ) -> bool:
         max_retries = max_retries or self.max_retries
         retry_delay = retry_delay or self.retry_delay
@@ -39,7 +39,9 @@ class DownloadService:
 
         return False
 
-    async def _download_single_attempt(self, client: TelegramClient, media: Any, file_path: str) -> bool:
+    async def _download_single_attempt(
+        self, client: TelegramClient, media: Any, file_path: str
+    ) -> bool:
         await client.download_media(media, file=file_path)
 
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
@@ -55,7 +57,7 @@ class DownloadService:
         client: TelegramClient,
         media_items: List[MediaInfo],
         output_dir: str,
-        max_concurrent: int = 5
+        max_concurrent: int = 5,
     ) -> List[Dict[str, Any]]:
         semaphore = asyncio.Semaphore(max_concurrent)
         results = []
@@ -68,30 +70,28 @@ class DownloadService:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         return [
-            result for result in results
+            result
+            for result in results
             if not isinstance(result, Exception) and result is not None
         ]
 
     async def _download_single_media(
-        self,
-        client: TelegramClient,
-        media_item: MediaInfo,
-        output_dir: str
+        self, client: TelegramClient, media_item: MediaInfo, output_dir: str
     ) -> Optional[Dict[str, Any]]:
         try:
             file_name = f"{media_item['file_id']}_{media_item['type']}"
             file_path = os.path.join(output_dir, file_name)
 
             success = await self.download_media_with_retry(
-                client, media_item['media_obj'], file_path
+                client, media_item["media_obj"], file_path
             )
 
             if success:
                 return {
                     **media_item,
-                    'path': file_path,
-                    'size': os.path.getsize(file_path),
-                    'success': True
+                    "path": file_path,
+                    "size": os.path.getsize(file_path),
+                    "success": True,
                 }
 
         except Exception as e:
@@ -101,9 +101,9 @@ class DownloadService:
 
     async def validate_media_file(self, file_path: str, min_size: int = 1024) -> bool:
         return (
-            os.path.exists(file_path) and
-            os.path.isfile(file_path) and
-            os.path.getsize(file_path) >= min_size
+            os.path.exists(file_path)
+            and os.path.isfile(file_path)
+            and os.path.getsize(file_path) >= min_size
         )
 
     async def cleanup_downloads(self, file_paths: List[str]):

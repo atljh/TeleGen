@@ -8,21 +8,18 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     user_telegram_id = dialog_manager.event.from_user.id
     channels = await channel_service.get_user_channels(user_telegram_id)
     dialog_manager.dialog_data["channels"] = channels or []
-    return {
-        "channels": channels or []
-    }
+    return {"channels": channels or []}
+
 
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
 
-    selected_channel = (
-        start_data.get("selected_channel")
-        or dialog_data.get("selected_channel")
+    selected_channel = start_data.get("selected_channel") or dialog_data.get(
+        "selected_channel"
     )
-    channel_flow = (
-        start_data.get("channel_flow", False)
-        or dialog_data.get("channel_flow", False)
+    channel_flow = start_data.get("channel_flow", False) or dialog_data.get(
+        "channel_flow", False
     )
 
     if not selected_channel:
@@ -32,7 +29,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
             "created_at": datetime.now(),
             "channel_flow": "Вiдсутнiй",
             "has_flow": False,
-            "no_flow": True
+            "no_flow": True,
         }
 
     dialog_manager.dialog_data["selected_channel"] = selected_channel
@@ -44,7 +41,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         "channel_name": selected_channel.name,
         "channel_id": selected_channel.channel_id,
         "created_at": selected_channel.created_at,
-        "channel_flow": "Присутнiй" if has_flow else 'Вiдсутнiй',
+        "channel_flow": "Присутнiй" if has_flow else "Вiдсутнiй",
         "has_flow": has_flow,
-        "no_flow": not has_flow
+        "no_flow": not has_flow,
     }

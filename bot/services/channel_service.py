@@ -4,18 +4,16 @@ from asgiref.sync import sync_to_async
 
 from admin_panel.admin_panel.models import Flow
 from bot.database.models.channel import ChannelDTO
-from bot.database.repositories import (
-    ChannelRepository,
-    UserRepository
-)
+from bot.database.repositories import ChannelRepository, UserRepository
 from bot.services.logger_service import get_logger
+
 
 class ChannelService:
     def __init__(
         self,
         channel_repository: ChannelRepository,
         user_repository: UserRepository,
-        rss_service: 'RssService'
+        rss_service: "RssService",
     ):
         self.channel_repository = channel_repository
         self.user_repository = user_repository
@@ -27,7 +25,7 @@ class ChannelService:
         user_telegram_id: int,
         channel_id: str,
         name: str,
-        description: Optional[str] = None
+        description: Optional[str] = None,
     ) -> tuple[ChannelDTO, bool]:
         """
         Get or create channel for user
@@ -63,7 +61,7 @@ class ChannelService:
                 user=user,
                 channel_id=channel_id,
                 name=name,
-                description=description or ""
+                description=description or "",
             )
 
             if not channel:
@@ -75,16 +73,18 @@ class ChannelService:
             return ChannelDTO.from_orm(channel), created
 
         except Exception as e:
-            logging.error(f"Error in get_or_create_channel for user {user_telegram_id}: {e}")
+            logging.error(
+                f"Error in get_or_create_channel for user {user_telegram_id}: {e}"
+            )
             if self.logger:
                 await self.logger.error_occurred(
                     error_message=f"Channel creation failed: {e}",
-                    user=user if 'user' in locals() else None,
+                    user=user if "user" in locals() else None,
                     context={
                         "user_telegram_id": user_telegram_id,
                         "channel_id": channel_id,
-                        "channel_name": name
-                    }
+                        "channel_name": name,
+                    },
                 )
             raise
 
@@ -148,7 +148,7 @@ class ChannelService:
                     user=user,
                     setting_type="channel",
                     old_value="",
-                    new_value=str(kwargs)
+                    new_value=str(kwargs),
                 )
 
             logging.info(f"Channel {channel_id} updated with: {kwargs}")
@@ -160,7 +160,7 @@ class ChannelService:
             if self.logger:
                 await self.logger.error_occurred(
                     error_message=f"Channel update failed: {e}",
-                    context={"channel_id": channel_id, "updates": kwargs}
+                    context={"channel_id": channel_id, "updates": kwargs},
                 )
             raise
 
@@ -189,19 +189,19 @@ class ChannelService:
 
             if self.logger:
                 await self.logger.user_deleted_channel(
-                    user=user,
-                    channel_name=channel_name,
-                    channel_id=channel_id
+                    user=user, channel_name=channel_name, channel_id=channel_id
                 )
 
-            logging.info(f"Channel {channel_id} successfully deleted with all associated RSS feeds")
+            logging.info(
+                f"Channel {channel_id} successfully deleted with all associated RSS feeds"
+            )
 
         except Exception as e:
             logging.error(f"Error deleting channel {channel_id}: {e}")
             if self.logger:
                 await self.logger.error_occurred(
                     error_message=f"Channel deletion failed: {e}",
-                    context={"channel_id": channel_id}
+                    context={"channel_id": channel_id},
                 )
             raise
 
@@ -232,18 +232,26 @@ class ChannelService:
                     continue
 
                 for source in flow.sources:
-                    if source.get('type') == 'web' and source.get('rss_url'):
+                    if source.get("type") == "web" and source.get("rss_url"):
                         try:
-                            success = await self.rss_service.delete_feed_by_url(source['rss_url'])
+                            success = await self.rss_service.delete_feed_by_url(
+                                source["rss_url"]
+                            )
                             if success:
                                 deleted_count += 1
-                                logging.info(f"Successfully deleted RSS feed: {source['rss_url']}")
+                                logging.info(
+                                    f"Successfully deleted RSS feed: {source['rss_url']}"
+                                )
                             else:
                                 failed_count += 1
-                                logging.warning(f"Failed to delete RSS feed: {source['rss_url']}")
+                                logging.warning(
+                                    f"Failed to delete RSS feed: {source['rss_url']}"
+                                )
                         except Exception as e:
                             failed_count += 1
-                            logging.error(f"Error deleting RSS feed {source['rss_url']}: {e}")
+                            logging.error(
+                                f"Error deleting RSS feed {source['rss_url']}: {e}"
+                            )
 
             logging.info(
                 f"RSS feeds cleanup for channel {channel_id}: "

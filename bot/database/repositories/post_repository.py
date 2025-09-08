@@ -20,7 +20,6 @@ from bot.database.models import MediaType, PostDTO, PostImageDTO, PostStatus
 
 
 class PostRepository:
-
     async def create(
         self,
         flow: Flow,
@@ -29,14 +28,14 @@ class PostRepository:
         status: PostStatus = None,
         scheduled_time: Optional[datetime] = None,
         images: Optional[List[str]] = None,
-        video_path: Optional[str] = None
+        video_path: Optional[str] = None,
     ) -> Post:
         post = Post(
             flow=flow,
             content=content,
             source_url=source_url,
             status=status,
-            scheduled_time=scheduled_time
+            scheduled_time=scheduled_time,
         )
         await post.asave()
 
@@ -59,7 +58,7 @@ class PostRepository:
         source_url: str,
         source_id: str,
         original_content: str,
-        scheduled_time: Optional[datetime] = None
+        scheduled_time: Optional[datetime] = None,
     ) -> Optional[Post]:
         try:
             if await self._post_exists(source_id):
@@ -74,7 +73,7 @@ class PostRepository:
                 original_content=original_content,
                 source_url=source_url,
                 source_id=source_id,
-                scheduled_time=scheduled_time
+                scheduled_time=scheduled_time,
             )
 
         except IntegrityError as e:
@@ -99,7 +98,7 @@ class PostRepository:
         source_url: str,
         source_id: str,
         original_content: str,
-        scheduled_time: Optional[datetime] = None
+        scheduled_time: Optional[datetime] = None,
     ) -> Post:
         @sync_to_async
         def _create_post_sync():
@@ -111,7 +110,7 @@ class PostRepository:
                 original_date=original_date,
                 source_url=source_url,
                 source_id=source_id,
-                scheduled_time=scheduled_time
+                scheduled_time=scheduled_time,
             )
 
         post = await _create_post_sync()
@@ -127,7 +126,7 @@ class PostRepository:
         source_url: str,
         source_id: str,
         original_content: str,
-        scheduled_time: Optional[datetime] = None
+        scheduled_time: Optional[datetime] = None,
     ) -> Post:
         return Post.objects.create(
             flow=flow,
@@ -138,7 +137,7 @@ class PostRepository:
             source_url=source_url,
             source_id=source_id,
             status=PostStatus.DRAFT,
-            scheduled_time=scheduled_time
+            scheduled_time=scheduled_time,
         )
 
     async def _process_media_list(self, post: Post, media_list: List[dict]):
@@ -157,8 +156,7 @@ class PostRepository:
             return
 
         permanent_path = await self._store_media_permanently(
-            local_path,
-            'images' if media_type == MediaType.IMAGE.value else 'videos'
+            local_path, "images" if media_type == MediaType.IMAGE.value else "videos"
         )
 
         if media_type == MediaType.IMAGE.value:
@@ -166,48 +164,52 @@ class PostRepository:
         elif media_type == MediaType.VIDEO.value:
             await sync_to_async(self._update_post_video)(post, permanent_path)
 
-
     def _create_post_image(self, post: Post, image_path: str):
-        PostImage.objects.create(
-            post=post,
-            image=image_path,
-            order=post.images.count()
-        )
+        PostImage.objects.create(post=post, image=image_path, order=post.images.count())
 
     def _update_post_video(self, post: Post, video_path: str):
         post.video = video_path
         post.save()
 
-    async def _handle_integrity_error(self, error: IntegrityError, source_id: str) -> Optional[Post]:
+    async def _handle_integrity_error(
+        self, error: IntegrityError, source_id: str
+    ) -> Optional[Post]:
         if isinstance(error.__cause__, UniqueViolation):
             logging.warning(f"Duplicate post detected (source_id: {source_id})")
             return await Post.objects.filter(source_id=source_id).afirst()
         logging.error(f"Database error: {str(error)}")
         raise error
 
-
-    async def _store_media_permanently(self, file_path_or_url: str, media_type: str) -> str:
+    async def _store_media_permanently(
+        self, file_path_or_url: str, media_type: str
+    ) -> str:
         try:
-            if file_path_or_url.startswith(('http://', 'https://')):
+            if file_path_or_url.startswith(("http://", "https://")):
                 response = requests.get(file_path_or_url, stream=True)
 
-                ext = os.path.splitext(urlparse(file_path_or_url).path)[1] or ('.jpg' if media_type == 'images' else '.mp4')
+                ext = os.path.splitext(urlparse(file_path_or_url).path)[1] or (
+                    ".jpg" if media_type == "images" else ".mp4"
+                )
                 temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
 
-                with open(temp_file, 'wb') as f:
+                with open(temp_file, "wb") as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
 
                 file_path_or_url = temp_file
 
-            media_dir = 'posts/images' if media_type == 'images' else 'posts/videos'
+            media_dir = "posts/images" if media_type == "images" else "posts/videos"
             os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
 
-            ext = os.path.splitext(file_path_or_url)[1] or ('.jpg' if media_type == 'images' else '.mp4')
+            ext = os.path.splitext(file_path_or_url)[1] or (
+                ".jpg" if media_type == "images" else ".mp4"
+            )
             filename = f"{uuid.uuid4()}{ext}"
             permanent_path = os.path.join(media_dir, filename)
 
-            shutil.copy2(file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path))
+            shutil.copy2(
+                file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path)
+            )
             return permanent_path
 
         except Exception as e:
@@ -216,17 +218,13 @@ class PostRepository:
 
     async def get(self, post_id: int) -> Post:
         try:
-            query = Post.objects.select_related('flow').prefetch_related('images')
+            query = Post.objects.select_related("flow").prefetch_related("images")
             return await query.aget(id=post_id)
         except Post.DoesNotExist:
             raise PostNotFoundError(f"Post with id={post_id} not found")
 
     async def update_media(
-        self,
-        post_id: int,
-        media_file,
-        filename: str,
-        media_type: MediaType
+        self, post_id: int, media_file, filename: str, media_type: MediaType
     ) -> Post:
         post = await self.get(post_id)
 
@@ -254,13 +252,17 @@ class PostRepository:
         await post.asave()
         return post
 
-    async def get_posts_by_flow_id(self, flow_id: int, status: PostStatus = None) -> List[PostDTO]:
+    async def get_posts_by_flow_id(
+        self, flow_id: int, status: PostStatus = None
+    ) -> List[PostDTO]:
         posts = await self._fetch_posts_from_db(flow_id, status=status)
         # await self._preload_media_for_posts(posts)
         return posts
 
     @sync_to_async
-    def _fetch_posts_from_db(self, flow_id: int, status: PostStatus = None) -> List[PostDTO]:
+    def _fetch_posts_from_db(
+        self, flow_id: int, status: PostStatus = None
+    ) -> List[PostDTO]:
         posts = Post.objects.filter(flow_id=flow_id)
 
         if status is not None:
@@ -268,31 +270,42 @@ class PostRepository:
         else:
             posts = posts.filter(status__in=[PostStatus.PUBLISHED, PostStatus.DRAFT])
 
-        posts = posts.select_related('flow')\
+        posts = (
+            posts.select_related("flow")
             .prefetch_related(
-                Prefetch('images', queryset=PostImage.objects.only('image', 'order').order_by('order'))
-            )\
+                Prefetch(
+                    "images",
+                    queryset=PostImage.objects.only("image", "order").order_by("order"),
+                )
+            )
             .only(
-                'id', 'content', 'source_url', 'publication_date',
-                'status', 'created_at', 'scheduled_time',
-                'video', 'flow__id', 'flow__name',
-                'original_link', 'original_date', 'source_url'
-            )\
-            .order_by('-created_at')
+                "id",
+                "content",
+                "source_url",
+                "publication_date",
+                "status",
+                "created_at",
+                "scheduled_time",
+                "video",
+                "flow__id",
+                "flow__name",
+                "original_link",
+                "original_date",
+                "source_url",
+            )
+            .order_by("-created_at")
+        )
 
-        return [
-            PostDTO.from_orm(post)
-            for post in posts
-        ]
+        return [PostDTO.from_orm(post) for post in posts]
 
     async def _preload_media_for_posts(self, posts: List[PostDTO]):
         tasks = []
 
         for post in posts[:3]:
             if post.images:
-                tasks.append(self._preload_media(post.images[0].url, 'image'))
+                tasks.append(self._preload_media(post.images[0].url, "image"))
             elif post.video_url:
-                tasks.append(self._preload_media(post.video_url, 'video'))
+                tasks.append(self._preload_media(post.video_url, "video"))
 
         if tasks:
             await asyncio.gather(*tasks)
@@ -304,7 +317,7 @@ class PostRepository:
 
             media_path = os.path.join(
                 settings.MEDIA_ROOT,
-                media_url.replace(settings.MEDIA_URL, '').lstrip('/')
+                media_url.replace(settings.MEDIA_URL, "").lstrip("/"),
             )
 
             if os.path.exists(media_path):
@@ -325,7 +338,7 @@ class PostRepository:
         is_published: Optional[bool] = None,
         scheduled_before: Optional[datetime] = None,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
     ) -> List[Post]:
         query = Post.objects.all()
 
@@ -339,20 +352,16 @@ class PostRepository:
             query = query.filter(scheduled_time__lte=scheduled_before)
 
         return [
-            post async for post in
-            query.select_related('flow')
-                .order_by('-created_at')
-                [offset:offset+limit]
+            post
+            async for post in query.select_related("flow").order_by("-created_at")[
+                offset : offset + limit
+            ]
         ]
 
     async def count_posts_in_flow(self, flow_id: int) -> int:
         return await Post.objects.filter(flow_id=flow_id).acount()
 
-    async def update(
-        self,
-        post_id: int,
-        **fields
-    ) -> Post:
+    async def update(self, post_id: int, **fields) -> Post:
         post = await self.get(post_id)
         for field, value in fields.items():
             setattr(post, field, value)
@@ -365,6 +374,5 @@ class PostRepository:
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> None:
         await sync_to_async(Post.objects.filter(id=post_id).update)(
-            scheduled_time=scheduled_time,
-            status=PostStatus.SCHEDULED
+            scheduled_time=scheduled_time, status=PostStatus.SCHEDULED
         )

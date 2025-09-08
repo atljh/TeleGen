@@ -1,12 +1,13 @@
 import re
 
+
 def escape_markdown_v2(text: str) -> str:
     if not text:
         return text
 
     def escape(text):
         to_escape = r"_[]()~`>#+-=|{}.!\\"
-        return ''.join(f"\\{c}" if c in to_escape else c for c in text)
+        return "".join(f"\\{c}" if c in to_escape else c for c in text)
 
     bold_pattern = r"\*\*[^\*]+\*\*"
     link_pattern = r"\[[^\]]+\]\([^)]+\)"
@@ -23,4 +24,4 @@ def escape_markdown_v2(text: str) -> str:
         else:
             result.append(escape(part))
 
-    return ''.join(result)
+    return "".join(result)

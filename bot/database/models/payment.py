@@ -3,6 +3,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 from typing import Any, Self
 
+
 class PaymentDTO(BaseModel):
     id: int
     user_id: int

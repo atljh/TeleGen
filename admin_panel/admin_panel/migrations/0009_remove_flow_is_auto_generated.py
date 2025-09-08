@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0008_flow_is_auto_generated_flow_last_generated_at_and_more'),
+        ("admin_panel", "0008_flow_is_auto_generated_flow_last_generated_at_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='flow',
-            name='is_auto_generated',
+            model_name="flow",
+            name="is_auto_generated",
         ),
     ]

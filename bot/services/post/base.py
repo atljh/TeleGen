@@ -7,8 +7,8 @@ from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository
 from bot.database.exceptions import PostNotFoundError
 
-class PostBaseService:
 
+class PostBaseService:
     def __init__(self, post_repository: PostRepository):
         self.post_repo = post_repository
 
@@ -17,7 +17,9 @@ class PostBaseService:
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
 
-        images_qs = await sync_to_async(lambda: list(post.images.all().order_by('order')))()
+        images_qs = await sync_to_async(
+            lambda: list(post.images.all().order_by("order"))
+        )()
         return PostDTO.from_orm(post)
 
     async def update_post(
@@ -28,7 +30,7 @@ class PostBaseService:
         publication_date: Optional[datetime] = None,
         status: Optional[PostStatus] = None,
         video_url: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> PostDTO:
         post = await self.post_repo.get(post_id)
 
@@ -53,9 +55,7 @@ class PostBaseService:
 
         for img_data in images:
             await sync_to_async(PostImage.objects.create)(
-                post=post,
-                image=img_data["file_path"],
-                order=img_data["order"]
+                post=post, image=img_data["file_path"], order=img_data["order"]
             )
 
     async def delete_post(self, post_id: int) -> None:

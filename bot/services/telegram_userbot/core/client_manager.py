@@ -11,8 +11,8 @@ from .entity_service import EntityService
 from .download_service import DownloadService
 from ..types import TelegramEntity
 
-class TelegramClientManager:
 
+class TelegramClientManager:
     def __init__(
         self,
         api_id: int,
@@ -21,14 +21,14 @@ class TelegramClientManager:
         session_path: Optional[str] = None,
         connection_retries: int = 5,
         auto_reconnect: bool = True,
-        download_retries: int = 3
+        download_retries: int = 3,
     ):
         self.connection_service = ConnectionService(
             session_path=session_path or os.getenv("SESSION_PATH", "userbot.session"),
             api_id=api_id,
             api_hash=api_hash,
             connection_retries=connection_retries,
-            auto_reconnect=auto_reconnect
+            auto_reconnect=auto_reconnect,
         )
 
         self.authorization_service = AuthorizationService(phone=phone)
@@ -55,7 +55,9 @@ class TelegramClientManager:
         finally:
             await self.connection_service.disconnect_client(client)
 
-    async def get_entity(self, client: TelegramClient, source_link: str) -> Optional[TelegramEntity]:
+    async def get_entity(
+        self, client: TelegramClient, source_link: str
+    ) -> Optional[TelegramEntity]:
         return await self.entity_service.get_entity(client, source_link)
 
     async def download_media_with_retry(
@@ -64,7 +66,7 @@ class TelegramClientManager:
         media,
         file_path: str,
         max_retries: Optional[int] = None,
-        retry_delay: Optional[float] = None
+        retry_delay: Optional[float] = None,
     ) -> bool:
         return await self.download_service.download_media_with_retry(
             client, media, file_path, max_retries, retry_delay
@@ -75,7 +77,7 @@ class TelegramClientManager:
         client: TelegramClient,
         entity: TelegramEntity,
         limit: int,
-        offset_id: int = 0
+        offset_id: int = 0,
     ) -> list:
         try:
             return await client.get_messages(entity, limit=limit, offset_id=offset_id)
@@ -92,7 +94,9 @@ class TelegramClientManager:
     async def test_connection(self, client: TelegramClient) -> bool:
         return await self.connection_service.test_connection(client)
 
-    async def get_entity_info(self, client: TelegramClient, entity: TelegramEntity) -> dict:
+    async def get_entity_info(
+        self, client: TelegramClient, entity: TelegramEntity
+    ) -> dict:
         return await self.entity_service.get_entity_info(client, entity)
 
     async def download_media_batch(
@@ -100,7 +104,7 @@ class TelegramClientManager:
         client: TelegramClient,
         media_items: list,
         output_dir: str,
-        max_concurrent: int = 5
+        max_concurrent: int = 5,
     ) -> list:
         return await self.download_service.download_media_batch(
             client, media_items, output_dir, max_concurrent

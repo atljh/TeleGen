@@ -24,21 +24,22 @@ logger = logging.getLogger(__name__)
 
 
 async def go_back_to_channels(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get('selected_channel')
-    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get('channel_flow')
+    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get(
+        "selected_channel"
+    )
+    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get(
+        "channel_flow"
+    )
     messages = manager.dialog_data.get("message_ids")
-    bot = manager.middleware_data['bot']
+    bot = manager.middleware_data["bot"]
 
-
-    from_gen = manager.start_data.get('from_gen') if manager.start_data else None
+    from_gen = manager.start_data.get("from_gen") if manager.start_data else None
     if messages:
         for message_id in messages:
-            bot = manager.middleware_data['bot']
-            chat_id = manager.middleware_data['event_chat'].id
+            bot = manager.middleware_data["bot"]
+            chat_id = manager.middleware_data["event_chat"].id
             await bot.delete_message(chat_id=chat_id, message_id=message_id)
             manager.dialog_data["message_ids"] = []
 
@@ -46,10 +47,10 @@ async def go_back_to_channels(
         await manager.start(
             GenerationMenu.channel_main,
             data={
-            "selected_channel": channel,
-            "channel_flow": channel_flow,
-            "item_id": str(channel.id)
-        },
+                "selected_channel": channel,
+                "channel_flow": channel_flow,
+                "item_id": str(channel.id),
+            },
         )
         return
     await manager.start(
@@ -57,22 +58,19 @@ async def go_back_to_channels(
         data={
             "selected_channel": channel,
             "channel_flow": channel_flow,
-            "item_id": str(channel.id)
+            "item_id": str(channel.id),
         },
     )
 
+
 async def on_channel_selected(
-    callback: CallbackQuery,
-    widget,
-    manager: DialogManager,
-    item_id: str
+    callback: CallbackQuery, widget, manager: DialogManager, item_id: str
 ):
     try:
         data = manager.dialog_data
         channels = data.get("channels", [])
         selected_channel = next(
-            (channel for channel in channels if str(channel.id) == item_id),
-            None
+            (channel for channel in channels if str(channel.id) == item_id), None
         )
 
         if not selected_channel:
@@ -84,12 +82,11 @@ async def on_channel_selected(
         if not channel_flow:
             await callback.answer("У канала немає флоу")
             return
-        manager.dialog_data['item_id'] = item_id
+        manager.dialog_data["item_id"] = item_id
 
-        manager.dialog_data.update({
-            "selected_channel": selected_channel,
-            "channel_flow": channel_flow
-        })
+        manager.dialog_data.update(
+            {"selected_channel": selected_channel, "channel_flow": channel_flow}
+        )
 
         await manager.switch_to(BufferMenu.channel_main)
 
@@ -99,9 +96,7 @@ async def on_channel_selected(
 
 
 async def on_toggle_details(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     data = await paging_getter(manager)
     current_post = data["post"]
@@ -113,10 +108,9 @@ async def on_toggle_details(
 
     # await manager.show()
 
+
 async def on_hide_details(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     await delete_album_messages(manager)
 
@@ -125,13 +119,12 @@ async def on_hide_details(
 
     # await manager.show()
 
-async def delete_album_messages(
-        manager: DialogManager
-):
+
+async def delete_album_messages(manager: DialogManager):
     message_ids = manager.dialog_data.get("message_ids", [])
     if message_ids:
-        bot = manager.middleware_data['bot']
-        chat_id = manager.middleware_data['event_chat'].id
+        bot = manager.middleware_data["bot"]
+        chat_id = manager.middleware_data["event_chat"].id
         for msg_id in message_ids:
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg_id)
@@ -139,10 +132,9 @@ async def delete_album_messages(
                 pass
         manager.dialog_data["message_ids"] = []
 
+
 async def on_back_to_posts(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     manager.dialog_data["needs_refresh"] = True
     original_page = manager.dialog_data.get("original_page", 0)
@@ -165,7 +157,9 @@ async def on_back_to_posts(
     #     await manager.show()
 
 
-async def on_publish_post(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def on_publish_post(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     dialog_data = await paging_getter(manager)
     start_data = manager.start_data or {}
     current_post = dialog_data["post"]
@@ -185,7 +179,7 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
             **current_post,
             "status": "✅ Опубліковано",
             "pub_time": updated_post.publication_date.strftime("%d.%m.%Y %H:%M"),
-            "is_published": True
+            "is_published": True,
         }
 
         manager.dialog_data["needs_refresh"] = True
@@ -205,13 +199,8 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
         await manager.switch_to(BufferMenu.channel_main)
 
 
-
-#===========================================EDIT===========================================
-async def on_edit_post(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
-):
+# ===========================================EDIT===========================================
+async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     data = await paging_getter(manager)
     current_page = data["current_page"] - 1
     posts = manager.dialog_data.get("all_posts", [])
@@ -221,13 +210,17 @@ async def on_edit_post(
         manager.dialog_data["original_page"] = current_page
     await manager.switch_to(BufferMenu.edit_post)
 
+
 async def on_edit_text(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.answer(
         "Надішліть новий текст для поста:",
     )
     manager.dialog_data["awaiting_input"] = "text"
 
-async def on_edit_media(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def on_edit_media(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await callback.message.answer(
         "Надішліть нове фото або відео для поста:",
     )
@@ -238,7 +231,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
     input_type = manager.dialog_data.get("awaiting_input")
     post_data = manager.dialog_data.get("editing_post", {})
     post_id = post_data.get("id")
-    flow = manager.dialog_data.get('channel_flow')
+    flow = manager.dialog_data.get("channel_flow")
     if not post_id:
         await message.answer("Помилка: ID поста не знайдено")
         return
@@ -248,14 +241,11 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
     try:
         if input_type == "text":
             new_text = message.text
-            text = new_text + f'\n\n{flow.signature}'
+            text = new_text + f"\n\n{flow.signature}"
 
             manager.dialog_data["edited_content"] = text
             manager.dialog_data["needs_refresh"] = True
-            await post_service.update_post(
-                post_id=post_id,
-                content=text
-            )
+            await post_service.update_post(post_id=post_id, content=text)
             await message.answer("Текст успішно оновлено!")
 
         elif input_type == "media":
@@ -271,12 +261,12 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 updated_post = await post_service.update_post(
                     post_id=post_id,
                     images=[{"file_path": file_path, "order": 0}],
-                    video_url=None
+                    video_url=None,
                 )
 
                 manager.dialog_data["edited_media"] = {
-                    "type": 'photo',
-                    "url": os.path.join(settings.MEDIA_URL, file_path)
+                    "type": "photo",
+                    "url": os.path.join(settings.MEDIA_URL, file_path),
                 }
                 manager.dialog_data["needs_refresh"] = True
 
@@ -294,12 +284,12 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 await post_service.update_post(
                     post_id=post_id,
                     video_url=os.path.join(settings.MEDIA_URL, file_path),
-                    images=[]
+                    images=[],
                 )
 
                 manager.dialog_data["edited_media"] = {
-                    "type": 'video',
-                    "url": os.path.join(settings.MEDIA_URL, file_path)
+                    "type": "video",
+                    "url": os.path.join(settings.MEDIA_URL, file_path),
                 }
                 manager.dialog_data["needs_refresh"] = True
                 await message.answer("Відео успішно збережено!")
@@ -316,13 +306,14 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 ]
                 manager.dialog_data["editing_post"]["video_url"] = None
             else:
-                manager.dialog_data["editing_post"]["video_url"] = os.path.join(settings.MEDIA_URL, file_path)
+                manager.dialog_data["editing_post"]["video_url"] = os.path.join(
+                    settings.MEDIA_URL, file_path
+                )
                 manager.dialog_data["editing_post"]["images"] = []
 
         try:
             await message.bot.delete_message(
-                chat_id=message.chat.id,
-                message_id=message.message_id - 1
+                chat_id=message.chat.id, message_id=message.message_id - 1
             )
         except:
             pass
@@ -337,12 +328,17 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
         await message.answer("Помилка при збереженні змін")
 
 
-
 async def on_post_info(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(BufferMenu.post_info)
 
-async def show_publish_confirm(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def show_publish_confirm(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(BufferMenu.publish_confirm)
 
-async def back_to_post_view(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def back_to_post_view(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(BufferMenu.channel_main)

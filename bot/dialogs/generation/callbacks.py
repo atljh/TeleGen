@@ -21,19 +21,21 @@ logger = logging.getLogger(__name__)
 
 
 async def go_back_to_channels(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get('selected_channel')
-    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get('channel_flow')
+    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get(
+        "selected_channel"
+    )
+    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get(
+        "channel_flow"
+    )
     messages = manager.dialog_data.get("message_ids")
-    bot = manager.middleware_data['bot']
+    bot = manager.middleware_data["bot"]
 
     if messages:
         for message_id in messages:
-            bot = manager.middleware_data['bot']
-            chat_id = manager.middleware_data['event_chat'].id
+            bot = manager.middleware_data["bot"]
+            chat_id = manager.middleware_data["event_chat"].id
             await bot.delete_message(chat_id=chat_id, message_id=message_id)
             manager.dialog_data["message_ids"] = []
 
@@ -42,22 +44,19 @@ async def go_back_to_channels(
         data={
             "selected_channel": channel,
             "channel_flow": channel_flow,
-            "item_id": str(channel.id)
+            "item_id": str(channel.id),
         },
     )
 
+
 async def on_channel_selected(
-    callback: CallbackQuery,
-    widget,
-    manager: DialogManager,
-    item_id: str
+    callback: CallbackQuery, widget, manager: DialogManager, item_id: str
 ):
     try:
         data = manager.dialog_data
         channels = data.get("channels", [])
         selected_channel = next(
-            (channel for channel in channels if str(channel.id) == item_id),
-            None
+            (channel for channel in channels if str(channel.id) == item_id), None
         )
 
         if not selected_channel:
@@ -66,12 +65,11 @@ async def on_channel_selected(
 
         flow_service = Container.flow_service()
         channel_flow = await flow_service.get_flow_by_channel_id(int(item_id))
-        manager.dialog_data['item_id'] = item_id
+        manager.dialog_data["item_id"] = item_id
 
-        manager.dialog_data.update({
-            "selected_channel": selected_channel,
-            "channel_flow": channel_flow
-        })
+        manager.dialog_data.update(
+            {"selected_channel": selected_channel, "channel_flow": channel_flow}
+        )
 
         await manager.switch_to(GenerationMenu.channel_main)
 
@@ -79,17 +77,15 @@ async def on_channel_selected(
         logger.error(f"Channel selection error: {e}", exc_info=True)
         await callback.answer("Error processing selection")
 
+
 async def add_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await manager.start(
-        AddChannelMenu.instructions,
-        mode=StartMode.RESET_STACK
-)
+    await manager.start(AddChannelMenu.instructions, mode=StartMode.RESET_STACK)
 
 
 async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
-    channel_flow = manager.dialog_data.get('channel_flow')
-    item_id = manager.dialog_data.get('item_id')
+    channel_flow = manager.dialog_data.get("channel_flow")
+    item_id = manager.dialog_data.get("item_id")
 
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
@@ -99,26 +95,34 @@ async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManage
         data={
             "selected_channel": selected_channel,
             "channel_flow": channel_flow,
-            "channel_id": item_id
-            },
-        mode=StartMode.RESET_STACK
+            "channel_id": item_id,
+        },
+        mode=StartMode.RESET_STACK,
     )
 
-async def on_create_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def on_create_flow(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     selected_channel = manager.dialog_data.get("selected_channel")
-    channel_flow = manager.dialog_data.get('channel_flow')
+    channel_flow = manager.dialog_data.get("channel_flow")
     if channel_flow:
         await callback.answer(f"У канала {selected_channel.name} вже є Флоу")
         return
     await manager.start(
         CreateFlowMenu.select_theme,
         data={"selected_channel": selected_channel},
-        mode=StartMode.RESET_STACK
+        mode=StartMode.RESET_STACK,
     )
 
+
 async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
-    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get('selected_channel')
-    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get('channel_flow')
+    channel = manager.dialog_data.get("selected_channel") or manager.start_data.get(
+        "selected_channel"
+    )
+    channel_flow = manager.dialog_data.get("channel_flow") or manager.start_data.get(
+        "channel_flow"
+    )
 
     await manager.start(
         BufferMenu.channel_main,
@@ -126,15 +130,13 @@ async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogMana
             "from_gen": True,
             "selected_channel": channel,
             "channel_flow": channel_flow,
-            "item_id": str(channel.id)
+            "item_id": str(channel.id),
         },
     )
 
 
 async def on_force_generate(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     try:
         dialog_data = manager.dialog_data
@@ -151,21 +153,22 @@ async def on_force_generate(
         status_msg = await bot.send_message(
             chat_id=callback.message.chat.id,
             text=f"⚡ Генерація для флоу *{flow.name}*...",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
         )
 
         process = subprocess.Popen(
             [
-                "python", "generator_worker.py",
+                "python",
+                "generator_worker.py",
                 str(flow.id),
                 str(callback.message.chat.id),
                 str(status_msg.message_id),
-                bot.token
+                bot.token,
             ],
             stdout=sys.stdout,
             stderr=sys.stderr,
             text=True,
-            bufsize=1
+            bufsize=1,
         )
 
         asyncio.create_task(
@@ -176,16 +179,14 @@ async def on_force_generate(
                 status_msg_id=status_msg.message_id,
                 bot=bot,
                 flow=flow,
-                channel=channel
+                channel=channel,
             )
         )
 
     except Exception as e:
         logging.error(f"Помилка запуску генерації: {str(e)}")
-        await callback.message.answer(
-            f"❌ Помилка: {str(e)}",
-            parse_mode="Markdown"
-        )
+        await callback.message.answer(f"❌ Помилка: {str(e)}", parse_mode="Markdown")
+
 
 async def show_generated_posts(
     process: subprocess.Popen,
@@ -194,7 +195,7 @@ async def show_generated_posts(
     status_msg_id: int,
     bot: Bot,
     flow,
-    channel
+    channel,
 ):
     try:
         while process.poll() is None:
@@ -206,7 +207,7 @@ async def show_generated_posts(
             await bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=status_msg_id,
-                text=f"❌ Помилка генерації: {error_msg}"
+                text=f"❌ Помилка генерації: {error_msg}",
             )
             return
 
@@ -217,30 +218,34 @@ async def show_generated_posts(
             await bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=status_msg_id,
-                text="ℹ️ Не знайдено згенерованих постів"
+                text="ℹ️ Не знайдено згенерованих постів",
             )
             return
 
         await bot.delete_message(chat_id, status_msg_id)
 
         from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(
-                text="Переглянути згенеровані пости",
-                callback_data=f"view_generated_{flow.id}"
-            )]
-        ])
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Переглянути згенеровані пости",
+                        callback_data=f"view_generated_{flow.id}",
+                    )
+                ]
+            ]
+        )
 
         await bot.send_message(
             chat_id=chat_id,
             text=f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n",
             parse_mode="Markdown",
-            reply_markup=keyboard
+            reply_markup=keyboard,
         )
 
     except Exception as e:
         logging.error(f"Помилка показу постів: {str(e)}")
         await bot.send_message(
-            chat_id=chat_id,
-            text=f"❌ Не вдалося показати пости: {str(e)}"
+            chat_id=chat_id, text=f"❌ Не вдалося показати пости: {str(e)}"
         )

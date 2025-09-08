@@ -8,18 +8,20 @@ from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository, FlowRepository
 from bot.database.exceptions import PostNotFoundError, InvalidOperationError
 from bot.services.post import (
-    PostBaseService, PostGenerationService,
-    PostPublishingService, PostSchedulingService
+    PostBaseService,
+    PostGenerationService,
+    PostPublishingService,
+    PostSchedulingService,
 )
 from bot.services.web.web_service import WebService
 
-class PostService:
 
+class PostService:
     def __init__(
         self,
         bot: Bot,
         web_service: WebService,
-        userbot_service: 'EnhancedUserbotService',
+        userbot_service: "EnhancedUserbotService",
         post_repository: PostRepository,
         flow_repository: FlowRepository,
     ):
@@ -28,7 +30,9 @@ class PostService:
 
         self.base_service = PostBaseService(post_repository)
         self.publishing_service = PostPublishingService(bot, self.base_service)
-        self.scheduling_service = PostSchedulingService(self.base_service, self.publishing_service)
+        self.scheduling_service = PostSchedulingService(
+            self.base_service, self.publishing_service
+        )
         self.generation_service = PostGenerationService(
             userbot_service, web_service, flow_repository, self.base_service, self.bot
         )
@@ -51,28 +55,23 @@ class PostService:
     async def publish_scheduled_posts(self) -> List[PostDTO]:
         return await self.scheduling_service.publish_scheduled_posts()
 
-    async def generate_auto_posts(self, flow_id: int, auto_generate: bool = False) -> list[PostDTO]:
-        return await self.generation_service.generate_auto_posts(
-            flow_id, auto_generate
-        )
+    async def generate_auto_posts(
+        self, flow_id: int, auto_generate: bool = False
+    ) -> list[PostDTO]:
+        return await self.generation_service.generate_auto_posts(flow_id, auto_generate)
 
     async def get_all_posts_in_flow(self, flow_id: int) -> List[Post]:
         return await sync_to_async(list)(
-            Post.objects.filter(flow_id=flow_id)
-            .order_by('created_at')
+            Post.objects.filter(flow_id=flow_id).order_by("created_at")
         )
 
     async def get_oldest_posts(self, flow_id: int, limit: int) -> List[Post]:
         return await sync_to_async(list)(
-            Post.objects.filter(flow_id=flow_id)
-            .order_by('created_at')[:limit]
+            Post.objects.filter(flow_id=flow_id).order_by("created_at")[:limit]
         )
 
     async def update_post_with_media(
-        self,
-        post_id: int,
-        content: str,
-        media_list: List[dict]
+        self, post_id: int, content: str, media_list: List[dict]
     ) -> PostDTO:
         post = await self.base_service.post_repo.get(post_id)
 
@@ -82,14 +81,12 @@ class PostService:
         await sync_to_async(lambda: post.images.all().delete())()
 
         for media in media_list:
-            if media['type'] == 'image':
+            if media["type"] == "image":
                 await sync_to_async(PostImage.objects.create)(
-                    post=post,
-                    image=media['path'],
-                    order=media['order']
+                    post=post, image=media["path"], order=media["order"]
                 )
-            elif media['type'] == 'video':
-                post.video_url = media['path']
+            elif media["type"] == "video":
+                post.video_url = media["path"]
                 await sync_to_async(post.save)()
 
         return await self.get_post(post_id)
@@ -127,10 +124,18 @@ class PostService:
         )
         return await sync_to_async(PostDTO.from_orm)(post)
 
-    async def get_posts_by_flow_id(self, flow_id: int, status: PostStatus = None) -> list[PostDTO]:
-        posts = await self.base_service.post_repo.get_posts_by_flow_id(flow_id=flow_id, status=status)
+    async def get_posts_by_flow_id(
+        self, flow_id: int, status: PostStatus = None
+    ) -> list[PostDTO]:
+        posts = await self.base_service.post_repo.get_posts_by_flow_id(
+            flow_id=flow_id, status=status
+        )
         return posts
 
     @sync_to_async
     def get_channel_id(self, post_id: int) -> str:
-        return Post.objects.select_related("flow__channel").get(id=post_id).flow.channel.channel_id
+        return (
+            Post.objects.select_related("flow__channel")
+            .get(id=post_id)
+            .flow.channel.channel_id
+        )

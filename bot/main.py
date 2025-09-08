@@ -14,6 +14,7 @@ from bot.containers import Container
 from bot.utils.logging import setup_logging
 from dialogs import register_dialogs
 
+
 async def main():
     load_dotenv()
 
@@ -34,23 +35,23 @@ async def main():
         await dp.start_polling(
             bot,
             allowed_updates=["my_chat_member", "message", "callback_query"],
-            skip_updates=True
+            skip_updates=True,
         )
     except Exception as e:
         logging.error(f"Bot stopped with error: {e}")
 
         if telegram_logger and telegram_logger.enabled:
-            await telegram_logger.log(LogEvent(
-                level=LogLevel.ERROR,
-                message="Bot stopped unexpectedly",
-                additional_data={
-                    "Error": str(e),
-                    "Status": "Offline"
-                }
-            ))
+            await telegram_logger.log(
+                LogEvent(
+                    level=LogLevel.ERROR,
+                    message="Bot stopped unexpectedly",
+                    additional_data={"Error": str(e), "Status": "Offline"},
+                )
+            )
         raise
     finally:
         logging.info("Bot shutdown completed")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0009_remove_flow_is_auto_generated'),
+        ("admin_panel", "0009_remove_flow_is_auto_generated"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='scheduled_time',
+            model_name="post",
+            name="scheduled_time",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

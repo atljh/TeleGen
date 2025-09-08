@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0005_alter_flow_channel'),
+        ("admin_panel", "0005_alter_flow_channel"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='image',
-            field=models.ImageField(blank=True, null=True, upload_to='posts/images/', verbose_name='Зображення'),
+            model_name="post",
+            name="image",
+            field=models.ImageField(
+                blank=True,
+                null=True,
+                upload_to="posts/images/",
+                verbose_name="Зображення",
+            ),
         ),
     ]

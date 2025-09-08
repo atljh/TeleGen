@@ -18,31 +18,35 @@ async def remove_old_posts(flow_id: int, count: int, post_service):
     for post in old_posts:
         await post_service.delete_post(post.id)
 
+
 async def create_new_posts(flow_id: int, posts_dto: List, post_service):
     created_posts = []
     for post_data in posts_dto:
         media_list = [
-            {'path': img.url, 'type': 'image', 'order': img.order}
+            {"path": img.url, "type": "image", "order": img.order}
             for img in post_data.images
         ]
         if post_data.video_url:
-            media_list.append({
-                'path': post_data.video_url,
-                'type': 'video',
-                'order': len(post_data.images)
-            })
+            media_list.append(
+                {
+                    "path": post_data.video_url,
+                    "type": "video",
+                    "order": len(post_data.images),
+                }
+            )
 
         post = await post_service.create_post(
             original_link=post_data.original_link,
             original_date=post_data.original_date,
             flow_id=flow_id,
             content=post_data.content,
-            media_list=media_list
+            media_list=media_list,
         )
         created_posts.append(post)
 
     if created_posts:
         logger.info(f"Created {len(created_posts)} new posts for flow {flow_id}")
+
 
 async def _async_check_flows_generation():
     flow_service = Container.flow_service()
@@ -55,14 +59,12 @@ async def _async_check_flows_generation():
         logger.info(f"Processing flow {flow.id} (volume: {flow.flow_volume})")
         try:
             await _start_telegram_generations(
-                flow,
-                flow_service,
-                post_service,
-                auto_generate=True
+                flow, flow_service, post_service, auto_generate=True
             )
         except Exception as e:
             logger.error(f"Failed to process flow {flow.id}: {e}")
             continue
+
 
 @shared_task(bind=True, max_retries=3)
 def check_flows_generation(self):
@@ -93,6 +95,7 @@ def check_scheduled_posts(self):
         logger.error(f"Task check_scheduled_posts failed: {e}", exc_info=True)
         self.retry(exc=e, countdown=60)
 
+
 async def _async_check_scheduled_posts():
     try:
         post_service = Container.post_service()
@@ -105,7 +108,6 @@ async def _async_check_scheduled_posts():
             logger.info("No posts to publish")
 
         return [post.dict() for post in published]
-
 
     except Exception as e:
         logger.error(f"Error publishing scheduled posts: {e}", exc_info=True)

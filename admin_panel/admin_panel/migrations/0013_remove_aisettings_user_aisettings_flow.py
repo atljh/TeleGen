@@ -5,19 +5,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0012_alter_aisettings_user_alter_flow_content_length_and_more'),
+        (
+            "admin_panel",
+            "0012_alter_aisettings_user_alter_flow_content_length_and_more",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='aisettings',
-            name='user',
+            model_name="aisettings",
+            name="user",
         ),
         migrations.AddField(
-            model_name='aisettings',
-            name='flow',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='ai_settings', to='admin_panel.flow', verbose_name='Флоу'),
+            model_name="aisettings",
+            name="flow",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="ai_settings",
+                to="admin_panel.flow",
+                verbose_name="Флоу",
+            ),
         ),
     ]

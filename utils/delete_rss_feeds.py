@@ -5,15 +5,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-RSS_API_KEY = os.getenv('RSS_API_KEY')
-RSS_API_SECRET = os.getenv('RSS_API_SECRET')
+RSS_API_KEY = os.getenv("RSS_API_KEY")
+RSS_API_SECRET = os.getenv("RSS_API_SECRET")
 API_TOKEN = f"{RSS_API_KEY}:{RSS_API_SECRET}"
 BASE_URL = "https://api.rss.app/v1"
 LIMIT = 100
 
-headers = {
-    "Authorization": f"Bearer {API_TOKEN}"
-}
+headers = {"Authorization": f"Bearer {API_TOKEN}"}
+
 
 def get_all_feeds():
     feeds = []

@@ -5,9 +5,13 @@ from .basic_commands import basic_commands_router
 from .genaration import generation_router
 
 routers = [
-    start_router, menu_router, channel_router,
-    basic_commands_router, generation_router
+    start_router,
+    menu_router,
+    channel_router,
+    basic_commands_router,
+    generation_router,
 ]
+
 
 def register_handlers(dp):
     for router in routers:

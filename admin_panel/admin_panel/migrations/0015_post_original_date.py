@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0014_remove_post_is_draft_remove_post_is_published_and_more'),
+        ("admin_panel", "0014_remove_post_is_draft_remove_post_is_published_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='original_date',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Дата оригiнальної публікації'),
+            model_name="post",
+            name="original_date",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Дата оригiнальної публікації"
+            ),
         ),
     ]

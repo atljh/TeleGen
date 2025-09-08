@@ -1,4 +1,3 @@
-
 WEB_SOURCES = [
     "https://top-channel.tv/",
     "https://www.derstandard.at/",
@@ -99,7 +98,7 @@ WEB_SOURCES = [
     "https://zn.ua/",
     "https://www.eurointegration.com.ua/news/",
     "https://www.epravda.com.ua/news/",
-    "https://www.radiosvoboda.org/z/1041"
+    "https://www.radiosvoboda.org/z/1041",
 ]
 
 TELEGRAM_SOURCES = [
@@ -202,19 +201,19 @@ TELEGRAM_SOURCES = [
     "https://t.me/+w0FE-8kXS-dkZGI6",
     "https://t.me/+Kg1a-aRv1jo1Yzg6",
     "https://t.me/+X2Wwe1FTKzc0NzRi",
-    "https://t.me/+Hl-eevfuUrlmNjdi"
+    "https://t.me/+Hl-eevfuUrlmNjdi",
 ]
 
 # Категоризированные источники (опционально)
 CATEGORIZED_SOURCES = {
-    'news': [
+    "news": [
         "https://www.bbc.com/news/world/europe",
         "https://www.reuters.com/world/europe/",
         "https://www.nytimes.com/",
         "https://www.theguardian.com/uk-news",
         # ... другие новостные
     ],
-    'ukrainian': [
+    "ukrainian": [
         "https://www.pravda.com.ua/news/",
         "https://www.ukrinform.ua/block-lastnews",
         "https://suspilne.media/news/",
@@ -222,29 +221,34 @@ CATEGORIZED_SOURCES = {
         "https://t.me/suspilnenews",
         # ... другие украинские
     ],
-    'european': [
+    "european": [
         "https://www.derstandard.at/",
         "https://www.lemonde.fr/",
         "https://www.spiegel.de/international/",
         "https://www.corriere.it/",
         # ... другие европейские
     ],
-    'official': [
+    "official": [
         "https://t.me/AFUStratCom",
         "https://t.me/GeneralStaffZSU",
         "https://t.me/mvs_ukraine",
         "https://t.me/UA_National_Police",
         # ... официальные каналы
-    ]
+    ],
 }
+
 
 def get_random_web_sources(count: int = 5) -> list:
     import random
+
     return random.sample(WEB_SOURCES, min(count, len(WEB_SOURCES)))
+
 
 def get_random_telegram_sources(count: int = 5) -> list:
     import random
+
     return random.sample(TELEGRAM_SOURCES, min(count, len(TELEGRAM_SOURCES)))
+
 
 def get_random_sources_mix(web_count: int = 3, telegram_count: int = 2) -> list:
     web = get_random_web_sources(web_count)
@@ -252,26 +256,31 @@ def get_random_sources_mix(web_count: int = 3, telegram_count: int = 2) -> list:
 
     sources = []
     for link in web:
-        sources.append({'link': link, 'type': 'web', 'added_at': '2025-01-01T00:00:00'})
+        sources.append({"link": link, "type": "web", "added_at": "2025-01-01T00:00:00"})
 
     for link in telegram:
-        sources.append({'link': link, 'type': 'telegram', 'added_at': '2025-01-01T00:00:00'})
+        sources.append(
+            {"link": link, "type": "telegram", "added_at": "2025-01-01T00:00:00"}
+        )
 
     return sources
+
 
 def get_sources_by_category(category: str, count: int = 5) -> list:
     if category in CATEGORIZED_SOURCES:
         import random
+
         sources = CATEGORIZED_SOURCES[category]
         return random.sample(sources, min(count, len(sources)))
     return []
 
+
 __all__ = [
-    'WEB_SOURCES',
-    'TELEGRAM_SOURCES',
-    'CATEGORIZED_SOURCES',
-    'get_random_web_sources',
-    'get_random_telegram_sources',
-    'get_random_sources_mix',
-    'get_sources_by_category'
+    "WEB_SOURCES",
+    "TELEGRAM_SOURCES",
+    "CATEGORIZED_SOURCES",
+    "get_random_web_sources",
+    "get_random_telegram_sources",
+    "get_random_sources_mix",
+    "get_sources_by_category",
 ]

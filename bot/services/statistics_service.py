@@ -1,7 +1,10 @@
 import logging
 from bot.database.models import StatisticsDTO
-from bot.database.repositories import StatisticsRepository, UserRepository, ChannelRepository
-
+from bot.database.repositories import (
+    StatisticsRepository,
+    UserRepository,
+    ChannelRepository,
+)
 
 
 class StatisticsService:
@@ -10,7 +13,7 @@ class StatisticsService:
         statistics_repository: StatisticsRepository,
         user_repository: UserRepository,
         channel_repository: ChannelRepository,
-        logger: logging.Logger | None = None
+        logger: logging.Logger | None = None,
     ):
         self.statistics_repository = statistics_repository
         self.user_repository = user_repository
@@ -18,7 +21,9 @@ class StatisticsService:
         self.logger = logger or logging.getLogger(__name__)
 
     async def get_statistics_by_id(self, statistics_id: int) -> StatisticsDTO:
-        statistics = await self.statistics_repository.get_statistics_by_id(statistics_id)
+        statistics = await self.statistics_repository.get_statistics_by_id(
+            statistics_id
+        )
         return StatisticsDTO.from_orm(statistics)
 
     async def get_user_statistics(self, user_id: int) -> StatisticsDTO:
@@ -27,10 +32,16 @@ class StatisticsService:
         return StatisticsDTO.from_orm(statistics)
 
     async def update_statistics(self, statistics_id: int) -> StatisticsDTO:
-        statistics = await self.statistics_repository.get_statistics_by_id(statistics_id)
-        updated_staistics = await self.statistics_repository.update_statistics(statistics)
+        statistics = await self.statistics_repository.get_statistics_by_id(
+            statistics_id
+        )
+        updated_staistics = await self.statistics_repository.update_statistics(
+            statistics
+        )
         return StatisticsDTO.from_orm(updated_staistics)
 
     async def delete_statistics(self, statistics_id: int):
-        statistics = await self.statistics_repository.get_statistics_by_id(statistics_id)
+        statistics = await self.statistics_repository.get_statistics_by_id(
+            statistics_id
+        )
         await self.statistics_repository.delete_statistics(statistics)

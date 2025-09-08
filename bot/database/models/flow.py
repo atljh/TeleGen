@@ -4,15 +4,18 @@ import re
 from pydantic import BaseModel, validator, field_validator
 from typing import Self, Any
 
+
 class ContentLength(StrEnum):
-    TO_100 = 'to_100'
-    TO_300 = 'to_300'
-    TO_1000 = 'to_1000'
+    TO_100 = "to_100"
+    TO_300 = "to_300"
+    TO_1000 = "to_1000"
+
 
 class GenerationFrequency(StrEnum):
     HOURLY = "hourly"
     EVERY_12_HOURS = "12h"
     DAILY = "daily"
+
 
 class FlowDTO(BaseModel):
     id: int
@@ -34,11 +37,11 @@ class FlowDTO(BaseModel):
     next_generation_time: datetime | None = None
     last_generated_at: datetime | None = None
 
-    @field_validator('ad_time')
+    @field_validator("ad_time")
     @classmethod
     def validate_ad_time(cls, v: str | None) -> str | None:
-        if v and not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', v):
-            raise ValueError('Invalid time format. Use HH:MM')
+        if v and not re.match(r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", v):
+            raise ValueError("Invalid time format. Use HH:MM")
         return v
 
     class Config:

@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0018_post_original_content_post_unique_source_id'),
+        ("admin_panel", "0018_post_original_content_post_unique_source_id"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='aisettings',
-            name='role',
-            field=models.CharField(blank=True, max_length=255, verbose_name='Роль'),
+            model_name="aisettings",
+            name="role",
+            field=models.CharField(blank=True, max_length=255, verbose_name="Роль"),
         ),
         migrations.AlterField(
-            model_name='aisettings',
-            name='style',
-            field=models.CharField(blank=True, max_length=100, verbose_name='Стиль'),
+            model_name="aisettings",
+            name="style",
+            field=models.CharField(blank=True, max_length=100, verbose_name="Стиль"),
         ),
     ]

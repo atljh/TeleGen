@@ -3,8 +3,10 @@ import logging
 from bot.database.models import FlowDTO
 from bot.services.aisettings_service import AISettingsService
 from bot.services.content_processing.processors import (
-    ChatGPTContentProcessor, DefaultContentProcessor
+    ChatGPTContentProcessor,
+    DefaultContentProcessor,
 )
+
 
 class ContentProcessorService:
     def __init__(
@@ -19,10 +21,7 @@ class ContentProcessorService:
         self.logger = logger or logging.getLogger(__name__)
 
     async def process_batch(
-        self,
-        texts: list[str],
-        flow: FlowDTO,
-        user_id: int
+        self, texts: list[str], flow: FlowDTO, user_id: int
     ) -> list[str]:
         if self.openai_key:
             processor = ChatGPTContentProcessor(
@@ -30,10 +29,9 @@ class ContentProcessorService:
                 flow=flow,
                 aisettings_service=self.aisettings_service,
                 max_retries=2,
-                timeout=30.0
+                timeout=30.0,
             )
             return await processor.process_batch(texts, user_id)
-        return await asyncio.gather(*[
-            self.default_processor.process(text)
-            for text in texts
-        ])
+        return await asyncio.gather(
+            *[self.default_processor.process(text) for text in texts]
+        )

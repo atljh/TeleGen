@@ -5,25 +5,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0011_remove_post_image_postimage'),
+        ("admin_panel", "0011_remove_post_image_postimage"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='aisettings',
-            name='user',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='ai_settings', to='admin_panel.user', verbose_name='Користувач'),
+            model_name="aisettings",
+            name="user",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="ai_settings",
+                to="admin_panel.user",
+                verbose_name="Користувач",
+            ),
         ),
         migrations.AlterField(
-            model_name='flow',
-            name='content_length',
-            field=models.CharField(choices=[('to_100', 'До 100 знаків'), ('to_300', 'До 300 знаків'), ('to_1000', 'До 1000 знаків')], max_length=50, verbose_name='Обсяг тексту'),
+            model_name="flow",
+            name="content_length",
+            field=models.CharField(
+                choices=[
+                    ("to_100", "До 100 знаків"),
+                    ("to_300", "До 300 знаків"),
+                    ("to_1000", "До 1000 знаків"),
+                ],
+                max_length=50,
+                verbose_name="Обсяг тексту",
+            ),
         ),
         migrations.AlterField(
-            model_name='postimage',
-            name='image',
-            field=models.ImageField(max_length=255, upload_to='posts/images/', verbose_name='Зображення'),
+            model_name="postimage",
+            name="image",
+            field=models.ImageField(
+                max_length=255, upload_to="posts/images/", verbose_name="Зображення"
+            ),
         ),
     ]

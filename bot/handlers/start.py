@@ -11,8 +11,7 @@ router = Router()
 async def cmd_start(message: Message):
     user_service = Container.user_service()
     user_dto, created = await user_service.create_or_get_user(
-        telegram_id=message.from_user.id,
-        username=message.from_user.username
+        telegram_id=message.from_user.id, username=message.from_user.username
     )
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
@@ -23,9 +22,7 @@ async def cmd_start(message: Message):
     )
 
     await message.answer(
-        "📌 *Вітаємо у PROPOST\!* 🎉\n\n"
-        "Оберіть опцію з меню нижче:\n"
-        "👇👇👇",
+        "📌 *Вітаємо у PROPOST\!* 🎉\n\n" "Оберіть опцію з меню нижче:\n" "👇👇👇",
         reply_markup=keyboard,
-        parse_mode="MarkdownV2"
+        parse_mode="MarkdownV2",
     )

@@ -3,18 +3,22 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 from typing import Any, Dict, Self
 
+
 class MediaType(StrEnum):
     IMAGE = "image"
     VIDEO = "video"
 
+
 class PostStatus(StrEnum):
-    DRAFT = 'draft'
-    SCHEDULED = 'scheduled'
-    PUBLISHED = 'published'
+    DRAFT = "draft"
+    SCHEDULED = "scheduled"
+    PUBLISHED = "published"
+
 
 class PostImageDTO(BaseModel):
     url: str
     order: int = Field(default=0, ge=0)
+
 
 class PostDTO(BaseModel):
     id: int | None = None
@@ -43,36 +47,39 @@ class PostDTO(BaseModel):
         populate_by_name = True
 
     @classmethod
-    def from_raw_post(cls, raw_post: Dict) -> 'PostDTO':
+    def from_raw_post(cls, raw_post: Dict) -> "PostDTO":
         images = [
-            PostImageDTO(url=media['path'], order=i)
-            for i, media in enumerate(raw_post.get('media', []))
-            if media['type'] == 'image'
+            PostImageDTO(url=media["path"], order=i)
+            for i, media in enumerate(raw_post.get("media", []))
+            if media["type"] == "image"
         ]
 
         video_url = next(
-            (media['path'] for media in raw_post.get('media', [])
-            if media['type'] == 'video'),
-            None
+            (
+                media["path"]
+                for media in raw_post.get("media", [])
+                if media["type"] == "video"
+            ),
+            None,
         )
 
         status = PostStatus.DRAFT
-        if raw_post.get('is_published', False):
+        if raw_post.get("is_published", False):
             status = PostStatus.PUBLISHED
-        elif raw_post.get('scheduled_time'):
+        elif raw_post.get("scheduled_time"):
             status = PostStatus.SCHEDULED
 
         return cls(
-            content=raw_post.get('text', ''),
-            source_url=raw_post.get('source', {}).get('link'),
+            content=raw_post.get("text", ""),
+            source_url=raw_post.get("source", {}).get("link"),
             images=images,
             video_url=video_url,
             status=status,
-            original_link=raw_post.get('original_link'),
-            original_date=raw_post.get('original_date'),
-            source_id=raw_post.get('source_id'),
+            original_link=raw_post.get("original_link"),
+            original_date=raw_post.get("original_date"),
+            source_id=raw_post.get("source_id"),
             flow_id=0,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
     @classmethod

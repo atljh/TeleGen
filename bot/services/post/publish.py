@@ -11,8 +11,8 @@ from bot.database.models import PostDTO, PostStatus
 from bot.database.exceptions import InvalidOperationError
 from bot.services.post.base import PostBaseService
 
-class PostPublishingService:
 
+class PostPublishingService:
     def __init__(self, bot: Bot, post_base_service: PostBaseService):
         self.bot = bot
         self.post_service = post_base_service
@@ -30,7 +30,7 @@ class PostPublishingService:
                 status=PostStatus.PUBLISHED,
                 content=post.content,
                 publication_date=timezone.now(),
-                scheduled_time=None
+                scheduled_time=None,
             )
 
         except Exception as e:
@@ -55,24 +55,32 @@ class PostPublishingService:
 
         await self.bot.send_media_group(chat_id=channel_id, media=media_group)
 
-    async def _create_media_item(self, image, caption: Optional[str] = None) -> InputMediaPhoto:
-        if image.url.startswith(('http://', 'https://')):
-            return InputMediaPhoto(media=image.url, caption=caption, parse_mode=ParseMode.HTML)
+    async def _create_media_item(
+        self, image, caption: Optional[str] = None
+    ) -> InputMediaPhoto:
+        if image.url.startswith(("http://", "https://")):
+            return InputMediaPhoto(
+                media=image.url, caption=caption, parse_mode=ParseMode.HTML
+            )
         else:
             media_path = os.path.join(settings.BASE_DIR, image.url.lstrip("/"))
             if os.path.exists(media_path):
-                return InputMediaPhoto(media=FSInputFile(media_path), caption=caption, parse_mode=ParseMode.HTML)
+                return InputMediaPhoto(
+                    media=FSInputFile(media_path),
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                )
             else:
                 raise InvalidOperationError(f"Файл изображения не найден: {image.url}")
 
     async def _send_video(self, post: PostDTO, channel_id: str, caption: str):
-        if post.video_url.startswith(('http://', 'https://')):
+        if post.video_url.startswith(("http://", "https://")):
             video = URLInputFile(post.video_url)
             await self.bot.send_video(
                 chat_id=channel_id,
                 video=video,
                 caption=caption,
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
             )
         else:
             decoded_path = unquote(post.video_url)
@@ -85,23 +93,21 @@ class PostPublishingService:
                     chat_id=channel_id,
                     video=video,
                     caption=caption,
-                    parse_mode=ParseMode.HTML
+                    parse_mode=ParseMode.HTML,
                 )
             else:
                 raise InvalidOperationError("Файл видео не найден")
 
     async def _send_text_message(self, post: PostDTO, channel_id: str):
         if len(post.content) > 4096:
-            chunks = [post.content[i:i+4096] for i in range(0, len(post.content), 4096)]
+            chunks = [
+                post.content[i : i + 4096] for i in range(0, len(post.content), 4096)
+            ]
             for chunk in chunks:
                 await self.bot.send_message(
-                    chat_id=channel_id,
-                    text=chunk,
-                    parse_mode=ParseMode.HTML
+                    chat_id=channel_id, text=chunk, parse_mode=ParseMode.HTML
                 )
         else:
             await self.bot.send_message(
-                chat_id=channel_id,
-                text=post.content,
-                parse_mode=ParseMode.HTML
+                chat_id=channel_id, text=post.content, parse_mode=ParseMode.HTML
             )

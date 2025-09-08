@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Any, Self
 
+
 class UserDTO(BaseModel):
     id: int
     telegram_id: int

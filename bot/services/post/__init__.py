@@ -5,9 +5,9 @@ from bot.services.post.scheduling import PostSchedulingService
 from bot.services.post.post_service import PostService
 
 all = [
-    'PostBaseService',
-    'PostGenerationService',
-    'PostPublishingService',
-    'PostSchedulingService',
-    'PostService'
+    "PostBaseService",
+    "PostGenerationService",
+    "PostPublishingService",
+    "PostSchedulingService",
+    "PostService",
 ]

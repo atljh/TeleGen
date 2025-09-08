@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0019_aisettings_role_alter_aisettings_style'),
+        ("admin_panel", "0019_aisettings_role_alter_aisettings_style"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='aisettings',
-            name='role_content',
-            field=models.TextField(blank=True, verbose_name='Текст роли'),
+            model_name="aisettings",
+            name="role_content",
+            field=models.TextField(blank=True, verbose_name="Текст роли"),
         ),
     ]

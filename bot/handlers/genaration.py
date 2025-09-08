@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 generation_router = Router()
 
+
 @generation_router.callback_query(F.data.startswith("view_generated_"))
 async def view_generated_posts(
-    callback: CallbackQuery,
-    dialog_manager: DialogManager
+    callback: CallbackQuery, dialog_manager: DialogManager
 ) -> None:
     try:
         parts = callback.data.split("_")
@@ -53,7 +53,7 @@ async def view_generated_posts(
                 "selected_channel": channel,
                 "channel_flow": flow,
             },
-            mode=StartMode.RESET_STACK
+            mode=StartMode.RESET_STACK,
         )
 
         await callback.answer()

@@ -5,28 +5,53 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0010_post_scheduled_time'),
+        ("admin_panel", "0010_post_scheduled_time"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='post',
-            name='image',
+            model_name="post",
+            name="image",
         ),
         migrations.CreateModel(
-            name='PostImage',
+            name="PostImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(upload_to='posts/images/', verbose_name='Зображення')),
-                ('order', models.PositiveIntegerField(default=0, verbose_name='Порядок сортування')),
-                ('post', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='admin_panel.post', verbose_name='Пост')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "image",
+                    models.ImageField(
+                        upload_to="posts/images/", verbose_name="Зображення"
+                    ),
+                ),
+                (
+                    "order",
+                    models.PositiveIntegerField(
+                        default=0, verbose_name="Порядок сортування"
+                    ),
+                ),
+                (
+                    "post",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="admin_panel.post",
+                        verbose_name="Пост",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Зображення поста',
-                'verbose_name_plural': 'Зображення постів',
-                'ordering': ['order'],
+                "verbose_name": "Зображення поста",
+                "verbose_name_plural": "Зображення постів",
+                "ordering": ["order"],
             },
         ),
     ]

@@ -7,8 +7,8 @@ from telethon.errors import SessionPasswordNeededError
 from bot.utils.notifications import notify_admins
 from ..types import AuthorizationError
 
-class AuthorizationService:
 
+class AuthorizationService:
     def __init__(self, phone: Optional[str] = None):
         self.phone = phone
         self.logger = logging.getLogger(__name__)
@@ -16,9 +16,7 @@ class AuthorizationService:
     async def authorize_client(self, client: TelegramClient) -> bool:
         try:
             await client.start(
-                phone=self.phone,
-                code_callback=lambda: None,
-                password=lambda: None
+                phone=self.phone, code_callback=lambda: None, password=lambda: None
             )
             return True
 
@@ -68,7 +66,9 @@ class AuthorizationService:
             self.logger.error(f"Sign in with code failed: {str(e)}")
             return False
 
-    async def sign_in_with_password(self, client: TelegramClient, password: str) -> bool:
+    async def sign_in_with_password(
+        self, client: TelegramClient, password: str
+    ) -> bool:
         try:
             await client.sign_in(password=password)
             return True

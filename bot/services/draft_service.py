@@ -4,13 +4,14 @@ from bot.database.repositories import DraftRepository, PostRepository, UserRepos
 from bot.database.exceptions import UserNotFoundError, PostNotFoundError
 from admin_panel.admin_panel.models import User
 
+
 class DraftService:
     def __init__(
         self,
         draft_repository: DraftRepository,
         post_repository: PostRepository,
         user_repository: UserRepository,
-        logger: logging.Logger | None = None
+        logger: logging.Logger | None = None,
     ):
         self.draft_repository = draft_repository
         self.post_repository = post_repository

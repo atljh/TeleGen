@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0003_alter_flow_frequency'),
+        ("admin_panel", "0003_alter_flow_frequency"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='flow',
-            name='frequency',
-            field=models.CharField(choices=[('hourly', 'Кожну годину'), ('daily', 'Раз на день'), ('weekly', 'Раз на тиждень'), ('custom', 'Користувацький графік')], max_length=50, verbose_name='Частота генерації'),
+            model_name="flow",
+            name="frequency",
+            field=models.CharField(
+                choices=[
+                    ("hourly", "Кожну годину"),
+                    ("daily", "Раз на день"),
+                    ("weekly", "Раз на тиждень"),
+                    ("custom", "Користувацький графік"),
+                ],
+                max_length=50,
+                verbose_name="Частота генерації",
+            ),
         ),
     ]

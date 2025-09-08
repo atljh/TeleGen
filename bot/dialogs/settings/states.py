@@ -1,6 +1,7 @@
 from aiogram_dialog import Window, Dialog
 from aiogram.fsm.state import StatesGroup, State
 
+
 class SettingsMenu(StatesGroup):
     main = State()
     channel_settings = State()

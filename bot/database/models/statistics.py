@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Any, Self
 
+
 class StatisticsDTO(BaseModel):
     id: int
     user_id: int

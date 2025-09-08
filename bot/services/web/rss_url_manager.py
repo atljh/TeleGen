@@ -6,17 +6,14 @@ from bot.services.web.rss_service import RssService, SourceDict
 
 logger = logging.getLogger(__name__)
 
+
 class RssUrlManager:
     def __init__(self, rss_service: RssService, flow_service: FlowService):
         self.rss_service = rss_service
         self.flow_service = flow_service
 
     async def get_or_set_rss_url(
-        self,
-        flow_id: int,
-        source: SourceDict,
-        *,
-        force_refresh: bool = False
+        self, flow_id: int, source: SourceDict, *, force_refresh: bool = False
     ) -> Optional[str]:
         try:
             if force_refresh:
@@ -25,14 +22,13 @@ class RssUrlManager:
                 return None
 
             return await self.flow_service.get_or_set_source_rss_url(
-                flow_id,
-                source['link']
+                flow_id, source["link"]
             )
 
         except Exception as e:
             logger.error(
                 f"Failed to get/set RSS URL for {source.get('link')}: {e}",
-                exc_info=True
+                exc_info=True,
             )
             return None
 
@@ -42,13 +38,11 @@ class RssUrlManager:
         sources: List[SourceDict],
         *,
         parallel: bool = True,
-        force_refresh: bool = False
+        force_refresh: bool = False,
     ) -> List[str]:
         async def process_source(source: SourceDict) -> Optional[str]:
             return await self.get_or_set_rss_url(
-                flow_id,
-                source,
-                force_refresh=force_refresh
+                flow_id, source, force_refresh=force_refresh
             )
 
         if parallel:
@@ -56,22 +50,17 @@ class RssUrlManager:
             results = await asyncio.gather(*tasks)
             return [url for url in results if url]
 
-        return [
-            url for source in sources
-            if (url := await process_source(source))
-        ]
+        return [url for source in sources if (url := await process_source(source))]
 
     async def _discover_and_cache(
-        self,
-        flow_id: int,
-        source: SourceDict
+        self, flow_id: int, source: SourceDict
     ) -> Optional[str]:
         try:
-            if discovered_url := await self.rss_service._discover_rss_for_source(source):
+            if discovered_url := await self.rss_service._discover_rss_for_source(
+                source
+            ):
                 await self.flow_service.get_or_set_source_rss_url(
-                    flow_id,
-                    source['link'],
-                    rss_url=discovered_url
+                    flow_id, source["link"], rss_url=discovered_url
                 )
                 return discovered_url
             return None

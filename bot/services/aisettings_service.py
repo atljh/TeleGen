@@ -5,27 +5,23 @@ from bot.database.models import FlowDTO, AISettingsDTO
 from bot.database.exceptions import AISettingsNotFoundError
 from bot.database.repositories import AISettingsRepository, UserRepository
 
+
 class AISettingsService:
     def __init__(
         self,
         repository: AISettingsRepository,
         user_repository: UserRepository,
-        logger: logging.Logger | None = None
+        logger: logging.Logger | None = None,
     ):
         self.aisettings_repository = repository
         self.user_repository = user_repository
         self.logger = logger or logging.getLogger(__name__)
 
     async def create_aisettings(
-        self,
-        flow: FlowDTO,
-        prompt: str,
-        style: str
+        self, flow: FlowDTO, prompt: str, style: str
     ) -> AISettingsDTO:
         aisettings = await self.aisettings_repository.create_ai_settings(
-            flow=flow,
-            prompt=prompt,
-            style=style
+            flow=flow, prompt=prompt, style=style
         )
         return AISettingsDTO.from_orm(aisettings)
 

@@ -16,25 +16,21 @@ async def on_main_dialog_start(start_data, dialog_manager: DialogManager):
     )
 
     event = dialog_manager.event
-    if hasattr(event, 'message'):
+    if hasattr(event, "message"):
         message = event.message
     else:
         message = event
 
-    await message.answer(
-        "Оберіть опцію з меню нижче:",
-        reply_markup=keyboard
-    )
+    await message.answer("Оберіть опцію з меню нижче:", reply_markup=keyboard)
+
 
 def create_main_dialog():
     return Dialog(
         Window(
             Format(
-                "*Вітаємо у PROPOST\\!* 🎉\n\n"
-                "Оберіть опцію з меню нижче\\:\n"
-                "👇👇👇"
+                "*Вітаємо у PROPOST\\!* 🎉\n\n" "Оберіть опцію з меню нижче\\:\n" "👇👇👇"
             ),
             parse_mode=ParseMode.HTML,
         ),
-        on_start=on_main_dialog_start
+        on_start=on_main_dialog_start,
     )

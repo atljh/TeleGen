@@ -15,9 +15,13 @@ from bot.services.flow_service import FlowService
 from bot.services.post import PostService
 from bot.utils.notifications import send_telegram_notification
 from bot.services.logger_service import (
-    LogEvent, LogLevel, TelegramLogger,
-    init_logger, get_logger
+    LogEvent,
+    LogLevel,
+    TelegramLogger,
+    init_logger,
+    get_logger,
 )
+
 
 class TelegramLogHandler(logging.Handler):
     def __init__(self, bot: Bot):
@@ -44,10 +48,7 @@ class TelegramLogHandler(logging.Handler):
                 logging.INFO: LogLevel.INFO,
             }.get(record.levelno, LogLevel.INFO)
 
-            event = LogEvent(
-                level=log_level,
-                message=self.format(record)
-            )
+            event = LogEvent(level=log_level, message=self.format(record))
             await self.logger_service.log(event)
         except Exception as e:
             sys.stderr.write(f"[TelegramLogHandler async ERROR] {e}\n")
@@ -65,8 +66,7 @@ def setup_logging(bot: Bot = None):
 
     console_handler = FlushingStreamHandler(sys.stdout)
     formatter = logging.Formatter(
-        '[%(asctime)s] %(levelname)s | %(message)s',
-        datefmt='%d.%m.%Y %H:%M:%S'
+        "[%(asctime)s] %(levelname)s | %(message)s", datefmt="%d.%m.%Y %H:%M:%S"
     )
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
@@ -75,11 +75,9 @@ def setup_logging(bot: Bot = None):
     sys.stderr.reconfigure(line_buffering=True)
     return logger
 
+
 async def generate_flow(
-    flow_id: int,
-    chat_id: int,
-    bot: Bot,
-    status_msg_id: int
+    flow_id: int, chat_id: int, bot: Bot, status_msg_id: int
 ) -> List:
     try:
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -88,33 +86,30 @@ async def generate_flow(
         flow = await flow_service.get_flow_by_id(flow_id)
         user = await flow_service.get_user_by_flow_id(flow.id)
 
-        logging.info(f"User {user.username} started generation for flow {flow.name} ({flow.id})")
+        logging.info(
+            f"User {user.username} started generation for flow {flow.name} ({flow.id})"
+        )
 
         if not flow:
             await send_telegram_notification(
-                bot_token,
-                chat_id,
-                f"❌ Флоу з ID {flow_id} не знайдено"
+                bot_token, chat_id, f"❌ Флоу з ID {flow_id} не знайдено"
             )
             return []
 
         start_time = time.time()
-        posts = await _start_telegram_generations(
-            flow,
-            flow_service,
-            post_service
-        )
+        posts = await _start_telegram_generations(flow, flow_service, post_service)
         posts_count = len(posts) if posts else 0
-        logging.info(f"Generated {posts_count} posts for flow {flow.id} for {time.time() - start_time:.2f} sec")
+        logging.info(
+            f"Generated {posts_count} posts for flow {flow.id} for {time.time() - start_time:.2f} sec"
+        )
 
     except Exception as e:
         logging.error(f"Помилка генерації: {str(e)}", exc_info=True)
         await send_telegram_notification(
             bot_token,
             chat_id,
-            f"❌ Критична помилка під час генерації флоу {flow_id}:\n"
-            f"_{str(e)}_",
-            parse_mode="Markdown"
+            f"❌ Критична помилка під час генерації флоу {flow_id}:\n" f"_{str(e)}_",
+            parse_mode="Markdown",
         )
         raise
 
@@ -123,18 +118,14 @@ async def _start_telegram_generations(
     flow: FlowDTO,
     flow_service: FlowService,
     post_service: PostService,
-    auto_generate = False
+    auto_generate=False,
 ) -> List:
-
     existing_posts = await post_service.get_all_posts_in_flow(flow.id)
     existing_count = len(existing_posts)
 
     user = await flow_service.get_user_by_flow_id(flow.id)
 
-    generated_posts = await post_service.generate_auto_posts(
-        flow.id,
-        auto_generate
-    )
+    generated_posts = await post_service.generate_auto_posts(flow.id, auto_generate)
     generated_count = len(generated_posts) if generated_posts else 0
 
     if not generated_posts:

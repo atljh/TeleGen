@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0015_post_original_date'),
+        ("admin_panel", "0015_post_original_date"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='original_link',
-            field=models.CharField(blank=True, null=True, verbose_name='Посилання на оригiнальний пост'),
+            model_name="post",
+            name="original_link",
+            field=models.CharField(
+                blank=True, null=True, verbose_name="Посилання на оригiнальний пост"
+            ),
         ),
     ]

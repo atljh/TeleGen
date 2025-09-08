@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class TestDataGenerator:
-
     def __init__(self):
         self.fake = Faker()
 
@@ -26,7 +25,9 @@ class TestDataGenerator:
             from django.conf import settings
 
             if not settings.configured:
-                os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'admin_panel.core.settings')
+                os.environ.setdefault(
+                    "DJANGO_SETTINGS_MODULE", "admin_panel.core.settings"
+                )
                 django.setup()
 
         except Exception as e:
@@ -42,15 +43,14 @@ class TestDataGenerator:
 
         for i in range(count):
             try:
-
                 username = f"test_user_{i}_{self.fake.user_name()}"
                 telegram_id = random.randint(1, 999999)
 
                 user, created = await sync_to_async(User.objects.get_or_create)(
                     username=username,
                     defaults={
-                        'telegram_id': telegram_id,
-                    }
+                        "telegram_id": telegram_id,
+                    },
                 )
 
                 if created:
@@ -65,7 +65,9 @@ class TestDataGenerator:
 
         return users
 
-    async def create_test_channels_for_user(self, user: Any, min_channels: int = 1, max_channels: int = 3) -> List[Any]:
+    async def create_test_channels_for_user(
+        self, user: Any, min_channels: int = 1, max_channels: int = 3
+    ) -> List[Any]:
         await self._setup_django()
 
         from admin_panel.models import Channel
@@ -82,15 +84,17 @@ class TestDataGenerator:
                 channel, created = await sync_to_async(Channel.objects.get_or_create)(
                     channel_id=channel_id,
                     defaults={
-                        'user': user,
-                        'name': channel_name,
-                        'description': self.fake.sentence(),
-                        'is_active': True
-                    }
+                        "user": user,
+                        "name": channel_name,
+                        "description": self.fake.sentence(),
+                        "is_active": True,
+                    },
                 )
 
                 if created:
-                    logger.info(f"Created channel: {channel_name} for user {user.username}")
+                    logger.info(
+                        f"Created channel: {channel_name} for user {user.username}"
+                    )
                     channels.append(channel)
 
             except Exception as e:
@@ -98,7 +102,9 @@ class TestDataGenerator:
 
         return channels
 
-    async def create_test_flows_for_channel(self, channel: Any, min_flows: int = 1, max_flows: int = 2) -> List[Any]:
+    async def create_test_flows_for_channel(
+        self, channel: Any, min_flows: int = 1, max_flows: int = 2
+    ) -> List[Any]:
         await self._setup_django()
 
         from admin_panel.models import Flow
@@ -116,8 +122,8 @@ class TestDataGenerator:
                     name=flow_name,
                     flow_volume=flow_volume,
                     channel=channel,
-                    content_length='to_300',
-                    frequency='hourly',
+                    content_length="to_300",
+                    frequency="hourly",
                     signature=self.fake.sentence(),
                 )
 
@@ -129,25 +135,27 @@ class TestDataGenerator:
 
         return flows
 
-    async def add_test_sources_to_flow(self, flow: Any, min_sources: int = 2, max_sources: int = 5) -> List[Dict]:
+    async def add_test_sources_to_flow(
+        self, flow: Any, min_sources: int = 2, max_sources: int = 5
+    ) -> List[Dict]:
         sources = []
         num_sources = random.randint(min_sources, max_sources)
 
         for i in range(num_sources):
             try:
-                source_type = random.choice(['telegram', 'web'])
+                source_type = random.choice(["telegram", "web"])
 
-                if source_type == 'telegram':
+                if source_type == "telegram":
                     source = {
-                        'link': random.choice(self.telegram_channels),
-                        'type': 'telegram',
-                        'added_at': datetime.now().isoformat()
+                        "link": random.choice(self.telegram_channels),
+                        "type": "telegram",
+                        "added_at": datetime.now().isoformat(),
                     }
                 else:
                     source = {
-                        'link': random.choice(self.web_sources),
-                        'type': 'web',
-                        'added_at': datetime.now().isoformat()
+                        "link": random.choice(self.web_sources),
+                        "type": "web",
+                        "added_at": datetime.now().isoformat(),
                     }
 
                 sources.append(source)
@@ -157,6 +165,7 @@ class TestDataGenerator:
 
         try:
             from asgiref.sync import sync_to_async
+
             flow.sources = sources
             await sync_to_async(flow.save)()
             logger.info(f"Added {len(sources)} sources to flow {flow.name}")
@@ -174,38 +183,33 @@ class TestDataGenerator:
         min_flows_per_channel: int = 1,
         max_flows_per_channel: int = 2,
         min_sources_per_flow: int = 2,
-        max_sources_per_flow: int = 5
+        max_sources_per_flow: int = 5,
     ) -> Dict:
         logger.info(f"Starting test data generation for {user_count} users...")
 
-        results = {
-            'users': [],
-            'channels': [],
-            'flows': [],
-            'sources': 0
-        }
+        results = {"users": [], "channels": [], "flows": [], "sources": 0}
 
         try:
             users = await self.create_test_users(user_count)
-            results['users'] = users
+            results["users"] = users
 
             for user in users:
                 channels = await self.create_test_channels_for_user(
                     user, min_channels_per_user, max_channels_per_user
                 )
-                results['channels'].extend(channels)
+                results["channels"].extend(channels)
 
                 for channel in channels:
                     flows = await self.create_test_flows_for_channel(
                         channel, min_flows_per_channel, max_flows_per_channel
                     )
-                    results['flows'].extend(flows)
+                    results["flows"].extend(flows)
 
                     for flow in flows:
                         sources = await self.add_test_sources_to_flow(
                             flow, min_sources_per_flow, max_sources_per_flow
                         )
-                        results['sources'] += len(sources)
+                        results["sources"] += len(sources)
 
             logger.info(
                 f"Test data generation completed: "
@@ -227,7 +231,6 @@ class TestDataGenerator:
 
             from asgiref.sync import sync_to_async
 
-
             users_to_delete = await sync_to_async(list)(
                 User.objects.filter(username__startswith=username_prefix)
             )
@@ -247,6 +250,7 @@ class TestDataGenerator:
             logger.error(f"Error cleaning up test data: {e}")
             return 0
 
+
 async def generate_test_data(
     user_count: int = 5,
     min_channels: int = 1,
@@ -254,13 +258,19 @@ async def generate_test_data(
     min_flows: int = 1,
     max_flows: int = 2,
     min_sources: int = 2,
-    max_sources: int = 5
+    max_sources: int = 5,
 ):
     generator = TestDataGenerator()
     return await generator.generate_complete_test_data(
-        user_count, min_channels, max_channels,
-        min_flows, max_flows, min_sources, max_sources
+        user_count,
+        min_channels,
+        max_channels,
+        min_flows,
+        max_flows,
+        min_sources,
+        max_sources,
     )
+
 
 async def cleanup_test_data():
     generator = TestDataGenerator()

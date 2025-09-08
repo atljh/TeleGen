@@ -14,12 +14,10 @@ from .callbacks import (
     on_create_flow,
     on_buffer,
     on_flow,
-    on_force_generate
+    on_force_generate,
 )
-from .gettets import (
-    get_user_channels_data,
-    selected_channel_getter
-)
+from .gettets import get_user_channels_data, selected_channel_getter
+
 
 def create_generation_dialog():
     return Dialog(
@@ -49,29 +47,21 @@ def create_generation_dialog():
                 "<b>Флоу: {channel_flow}</b>"
             ),
             Column(
+                Button(Const("Флоу"), id="flow", on_click=on_flow, when="has_flow"),
                 Button(
-                    Const("Флоу"),
-                    id="flow",
-                    on_click=on_flow,
-                    when="has_flow"
-                ),
-                Button(
-                    Const("Буфер"),
-                    id="buffer",
-                    on_click=on_buffer,
-                    when="has_flow"
+                    Const("Буфер"), id="buffer", on_click=on_buffer, when="has_flow"
                 ),
                 Button(
                     Const("Створити флоу"),
                     id="create_flow",
                     on_click=on_create_flow,
-                    when="no_flow"
+                    when="no_flow",
                 ),
                 Button(
                     Const("Генерацiя"),
                     id="force_generate",
                     on_click=on_force_generate,
-                    when="has_flow"
+                    when="has_flow",
                 ),
             ),
             Row(
@@ -79,6 +69,6 @@ def create_generation_dialog():
             ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.HTML,
-            getter=selected_channel_getter
-        )
+            getter=selected_channel_getter,
+        ),
     )

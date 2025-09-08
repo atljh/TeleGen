@@ -4,19 +4,20 @@ from typing import Optional
 from contextlib import asynccontextmanager
 
 from telethon import TelegramClient
+
 # from telethon.errors import ConnectionError as TelethonConnectionError
 
 from ..types import TelegramEntity, ConnectionError
 
-class ConnectionService:
 
+class ConnectionService:
     def __init__(
         self,
         session_path: str,
         api_id: int,
         api_hash: str,
         connection_retries: int = 5,
-        auto_reconnect: bool = True
+        auto_reconnect: bool = True,
     ):
         self.session_path = session_path
         self.api_id = api_id
@@ -33,7 +34,7 @@ class ConnectionService:
             connection_retries=self.connection_retries,
             auto_reconnect=self.auto_reconnect,
             use_ipv6=False,
-            proxy=None
+            proxy=None,
         )
 
     async def connect_client(self, client: TelegramClient) -> bool:

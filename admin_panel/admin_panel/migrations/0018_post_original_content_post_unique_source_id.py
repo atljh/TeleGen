@@ -4,19 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0017_post_source_id'),
+        ("admin_panel", "0017_post_source_id"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='original_content',
-            field=models.TextField(blank=True, null=True, verbose_name='Оригiнальний текст'),
+            model_name="post",
+            name="original_content",
+            field=models.TextField(
+                blank=True, null=True, verbose_name="Оригiнальний текст"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='post',
-            constraint=models.UniqueConstraint(condition=models.Q(('source_id__isnull', False)), fields=('source_id',), name='unique_source_id'),
+            model_name="post",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("source_id__isnull", False)),
+                fields=("source_id",),
+                name="unique_source_id",
+            ),
         ),
     ]

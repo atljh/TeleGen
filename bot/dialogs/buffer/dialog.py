@@ -9,8 +9,17 @@ from aiogram_dialog.widgets.kbd import Button, Row, Column, Back, Calendar
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 from aiogram_dialog.widgets.kbd import (
-    Select, ScrollingGroup, Button, Row, Button, Group,
-    StubScroll, NumberedPager, Cancel, Back, Calendar
+    Select,
+    ScrollingGroup,
+    Button,
+    Row,
+    Button,
+    Group,
+    StubScroll,
+    NumberedPager,
+    Cancel,
+    Back,
+    Calendar,
 )
 from aiogram.enums import ParseMode
 
@@ -19,8 +28,11 @@ from aiogram_dialog import DialogManager
 from datetime import datetime, timedelta
 
 from bot.dialogs.buffer.getters import (
-    edit_post_getter, get_user_channels_data,
-    paging_getter, post_info_getter, send_media_album
+    edit_post_getter,
+    get_user_channels_data,
+    paging_getter,
+    post_info_getter,
+    send_media_album,
 )
 
 from bot.dialogs.buffer.states import BufferMenu
@@ -40,26 +52,32 @@ from .callbacks import (
     show_publish_confirm,
 )
 
-async def on_dialog_result(
-    event,
-    manager: DialogManager,
-    result
-):
+
+async def on_dialog_result(event, manager: DialogManager, result):
     if manager.current_state() == BufferError.channel_main:
         if manager.dialog_data.pop("needs_refresh", False):
             manager.dialog_data.pop("all_posts", None)
             await manager.show()
 
+
 async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
     data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data
-    dialog_manager.dialog_data["post_text"] = dialog_data.get("post_text", "Текст відсутній")
+    dialog_manager.dialog_data["post_text"] = dialog_data.get(
+        "post_text", "Текст відсутній"
+    )
     return {
-        "post_text": data.get("post_text") or dialog_data.get("post_text", "Текст відсутній"),
+        "post_text": data.get("post_text")
+        or dialog_data.get("post_text", "Текст відсутній"),
         "has_media": "✅" if "media" in dialog_data else "❌",
-        "publish_time": dialog_data.get("publish_time", datetime.now()).strftime("%d.%m.%Y %H:%M"),
-        "is_scheduled": "🕒 Заплановано" if "publish_time" in dialog_data else "⏳ Не заплановано"
+        "publish_time": dialog_data.get("publish_time", datetime.now()).strftime(
+            "%d.%m.%Y %H:%M"
+        ),
+        "is_scheduled": "🕒 Заплановано"
+        if "publish_time" in dialog_data
+        else "⏳ Не заплановано",
     }
+
 
 def create_buffer_dialog():
     async def on_page_changed(
@@ -94,19 +112,22 @@ def create_buffer_dialog():
                 "{post[content_preview]}\n\n"
                 "<b>Заплановано:</b> {post[scheduled_time]}\n"
                 "{media_indicator}",
-                when=lambda data, widget, manager: not data["post"].get("is_selected")
+                when=lambda data, widget, manager: not data["post"].get("is_selected"),
             ),
             Format(
                 "{post[full_content]}\n\n"
                 "<b>Заплановано:</b> {post[scheduled_time]}\n"
                 "{media_indicator}",
-                when=lambda data, widget, manager: data["post"].get("is_selected")
+                when=lambda data, widget, manager: data["post"].get("is_selected"),
             ),
             DynamicMedia(
                 "media_content",
-                when=lambda data, widget, manager: data["post"].get("is_selected") and not data["post"].get("is_album")
+                when=lambda data, widget, manager: data["post"].get("is_selected")
+                and not data["post"].get("is_album"),
             ),
-            StubScroll(id="stub_scroll", pages="pages", on_page_changed=on_page_changed),
+            StubScroll(
+                id="stub_scroll", pages="pages", on_page_changed=on_page_changed
+            ),
             Group(
                 NumberedPager(scroll="stub_scroll"),
                 width=5,
@@ -116,36 +137,42 @@ def create_buffer_dialog():
                     Const("👀 Деталi"),
                     id="toggle_details",
                     on_click=on_toggle_details,
-                    when=lambda data, widget, manager: not data["post"].get("is_selected")
+                    when=lambda data, widget, manager: not data["post"].get(
+                        "is_selected"
+                    ),
                 ),
                 Button(
                     Const("📋 Сховати"),
                     id="hide_details",
                     on_click=on_hide_details,
-                    when=lambda data, widget, manager: data["post"].get("is_selected")
+                    when=lambda data, widget, manager: data["post"].get("is_selected"),
                 ),
                 Button(
                     Const("✅ Опублікувати"),
                     id="publish_post",
                     on_click=show_publish_confirm,
-                    when=lambda data, widget, manager: data["post"].get("content")
+                    when=lambda data, widget, manager: data["post"].get("content"),
                 ),
                 Button(
                     Const("✏️ Редагувати"),
                     id="edit_post",
                     on_click=on_edit_post,
-                    when=lambda data, widget, manager: data["post"].get("content")
+                    when=lambda data, widget, manager: data["post"].get("content"),
                 ),
                 Button(
                     Const("ℹ️ Пост iнфо"),
                     id="post_info",
                     on_click=on_post_info,
-                    when=lambda data, widget, manager: data["post"].get("content")
+                    when=lambda data, widget, manager: data["post"].get("content"),
                 ),
-                width=2
+                width=2,
             ),
             Row(
-                Button(Const("🔙 Назад"), id='go_back_to_channels', on_click=go_back_to_channels)
+                Button(
+                    Const("🔙 Назад"),
+                    id="go_back_to_channels",
+                    on_click=go_back_to_channels,
+                )
             ),
             getter=paging_getter,
             state=BufferMenu.channel_main,
@@ -166,41 +193,57 @@ def create_buffer_dialog():
             getter=post_info_getter,
             state=BufferMenu.post_info,
             parse_mode=ParseMode.HTML,
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
         ),
         Window(
-            Format("<b>✏️ Редагування поста</b>\n\n"
-                "\n{content}\n\n"
-                ),
+            Format("<b>✏️ Редагування поста</b>\n\n" "\n{content}\n\n"),
             DynamicMedia("media"),
-
             Row(
                 Button(Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text),
-                Button(Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media),
+                Button(
+                    Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media
+                ),
             ),
             Row(
-                Button(Const("🔙 Назад"), id='on_back_to_posts', on_click=on_back_to_posts)
+                Button(
+                    Const("🔙 Назад"), id="on_back_to_posts", on_click=on_back_to_posts
+                )
             ),
-
             MessageInput(process_edit_input),
-
             getter=edit_post_getter,
             state=BufferMenu.edit_post,
-            parse_mode="HTML"
+            parse_mode="HTML",
         ),
         Window(
-            Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
-            Format("Альбом {post[images_count]} зобр.", when=lambda data, widget, manager: data["post"].get("is_album")),
-            DynamicMedia("media_content", when=lambda data, widget, manager: not data["post"].get("is_album")),
+            Format(
+                "{post[content_preview]}",
+                when=lambda data, widget, manager: not data["post"].get("is_album"),
+            ),
+            Format(
+                "Альбом {post[images_count]} зобр.",
+                when=lambda data, widget, manager: data["post"].get("is_album"),
+            ),
+            DynamicMedia(
+                "media_content",
+                when=lambda data, widget, manager: not data["post"].get("is_album"),
+            ),
             Format("\n\nВи впевнені, що хочете опублікувати цей пост?"),
             Group(
-                Button(Const("✅ Так, опублікувати"), id="confirm_publish", on_click=on_publish_post),
-                Button(Const("❌ Скасувати"), id="cancel_publish", on_click=back_to_post_view),
-                width=2
+                Button(
+                    Const("✅ Так, опублікувати"),
+                    id="confirm_publish",
+                    on_click=on_publish_post,
+                ),
+                Button(
+                    Const("❌ Скасувати"),
+                    id="cancel_publish",
+                    on_click=back_to_post_view,
+                ),
+                width=2,
             ),
             state=BufferMenu.publish_confirm,
             parse_mode=ParseMode.HTML,
             getter=paging_getter,
         ),
-        on_process_result=on_dialog_result
+        on_process_result=on_dialog_result,
     )

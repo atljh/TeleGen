@@ -1,5 +1,6 @@
 from aiogram import BaseMiddleware
 
+
 class MainMiddleware(BaseMiddleware):
     def __init__(self, bot):
         self.bot = bot

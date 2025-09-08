@@ -5,16 +5,13 @@ import undetected_chromedriver as uc
 import asyncio
 from typing import Optional
 
+
 class CloudflareBypass:
     def __init__(self, logger):
         self.scraper = cloudscraper.create_scraper(
-            browser={
-                'browser': 'chrome',
-                'platform': 'windows',
-                'desktop': True
-            },
+            browser={"browser": "chrome", "platform": "windows", "desktop": True},
             delay=10,
-            interpreter='nodejs'
+            interpreter="nodejs",
         )
         self.logger = logger
         self.success_count = 0
@@ -32,12 +29,12 @@ class CloudflareBypass:
 
     async def fetch_with_selenium(self, url: str) -> Optional[str]:
         options = uc.ChromeOptions()
-        options.add_argument('--headless=new')
-        options.add_argument('--disable-blink-features=AutomationControlled')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--window-size=1920,1080')
-        options.add_argument('--disable-gpu')
+        options.add_argument("--headless=new")
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--disable-gpu")
 
         driver = None
         try:

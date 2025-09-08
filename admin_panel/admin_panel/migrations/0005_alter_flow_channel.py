@@ -5,15 +5,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('admin_panel', '0004_alter_flow_frequency'),
+        ("admin_panel", "0004_alter_flow_frequency"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='flow',
-            name='channel',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='admin_panel.channel'),
+            model_name="flow",
+            name="channel",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE, to="admin_panel.channel"
+            ),
         ),
     ]

@@ -2,15 +2,28 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+
 class User(models.Model):
     telegram_id = models.BigIntegerField(unique=True, verbose_name="Telegram ID")
-    username = models.CharField(max_length=100, null=True, blank=True, verbose_name="Telegram username")
-    first_name = models.CharField(max_length=100, null=True, blank=True, verbose_name="Ім'я")
-    last_name = models.CharField(max_length=100, null=True, blank=True, verbose_name="Прізвище")
-    subscription_status = models.BooleanField(default=False, verbose_name="Статус підписки")
-    subscription_end_date = models.DateTimeField(null=True, blank=True, verbose_name="Дата закінчення підписки")
+    username = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Telegram username"
+    )
+    first_name = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Ім'я"
+    )
+    last_name = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Прізвище"
+    )
+    subscription_status = models.BooleanField(
+        default=False, verbose_name="Статус підписки"
+    )
+    subscription_end_date = models.DateTimeField(
+        null=True, blank=True, verbose_name="Дата закінчення підписки"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
-    subscription_type = models.CharField(max_length=50, null=True, blank=True, verbose_name="Тип підписки")
+    subscription_type = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Тип підписки"
+    )
     payment_method = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
@@ -23,12 +36,17 @@ class User(models.Model):
 
 class Channel(models.Model):
     TIMEZONE_CHOICES = [
-        ('Europe/Kiev', '🇺🇦 Київ (UTC+2)'),
-        ('Europe/London', '🇪🇺 Лондон (UTC+0)'),
-        ('America/New_York', '🇺🇸 Нью-Йорк (UTC-4)'),
+        ("Europe/Kiev", "🇺🇦 Київ (UTC+2)"),
+        ("Europe/London", "🇪🇺 Лондон (UTC+0)"),
+        ("America/New_York", "🇺🇸 Нью-Йорк (UTC-4)"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='channels', verbose_name="Користувач")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="channels",
+        verbose_name="Користувач",
+    )
     channel_id = models.CharField(max_length=100, unique=True, verbose_name="ID каналу")
     name = models.CharField(max_length=255, verbose_name="Назва каналу")
     description = models.TextField(blank=True, null=True, verbose_name="Опис каналу")
@@ -38,8 +56,8 @@ class Channel(models.Model):
     timezone = models.CharField(
         max_length=50,
         choices=TIMEZONE_CHOICES,
-        default='Europe/Kiev',
-        verbose_name="Часовий пояс"
+        default="Europe/Kiev",
+        verbose_name="Часовий пояс",
     )
 
     def __str__(self):
@@ -48,6 +66,7 @@ class Channel(models.Model):
     class Meta:
         verbose_name = "Канал"
         verbose_name_plural = "Канали"
+
 
 class Flow(models.Model):
     class ContentLength(models.TextChoices):
@@ -61,51 +80,48 @@ class Flow(models.Model):
         DAILY = "daily", "Раз на день"
 
     channel = models.OneToOneField(
-        Channel,
-        on_delete=models.CASCADE,
-        primary_key=False,
-        unique=True
+        Channel, on_delete=models.CASCADE, primary_key=False, unique=True
     )
     name = models.CharField(max_length=255, verbose_name="Назва флоу")
     theme = models.CharField(max_length=100, verbose_name="Тематика")
     sources = models.JSONField(
-        default=list,
-        verbose_name="Джерела контенту"
+        default=list, verbose_name="Джерела контенту"
     )  # Список: [{"type": "telegram", "link": "..."}, ...]
     content_length = models.CharField(
-        max_length=50,
-        choices=ContentLength.choices,
-        verbose_name="Обсяг тексту"
+        max_length=50, choices=ContentLength.choices, verbose_name="Обсяг тексту"
     )
     use_emojis = models.BooleanField(default=False, verbose_name="Використання емодзі")
-    use_premium_emojis = models.BooleanField(default=False, verbose_name="Преміум емодзі")
-    title_highlight = models.BooleanField(default=False, verbose_name="Виділення заголовків")
+    use_premium_emojis = models.BooleanField(
+        default=False, verbose_name="Преміум емодзі"
+    )
+    title_highlight = models.BooleanField(
+        default=False, verbose_name="Виділення заголовків"
+    )
     cta = models.BooleanField(default=False, verbose_name="Заклик до дії (CTA)")
     frequency = models.CharField(
         max_length=50,
         choices=GenerationFrequency.choices,
-        verbose_name="Частота генерації"
+        verbose_name="Частота генерації",
     )
-    signature = models.TextField(
-        null=True,
-        blank=True,
-        verbose_name="Підпис до постів"
-    )
+    signature = models.TextField(null=True, blank=True, verbose_name="Підпис до постів")
     flow_volume = models.PositiveSmallIntegerField(
-        default=5,
-        verbose_name="Кількість постів у флоу"
+        default=5, verbose_name="Кількість постів у флоу"
     )
     ad_time = models.CharField(
         max_length=5,
         null=True,
         blank=True,
-        verbose_name="Час для рекламних топів (HH:MM)"
+        verbose_name="Час для рекламних топів (HH:MM)",
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата оновлення")
 
-    next_generation_time = models.DateTimeField(null=True, blank=True, verbose_name="Наступна генерація")
-    last_generated_at = models.DateTimeField(null=True, blank=True, verbose_name="Остання генерація")
+    next_generation_time = models.DateTimeField(
+        null=True, blank=True, verbose_name="Наступна генерація"
+    )
+    last_generated_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Остання генерація"
+    )
 
     def __str__(self):
         return f"{self.name} ({self.theme})"
@@ -122,48 +138,42 @@ class Flow(models.Model):
 
 class PostImage(models.Model):
     post = models.ForeignKey(
-        'Post',
-        on_delete=models.CASCADE,
-        related_name='images',
-        verbose_name="Пост"
+        "Post", on_delete=models.CASCADE, related_name="images", verbose_name="Пост"
     )
     image = models.ImageField(
-        upload_to='posts/images/',
-        verbose_name="Зображення",
-        max_length=255
+        upload_to="posts/images/", verbose_name="Зображення", max_length=255
     )
-    order = models.PositiveIntegerField(
-        default=0,
-        verbose_name="Порядок сортування"
-    )
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортування")
 
     class Meta:
         verbose_name = "Зображення поста"
         verbose_name_plural = "Зображення постів"
-        ordering = ['order']
+        ordering = ["order"]
 
     def __str__(self):
         return f"Зображення для поста {self.post.id}"
 
+
 class Post(models.Model):
-    DRAFT = 'draft'
-    SCHEDULED = 'scheduled'
-    PUBLISHED = 'published'
+    DRAFT = "draft"
+    SCHEDULED = "scheduled"
+    PUBLISHED = "published"
 
     STATUS_CHOICES = [
-        (DRAFT, 'Чернетка'),
-        (SCHEDULED, 'Заплановано'),
-        (PUBLISHED, 'Опубліковано'),
+        (DRAFT, "Чернетка"),
+        (SCHEDULED, "Заплановано"),
+        (PUBLISHED, "Опубліковано"),
     ]
 
-    flow = models.ForeignKey(Flow, on_delete=models.CASCADE, related_name='posts', verbose_name="Флоу")
+    flow = models.ForeignKey(
+        Flow, on_delete=models.CASCADE, related_name="posts", verbose_name="Флоу"
+    )
     content = models.TextField(verbose_name="Контент")
-    original_content = models.TextField(verbose_name='Оригiнальний текст', blank=True, null=True)
+    original_content = models.TextField(
+        verbose_name="Оригiнальний текст", blank=True, null=True
+    )
     status = models.CharField(
-        max_length=10,
-        choices=STATUS_CHOICES,
-        default=DRAFT,
-        verbose_name="Статус"
+        max_length=10, choices=STATUS_CHOICES, default=DRAFT, verbose_name="Статус"
     )
     source_id = models.CharField(
         max_length=255,
@@ -171,27 +181,34 @@ class Post(models.Model):
         blank=True,
         null=True,
         verbose_name="Унікальний ID із джерела",
-        help_text="Ідентифікатор посту в оригінальному джерелі (Telegram/Web)"
+        help_text="Ідентифікатор посту в оригінальному джерелі (Telegram/Web)",
     )
-    source_url = models.URLField(blank=True, null=True, verbose_name="Посилання на джерело")
-    original_link = models.CharField(blank=True, null=True, verbose_name="Посилання на оригiнальний пост")
-    publication_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата публікації")
-    scheduled_time = models.DateTimeField(null=True, blank=True, verbose_name="Запланований час")
-    original_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата оригiнальної публікації")
+    source_url = models.URLField(
+        blank=True, null=True, verbose_name="Посилання на джерело"
+    )
+    original_link = models.CharField(
+        blank=True, null=True, verbose_name="Посилання на оригiнальний пост"
+    )
+    publication_date = models.DateTimeField(
+        blank=True, null=True, verbose_name="Дата публікації"
+    )
+    scheduled_time = models.DateTimeField(
+        null=True, blank=True, verbose_name="Запланований час"
+    )
+    original_date = models.DateTimeField(
+        blank=True, null=True, verbose_name="Дата оригiнальної публікації"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     video = models.FileField(
-        upload_to='posts/videos/',
-        blank=True,
-        null=True,
-        verbose_name="Відео"
+        upload_to="posts/videos/", blank=True, null=True, verbose_name="Відео"
     )
 
     @property
     def media_type(self):
         if self.images.exists():
-            return 'image'
+            return "image"
         elif self.video:
-            return 'video'
+            return "video"
         return None
 
     @property
@@ -224,15 +241,20 @@ class Post(models.Model):
         verbose_name_plural = "Пости"
         constraints = [
             models.UniqueConstraint(
-                fields=['source_id'],
-                name='unique_source_id',
-                condition=models.Q(source_id__isnull=False)
+                fields=["source_id"],
+                name="unique_source_id",
+                condition=models.Q(source_id__isnull=False),
             )
         ]
 
+
 class Draft(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='drafts', verbose_name="Користувач")
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='drafts', verbose_name="Пост")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="drafts", verbose_name="Користувач"
+    )
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="drafts", verbose_name="Пост"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
     def __str__(self):
@@ -244,8 +266,18 @@ class Draft(models.Model):
 
 
 class Subscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions', verbose_name="Користувач")
-    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='subscriptions', verbose_name="Канал")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        verbose_name="Користувач",
+    )
+    channel = models.ForeignKey(
+        Channel,
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        verbose_name="Канал",
+    )
     subscription_type = models.CharField(max_length=50, verbose_name="Тип підписки")
     start_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата початку")
     end_date = models.DateTimeField(verbose_name="Дата закінчення")
@@ -260,7 +292,12 @@ class Subscription(models.Model):
 
 
 class Payment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments', verbose_name="Користувач")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="payments",
+        verbose_name="Користувач",
+    )
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сума")
     payment_method = models.CharField(max_length=50, verbose_name="Метод оплати")
     payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата оплати")
@@ -273,18 +310,19 @@ class Payment(models.Model):
         verbose_name = "Платіж"
         verbose_name_plural = "Платежі"
 
+
 class AISettings(models.Model):
     flow = models.OneToOneField(
         Flow,
         on_delete=models.CASCADE,
-        related_name='ai_settings',
+        related_name="ai_settings",
         verbose_name="Флоу",
         blank=True,
         null=True,
     )
     prompt = models.TextField(verbose_name="Промпт")
-    role = models.CharField(max_length=255, verbose_name='Роль', blank=True)
-    role_content = models.TextField(verbose_name='Текст роли', blank=True)
+    role = models.CharField(max_length=255, verbose_name="Роль", blank=True)
+    role_content = models.TextField(verbose_name="Текст роли", blank=True)
     style = models.CharField(max_length=100, verbose_name="Стиль", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
@@ -296,10 +334,19 @@ class AISettings(models.Model):
         verbose_name_plural = "Налаштування AI"
 
 
-
 class Statistics(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='statistics', verbose_name="Користувач")
-    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='statistics', verbose_name="Канал")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="statistics",
+        verbose_name="Користувач",
+    )
+    channel = models.ForeignKey(
+        Channel,
+        on_delete=models.CASCADE,
+        related_name="statistics",
+        verbose_name="Канал",
+    )
     total_posts = models.IntegerField(default=0, verbose_name="Всього постів")
     total_views = models.IntegerField(default=0, verbose_name="Всього переглядів")
     total_likes = models.IntegerField(default=0, verbose_name="Всього лайків")

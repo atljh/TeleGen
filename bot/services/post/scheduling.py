@@ -11,11 +11,10 @@ from bot.services.post.publish import PostPublishingService
 
 
 class PostSchedulingService:
-
     def __init__(
         self,
         post_base_service: PostBaseService,
-        publishing_service: PostPublishingService
+        publishing_service: PostPublishingService,
     ):
         self.post_service = post_base_service
         self.publishing_service = publishing_service
@@ -35,7 +34,11 @@ class PostSchedulingService:
 
     @sync_to_async
     def get_channel_id(self, post_id: int) -> str:
-        return Post.objects.select_related("flow__channel").get(id=post_id).flow.channel.channel_id
+        return (
+            Post.objects.select_related("flow__channel")
+            .get(id=post_id)
+            .flow.channel.channel_id
+        )
 
     async def publish_scheduled_posts(self) -> List[PostDTO]:
         now = datetime.now()
@@ -43,7 +46,7 @@ class PostSchedulingService:
             Post.objects.filter(
                 status=PostStatus.SCHEDULED,
                 scheduled_time__isnull=False,
-                scheduled_time__lte=now
+                scheduled_time__lte=now,
             )
         )
 

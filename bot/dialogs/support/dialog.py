@@ -16,7 +16,11 @@ def create_support_dialog():
             Const("Допомога"),
             Row(
                 Button(Const("Інструкції"), id="instructions", on_click=instructions),
-                Button(Const("Зв'язок із підтримкою"), id="sms_support", on_click=sms_support),
+                Button(
+                    Const("Зв'язок із підтримкою"),
+                    id="sms_support",
+                    on_click=sms_support,
+                ),
             ),
             state=SupportMenu.main,
         )

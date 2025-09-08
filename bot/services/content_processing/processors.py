@@ -13,6 +13,7 @@ from bot.database.exceptions import AISettingsNotFoundError
 from bot.services.aisettings_service import AISettingsService
 from bot.utils.notifications import notify_admins
 
+
 class ContentProcessor(ABC):
     @abstractmethod
     async def process(self, text: str) -> str:
@@ -22,28 +23,29 @@ class ContentProcessor(ABC):
 class DefaultContentProcessor(ContentProcessor):
     def __init__(self):
         self.patterns = {
-            'url': re.compile(r'https?://\S+|www\.\S+'),
-            'username': re.compile(r'@\w+'),
-            'bold_asterisks': re.compile(r'\*\*([^*]+)\*\*'),
-            'hidden_chars': re.compile(r'[\u200B-\u200D\uFEFF]'),
-            'emoji': re.compile(r'[^\w\s,.!?;:@#%&*+-=]'),
-            'markdown_links': re.compile(r'\[([^\]]+)\]\([^)]+\)'),
-            'telegram_commands': re.compile(r'/\w+')
+            "url": re.compile(r"https?://\S+|www\.\S+"),
+            "username": re.compile(r"@\w+"),
+            "bold_asterisks": re.compile(r"\*\*([^*]+)\*\*"),
+            "hidden_chars": re.compile(r"[\u200B-\u200D\uFEFF]"),
+            "emoji": re.compile(r"[^\w\s,.!?;:@#%&*+-=]"),
+            "markdown_links": re.compile(r"\[([^\]]+)\]\([^)]+\)"),
+            "telegram_commands": re.compile(r"/\w+"),
         }
 
     async def process(self, text: str) -> str:
         if not text:
             return ""
-        text = text.replace('_', '')
+        text = text.replace("_", "")
 
         for pattern_name, pattern in self.patterns.items():
-            if pattern_name == 'markdown_links':
-                text = pattern.sub(r'\1', text)
+            if pattern_name == "markdown_links":
+                text = pattern.sub(r"\1", text)
             else:
-                text = pattern.sub('', text)
+                text = pattern.sub("", text)
 
-        text = ' '.join(text.split())
+        text = " ".join(text.split())
         return text.strip()
+
 
 class ChatGPTContentProcessor(ContentProcessor):
     def __init__(
@@ -66,17 +68,16 @@ class ChatGPTContentProcessor(ContentProcessor):
         self.aisettings_service = aisettings_service
         self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
 
-
     async def process_batch(self, texts: List[str], user_id: int) -> List[str]:
         if not texts:
             return []
 
         results = []
         for i in range(0, len(texts), self.max_batch_size):
-            batch = texts[i:i + self.max_batch_size]
-            batch_results = await asyncio.gather(*[
-                self.process(text, user_id) for text in batch
-            ])
+            batch = texts[i : i + self.max_batch_size]
+            batch_results = await asyncio.gather(
+                *[self.process(text, user_id) for text in batch]
+            )
             results.extend(batch_results)
 
             if i + self.max_batch_size < len(texts):
@@ -96,14 +97,14 @@ class ChatGPTContentProcessor(ContentProcessor):
             default_prompt = await self._build_system_prompt(text, flow)
             try:
                 aisettings = await self.aisettings_service.create_aisettings(
-                    flow=flow,
-                    prompt=default_prompt,
-                    style=str(flow.theme)
+                    flow=flow, prompt=default_prompt, style=str(flow.theme)
                 )
                 return default_prompt
 
             except UniqueViolation:
-                existing_settings = await self.aisettings_service.get_aisettings_by_flow(flow)
+                existing_settings = (
+                    await self.aisettings_service.get_aisettings_by_flow(flow)
+                )
                 return existing_settings.prompt
 
             except Exception as create_error:
@@ -150,7 +151,6 @@ class ChatGPTContentProcessor(ContentProcessor):
             return text
 
     async def _call_ai_with_retry(self, text: str, system_prompt: str, flow) -> str:
-
         messages = [
             {"role": "system", "content": system_prompt},
         ]
@@ -177,7 +177,7 @@ class ChatGPTContentProcessor(ContentProcessor):
                     temperature=0.5,
                     top_p=0.9,
                     max_tokens=2000,
-                    timeout=self.request_timeout
+                    timeout=self.request_timeout,
                 )
                 return response.choices[0].message.content.strip()
 
@@ -200,7 +200,9 @@ class ChatGPTContentProcessor(ContentProcessor):
                     raise openai.APIError(f"Unexpected error: {str(e)}")
                 await asyncio.sleep(1)
 
-        raise last_error if last_error else openai.APIError("Unknown error after retries")
+        raise last_error if last_error else openai.APIError(
+            "Unknown error after retries"
+        )
 
     async def _notify_admin(self, message: str):
         try:
@@ -211,9 +213,7 @@ class ChatGPTContentProcessor(ContentProcessor):
     async def _get_prompt(self, text: str, flow: FlowDTO) -> str:
         return await self._get_or_create_user_prompt(text, flow)
 
-
     async def _build_system_prompt(self, text: str, flow: FlowDTO) -> str:
-
         rules = [
             "You are a professional post editor.",
             f"Translate it to Ukranian",
@@ -229,7 +229,9 @@ class ChatGPTContentProcessor(ContentProcessor):
             rules.append(f"5. Use relevant {emoji_type} emojis")
 
         if self.flow.title_highlight:
-            rules.append("6. Format the title using <b> tags, and add an empty line immediately after it.")
+            rules.append(
+                "6. Format the title using <b> tags, and add an empty line immediately after it."
+            )
 
         if self.flow.cta:
             rules.append(f"7. Add CTA: {self.flow.cta}")
@@ -241,6 +243,6 @@ class ChatGPTContentProcessor(ContentProcessor):
         length_mapping = {
             "to_100": "100 characters",
             "to_300": "300 characters",
-            "to_1000": "1000 characters"
+            "to_1000": "1000 characters",
         }
         return length_mapping.get(self.flow.content_length, "300 characters")

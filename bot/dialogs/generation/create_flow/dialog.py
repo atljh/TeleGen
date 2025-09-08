@@ -16,43 +16,36 @@ from .getters import (
     flow_confirmation_getter,
     source_link_getter,
     source_confirmation_getter,
-    source_type_getter
+    source_type_getter,
 )
-from .callbacks import(
+from .callbacks import (
     start_generation_process,
     to_channel,
     to_select_frequency,
-
     on_channel_theme_selected,
     on_custom_theme_entered,
     to_custom_theme_input,
-
     on_once_a_day,
     on_once_a_12,
     on_once_an_hour,
-
     on_to_100,
     on_to_300,
     on_to_1000,
-
     on_source_link_entered,
     on_source_type_selected,
     on_source_link_entered,
     add_more_sources,
-
     confirm_title_highlight,
     reject_title_highlight,
-
     handle_time_input,
     reset_ad_time,
-
     on_volume_selected,
     open_custom_volume_input,
     handle_custom_volume_input,
-
     handle_signature_input,
-    skip_signature
+    skip_signature,
 )
+
 
 def create_flow_dialog():
     return Dialog(
@@ -62,16 +55,32 @@ def create_flow_dialog():
                 "<b>Оберіть тему каналу з існуючих або додайте</b>"
             ),
             Column(
-                Button(Const("Спортивний канал"), id="Sport", on_click=on_channel_theme_selected),
-                Button(Const("Кулінарний канал"), id="Cooking", on_click=on_channel_theme_selected),
-                Button(Const("Регіональний канал"), id="Regional", on_click=on_channel_theme_selected),
-                Button(Const("✏️ Задати тему самостійно"), id="custom_theme", on_click=to_custom_theme_input),
+                Button(
+                    Const("Спортивний канал"),
+                    id="Sport",
+                    on_click=on_channel_theme_selected,
+                ),
+                Button(
+                    Const("Кулінарний канал"),
+                    id="Cooking",
+                    on_click=on_channel_theme_selected,
+                ),
+                Button(
+                    Const("Регіональний канал"),
+                    id="Regional",
+                    on_click=on_channel_theme_selected,
+                ),
+                Button(
+                    Const("✏️ Задати тему самостійно"),
+                    id="custom_theme",
+                    on_click=to_custom_theme_input,
+                ),
             ),
             Row(
                 Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
             ),
             state=CreateFlowMenu.select_theme,
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         ),
         Window(
             Format(
@@ -82,28 +91,45 @@ def create_flow_dialog():
                 "{selected_sources}"
             ),
             Column(
-                Button(Const("📷 Instagram"), id="instagram", on_click=on_source_type_selected),
-                Button(Const("👍 Facebook"), id="facebook", on_click=on_source_type_selected),
+                Button(
+                    Const("📷 Instagram"),
+                    id="instagram",
+                    on_click=on_source_type_selected,
+                ),
+                Button(
+                    Const("👍 Facebook"), id="facebook", on_click=on_source_type_selected
+                ),
                 Button(Const("🌐 Web-сайт"), id="web", on_click=on_source_type_selected),
-                Button(Const("✈️ Telegram"), id="telegram", on_click=on_source_type_selected),
+                Button(
+                    Const("✈️ Telegram"),
+                    id="telegram",
+                    on_click=on_source_type_selected,
+                ),
             ),
             Row(
                 Back(Const("🔙 Назад")),
-                Button(Const("🔜 Далі"), id="next", when="has_selected_sources", on_click=to_select_frequency),
+                Button(
+                    Const("🔜 Далі"),
+                    id="next",
+                    when="has_selected_sources",
+                    on_click=to_select_frequency,
+                ),
             ),
             state=CreateFlowMenu.select_source,
             parse_mode=ParseMode.HTML,
             getter=source_type_getter,
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
         ),
         Window(
-            Format("🔗 <b>Додавання {source_name}</b>\n\n"
-                  "Відправте посилання за шаблоном:\n"
-                  "<code>{link_example}</code>"),
+            Format(
+                "🔗 <b>Додавання {source_name}</b>\n\n"
+                "Відправте посилання за шаблоном:\n"
+                "<code>{link_example}</code>"
+            ),
             TextInput(
                 id="source_link_input",
                 on_success=on_source_link_entered,
-                filter=F.text & ~F.text.startswith('/')
+                filter=F.text & ~F.text.startswith("/"),
             ),
             Row(
                 Back(Const("🔙 Назад")),
@@ -112,26 +138,27 @@ def create_flow_dialog():
             state=CreateFlowMenu.add_source_link,
             parse_mode=ParseMode.HTML,
             getter=source_link_getter,
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
         ),
         Window(
-            Format("✅ <b>Джерело додано</b>\n\n"
-                  "Тип: {source_type}\n"
-                  "Посилання: {source_link}\n\n"
-                  "Додати ще одне джерело?"),
+            Format(
+                "✅ <b>Джерело додано</b>\n\n"
+                "Тип: {source_type}\n"
+                "Посилання: {source_link}\n\n"
+                "Додати ще одне джерело?"
+            ),
             Column(
-                Button(Const("➕ Так"), id="add_more_sources", on_click=add_more_sources),
+                Button(
+                    Const("➕ Так"), id="add_more_sources", on_click=add_more_sources
+                ),
                 Next(Const("🔜 Ні, продовжити"), id="continue_flow"),
             ),
             state=CreateFlowMenu.source_confirmation,
             parse_mode=ParseMode.HTML,
-            getter=source_confirmation_getter
+            getter=source_confirmation_getter,
         ),
         Window(
-            Const(
-                "<b>Етап 3 из 7</b>\n\n"
-                "<b>Оберіть частоту генерацii</b>"
-            ),
+            Const("<b>Етап 3 из 7</b>\n\n" "<b>Оберіть частоту генерацii</b>"),
             Column(
                 Button(Const("Раз на день"), id="daily", on_click=on_once_a_day),
                 Button(Const("Раз на 12 годин"), id="12h", on_click=on_once_a_12),
@@ -161,19 +188,14 @@ def create_flow_dialog():
         ),
         Window(
             Const(
-                "<b>Етап 5 из 7</b>\n\n"
-                "✏️ <b>Чи потрібно виділяти заголовок?</b>\n\n"
+                "<b>Етап 5 из 7</b>\n\n" "✏️ <b>Чи потрібно виділяти заголовок?</b>\n\n"
             ),
             Column(
                 Button(
-                    Const("✅ Так"),
-                    id="highlight_yes",
-                    on_click=confirm_title_highlight
+                    Const("✅ Так"), id="highlight_yes", on_click=confirm_title_highlight
                 ),
                 Button(
-                    Const("❌ Ні"),
-                    id="highlight_no",
-                    on_click=reject_title_highlight
+                    Const("❌ Ні"), id="highlight_no", on_click=reject_title_highlight
                 ),
             ),
             Row(
@@ -206,7 +228,8 @@ def create_flow_dialog():
                 "📊 <b>Налаштування об'єму флоу</b>\n\n"
                 "Оберіть кількість останніх постів,\n"
                 "яку треба зберігати у флоу:\n\n"
-                "Поточне значення: {current_value}"),
+                "Поточне значення: {current_value}"
+            ),
             Column(
                 Select(
                     text=Format("{item}"),
@@ -220,7 +243,7 @@ def create_flow_dialog():
                 Button(
                     Const("✏️ Вказати своє число"),
                     id="custom_volume",
-                    on_click=open_custom_volume_input
+                    on_click=open_custom_volume_input,
                 ),
             ),
             Row(
@@ -228,22 +251,22 @@ def create_flow_dialog():
             ),
             state=CreateFlowMenu.flow_volume_settings,
             parse_mode=ParseMode.HTML,
-            getter=flow_volume_getter
+            getter=flow_volume_getter,
         ),
         Window(
             Const(
                 "✏️ <b>Введіть власне число</b>\n\n"
                 "Діапазон: 1-50\n\n"
-                "Або натисніть 'Назад'"),
+                "Або натисніть 'Назад'"
+            ),
             MessageInput(
-                handle_custom_volume_input,
-                filter=F.text & ~F.text.startswith('/')
+                handle_custom_volume_input, filter=F.text & ~F.text.startswith("/")
             ),
             Row(
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.custom_volume_input,
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         ),
         Window(
             Format(
@@ -252,24 +275,26 @@ def create_flow_dialog():
                 "Поточний підпис:\n"
                 "<code>{current_signature}</code>\n\n"
                 "Відправте новий підпис або натисніть 'Пропустити'\n"
-                "<i>Підтримка emoji та HTML-розмітки</i>"),
+                "<i>Підтримка emoji та HTML-розмітки</i>"
+            ),
             MessageInput(
-                handle_signature_input,
-                filter=F.text & ~F.text.startswith('/')
+                handle_signature_input, filter=F.text & ~F.text.startswith("/")
             ),
             Row(
-                Button(Const("⏩ Пропустити"), id="skip_signature", on_click=skip_signature),
+                Button(
+                    Const("⏩ Пропустити"), id="skip_signature", on_click=skip_signature
+                ),
                 Back(Const("🔙 Назад")),
             ),
             state=CreateFlowMenu.signature_settings,
             parse_mode=ParseMode.HTML,
-            getter=signature_getter
+            getter=signature_getter,
         ),
         Window(
             Format(
                 "🎉 <b>Вітаю! Ваш флоу успішно створений!</b>\n\n"
                 "🔧 Ви можете змінити його параметри в налаштуваннях.\n\n"
-                "📌 <b>Параметри Flow \"{flow_name}\":</b>\n"
+                '📌 <b>Параметри Flow "{flow_name}":</b>\n'
                 "▪️ <b>Тематика:</b> {theme}\n"
                 "▪️ <b>Джерела ({source_count}):</b>\n  {sources}\n"
                 "▪️ <b>Частота генерації:</b> {frequency}\n"
@@ -280,23 +305,31 @@ def create_flow_dialog():
                 "▪️ <b>Підпис до постів:</b> {signature}\n\n"
             ),
             Column(
-                Button(Const("Налаштування Flow"), id="to_settings", on_click=start_flow_settings),
-                Button(Const("Почати генерацiю"), id="start_generation", on_click=start_generation_process),
+                Button(
+                    Const("Налаштування Flow"),
+                    id="to_settings",
+                    on_click=start_flow_settings,
+                ),
+                Button(
+                    Const("Почати генерацiю"),
+                    id="start_generation",
+                    on_click=start_generation_process,
+                ),
             ),
             state=CreateFlowMenu.confirmation,
             parse_mode=ParseMode.HTML,
             getter=flow_confirmation_getter,
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
         ),
         Window(
             Format("✏️ <b>Введіть власну тему каналу:</b>"),
             TextInput(
                 id="custom_theme_input",
                 on_success=on_custom_theme_entered,
-                filter=F.text & ~F.text.startswith('/')
+                filter=F.text & ~F.text.startswith("/"),
             ),
             Back(Const("🔙 Назад")),
             state=CreateFlowMenu.input_custom_theme,
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         ),
     )

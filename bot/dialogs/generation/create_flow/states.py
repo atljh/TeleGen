@@ -1,5 +1,6 @@
 from aiogram.fsm.state import State, StatesGroup
 
+
 class CreateFlowMenu(StatesGroup):
     select_theme = State()
     input_custom_theme = State()

@@ -89,22 +89,24 @@ class FlowRepository:
         next_generation_time__lte: datetime | None = None,
         include_null_generation_time: bool = False,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
     ) -> list[FlowDTO]:
-        queryset = Flow.objects.select_related('channel')
+        queryset = Flow.objects.select_related("channel")
 
         conditions = []
         if next_generation_time__lte is not None:
-            conditions.append(models.Q(next_generation_time__lte=next_generation_time__lte))
+            conditions.append(
+                models.Q(next_generation_time__lte=next_generation_time__lte)
+            )
         if include_null_generation_time:
             conditions.append(models.Q(next_generation_time__isnull=True))
 
         if conditions:
             queryset = queryset.filter(reduce(operator.or_, conditions))
 
-        queryset = queryset.order_by('-created_at')
+        queryset = queryset.order_by("-created_at")
         if limit is not None:
-            queryset = queryset[offset:offset+limit]
+            queryset = queryset[offset : offset + limit]
 
         return [self._to_dto(flow) async for flow in queryset]
 
@@ -126,5 +128,5 @@ class FlowRepository:
             ad_time=flow.ad_time,
             next_generation_time=flow.next_generation_time,
             created_at=flow.created_at,
-            updated_at=flow.updated_at
+            updated_at=flow.updated_at,
         )

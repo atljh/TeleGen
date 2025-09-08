@@ -13,16 +13,15 @@ class WebService:
     def __init__(
         self,
         post_repository: PostRepository,
-        rss_service_factory: Callable[[], Awaitable['RssService']],
-        content_processor: 'ContentProcessorService',
-        user_service: 'UserService',
-        flow_service: 'FlowService',
-        web_scraper: 'WebScraperService',
-        aisettings_service: 'AISettingsService',
-        image_extractor: 'ImageExtractorService',
-        post_builder: 'PostBuilderService',
-        logger: logging.Logger | None = None
-
+        rss_service_factory: Callable[[], Awaitable["RssService"]],
+        content_processor: "ContentProcessorService",
+        user_service: "UserService",
+        flow_service: "FlowService",
+        web_scraper: "WebScraperService",
+        aisettings_service: "AISettingsService",
+        image_extractor: "ImageExtractorService",
+        post_builder: "PostBuilderService",
+        logger: logging.Logger | None = None,
     ):
         self.post_repository = post_repository
         self.rss_service_factory = rss_service_factory
@@ -35,18 +34,16 @@ class WebService:
         self.post_builder = post_builder
         self.logger = logger or logging.getLogger(__name__)
 
-    async def get_last_posts(
-        self,
-        flow: FlowDTO,
-        limit: int = 10
-    ) -> List[PostDTO]:
+    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
         async with self.rss_service_factory() as rss_service:
             try:
                 raw_posts = [
-                    post async for post in
-                    rss_service.get_posts_for_flow(
-                        flow, self.flow_service, limit,
-                        post_repository=self.post_repository
+                    post
+                    async for post in rss_service.get_posts_for_flow(
+                        flow,
+                        self.flow_service,
+                        limit,
+                        post_repository=self.post_repository,
                     )
                 ][:limit]
                 enriched_posts = await self._enrich_posts(raw_posts)
@@ -57,57 +54,44 @@ class WebService:
                 return []
 
     async def _get_raw_posts(
-        self,
-        rss_service: 'RssService',
-        flow: FlowDTO,
-        limit: int
+        self, rss_service: "RssService", flow: FlowDTO, limit: int
     ) -> List[Dict]:
         return [
-            post async for post in
-            rss_service.get_posts_for_flow(flow, self.flow_service, limit)
+            post
+            async for post in rss_service.get_posts_for_flow(
+                flow, self.flow_service, limit
+            )
         ][:limit]
 
-    async def _enrich_posts(
-        self,
-        posts: List[Dict]
-    ) -> List[Dict]:
-        return await asyncio.gather(*[
-            self._enrich_single_post(post)
-            for post in posts
-        ])
+    async def _enrich_posts(self, posts: List[Dict]) -> List[Dict]:
+        return await asyncio.gather(*[self._enrich_single_post(post) for post in posts])
 
-    async def _enrich_single_post(
-        self,
-        post: Dict
-    ) -> Dict:
+    async def _enrich_single_post(self, post: Dict) -> Dict:
         if not post:
             return
-        if not post.get('original_link'):
+        if not post.get("original_link"):
             return post
         try:
-            web_data = await self.web_scraper.scrape_page(post['original_link'])
+            web_data = await self.web_scraper.scrape_page(post["original_link"])
             if not web_data:
                 return post
 
-            if not post.get('images'):
-                html = await self.web_scraper._fetch_html(post['original_link'])
-                soup = BeautifulSoup(html, 'html.parser') if html else None
+            if not post.get("images"):
+                html = await self.web_scraper._fetch_html(post["original_link"])
+                soup = BeautifulSoup(html, "html.parser") if html else None
                 if soup:
                     web_data.images = self.image_extractor.extract_images(
-                        soup,
-                        post['original_link']
+                        soup, post["original_link"]
                     )
             else:
-                web_data.images = post.get('images')
+                web_data.images = post.get("images")
             return {**post, **web_data.to_dict()}
         except Exception as e:
             self.logger.warning(f"Failed to enrich post: {e}")
             return post
 
     async def _process_and_build_posts(
-        self,
-        posts: List[Optional[Dict]],
-        flow: FlowDTO
+        self, posts: List[Optional[Dict]], flow: FlowDTO
     ) -> List[PostDTO]:
         if not posts:
             return []
@@ -116,8 +100,9 @@ class WebService:
             user = await self.user_service.get_user_by_flow(flow)
 
             valid_posts = [
-                p for p in posts
-                if p is not None and isinstance(p, dict) and 'content' in p
+                p
+                for p in posts
+                if p is not None and isinstance(p, dict) and "content" in p
             ]
 
             if not valid_posts:
@@ -125,9 +110,7 @@ class WebService:
                 return []
 
             processed_contents = await self.content_processor.process_batch(
-                [p['content'] for p in valid_posts],
-                flow,
-                user.id
+                [p["content"] for p in valid_posts], flow, user.id
             )
 
             result = []
@@ -144,7 +127,7 @@ class WebService:
                 except Exception as e:
                     self.logger.error(
                         f"Failed to build post {post.get('source_id')}: {e}",
-                        exc_info=True
+                        exc_info=True,
                     )
 
             return result
@@ -152,6 +135,6 @@ class WebService:
         except Exception as e:
             self.logger.error(
                 f"Error in _process_and_build_posts for flow {flow.id}: {e}",
-                exc_info=True
+                exc_info=True,
             )
             return []

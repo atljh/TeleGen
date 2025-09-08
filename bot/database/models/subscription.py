@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Any, Self
 
+
 class SubscriptionDTO(BaseModel):
     id: int
     user_id: int

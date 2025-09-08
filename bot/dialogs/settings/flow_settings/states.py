@@ -1,6 +1,7 @@
 from aiogram_dialog import Window, Dialog
 from aiogram.fsm.state import StatesGroup, State
 
+
 class FlowSettingsMenu(StatesGroup):
     flow_settings = State()
     generation_frequency = State()

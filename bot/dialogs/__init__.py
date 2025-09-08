@@ -12,6 +12,7 @@ from .settings.flow_settings import create_flow_settings_dialog, create_sources_
 from .support import create_support_dialog
 from .settings.payment import create_payment_dialog
 
+
 def register_dialogs(dp: Dispatcher):
     generation_dialog = create_generation_dialog()
     add_channel_dialog = create_add_channel_dialog()

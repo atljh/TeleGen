@@ -3,17 +3,21 @@ import logging
 from typing import Optional
 import openai
 from bot.database.models.post import PostDTO
-from bot.services.content_processing.processors import ChatGPTContentProcessor, DefaultContentProcessor
+from bot.services.content_processing.processors import (
+    ChatGPTContentProcessor,
+    DefaultContentProcessor,
+)
 from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
 from bot.database.models import FlowDTO
+
 
 class ContentProcessingService:
     def __init__(
         self,
         openai_key: str = None,
         aisettings_service: AISettingsService = None,
-        user_service: UserService = None
+        user_service: UserService = None,
     ):
         self.openai_key = openai_key
         self.aisettings_service = aisettings_service
@@ -28,7 +32,9 @@ class ContentProcessingService:
             self._openai_client = openai.AsyncOpenAI(api_key=self.openai_key)
         return self._openai_client
 
-    async def process_post_content(self, post_dto: PostDTO, flow: FlowDTO) -> Optional[PostDTO]:
+    async def process_post_content(
+        self, post_dto: PostDTO, flow: FlowDTO
+    ) -> Optional[PostDTO]:
         if not post_dto.content:
             return None
 
@@ -38,7 +44,7 @@ class ContentProcessingService:
 
         final_content = await self._add_signature(processed_content, flow)
 
-        return post_dto.copy(update={'content': final_content})
+        return post_dto.copy(update={"content": final_content})
 
     async def _normalize_content(self, content) -> str:
         if isinstance(content, list):
@@ -61,7 +67,7 @@ class ContentProcessingService:
                 flow=flow,
                 max_retries=2,
                 timeout=15.0,
-                aisettings_service=self.aisettings_service
+                aisettings_service=self.aisettings_service,
             )
             return await processor.process(text, user.id)
         except Exception as e:

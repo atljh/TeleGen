@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Any, Self
 
+
 class AISettingsDTO(BaseModel):
     id: int
     flow_id: int

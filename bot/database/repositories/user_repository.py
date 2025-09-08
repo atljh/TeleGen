@@ -3,10 +3,11 @@ from bot.database.exceptions import UserNotFoundError
 
 
 class UserRepository:
-    async def get_or_create_user(self, telegram_id: int, username: str | None = None) -> tuple[User, bool]:
+    async def get_or_create_user(
+        self, telegram_id: int, username: str | None = None
+    ) -> tuple[User, bool]:
         return await User.objects.aget_or_create(
-            telegram_id=telegram_id,
-            defaults={"username": username}
+            telegram_id=telegram_id, defaults={"username": username}
         )
 
     async def get_user_by_telegram_id(self, telegram_id: int) -> User:

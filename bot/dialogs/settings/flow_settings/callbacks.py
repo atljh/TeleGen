@@ -16,79 +16,85 @@ logger = logging.getLogger(__name__)
 
 # ================== ОБРАБОТЧИКИ ГЛАВНОГО МЕНЮ ФЛОУ ==================
 
-async def start_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def start_flow_settings(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     start_data = manager.start_data or {}
     dialog_data = manager.dialog_data or {}
-    selected_channel = (
-        dialog_data.get("selected_channel", False)
-        or start_data.get('selected_channel', False)
+    selected_channel = dialog_data.get("selected_channel", False) or start_data.get(
+        "selected_channel", False
     )
 
-    channel_flow = (
-        dialog_data.get("channel_flow", False)
-        or start_data.get("channel_flow", False)
+    channel_flow = dialog_data.get("channel_flow", False) or start_data.get(
+        "channel_flow", False
     )
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
         return
     await manager.start(
         FlowSettingsMenu.flow_settings,
-        data={
-            "selected_channel": selected_channel,
-            "channel_flow": channel_flow
-        },
-        mode=StartMode.RESET_STACK
+        data={"selected_channel": selected_channel, "channel_flow": channel_flow},
+        mode=StartMode.RESET_STACK,
     )
 
-async def open_flow_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def open_flow_settings(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
-async def open_main_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def open_main_settings(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     start_data = manager.start_data or {}
     dialog_data = manager.dialog_data or {}
-    selected_channel = (
-        start_data.get("selected_channel", False)
-        or dialog_data.get('selected_channel', False)
+    selected_channel = start_data.get("selected_channel", False) or dialog_data.get(
+        "selected_channel", False
     )
-    channel_flow = (
-        start_data.get("channel_flow", False)
-        or dialog_data.get("channel_flow", False)
+    channel_flow = start_data.get("channel_flow", False) or dialog_data.get(
+        "channel_flow", False
     )
     await manager.start(
         SettingsMenu.channel_settings,
-        data={
-            "selected_channel": selected_channel,
-            "channel_flow": channel_flow
-        },
-        mode=StartMode.RESET_STACK
+        data={"selected_channel": selected_channel, "channel_flow": channel_flow},
+        mode=StartMode.RESET_STACK,
     )
     return
 
+
 async def back_to_settings(callback: CallbackQuery, b: Button, manager: DialogManager):
     selected_channel = manager.dialog_data.get("selected_channel")
-    channel_flow = manager.dialog_data.get('channel_flow')
+    channel_flow = manager.dialog_data.get("channel_flow")
     if not channel_flow:
         await callback.answer(f"У канала {selected_channel.name} поки немає Флоу")
         return
     await manager.start(
         FlowSettingsMenu.flow_settings,
-        data={
-            "selected_channel": selected_channel,
-            "channel_flow": channel_flow
-        },
-        mode=StartMode.RESET_STACK
+        data={"selected_channel": selected_channel, "channel_flow": channel_flow},
+        mode=StartMode.RESET_STACK,
     )
+
 
 # ================== ОСНОВНЫЕ ОБРАБОТЧИКИ ФЛОУ ==================
 
-async def set_generation_frequency(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def set_generation_frequency(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowSettingsMenu.generation_frequency)
 
-async def character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def character_limit(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowSettingsMenu.character_limit)
 
-async def toggle_title_highlight(callback: CallbackQuery, button: Button, manager: DialogManager):
 
+async def toggle_title_highlight(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     if "channel_flow" not in manager.dialog_data:
         manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
 
@@ -98,34 +104,39 @@ async def toggle_title_highlight(callback: CallbackQuery, button: Button, manage
 
     flow_service = Container.flow_service()
     await flow_service.update_flow(
-        flow_id=manager.dialog_data["channel_flow"].id,
-        title_highlight=not current
+        flow_id=manager.dialog_data["channel_flow"].id, title_highlight=not current
     )
 
-    await callback.answer(f"Виділення заголовку {'увімкнено' if not current else 'вимкнено'}")
+    await callback.answer(
+        f"Виділення заголовку {'увімкнено' if not current else 'вимкнено'}"
+    )
 
-async def configure_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def configure_ad_block(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowSettingsMenu.ad_block_settings)
 
-async def set_posts_in_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def set_posts_in_flow(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowSettingsMenu.posts_in_flow)
 
-async def open_source_settings(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def open_source_settings(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await manager.switch_to(FlowSettingsMenu.source_settings)
 
 
 # ================== ОБРАБОТЧИКИ ПОД-НАСТРОЕК ==================
 
+
 async def set_frequency(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    freq_map = {
-        "freq_1h": "hourly",
-        "freq_12h": "12h",
-        "freq_24h": "daily"
-    }
+    freq_map = {"freq_1h": "hourly", "freq_12h": "12h", "freq_24h": "daily"}
 
     try:
         if button.widget_id not in freq_map:
@@ -141,8 +152,7 @@ async def set_frequency(
 
         flow_service = Container.flow_service()
         await flow_service.update_flow(
-            flow_id=manager.dialog_data["channel_flow"].id,
-            frequency=new_frequency
+            flow_id=manager.dialog_data["channel_flow"].id, frequency=new_frequency
         )
 
         await callback.answer(f"✅ Частоту оновлено")
@@ -153,13 +163,11 @@ async def set_frequency(
         await callback.answer("❌ Помилка при оновленні частоти")
         logger.error(f"Error updating frequency: {e}")
 
-async def set_character_limit(callback: CallbackQuery, button: Button, manager: DialogManager):
 
-    limit_map = {
-        "limit_100": "to_100",
-        "limit_300": "to_300",
-        "limit_1000": "to_1000"
-    }
+async def set_character_limit(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    limit_map = {"limit_100": "to_100", "limit_300": "to_300", "limit_1000": "to_1000"}
     if button.widget_id not in limit_map:
         await callback.answer("Невідомий лiмiт символiв")
         return
@@ -173,8 +181,7 @@ async def set_character_limit(callback: CallbackQuery, button: Button, manager: 
 
     flow_service = Container.flow_service()
     await flow_service.update_flow(
-        flow_id=manager.dialog_data["channel_flow"].id,
-        content_length=new_limit
+        flow_id=manager.dialog_data["channel_flow"].id, content_length=new_limit
     )
 
     manager.dialog_data["words_limit"] = new_limit
@@ -183,23 +190,25 @@ async def set_character_limit(callback: CallbackQuery, button: Button, manager: 
 
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
-async def toggle_ad_block(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def toggle_ad_block(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     ad_enabled = button.widget_id == "enable_ads"
     manager.dialog_data["ad_enabled"] = ad_enabled
     await callback.answer(f"Рекламний блок {'увімкнено' if ad_enabled else 'вимкнено'}")
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
-async def set_flow_volume(callback: CallbackQuery, button: Button, manager: DialogManager):
-    volume_map = {
-        'volume_5': 5,
-        'volume_10': 10,
-        'volume_20': 20
-    }
+
+async def set_flow_volume(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    volume_map = {"volume_5": 5, "volume_10": 10, "volume_20": 20}
     if button.widget_id not in volume_map:
         await callback.answer("Невідома кількість постів у флоу")
         return
 
-    new_volume= volume_map[button.widget_id]
+    new_volume = volume_map[button.widget_id]
 
     if "channel_flow" not in manager.dialog_data:
         manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
@@ -208,23 +217,25 @@ async def set_flow_volume(callback: CallbackQuery, button: Button, manager: Dial
 
     flow_service = Container.flow_service()
     await flow_service.update_flow(
-        flow_id=manager.dialog_data["channel_flow"].id,
-        flow_volume=new_volume
+        flow_id=manager.dialog_data["channel_flow"].id, flow_volume=new_volume
     )
     await callback.answer(f"✅ Лiмiт оновлено")
 
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
-async def input_custom_volume(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.message.answer("Введіть кількість постів у флоу (число від 1 до 100):")
+
+async def input_custom_volume(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    await callback.message.answer(
+        "Введіть кількість постів у флоу (число від 1 до 100):"
+    )
     await manager.switch_to(FlowSettingsMenu.waiting_for_custom_volume)
 
+
 async def handle_custom_volume_input(
-        message: Message,
-        dialog: Dialog,
-        manager: DialogManager,
-        volume: int
-    ):
+    message: Message, dialog: Dialog, manager: DialogManager, volume: int
+):
     try:
         new_volume = int(message.text)
         if new_volume < 1 or new_volume > 100:
@@ -240,15 +251,16 @@ async def handle_custom_volume_input(
 
     flow_service = Container.flow_service()
     await flow_service.update_flow(
-        flow_id=manager.dialog_data["channel_flow"].id,
-        flow_volume=new_volume
+        flow_id=manager.dialog_data["channel_flow"].id, flow_volume=new_volume
     )
     await message.answer(f"✅ Лiмiт оновлено до {new_volume} постів")
 
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
+
 async def to_add_source(c: CallbackQuery, b: Button, m: DialogManager):
     await m.switch_to(FlowSettingsMenu.add_source_type)
+
 
 async def to_select_source_to_edit(c: CallbackQuery, b: Button, m: DialogManager):
     data = await get_sources_data(m)
@@ -256,6 +268,7 @@ async def to_select_source_to_edit(c: CallbackQuery, b: Button, m: DialogManager
         await c.answer("Немає джерел для редагування")
         return
     await m.switch_to(FlowSettingsMenu.edit_select_source)
+
 
 async def to_select_source_to_delete(c: CallbackQuery, b: Button, m: DialogManager):
     data = await get_sources_data(m)
@@ -265,40 +278,44 @@ async def to_select_source_to_delete(c: CallbackQuery, b: Button, m: DialogManag
     await m.switch_to(FlowSettingsMenu.select_source_to_delete)
 
 
-async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def on_source_type_selected(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     type_mapping = {
         "source_instagram": "instagram",
         "source_web": "web",
-        "source_telegram": "telegram"
+        "source_telegram": "telegram",
     }
     manager.dialog_data["new_source_type"] = type_mapping[button.widget_id]
     await manager.switch_to(FlowSettingsMenu.add_source_link)
 
-async def on_source_link_entered(message: Message, widget, manager: DialogManager, link: str):
+
+async def on_source_link_entered(
+    message: Message, widget, manager: DialogManager, link: str
+):
     try:
-        flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+        flow = manager.dialog_data.get(
+            "channel_flow", manager.start_data["channel_flow"]
+        )
         source_type = manager.dialog_data["new_source_type"]
 
         new_source = {
             "type": source_type,
             "link": link,
-            "added_at": datetime.now().strftime("%Y-%m-%d %H:%M")
+            "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
         }
 
         if not hasattr(flow, "sources"):
             flow.sources = []
 
-        if any(src['link'] == link for src in flow.sources):
+        if any(src["link"] == link for src in flow.sources):
             await message.answer("⚠️ Це джерело вже додано!")
             return
 
         flow.sources.append(new_source)
 
         flow_service = Container.flow_service()
-        await flow_service.update_flow(
-            flow_id=flow.id,
-            sources=flow.sources
-        )
+        await flow_service.update_flow(flow_id=flow.id, sources=flow.sources)
 
         await message.answer(f"✅ Джерело {source_type} успішно додано!")
         await manager.switch_to(FlowSettingsMenu.source_settings)
@@ -308,11 +325,9 @@ async def on_source_link_entered(message: Message, widget, manager: DialogManage
         await message.answer("❌ Помилка при додаванні джерела")
         await manager.back()
 
+
 async def on_source_selected_for_edit(
-    callback: CallbackQuery,
-    select,
-    manager: DialogManager,
-    item_id: str
+    callback: CallbackQuery, select, manager: DialogManager, item_id: str
 ):
     try:
         source_idx = int(item_id)
@@ -322,16 +337,18 @@ async def on_source_selected_for_edit(
         logger.error(f"Помилка вибору джерела: {e}")
         await callback.answer("❌ Помилка при виборі джерела")
 
+
 async def on_edit_link_clicked(c: CallbackQuery, b: Button, m: DialogManager):
     await m.switch_to(FlowSettingsMenu.edit_source_link)
 
+
 async def on_new_type_selected(
-    callback: CallbackQuery,
-    button: Button,
-    manager: DialogManager
+    callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     try:
-        flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+        flow = manager.dialog_data.get(
+            "channel_flow", manager.start_data["channel_flow"]
+        )
         if not flow:
             raise ValueError("Не знайдено дані флоу")
 
@@ -353,19 +370,11 @@ async def on_new_type_selected(
         flow.sources[source_idx]["updated_at"] = datetime.now().isoformat()
 
         flow_service = Container.flow_service()
-        await flow_service.update_flow(
-            flow_id=flow.id,
-            sources=flow.sources
-        )
+        await flow_service.update_flow(flow_id=flow.id, sources=flow.sources)
 
-        await callback.answer(
-            f"✅ Тип змінено на: {new_type}",
-            show_alert=True
-        )
+        await callback.answer(f"✅ Тип змінено на: {new_type}", show_alert=True)
 
-        await manager.switch_to(
-            FlowSettingsMenu.source_settings
-        )
+        await manager.switch_to(FlowSettingsMenu.source_settings)
 
     except ValueError as e:
         error_msg = f"Помилка валідації: {str(e)}"
@@ -385,21 +394,22 @@ async def on_new_type_selected(
         await callback.answer(error_msg, show_alert=True)
         await manager.done()
 
+
 async def validate_url(message: Message):
-    return message.startswith(('http://', 'https://'))
+    return message.startswith(("http://", "https://"))
+
 
 async def on_source_new_link_entered(
-    message: Message,
-    widget,
-    manager: DialogManager,
-    new_link: str
+    message: Message, widget, manager: DialogManager, new_link: str
 ):
     try:
         if not manager.has_context():
             await message.answer("🚫 Спробуйте заново")
             return
 
-        flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
+        flow = manager.dialog_data.get(
+            "channel_flow", manager.start_data["channel_flow"]
+        )
 
         if not flow:
             raise ValueError("Помилка при завантаженi флоу")
@@ -425,20 +435,17 @@ async def on_source_new_link_entered(
 
         flow_service = Container.flow_service()
         updated_flow = await flow_service.update_flow(
-            flow_id=flow.id,
-            sources=flow.sources
+            flow_id=flow.id, sources=flow.sources
         )
 
         await message.answer(
             f"✅ Джерело успішно змiнено!:\n\n"
             f"Було: <code>{old_link}</code>\n"
             f"Стало: <code>{new_link}</code>",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         )
 
-        await manager.switch_to(
-            FlowSettingsMenu.source_settings
-        )
+        await manager.switch_to(FlowSettingsMenu.source_settings)
 
     except ValueError as e:
         logger.warning(f"Validation error: {str(e)}")
@@ -450,13 +457,18 @@ async def on_source_new_link_entered(
         await message.answer("⛔ Произошла непредвиденная ошибка")
         await manager.done()
 
-async def on_source_selected_for_delete(callback: CallbackQuery, select, manager: DialogManager, item_id: str):
+
+async def on_source_selected_for_delete(
+    callback: CallbackQuery, select, manager: DialogManager, item_id: str
+):
     manager.dialog_data["source_to_delete"] = item_id
 
     await manager.switch_to(FlowSettingsMenu.confirm_delete_source)
 
 
-async def confirm_delete_source(callback: CallbackQuery, button: Button, manager: DialogManager):
+async def confirm_delete_source(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     flow = manager.dialog_data.get("channel_flow", manager.start_data["channel_flow"])
     item_id = manager.dialog_data["source_to_delete"]
     idx = int(item_id) - 1
@@ -464,36 +476,36 @@ async def confirm_delete_source(callback: CallbackQuery, button: Button, manager
     deleted_source = flow.sources[idx]
     flow.sources.pop(idx)
 
-    if deleted_source['type'] == 'web' and 'rss_url' in deleted_source:
+    if deleted_source["type"] == "web" and "rss_url" in deleted_source:
         rss_service = Container.rss_service_factory()
-        success = await rss_service.delete_feed_by_url(deleted_source['rss_url'])
+        success = await rss_service.delete_feed_by_url(deleted_source["rss_url"])
 
         if not success:
             await callback.answer(
                 "⚠️ Не вдалося видалити RSS джерело. Спробуйте пізніше.",
-                show_alert=True
+                show_alert=True,
             )
             return
 
     flow_service = Container.flow_service()
-    updated_flow = await flow_service.update_flow(
-        flow_id=flow.id,
-        sources=flow.sources
-    )
+    updated_flow = await flow_service.update_flow(flow_id=flow.id, sources=flow.sources)
 
     await callback.answer(
-        f"✅ Джерело {deleted_source['type']} видалено!",
-        show_alert=True
+        f"✅ Джерело {deleted_source['type']} видалено!", show_alert=True
     )
     await manager.switch_to(FlowSettingsMenu.source_settings)
 
-async def cancel_delete_source(callback: CallbackQuery, button: Button, manager: DialogManager):
+
+async def cancel_delete_source(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
     await callback.answer("Видалення скасовано")
     await manager.switch_to(FlowSettingsMenu.select_source_to_delete)
 
 
 async def to_edit_link(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowSettingsMenu.edit_source_link)
+
 
 async def to_edit_type(callback: CallbackQuery, button: Button, manager: DialogManager):
     await manager.switch_to(FlowSettingsMenu.edit_source_type)
