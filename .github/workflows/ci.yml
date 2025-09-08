@@ -34,13 +34,10 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install uv (modern pip alternative)
-      run: |
-        pip install uv
-
     - name: Install dependencies from pyproject.toml
       run: |
-        uv pip install .[dev]  # Устанавливаем основные зависимости + dev опциональные
+        pip install --upgrade pip setuptools wheel
+        pip install --upgrade ".[dev]" --no-build-isolation
 
     - name: Run tests
       env:
@@ -82,11 +79,10 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install uv
-      run: pip install uv
-
-    - name: Install dev dependencies
-      run: uv pip install --system .[dev]
+    - name: Install dependencies from pyproject.toml
+      run: |
+        pip install --upgrade pip setuptools wheel
+        pip install --upgrade ".[dev]" --no-build-isolation
 
     - name: Run black
       run: black --check .
