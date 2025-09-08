@@ -86,7 +86,7 @@ jobs:
       run: pip install uv
 
     - name: Install dev dependencies
-      run: uv pip install .[dev]
+      run: uv pip install --system .[dev]
 
     - name: Run black
       run: black --check .
