@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class ChannelDTO(BaseModel):
@@ -16,9 +16,12 @@ class ChannelDTO(BaseModel):
     timezone: str = "UTC"
     
     model_config = ConfigDict(
-        from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat()}
+        from_attributes=True
     )
+    
+    @field_serializer("created_at")
+    def serialize_created_at(self, v: datetime):
+        return v.isoformat()
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
         return super().model_validate(obj)

@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Dict, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class MediaType(StrEnum):
@@ -41,12 +41,15 @@ class PostDTO(BaseModel):
 
     model_config = ConfigDict(
         from_attributes=True,
-        json_encoders={datetime: lambda v: v.isoformat()},
         populate_by_name = True
     )
     @property
     def is_album(self) -> bool:
         return len(self.images) > 1      
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, v: datetime):
+        return v.isoformat()
 
     @classmethod
     def from_raw_post(cls, raw_post: Dict) -> "PostDTO":

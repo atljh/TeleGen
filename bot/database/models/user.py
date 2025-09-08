@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class UserDTO(BaseModel):
@@ -17,9 +17,12 @@ class UserDTO(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(
-        from_attributes=True,
-        json_encoders = {datetime: lambda v: v.isoformat()}
+        from_attributes=True
     )
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, v: datetime):
+        return v.isoformat()
 
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
