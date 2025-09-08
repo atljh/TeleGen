@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline - Content Generation Bot
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
     branches: [ main, master, develop ]
 
 env:
-  PYTHON_VERSION: '3.12'
-  POSTGRES_VERSION: '16'
+  PYTHON_VERSION: '3.11'
+  POSTGRES_VERSION: '13'
   REDIS_VERSION: '7'
   DOCKER_REGISTRY: ghcr.io
   DOCKER_IMAGE_NAME: ${{ github.repository }}
@@ -42,7 +42,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
+          POSTGRES_DB: test_content_bot
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -63,8 +63,7 @@ jobs:
 
     strategy:
       matrix:
-        django-version: ["4.2", "5.0"]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Checkout code
@@ -91,44 +90,67 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r backend/requirements/dev.txt
-          pip install -r backend/requirements/test.txt
-          pip install Django==${{ matrix.django-version }}
+          pip install -r requirements/dev.txt
+          pip install -r requirements/test.txt
+          pip install pytest pytest-asyncio pytest-django coverage
 
       - name: Run migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-          DJANGO_SETTINGS_MODULE: config.settings.testing
-          SECRET_KEY: test-secret-key-for-ci
-          DEBUG: "false"
-        run: |
-          cd backend
-          python manage.py migrate --noinput
-
-      - name: Run tests with coverage
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_content_bot
           DJANGO_SETTINGS_MODULE: config.settings.testing
           SECRET_KEY: test-secret-key-for-ci
           DEBUG: "false"
           REDIS_URL: redis://localhost:6379/0
         run: |
-          cd backend
+          python manage.py migrate --noinput
+
+      - name: Run Django tests with coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_content_bot
+          DJANGO_SETTINGS_MODULE: config.settings.testing
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: "false"
+          REDIS_URL: redis://localhost:6379/0
+          TELEGRAM_BOT_TOKEN: "test:token"
+          OPENAI_API_KEY: "test-key"
+        run: |
           coverage run --source='.' manage.py test
           coverage xml
           coverage report
 
+      - name: Run bot tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_content_bot
+          REDIS_URL: redis://localhost:6379/0
+          TELEGRAM_BOT_TOKEN: "test:token"
+        run: |
+          python -m pytest src/bot/tests/ -v --cov=src.bot --cov-report=xml
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./backend/coverage.xml
+          file: ./coverage.xml
           flags: unittests
-          name: codecov-umbrella
+          name: codecov-backend
 
-  test-fastapi:
-    name: FastAPI Tests
+  test-bot:
+    name: Bot Integration Tests
     runs-on: ubuntu-latest
     services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_bot
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
       redis:
         image: redis:${{ env.REDIS_VERSION }}
         options: >-
@@ -148,26 +170,21 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install FastAPI dependencies
+      - name: Install dependencies
         run: |
-          cd fastapi
-          pip install -r requirements.txt
+          pip install --upgrade pip
+          pip install -r requirements/dev.txt
+          pip install -r requirements/bot.txt
           pip install pytest pytest-asyncio httpx
 
-      - name: Run FastAPI tests
+      - name: Run bot integration tests
         env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_bot
           REDIS_URL: redis://localhost:6379/0
-          DATABASE_URL: sqlite:///./test.db
+          TELEGRAM_BOT_TOKEN: "test:token"
+          OPENAI_API_KEY: "test-key"
         run: |
-          cd fastapi
-          python -m pytest tests/ -v --cov=app --cov-report=xml
-
-      - name: Upload FastAPI coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./fastapi/coverage.xml
-          flags: fastapi
-          name: codecov-fastapi
+          python -m pytest tests/integration/ -v
 
   security-scan:
     name: Security Scanning
@@ -184,26 +201,31 @@ jobs:
       - name: Run safety check
         run: |
           pip install safety
-          safety check --full-report
+          safety check --full-report -r requirements/prod.txt
 
       - name: Run bandit
         run: |
           pip install bandit
-          bandit -r backend/ -x tests,__pycache__,migrations
-          bandit -r fastapi/ -x tests,__pycache__
+          bandit -r src/ -x tests,__pycache__
+          bandit -r bot/ -x tests,__pycache__
 
       - name: Run hadolint for Dockerfiles
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: |
-            ./backend/Dockerfile
-            ./fastapi/Dockerfile
-            ./engine/Dockerfile
+            ./Dockerfile
+            ./Dockerfile.bot
+            ./Dockerfile.web
+
+      - name: Check for secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
 
   build-and-push:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    needs: [pre-commit, test-backend, test-fastapi, security-scan]
+    needs: [pre-commit, test-backend, test-bot, security-scan]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     
     steps:
@@ -225,8 +247,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}-backend
-            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}-fastapi
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}-web
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}-bot
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -234,24 +256,24 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      - name: Build and push Backend image
+      - name: Build and push Web image
         uses: docker/build-push-action@v4
         with:
-          context: ./backend
-          file: ./backend/Dockerfile.prod
+          context: .
+          file: ./Dockerfile.web
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}-web:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push FastAPI image
+      - name: Build and push Bot image
         uses: docker/build-push-action@v4
         with:
-          context: ./fastapi
-          file: ./fastapi/Dockerfile.prod
+          context: .
+          file: ./Dockerfile.bot
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}-fastapi:${{ github.sha }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}-bot:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -274,7 +296,7 @@ jobs:
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            cd /opt/gramgpt
+            cd /opt/content-generation-bot
             git pull origin develop
             docker-compose -f docker-compose.staging.yml pull
             docker-compose -f docker-compose.staging.yml up -d
@@ -283,7 +305,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: deploy-staging
+    needs: [deploy-staging, performance-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
     
@@ -298,7 +320,7 @@ jobs:
           username: ${{ secrets.PRODUCTION_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
-            cd /opt/gramgpt
+            cd /opt/content-generation-bot
             git pull origin main
             docker-compose -f docker-compose.prod.yml pull
             docker-compose -f docker-compose.prod.yml up -d
@@ -320,10 +342,11 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Run performance tests
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
         run: |
           pip install locust
-          cd tests/performance
-          locust -f load_test.py --headless -u 100 -r 10 -t 1m --host=${{ secrets.STAGING_URL }}
+          locust -f tests/performance/load_test.py --headless -u 50 -r 5 -t 2m --host=${{ secrets.STAGING_URL }}
 
   notify:
     name: Notify Status
@@ -347,7 +370,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           message: |
-            🚀 Deployment ${{ job.status }}
+            🤖 Content Bot Deployment ${{ job.status }}
             Repository: ${{ github.repository }}
             Branch: ${{ github.ref }}
             Commit: ${{ github.sha }}

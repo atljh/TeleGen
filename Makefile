@@ -61,9 +61,6 @@ admin:
 test:
 	cd backend && python -m pytest tests/ -v --cov=.
 
-test-fastapi:
-	cd fastapi && python -m pytest tests/ -v --cov=app
-
 coverage:
 	cd backend && coverage run --source='.' manage.py test && coverage report
 

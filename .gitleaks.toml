@@ -1,0 +1,19 @@
+title = "gitleaks config"
+
+[[rules]]
+description = "Telegram Bot Token"
+id = "telegram-bot-token"
+regex = '''(?i)bot[0-9]{9,11}:[a-zA-Z0-9_-]{35}'''
+tags = ["key", "telegram"]
+
+[[rules]]
+description = "OpenAI API Key"
+id = "openai-api-key"
+regex = '''sk-[a-zA-Z0-9]{48}'''
+tags = ["key", "openai"]
+
+[[rules]]
+description = "Django Secret Key"
+id = "django-secret-key"
+regex = '''SECRET_KEY = ['"][^'"]{50,}['"]'''
+tags = ["key", "django"]
