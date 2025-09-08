@@ -1,18 +1,20 @@
-from django.core.management.base import BaseCommand
-from admin_panel.admin_panel.models import (
-    User,
-    Channel,
-    Flow,
-    Post,
-    Draft,
-    Subscription,
-    Payment,
-    AISettings,
-    Statistics,
-)
-from faker import Faker
 import random
+
+from django.core.management.base import BaseCommand
 from django.utils import timezone
+from faker import Faker
+
+from admin_panel.admin_panel.models import (
+    AISettings,
+    Channel,
+    Draft,
+    Flow,
+    Payment,
+    Post,
+    Statistics,
+    Subscription,
+    User,
+)
 
 fake = Faker()
 

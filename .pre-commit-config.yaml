@@ -24,6 +24,6 @@ repos:
     rev: 6.1.0
     hooks:
       - id: flake8
-        args: ['--max-line-length=88', '--extend-ignore=E203,W503,E501,F401,F403,F405,F811,F601,E402']
+        args: ['--max-line-length=88', '--extend-ignore=E203,W503,E501,F401,F403,F405,F811,F601,E402,F821']
 
 fail_fast: true

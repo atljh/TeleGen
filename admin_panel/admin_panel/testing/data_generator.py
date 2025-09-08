@@ -1,13 +1,15 @@
-import os
-import random
 import asyncio
 import logging
-from typing import List, Dict, Any
+import os
+import random
 from datetime import datetime
+from typing import Any, Dict, List
+
 from faker import Faker
 
 from admin_panel.models import User
-from .source_lists import WEB_SOURCES, TELEGRAM_SOURCES
+
+from .source_lists import TELEGRAM_SOURCES, WEB_SOURCES
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +72,9 @@ class TestDataGenerator:
     ) -> List[Any]:
         await self._setup_django()
 
-        from admin_panel.models import Channel
         from asgiref.sync import sync_to_async
+
+        from admin_panel.models import Channel
 
         channels = []
         num_channels = random.randint(min_channels, max_channels)
@@ -107,8 +110,9 @@ class TestDataGenerator:
     ) -> List[Any]:
         await self._setup_django()
 
-        from admin_panel.models import Flow
         from asgiref.sync import sync_to_async
+
+        from admin_panel.models import Flow
 
         flows = []
         num_flows = random.randint(min_flows, max_flows)

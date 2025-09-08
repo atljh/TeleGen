@@ -1,15 +1,16 @@
 from django.contrib import admin
+
 from .models import (
-    User,
-    Channel,
-    Flow,
-    Post,
-    Draft,
-    Subscription,
-    Payment,
     AISettings,
-    Statistics,
+    Channel,
+    Draft,
+    Flow,
+    Payment,
+    Post,
     PostImage,
+    Statistics,
+    Subscription,
+    User,
 )
 
 

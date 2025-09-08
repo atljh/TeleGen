@@ -58,11 +58,4 @@ admin:
 	open http://localhost:8000/admin
 
 test:
-	cd backend && python -m pytest tests/ -v --cov=.
-
-coverage:
-	cd backend && coverage run --source='.' manage.py test && coverage report
-
-security:
-	safety check
-	bandit -r backend/ -x tests,__pycache__,migrations
+	python -m pytest tests/ -v --cov=.

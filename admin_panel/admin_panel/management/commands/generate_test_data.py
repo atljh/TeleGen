@@ -1,6 +1,7 @@
-from django.core.management.base import BaseCommand
 import asyncio
 import logging
+
+from django.core.management.base import BaseCommand
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from admin_panel.testing.data_generator import (
-            generate_test_data,
             cleanup_test_data,
+            generate_test_data,
         )
 
         async def run_generation():

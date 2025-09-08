@@ -1,5 +1,6 @@
-from django.core.management.base import BaseCommand
 import asyncio
+
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
