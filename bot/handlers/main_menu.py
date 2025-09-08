@@ -1,8 +1,8 @@
 from aiogram import F, Router, types
 from aiogram.dispatcher.dispatcher import Dispatcher
 from aiogram_dialog import DialogManager, StartMode
-from dialogs.settings.states import SettingsMenu
-from dialogs.support.states import SupportMenu
+from bot.dialogs.settings.states import SettingsMenu
+from bot.dialogs.support.states import SupportMenu
 
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.states import GenerationMenu

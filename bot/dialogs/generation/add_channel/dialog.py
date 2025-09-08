@@ -8,7 +8,7 @@ from aiogram_dialog.widgets.text import Const, Format, Jinja
 
 from bot.containers import Container
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
-from utils.buttons import go_back_to_generation
+from bot.utils.buttons import go_back_to_generation
 
 from .callbacks import check_admin_rights, on_create_flow, subscribe
 from .getters import channel_data_getter

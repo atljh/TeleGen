@@ -6,7 +6,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.kbd import Button
-from dialogs.settings.states import SettingsMenu
+from bot.dialogs.settings.states import SettingsMenu
 
 from bot.containers import Container
 from bot.dialogs.settings.flow_settings.getters import get_sources_data

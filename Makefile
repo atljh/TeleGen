@@ -58,4 +58,4 @@ admin:
 	open http://localhost:8000/admin
 
 test:
-	python -m pytest tests/ -v --cov=.
+	python -m pytest tests/ -v

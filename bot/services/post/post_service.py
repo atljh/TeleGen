@@ -8,12 +8,11 @@ from admin_panel.admin_panel.models import Post, PostImage
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import FlowRepository, PostRepository
-from bot.services.post import (
-    PostBaseService,
-    PostGenerationService,
-    PostPublishingService,
-    PostSchedulingService,
-)
+from bot.services.post.base import PostBaseService
+from bot.services.post.generation import PostGenerationService
+from bot.services.post.publish import PostPublishingService
+from bot.services.post.scheduling import PostSchedulingService
+from bot.services.telegram_userbot.enhanced_userbot_service import EnhancedUserbotService
 from bot.services.web.web_service import WebService
 
 
@@ -22,7 +21,7 @@ class PostService:
         self,
         bot: Bot,
         web_service: WebService,
-        userbot_service: "EnhancedUserbotService",
+        userbot_service: EnhancedUserbotService,
         post_repository: PostRepository,
         flow_repository: FlowRepository,
     ):

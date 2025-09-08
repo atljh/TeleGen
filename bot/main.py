@@ -6,10 +6,10 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
-from dialogs import register_dialogs
 from dotenv import load_dotenv
-from handlers import register_handlers
 
+from bot.handlers import register_handlers
+from bot.dialogs import register_dialogs
 from bot.containers import Container
 from bot.services.logger_service import LogEvent, LogLevel
 from bot.utils.logging import setup_logging
