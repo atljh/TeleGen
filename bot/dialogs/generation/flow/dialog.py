@@ -20,6 +20,7 @@ from aiogram_dialog.widgets.kbd import (
 )
 from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.link_preview import LinkPreview
 
 from bot.dialogs.generation.flow.states import FlowMenu
 
@@ -129,10 +130,10 @@ def flow_dialog() -> Dialog:
                     on_click=go_back_to_channels,
                 )
             ),
+            LinkPreview(is_disabled=True),
             getter=paging_getter,
             state=FlowMenu.posts_list,
             parse_mode=ParseMode.HTML,
-            disable_web_page_preview=True,
         ),
         Window(
             Format(
@@ -145,10 +146,10 @@ def flow_dialog() -> Dialog:
             Row(
                 Back(Const("🔙 Назад")),
             ),
+            LinkPreview(is_disabled=True),
             getter=post_info_getter,
             state=FlowMenu.post_info,
             parse_mode=ParseMode.HTML,
-            disable_web_page_preview=True,
         ),
         Window(
             Format("<b>✏️ Редагування поста</b>\n\n" "\n{content}\n\n"),

@@ -8,6 +8,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from bot.dialogs.generation.callbacks import on_force_generate
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from bot.dialogs.settings.flow_settings.callbacks import start_flow_settings
+from aiogram_dialog.widgets.link_preview import LinkPreview
 
 from .callbacks import (
     add_more_sources,
@@ -114,10 +115,10 @@ def create_flow_dialog():
                     on_click=to_select_frequency,
                 ),
             ),
+            LinkPreview(is_disabled=True),
             state=CreateFlowMenu.select_source,
             parse_mode=ParseMode.HTML,
             getter=source_type_getter,
-            disable_web_page_preview=True,
         ),
         Window(
             Format(
@@ -132,12 +133,11 @@ def create_flow_dialog():
             ),
             Row(
                 Back(Const("🔙 Назад")),
-                # Button(Const("📋 Мої джерела"), id="my_sources", on_click=show_my_sources),
             ),
+            LinkPreview(is_disabled=True),
             state=CreateFlowMenu.add_source_link,
             parse_mode=ParseMode.HTML,
             getter=source_link_getter,
-            disable_web_page_preview=True,
         ),
         Window(
             Format(
@@ -315,10 +315,10 @@ def create_flow_dialog():
                     on_click=start_generation_process,
                 ),
             ),
+            LinkPreview(is_disabled=True),
             state=CreateFlowMenu.confirmation,
             parse_mode=ParseMode.HTML,
             getter=flow_confirmation_getter,
-            disable_web_page_preview=True,
         ),
         Window(
             Format("✏️ <b>Введіть власну тему каналу:</b>"),

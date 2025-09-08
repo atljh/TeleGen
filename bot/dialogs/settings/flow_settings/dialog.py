@@ -15,6 +15,7 @@ from aiogram_dialog.widgets.kbd import (
     SwitchTo,
 )
 from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.link_preview import LinkPreview
 
 from .callbacks import (
     back_to_settings,
@@ -110,10 +111,10 @@ def create_flow_settings_window():
                 Const("🔙 Назад"), id="open_main_settings", on_click=open_main_settings
             ),
         ),
+        LinkPreview(is_disabled=True),
         state=FlowSettingsMenu.flow_settings,
         parse_mode=ParseMode.HTML,
         getter=flow_settings_getter,
-        disable_web_page_preview=True,
     )
 
 

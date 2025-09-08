@@ -16,6 +16,7 @@ from aiogram_dialog.widgets.kbd import (
     SwitchTo,
 )
 from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.link_preview import LinkPreview
 
 from bot.containers import Container
 from bot.dialogs.settings.payment.states import PaymentMenu
@@ -157,11 +158,11 @@ def create_settings_dialog():
             Row(
                 Back(Const("🔙 Назад")),
             ),
+            LinkPreview(is_disabled=True),
             MessageInput(handle_sig_input),
             state=SettingsMenu.edit_signature,
             parse_mode=ParseMode.HTML,
             getter=selected_channel_getter,
-            disable_web_page_preview=True,
         ),
         Window(
             Format("🔔 <b>Налаштування сповіщень для {channel_name}</b>\n\n"),
@@ -173,10 +174,10 @@ def create_settings_dialog():
                 )
             ),
             Button(Const("🔙 Назад"), id="open_settings", on_click=open_settings),
+            LinkPreview(is_disabled=True),
             state=SettingsMenu.notification_settings,
             parse_mode=ParseMode.HTML,
             getter=notification_getter,
-            disable_web_page_preview=True,
         ),
         Window(
             Format(

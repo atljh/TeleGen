@@ -11,6 +11,7 @@ from aiogram_dialog.widgets.kbd import (
     Url,
 )
 from aiogram_dialog.widgets.text import Const, Format, Multi
+from aiogram_dialog.widgets.link_preview import LinkPreview
 
 from bot.dialogs.settings.payment.states import PaymentMenu
 
@@ -131,10 +132,10 @@ def create_payment_dialog():
                 on_click=on_monobank_confirm,
             ),
             Back(Const("🔙 До способів")),
+            LinkPreview(is_disabled=True),
             state=PaymentMenu.monobank_payment,
             getter=methods_getter,
             parse_mode=ParseMode.MARKDOWN,
-            disable_web_page_preview=True,
         ),
         Window(
             Multi(
@@ -157,10 +158,10 @@ def create_payment_dialog():
                 on_click=on_cryptobot_confirm,
             ),
             Back(Const("🔙 До способів")),
+            LinkPreview(is_disabled=True),
             state=PaymentMenu.cryptobot_payment,
             getter=methods_getter,
             parse_mode=ParseMode.MARKDOWN,
-            disable_web_page_preview=True,
         ),
         Window(
             Multi(
