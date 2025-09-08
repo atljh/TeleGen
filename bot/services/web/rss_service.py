@@ -6,7 +6,7 @@ import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, list, Optional, TypedDict
+from typing import Any, Optional, TypedDict
 from urllib.parse import urlparse
 
 import aiohttp
@@ -142,7 +142,7 @@ class RssService:
         return [await task for task in tasks]
 
     async def fetch_posts(
-        self, rss_urls: list[str], limit: int = 10, *, timeout: int = 30
+        self, rss_urls: list[str], limit: int = 10
     ) -> list[RssPost]:
         if not rss_urls:
             return []
@@ -152,15 +152,15 @@ class RssService:
             tasks = [
                 self._fetch_feed_posts(url, limits_per_url[url]) for url in rss_urls
             ]
-            results = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), timeout=timeout
-            )
+            async with asyncio.timeout(30):
+                results = await asyncio.gather(*tasks, return_exceptions=True)
             return [
                 post
                 for sublist in results
                 if not isinstance(sublist, Exception)
                 for post in sublist
             ]
+
         except asyncio.TimeoutError:
             self.logger.warning("Timeout while fetching posts")
             return []

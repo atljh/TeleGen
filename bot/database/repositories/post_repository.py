@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import uuid
 from datetime import datetime
-from typing import list, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 import requests

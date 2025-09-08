@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import Any, list, Optional
+from typing import Any, Optional
 
 from telethon import TelegramClient
 

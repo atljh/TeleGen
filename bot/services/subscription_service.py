@@ -1,5 +1,5 @@
 import logging
-from typing import list
+
 
 from bot.database.exceptions import (
     ChannelNotFoundError,

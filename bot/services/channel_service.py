@@ -1,5 +1,5 @@
 import logging
-from typing import list, Optional
+from typing import Optional
 
 from asgiref.sync import sync_to_async
 

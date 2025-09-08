@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-from typing import list
+
 
 from aiogram import Bot
 

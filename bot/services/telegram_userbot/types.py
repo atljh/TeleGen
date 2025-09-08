@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, list, Optional, TypedDict, Union
+from typing import Any, Optional, TypedDict, Union
 
 from telethon.tl.types import Channel, Chat, User
 

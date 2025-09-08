@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import list
+
 
 from asgiref.sync import sync_to_async
 

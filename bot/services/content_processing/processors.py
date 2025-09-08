@@ -3,7 +3,7 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from typing import list
+
 
 import openai
 from psycopg.errors import UniqueViolation

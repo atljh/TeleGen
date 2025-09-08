@@ -2,7 +2,7 @@ import logging
 import os
 import random
 from datetime import datetime
-from typing import Any, list
+from typing import Any
 
 from faker import Faker
 

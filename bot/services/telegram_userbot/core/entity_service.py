@@ -1,5 +1,5 @@
 import logging
-from typing import list, Optional
+from typing import Optional
 
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest

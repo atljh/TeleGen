@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Awaitable, Callable, dict, list, Optional
+from typing import Any, Awaitable, Callable
 
 from bs4 import BeautifulSoup
 
@@ -70,7 +70,7 @@ class WebService:
             )
         ][:limit]
 
-    async def _enrich_posts(self, posts: list[dict]) -> list[dict]:
+    async def _enrich_posts(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return await asyncio.gather(*[self._enrich_single_post(post) for post in posts])
 
     async def _enrich_single_post(self, post: dict) -> dict | None:
