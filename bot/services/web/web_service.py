@@ -50,7 +50,6 @@ class WebService:
                         flow,
                         self.flow_service,
                         limit,
-                        post_repository=self.post_repository,
                     )
                 ][:limit]
                 enriched_posts = await self._enrich_posts(raw_posts)
@@ -59,16 +58,6 @@ class WebService:
             except Exception as e:
                 self.logger.error(f"Failed to get posts: {e}", exc_info=True)
                 return []
-
-    async def _get_raw_posts(
-        self, rss_service: RssService, flow: FlowDTO, limit: int
-    ) -> list[dict]:
-        return [
-            post
-            async for post in rss_service.get_posts_for_flow(
-                flow, self.flow_service, limit
-            )
-        ][:limit]
 
     async def _enrich_posts(self, posts: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return await asyncio.gather(*[self._enrich_single_post(post) for post in posts])
