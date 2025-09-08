@@ -28,7 +28,7 @@ channel_router = Router()
 )
 async def on_bot_added_to_channel(event: ChatMemberUpdated, dialog_manager: DialogManager):
     channel_service = Container.channel_service()
-    try:    
+    try:
         channel = await channel_service.get_or_create_channel(
             user_telegram_id=event.from_user.id,
             channel_id=str(event.chat.id),
@@ -48,7 +48,7 @@ async def on_bot_added_to_channel(event: ChatMemberUpdated, dialog_manager: Dial
             },
             mode=StartMode.RESET_STACK
         )
-        
+
     except Exception as e:
         logging.error(f"Error adding channel: {e}")
         await event.bot.send_message(
@@ -89,4 +89,4 @@ async def global_error_handler(event):
     logging.error("Unhandled exception occurred", exc_info=event.exception)
     if event.update.message:
         await event.update.message.answer("Cпробуйте пiзнiше.")
-    return True 
+    return True

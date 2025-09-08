@@ -16,7 +16,7 @@ generation_router = Router()
 
 @generation_router.callback_query(F.data.startswith("view_generated_"))
 async def view_generated_posts(
-    callback: CallbackQuery, 
+    callback: CallbackQuery,
     dialog_manager: DialogManager
 ) -> None:
     try:
@@ -55,7 +55,7 @@ async def view_generated_posts(
             },
             mode=StartMode.RESET_STACK
         )
-        
+
         await callback.answer()
 
     except Exception as e:

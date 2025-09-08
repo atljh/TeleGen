@@ -1,7 +1,7 @@
 import html
 import logging
 from itertools import zip_longest
-from aiogram.enums import ParseMode 
+from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager
 from aiogram_dialog import Dialog, Window
@@ -44,8 +44,8 @@ def chunked(iterable, n):
 times = [f"{hour:02d}:{minute:02d}" for hour in range(8, 23) for minute in (0, 30)]
 
 async def on_dialog_result(
-    event, 
-    manager: DialogManager, 
+    event,
+    manager: DialogManager,
     result
 ):
     if manager.current_state() == FlowMenu.posts_list:
@@ -55,18 +55,18 @@ async def on_dialog_result(
 
 def flow_dialog() -> Dialog:
     from bot.dialogs.generation.callbacks import go_back_to_channels
-    
+
     async def on_page_changed(
-        callback: CallbackQuery, 
+        callback: CallbackQuery,
         widget,
-        manager: DialogManager, 
+        manager: DialogManager,
     ):
         data = await paging_getter(manager)
         if data["post"].get("is_album"):
             await send_media_album(manager, data["post"])
             return
         # await manager.show()
-    
+
     return Dialog(
         Window(
             Format("{post[content_preview]}", when=lambda data, widget, manager: not data["post"].get("is_album")),
@@ -113,7 +113,7 @@ def flow_dialog() -> Dialog:
                 "\n{content}\n\n"
                 ),
             DynamicMedia("media"),
-            
+
             Row(
                 Button(Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text),
                 Button(Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media),
@@ -121,9 +121,9 @@ def flow_dialog() -> Dialog:
             Row(
                 Button(Const("🔙 Назад"), id='on_back_to_posts', on_click=on_back_to_posts)
             ),
-            
+
             MessageInput(process_edit_input),
-            
+
             getter=edit_post_getter,
             state=FlowMenu.edit_post,
             parse_mode="HTML"

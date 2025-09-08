@@ -14,16 +14,16 @@ class PostProcessingPipeline:
             if not post_dto.content:
                 self.logger.warning("Empty content in post")
                 return None
-            
+
             processed_text = post_dto.content
             for processor in self.processors:
                 processed_text = await processor.process(processed_text)
                 if not processed_text:
                     self.logger.warning(f"Processor {type(processor).__name__} returned empty text")
                     break
-            
+
             return post_dto.copy(update={'content': processed_text})
-            
+
         except Exception as e:
             self.logger.error(f"Error processing post: {str(e)}", exc_info=True)
             return None

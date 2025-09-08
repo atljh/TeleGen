@@ -8,7 +8,7 @@ from bot.utils.notifications import notify_admins
 from ..types import AuthorizationError
 
 class AuthorizationService:
-    
+
     def __init__(self, phone: Optional[str] = None):
         self.phone = phone
         self.logger = logging.getLogger(__name__)
@@ -21,15 +21,15 @@ class AuthorizationService:
                 password=lambda: None
             )
             return True
-            
+
         except SessionPasswordNeededError:
             await self._handle_password_needed()
             raise AuthorizationError("Two-factor authentication required")
-            
+
         except EOFError:
             await self._handle_eof_error()
             raise AuthorizationError("Reauthorization required")
-            
+
         except Exception as e:
             await self._handle_authorization_error(e)
             raise AuthorizationError(f"Authorization failed: {str(e)}")

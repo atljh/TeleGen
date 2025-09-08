@@ -36,14 +36,14 @@ class WebService:
         self.logger = logger or logging.getLogger(__name__)
 
     async def get_last_posts(
-        self, 
-        flow: FlowDTO, 
+        self,
+        flow: FlowDTO,
         limit: int = 10
     ) -> List[PostDTO]:
         async with self.rss_service_factory() as rss_service:
             try:
                 raw_posts = [
-                    post async for post in 
+                    post async for post in
                     rss_service.get_posts_for_flow(
                         flow, self.flow_service, limit,
                         post_repository=self.post_repository
@@ -51,24 +51,24 @@ class WebService:
                 ][:limit]
                 enriched_posts = await self._enrich_posts(raw_posts)
                 return await self._process_and_build_posts(enriched_posts, flow)
-                
+
             except Exception as e:
                 self.logger.error(f"Failed to get posts: {e}", exc_info=True)
                 return []
 
     async def _get_raw_posts(
-        self, 
+        self,
         rss_service: 'RssService',
-        flow: FlowDTO, 
+        flow: FlowDTO,
         limit: int
     ) -> List[Dict]:
         return [
-            post async for post in 
+            post async for post in
             rss_service.get_posts_for_flow(flow, self.flow_service, limit)
         ][:limit]
 
     async def _enrich_posts(
-        self, 
+        self,
         posts: List[Dict]
     ) -> List[Dict]:
         return await asyncio.gather(*[
@@ -77,7 +77,7 @@ class WebService:
         ])
 
     async def _enrich_single_post(
-        self, 
+        self,
         post: Dict
     ) -> Dict:
         if not post:
@@ -94,7 +94,7 @@ class WebService:
                 soup = BeautifulSoup(html, 'html.parser') if html else None
                 if soup:
                     web_data.images = self.image_extractor.extract_images(
-                        soup, 
+                        soup,
                         post['original_link']
                     )
             else:
@@ -105,8 +105,8 @@ class WebService:
             return post
 
     async def _process_and_build_posts(
-        self, 
-        posts: List[Optional[Dict]], 
+        self,
+        posts: List[Optional[Dict]],
         flow: FlowDTO
     ) -> List[PostDTO]:
         if not posts:
@@ -114,12 +114,12 @@ class WebService:
 
         try:
             user = await self.user_service.get_user_by_flow(flow)
-            
+
             valid_posts = [
-                p for p in posts 
+                p for p in posts
                 if p is not None and isinstance(p, dict) and 'content' in p
             ]
-            
+
             if not valid_posts:
                 self.logger.warning(f"No valid posts found for flow {flow.id}")
                 return []
@@ -137,7 +137,7 @@ class WebService:
                         f"Content processing failed for post {post.get('source_id')}: {content}"
                     )
                     continue
-                
+
                 try:
                     built_post = self.post_builder.build_post(post, content, flow)
                     result.append(built_post)
@@ -146,7 +146,7 @@ class WebService:
                         f"Failed to build post {post.get('source_id')}: {e}",
                         exc_info=True
                     )
-            
+
             return result
 
         except Exception as e:

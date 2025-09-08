@@ -85,7 +85,7 @@ class RssService:
 
     def is_configured(self) -> bool:
         return bool(self.rss_app_key and self.rss_app_secret)
-    
+
     async def get_posts_for_flow(
         self,
         flow: FlowDTO,
@@ -97,14 +97,14 @@ class RssService:
     ) -> AsyncIterator[dict[str, Any]]:
         try:
             rss_urls = await self._get_flow_rss_urls(flow, flow_service)
-            
+
             async for post in self._stream_posts(
                 rss_urls, limit, timeout,
                 post_repository=post_repository
             ):
-                
+
                 yield self._convert_to_web_service_format(post)
-                
+
         except asyncio.TimeoutError:
             self.logger.warning(f"Timeout getting posts for flow {flow.id}")
         except Exception as e:
@@ -138,14 +138,14 @@ class RssService:
         parallel: bool = True
     ) -> list[str]:
         tasks = [self._discover_rss_for_source(source) for source in sources]
-        
+
         if parallel:
             results = await asyncio.gather(*tasks, return_exceptions=True)
             return [
-                url for url in results 
+                url for url in results
                 if url and not isinstance(url, Exception)
             ]
-            
+
         return [await task for task in tasks]
 
 
@@ -261,16 +261,16 @@ class RssService:
         retry: int = 0
     ) -> str | None:
         base_url = source['link'].rstrip('/')
-        
+
         try:
             # for path in self.common_rss_paths:
             #     rss_url = f"{base_url}{path}"
             #     if await self._validate_rss_feed(rss_url):
             #         return rss_url
-            
+
             if self.rss_app_key and self.rss_app_secret:
                 return await self._get_rss_via_api(base_url)
-            
+
             return None
 
         except Exception as e:
@@ -296,7 +296,7 @@ class RssService:
                 text = await response.text()
                 feed = feedparser.parse(text)
                 domain = urlparse(rss_url).netloc
-                
+
                 return await asyncio.gather(*[
                     self._parse_rss_entry(entry, domain, rss_url)
                     for entry in feed.entries[:limit]
@@ -318,10 +318,10 @@ class RssService:
         check_existing: bool = True
     ) -> Optional[RssPost]:
         await self._random_delay()
-        
+
         try:
             source_id = f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}"
-            
+
             if check_existing and post_repository:
                 if await post_repository._post_exists(source_id=source_id):
                     self.logger.debug(f"STOP | Post already exists: {source_id}")
@@ -329,8 +329,8 @@ class RssService:
 
             post_data = {
                 'title': entry.title,
-                'content': getattr(entry, 'description', '') 
-                        or getattr(entry, 'summary', '') 
+                'content': getattr(entry, 'description', '')
+                        or getattr(entry, 'summary', '')
                         or entry.title,
                 'original_link': entry.link,
                 'original_date': self._parse_rss_date(entry.get('published')),
@@ -340,7 +340,7 @@ class RssService:
                 'domain': domain
             }
             return RssPost(**post_data)
-            
+
         except Exception as e:
             self.logger.error(f"Error parsing RSS entry: {e}", exc_info=True)
             return None
@@ -350,35 +350,35 @@ class RssService:
 
     def _extract_rss_images(self, entry: feedparser.FeedParserDict) -> list[str]:
         images: set[str] = set()
-        
+
         # 1. Проверка media_content (стандартный способ)
         if hasattr(entry, 'media_content'):
             images.update(
                 media['url'] for media in entry.media_content
                 if media.get('medium') == 'image' or media.get('type', '').startswith('image/')
             )
-        
+
         # 2. Проверка links
         if hasattr(entry, 'links'):
             images.update(
                 link['href'] for link in entry.links
                 if link.get('type', '').startswith('image/')
             )
-        
+
         # 3. Проверка media_thumbnail (если есть)
         if hasattr(entry, 'media_thumbnail'):
             images.update(
                 thumb['url'] for thumb in entry.media_thumbnail
                 if thumb.get('url')
             )
-        
+
         # 4. Проверка описания (HTML парсинг)
         if hasattr(entry, 'description'):
             soup = BeautifulSoup(entry.description, "html.parser")
             images.update(
                 img['src'] for img in soup.find_all("img", src=True)
             )
-        
+
         # 5. Дополнительная проверка для media:content
         if hasattr(entry, 'enclosures'):
             images.update(
@@ -396,7 +396,7 @@ class RssService:
             async with self.session.get(url) as response:
                 if response.status != 200:
                     return False
-                
+
                 text = await response.text()
                 feed = feedparser.parse(text)
                 return bool(feed.entries)
@@ -410,7 +410,7 @@ class RssService:
     ) -> dict[str, int]:
         if not urls:
             return {}
-            
+
         base_limit = total_limit // len(urls)
         extra = total_limit % len(urls)
         return {
@@ -429,26 +429,26 @@ class RssService:
     def _is_valid_image_url(self, url: str) -> bool:
         if not url:
             return False
-        
+
         try:
             parsed = urlparse(url)
             if not parsed.scheme in ('http', 'https'):
                 return False
-                
+
             path = parsed.path.lower()
-            
+
             valid_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
             if any(path.endswith(ext) for ext in valid_extensions):
                 return True
-            
+
             image_paths = {'/media/', '/images/', '/img/', '/photo/', '/wp-content/uploads/'}
             if any(img_path in path for img_path in image_paths):
                 return True
-                
+
             cdn_domains = {'cdn.', 'images.', 'img.', 'media.'}
             if any(domain in parsed.netloc for domain in cdn_domains):
                 return True
-                
+
             return False
         except Exception:
             return False
@@ -460,7 +460,7 @@ class RssService:
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:127.0) Gecko/20100101 Firefox/127.0'
         ]
-        
+
         return {
             'User-Agent': random.choice(user_agents),
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -500,7 +500,7 @@ class RssService:
 
     async def _make_api_request(self, url: str, attempt: int) -> str | None:
         await self._random_delay()
-        
+
         async with self.session.post(
             "https://api.rss.app/v1/feeds",
             headers=self._prepare_api_headers(self.headers),
@@ -516,10 +516,10 @@ class RssService:
         if response.status == 200:
             data = await response.json()
             return data.get('rss_feed_url')
-        
+
         error_data = await self._parse_api_error(response)
         await self._notify_api_error(response.status, error_data, url)
-        
+
         if response.status >= 500:
             raise Exception(f"Server error: {response.status}")
         return None
@@ -550,7 +550,7 @@ class RssService:
             self.logger.error(f"Attempt {attempt} failed for {url}: {error_msg}", exc_info=True)
         await asyncio.sleep(attempt * 2)
 
-    
+
 
     async def delete_feed_by_url(self, rss_url: str) -> bool:
         """
@@ -560,7 +560,7 @@ class RssService:
         if not self.is_configured():
             self.logger.warning("RSS service not configured - skipping feed deletion")
             return True
-            
+
         try:
             feed_id = await self._find_feed_id_by_url(rss_url)
             if not feed_id:
@@ -568,47 +568,47 @@ class RssService:
                 return True
             await asyncio.sleep(2)
             return await self._delete_feed(feed_id)
-            
+
         except Exception as e:
             self.logger.error(f"Error deleting RSS feed {rss_url}: {str(e)}")
             return False
-    
+
     async def _find_feed_id_by_url(self, rss_url: str) -> Optional[str]:
         try:
             async with aiohttp.ClientSession() as session:
                 page = 1
                 while True:
                     url = f"{self.base_url}/feeds?page={page}&limit=100"
-                    
+
                     async with session.get(url, headers=self.headers) as response:
                         if response.status != 200:
                             self.logger.error(f"Failed to fetch feeds: {response.status}")
                             return None
-                            
+
                         data = await response.json()
                         feeds = data.get("data", [])
                         if not feeds:
                             return None
-                            
+
                         for feed in feeds:
                             feed_url = feed.get("rss_feed_url", "")
                             if feed_url == rss_url:
                                 return feed.get("id")
-                        
+
                         if len(feeds) < 100:
                             return None
-                            
+
                         page += 1
-                        
+
         except Exception as e:
             self.logger.error(f"Error searching for feed: {str(e)}")
             return None
-    
+
     async def _delete_feed(self, feed_id: str) -> bool:
         try:
             async with aiohttp.ClientSession() as session:
                 url = f"{self.base_url}/feeds/{feed_id}"
-                
+
                 async with session.delete(url, headers=self.headers) as response:
                     if response.status == 200:
                         self.logger.info(f"Successfully deleted RSS feed: {feed_id}")
@@ -620,15 +620,15 @@ class RssService:
                         error_text = await response.text()
                         self.logger.error(f"Failed to delete RSS feed {feed_id}: {response.status} - {error_text}")
                         return False
-                        
+
         except Exception as e:
             self.logger.error(f"Error deleting feed {feed_id}: {str(e)}")
             return False
-    
+
     async def create_feed(self, source_url: str) -> Optional[Dict]:
         if not self.is_configured():
             return None
-            
+
         try:
             async with aiohttp.ClientSession() as session:
                 url = f"{self.base_url}/feeds"
@@ -636,7 +636,7 @@ class RssService:
                     "url": source_url,
                     "format": "json"
                 }
-                
+
                 async with session.post(url, headers=self.headers, json=payload) as response:
                     if response.status == 201:
                         data = await response.json()
@@ -645,42 +645,42 @@ class RssService:
                         error_text = await response.text()
                         self.logger.error(f"Failed to create RSS feed: {response.status} - {error_text}")
                         return None
-                        
+
         except Exception as e:
             self.logger.error(f"Error creating RSS feed: {str(e)}")
             return None
-    
+
     async def get_all_feeds(self) -> List[Dict]:
         if not self.is_configured():
             return []
-            
+
         try:
             all_feeds = []
             page = 1
-            
+
             async with aiohttp.ClientSession() as session:
                 while True:
                     url = f"{self.base_url}/feeds?page={page}&limit=100"
-                    
+
                     async with session.get(url, headers=self.headers) as response:
                         if response.status != 200:
                             break
-                            
+
                         data = await response.json()
                         feeds = data.get("data", [])
-                        
+
                         if not feeds:
                             break
-                            
+
                         all_feeds.extend(feeds)
-                        
+
                         if len(feeds) < 100:
                             break
-                            
+
                         page += 1
-            
+
             return all_feeds
-            
+
         except Exception as e:
             self.logger.error(f"Error fetching feeds: {str(e)}")
             return []

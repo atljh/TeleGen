@@ -16,12 +16,12 @@ from dialogs import register_dialogs
 
 async def main():
     load_dotenv()
-    
+
     container = Container()
     bot = container.bot()
-    
+
     telegram_logger = await setup_logging(bot)
-    
+
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
 
@@ -29,7 +29,7 @@ async def main():
     register_handlers(dp)
     register_dialogs(dp)
     setup_dialogs(dp)
-    
+
     try:
         await dp.start_polling(
             bot,
@@ -38,7 +38,7 @@ async def main():
         )
     except Exception as e:
         logging.error(f"Bot stopped with error: {e}")
-        
+
         if telegram_logger and telegram_logger.enabled:
             await telegram_logger.log(LogEvent(
                 level=LogLevel.ERROR,

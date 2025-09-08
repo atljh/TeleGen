@@ -14,7 +14,7 @@ from bot.services.logger_service import (
 from bot.services.logger_service import SyncTelegramLogger
 
 class PostGenerationService:
-    
+
     def __init__(
         self,
         userbot_service: EnhancedUserbotService,
@@ -46,7 +46,7 @@ class PostGenerationService:
         logging.info(
             f"Generating posts: userbot={telegram_userbot_volume}, web={web_volume}, user: {user}"
         )
-        
+
         if not self.logger:
             init_logger(self.bot)
             self.logger = get_logger()
@@ -61,9 +61,9 @@ class PostGenerationService:
         )
         userbot_posts = await self.userbot_service.get_last_posts(flow, telegram_userbot_volume)
         web_posts = await self.web_service.get_last_posts(flow, web_volume)
-        
+
         combined_posts = userbot_posts + web_posts
-        combined_posts.sort(key=lambda x: x.created_at, reverse=True)        
+        combined_posts.sort(key=lambda x: x.created_at, reverse=True)
 
         self.sync_logger.generation_completed(
             user=user,
@@ -116,7 +116,7 @@ class PostGenerationService:
                     source_id=post_dto.source_id,
                     media_list=media_list
                 )
-                
+
                 if post:
                     db_post_dto = await sync_to_async(PostDTO.from_orm)(post)
                     generated_posts.append(db_post_dto)
@@ -132,12 +132,12 @@ class PostGenerationService:
             {'path': img.url, 'type': 'image', 'order': img.order}
             for img in post_dto.images
         ]
-        
+
         if post_dto.video_url:
             media_list.append({
                 'path': post_dto.video_url,
                 'type': 'video',
                 'order': len(post_dto.images)
             })
-            
+
         return media_list

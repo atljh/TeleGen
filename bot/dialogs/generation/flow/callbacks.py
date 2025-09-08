@@ -20,13 +20,13 @@ from .getters import paging_getter, send_media_album
 logger = logging.getLogger()
 
 async def on_back_to_posts(
-    callback: CallbackQuery, 
-    button: Button, 
+    callback: CallbackQuery,
+    button: Button,
     manager: DialogManager
 ):
     manager.dialog_data["needs_refresh"] = True
     original_page = manager.dialog_data.get("original_page", 0)
-    
+
     message_ids = manager.dialog_data.get("message_ids", [])
     if message_ids:
         bot = manager.middleware_data['bot']
@@ -37,16 +37,16 @@ async def on_back_to_posts(
             except:
                 pass
         manager.dialog_data["message_ids"] = []
-    
+
     manager.dialog_data.pop("all_posts", None)
     await paging_getter(manager)
-    
+
     await manager.switch_to(FlowMenu.posts_list)
-    
+
     scroll = manager.find("stub_scroll")
     if scroll:
         await scroll.set_page(original_page)
-    
+
     data = await paging_getter(manager)
     # if data["post"].get("is_album"):
     #     await send_media_album(manager, data["post"])
@@ -70,9 +70,9 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
     if not channel:
         await callback.answer("Канал не вибрано!")
         return
-    
+
     post_service = Container.post_service()
-    
+
     try:
         updated_post = await post_service.publish_post(post_id, channel.channel_id)
 
@@ -82,14 +82,14 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
             "pub_time": updated_post.publication_date.strftime("%d.%m.%Y %H:%M"),
             "is_published": True
         }
-        
+
         manager.dialog_data["needs_refresh"] = True
         manager.dialog_data.pop("all_posts", None)
 
         await asyncio.sleep(1)
         await manager.switch_to(FlowMenu.posts_list)
         await callback.message.answer("✅ Пост успішно опубліковано!")
-        
+
     except InvalidOperationError as e:
         logging.error(f"Invalid operation: {e}")
         await callback.answer(f"❌ Помилка: {str(e)}")
@@ -101,14 +101,14 @@ async def on_publish_post(callback: CallbackQuery, button: Button, manager: Dial
 
 #===========================================EDIT===========================================
 async def on_edit_post(
-    callback: CallbackQuery, 
-    button: Button, 
+    callback: CallbackQuery,
+    button: Button,
     manager: DialogManager
 ):
     data = await paging_getter(manager)
     current_page = data["current_page"] - 1
     posts = manager.dialog_data.get("all_posts", [])
-    
+
     if current_page < len(posts):
         manager.dialog_data["editing_post"] = posts[current_page]
         manager.dialog_data["original_page"] = current_page
@@ -149,23 +149,23 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 content=text
             )
             await message.answer("Текст успішно оновлено!")
-            
+
         elif input_type == "media":
             if message.content_type == ContentType.PHOTO:
                 file_id = message.photo[-1].file_id
                 file = await message.bot.get_file(file_id)
                 file_path = f"posts/images/{file_id}.jpg"
-                
+
                 destination = os.path.join(settings.MEDIA_ROOT, file_path)
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 await message.bot.download_file(file.file_path, destination)
-                
+
                 updated_post = await post_service.update_post(
                     post_id=post_id,
                     images=[{"file_path": file_path, "order": 0}],
                     video_url=None
                 )
-                
+
                 manager.dialog_data["edited_media"] = {
                     "type": 'photo',
                     "url": os.path.join(settings.MEDIA_URL, file_path)
@@ -173,22 +173,22 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 manager.dialog_data["needs_refresh"] = True
 
                 await message.answer("Фото успішно збережено!")
-                
+
             elif message.content_type == ContentType.VIDEO:
                 file_id = message.video.file_id
                 file = await message.bot.get_file(file_id)
                 file_path = f"posts/videos/{file_id}.mp4"
-                
+
                 destination = os.path.join(settings.MEDIA_ROOT, file_path)
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 await message.bot.download_file(file.file_path, destination)
-                
+
                 await post_service.update_post(
                     post_id=post_id,
                     video_url=os.path.join(settings.MEDIA_URL, file_path),
                     images=[]
                 )
-                
+
                 manager.dialog_data["edited_media"] = {
                     "type": 'video',
                     "url": os.path.join(settings.MEDIA_URL, file_path)
@@ -198,7 +198,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             else:
                 await message.answer("Будь ласка, надішліть фото або відео")
                 return
-    
+
         if input_type == "text":
             manager.dialog_data["editing_post"]["content"] = new_text
         elif input_type == "media":
@@ -210,7 +210,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             else:
                 manager.dialog_data["editing_post"]["video_url"] = os.path.join(settings.MEDIA_URL, file_path)
                 manager.dialog_data["editing_post"]["images"] = []
-        
+
         try:
             await message.bot.delete_message(
                 chat_id=message.chat.id,
@@ -218,10 +218,10 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             )
         except:
             pass
-            
+
         manager.dialog_data.pop("awaiting_input", None)
         # await manager.show()
-        
+
     except PostNotFoundError:
         await message.answer("Помилка: пост не знайдено")
     except Exception as e:
@@ -268,7 +268,7 @@ async def time_input_handler(message: Message, widget, manager: DialogManager):
     if not re.match(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$', message.text):
         await message.answer("❌ Невірний формат часу")
         return
-    
+
     hours, minutes = map(int, message.text.split(':'))
     manager.dialog_data["selected_hour"] = hours
     manager.dialog_data["selected_minute"] = minutes
@@ -278,14 +278,14 @@ async def process_time_selection(manager: DialogManager):
     date_obj = manager.dialog_data["scheduled_date_obj"]
     hour = manager.dialog_data.get("selected_hour", 12)
     minute = manager.dialog_data.get("selected_minute", 0)
-    
+
     ukraine_tz = pytz.timezone('Europe/Kiev')
     naive_datetime = datetime.combine(date_obj, time(hour=hour, minute=minute))
     scheduled_datetime = ukraine_tz.localize(naive_datetime)
-    
+
     manager.dialog_data["scheduled_datetime"] = scheduled_datetime
     manager.dialog_data["scheduled_datetime_str"] = scheduled_datetime.strftime('%d.%m.%Y о %H:%M')
-    
+
     await manager.switch_to(FlowMenu.confirm_schedule)
 
 async def confirm_schedule(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -297,10 +297,10 @@ async def confirm_schedule(callback: CallbackQuery, button: Button, manager: Dia
         post_id = current_post["id"]
 
         scheduled_datetime = manager.dialog_data["scheduled_datetime"]
-        
+
         post_service = Container.post_service()
         await post_service.schedule_post(post_id, scheduled_datetime)
-        
+
         await callback.message.answer(
             f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
         )

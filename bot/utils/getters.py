@@ -7,7 +7,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data or {}
     logging.info(dialog_data)
     selected_channel = (
-        start_data.get("selected_channel") 
+        start_data.get("selected_channel")
         or dialog_data.get("selected_channel")
     )
     channel_flow = (
@@ -22,7 +22,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
             "created_at": datetime.now(),
             "channel_flow": "Вiдсутнiй"
         }
-    
+
     dialog_manager.dialog_data["selected_channel"] = selected_channel
     dialog_manager.dialog_data["channel_flow"] = channel_flow
 

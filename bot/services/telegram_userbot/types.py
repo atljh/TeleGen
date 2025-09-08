@@ -134,12 +134,12 @@ class Constants:
     MAX_RETRY_ATTEMPTS = 3
     RETRY_DELAY = 1.0
     SESSION_TIMEOUT = 30.0
-    
+
     ALLOWED_MEDIA_TYPES = [
-        'image/jpeg', 'image/png', 'image/gif', 
+        'image/jpeg', 'image/png', 'image/gif',
         'video/mp4', 'video/quicktime'
     ]
-    
+
     EXTERNAL_LINK_DOMAINS = ['t.me', 'telegram.me']
 
 def is_telegram_entity(entity: Any) -> bool:

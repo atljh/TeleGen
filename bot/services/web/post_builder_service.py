@@ -17,7 +17,7 @@ class PostBuilderService:
         flow: FlowDTO
     ) -> PostDTO:
         signature = f"\n\n{flow.signature}" if flow.signature else ""
-        
+
         return PostDTO(
             id=None,
             flow_id=flow.id,

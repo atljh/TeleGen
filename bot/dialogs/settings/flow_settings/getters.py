@@ -9,7 +9,7 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
         dialog_data.get("channel_flow")
         or start_data.get("channel_flow")
     )
-    
+
     channel_data = (
         dialog_data.get("selected_channel")
         or start_data.get("selected_channel")
@@ -23,7 +23,7 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
         '12h': 'Раз на 12 годин',
         'hourly': 'Раз на годину',
     }
-    
+
     words_limit_map = {
         'to_100': 'До 100 слів',
         'to_300': 'До 300 слів',
@@ -32,7 +32,7 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
     }
 
     sources = "\n".join(
-        f"• {src['type']} - {src['link']}" 
+        f"• {src['type']} - {src['link']}"
         for src in getattr(flow_data, "sources", [])
     ) if getattr(flow_data, "sources", []) else "немає джерел"
 
@@ -81,11 +81,11 @@ async def posts_in_flow_getter(dialog_manager: DialogManager, **kwargs):
 
 async def get_sources_data(dialog_manager: DialogManager, **kwargs):
     flow_data = (
-        dialog_manager.dialog_data.get("channel_flow") 
+        dialog_manager.dialog_data.get("channel_flow")
         or dialog_manager.start_data.get("channel_flow")
     )
     sources = getattr(flow_data, "sources", [])
-    
+
     formatted_sources = [
         {
             "id": str(src.get("id", idx+1)),
@@ -119,28 +119,28 @@ async def get_source_type(dialog_manager: DialogManager, **kwargs):
 async def get_current_source(dialog_manager: DialogManager, **kwargs):
     try:
         flow = (
-            dialog_manager.dialog_data.get("channel_flow") 
+            dialog_manager.dialog_data.get("channel_flow")
             or dialog_manager.start_data.get("channel_flow")
         )
-        
+
         if not flow or not hasattr(flow, "sources"):
             raise ValueError("Дані флоу не знайдено")
-            
+
         source_idx = dialog_manager.dialog_data.get("editing_source_idx")
         if source_idx is None:
             raise ValueError("Індекс джерела не вказано")
-            
+
         sources = flow.sources
         if not isinstance(sources, list) or source_idx >= len(sources):
             raise ValueError("Невірний індекс джерела")
-            
+
         source = sources[source_idx]
         return {
             "source_type": source.get("type", "Невідомий тип"),
             "source_link": source.get("link", "Без посилання"),
             "source_idx": source_idx
         }
-        
+
     except Exception as e:
         logging.error(f"Помилка при отриманні джерела: {e}")
         return {
@@ -151,11 +151,11 @@ async def get_current_source(dialog_manager: DialogManager, **kwargs):
 
 async def get_sources_list(dialog_manager: DialogManager, **kwargs):
     flow = (
-        dialog_manager.dialog_data.get("channel_flow") 
+        dialog_manager.dialog_data.get("channel_flow")
         or dialog_manager.start_data.get("channel_flow")
     )
     sources = getattr(flow, "sources", [])
-    
+
     formatted_sources = []
     for idx, src in enumerate(sources):
         link = src['link']

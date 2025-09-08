@@ -27,13 +27,13 @@ async def on_channel_selected(
         channel_id = int(item_id)
 
         channel_service = Container.channel_service()
-        
+
         selected_channel = await channel_service.get_channel_by_db_id(channel_id)
 
         if not selected_channel:
             await callback.answer("Channel not found!")
             return
-            
+
         flow_service = Container.flow_service()
         channel_flow = await flow_service.get_flow_by_channel_id(int(item_id))
 
@@ -41,9 +41,9 @@ async def on_channel_selected(
             "selected_channel": selected_channel,
             "channel_flow": channel_flow
         })
-        
+
         await manager.switch_to(SettingsMenu.channel_settings)
-        
+
     except Exception as e:
         logger.error(f"Channel selection error: {e}")
         await callback.answer("Error processing selection")
@@ -74,10 +74,10 @@ async def open_emoji_settings(callback: CallbackQuery, button: Button, manager: 
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     channel_service = Container.channel_service()
     selected_channel_id = dialog_manager.dialog_data["selected_channel"].id
-    
+
     try:
         channel = await channel_service.get_channel_by_db_id(selected_channel_id)
-        
+
         return {
             "selected_channel": channel,
             "channel_flow": dialog_manager.dialog_data.get("channel_flow", None)
@@ -94,22 +94,22 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
 async def delete_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
     channel_service = Container.channel_service()
     selected_channel = manager.dialog_data["selected_channel"]
-    
+
     try:
         await channel_service.delete_channel(
             selected_channel.channel_id
         )
-    
+
         bot = manager.middleware_data["bot"]
         try:
             await bot.leave_chat(chat_id=selected_channel.channel_id)
             logger.info(f"Successfully left Telegram channel: {selected_channel.channel_id}")
         except Exception as leave_error:
             logger.warning(f"Couldn't leave Telegram channel {selected_channel.channel_id}: {leave_error}")
-        
+
         await callback.message.answer("✅ Канал успішно видалено!")
         await manager.switch_to(SettingsMenu.main)
-        
+
     except Exception as e:
         logger.error(f"Error deleting channel: {e}")
         await callback.answer("❌ Помилка при видаленні каналу")
@@ -189,35 +189,35 @@ async def set_timezone(callback: CallbackQuery, button: Button, manager: DialogM
         "europe_london": "Europe/London",
         "america_new_york": "America/New_York"
     }
-    
+
     tz_key = button.widget_id.replace("tz_", "")
     tz = tz_mapping.get(tz_key)
-    
+
     if not tz:
         await callback.answer("Невідомий часовий пояс")
         return
-    
+
     channel_service = Container.channel_service()
     channel = manager.dialog_data["selected_channel"]
-    
+
     await channel_service.update_channel(
         channel_id=channel.id,
         timezone=tz
     )
-    
+
     display_names = {
         "Europe/Kiev": "🇺🇦 Київ (UTC+2)",
         "Europe/London": "🇪🇺 Лондон (UTC+0)",
         "America/New_York": "🇺🇸 Нью-Йорк (UTC-4)"
     }
-    
+
     await callback.answer(f"Часовий пояс встановлено: {display_names[tz]}")
     await manager.switch_to(SettingsMenu.channel_main_settings)
 
 async def toggle_emoji(callback: CallbackQuery, widget, manager: DialogManager, is_enabled: bool):
     channel_service = Container.channel_service()
     channel = manager.dialog_data["selected_channel"]
-    
+
     await channel_service.update_channel(
         channel_id=channel.id,
         emoji_enabled=is_enabled

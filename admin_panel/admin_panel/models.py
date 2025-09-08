@@ -27,7 +27,7 @@ class Channel(models.Model):
         ('Europe/London', '🇪🇺 Лондон (UTC+0)'),
         ('America/New_York', '🇺🇸 Нью-Йорк (UTC-4)'),
     ]
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='channels', verbose_name="Користувач")
     channel_id = models.CharField(max_length=100, unique=True, verbose_name="ID каналу")
     name = models.CharField(max_length=255, verbose_name="Назва каналу")
@@ -122,8 +122,8 @@ class Flow(models.Model):
 
 class PostImage(models.Model):
     post = models.ForeignKey(
-        'Post', 
-        on_delete=models.CASCADE, 
+        'Post',
+        on_delete=models.CASCADE,
         related_name='images',
         verbose_name="Пост"
     )
@@ -149,13 +149,13 @@ class Post(models.Model):
     DRAFT = 'draft'
     SCHEDULED = 'scheduled'
     PUBLISHED = 'published'
-    
+
     STATUS_CHOICES = [
         (DRAFT, 'Чернетка'),
         (SCHEDULED, 'Заплановано'),
         (PUBLISHED, 'Опубліковано'),
     ]
-    
+
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE, related_name='posts', verbose_name="Флоу")
     content = models.TextField(verbose_name="Контент")
     original_content = models.TextField(verbose_name='Оригiнальний текст', blank=True, null=True)
@@ -185,7 +185,7 @@ class Post(models.Model):
         null=True,
         verbose_name="Відео"
     )
-    
+
     @property
     def media_type(self):
         if self.images.exists():
@@ -193,7 +193,7 @@ class Post(models.Model):
         elif self.video:
             return 'video'
         return None
-    
+
     @property
     def first_image_url(self):
         first_image = self.images.first()

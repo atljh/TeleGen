@@ -1,0 +1,16 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, E501, F401, F403, F405, F811, F601, E402
+exclude =
+    migrations/,
+    __pycache__/,
+    .venv/,
+    venv/,
+    env/,
+    .env/,
+    node_modules/,
+    build/,
+    dist/
+per-file-ignores =
+    backend/config/settings/dev.py:F403,F405
+    backend/config/settings/prod.py:F403,F405

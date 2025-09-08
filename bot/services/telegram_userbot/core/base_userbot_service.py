@@ -14,7 +14,7 @@ from bot.database.models import PostDTO
 from .client_manager import TelegramClientManager
 
 class BaseUserbotService:
-    
+
     def __init__(
         self,
         api_id: int,
@@ -26,7 +26,7 @@ class BaseUserbotService:
         self.download_semaphore = asyncio.Semaphore(10)
         self._temp_files = set()
         self.logger = logging.getLogger(__name__)
-        
+
         self.client_manager = TelegramClientManager(
             api_id=api_id,
             api_hash=api_hash,
@@ -51,7 +51,7 @@ class BaseUserbotService:
         telegram_sources = [s for s in sources if s.get('type') == 'telegram']
         if not telegram_sources:
             return []
-        
+
         result = []
         processed_albums = set()
         source_limits = self._calculate_source_limits(sources, limit)
@@ -74,9 +74,9 @@ class BaseUserbotService:
                     entity = await self.client_manager.get_entity(client, source['link'])
                     if not entity:
                         continue
-                    
+
                     await self._process_source_messages(
-                        client, entity, source, remaining_for_source, 
+                        client, entity, source, remaining_for_source,
                         result, processed_albums, total_posts_needed
                     )
 
@@ -88,18 +88,18 @@ class BaseUserbotService:
         return result[:total_posts_needed]
 
     async def _process_source_messages(
-        self, client, entity, source, remaining_for_source, 
+        self, client, entity, source, remaining_for_source,
         result, processed_albums, total_posts_needed
     ):
         messages = await client.get_messages(
             entity,
             limit=remaining_for_source * 3
         )
-        
+
         for msg in messages:
             if len(result) >= total_posts_needed:
                 break
-                
+
             if await self._contains_external_links(client, msg, entity):
                 self.logger.info("Post contains external link. PASS")
                 continue
@@ -107,13 +107,13 @@ class BaseUserbotService:
             process_result = await self._process_message_or_album(
                 client, entity, msg, source['link'], processed_albums
             )
-            
+
             if process_result is None:
                 continue
-                
+
             post_data, post_count = process_result
             result.append(post_data)
-            
+
             self.logger.info(
                 f"Added {'album' if post_count > 1 else 'post'} "
                 f"(size {post_count}). Result: {len(result)}/{total_posts_needed}"
@@ -122,10 +122,10 @@ class BaseUserbotService:
     async def _contains_external_links(self, client, message, channel_entity) -> bool:
         if not message.entities:
             return False
-        
+
         channel_username = getattr(channel_entity, 'username', None)
         channel_id = channel_entity.id
-        
+
         # for entity in message.entities:
             # if isinstance(entity, MessageEntityTextUrl):
             #     url = entity.url
@@ -133,14 +133,14 @@ class BaseUserbotService:
             #         mentioned_username = url.split('/')[-1]
             #         if mentioned_username.lower() != channel_username.lower():
             #             return True
-            
+
             # elif isinstance(entity, MessageEntityUrl):
             #     text = message.text[entity.offset:entity.offset+entity.length]
             #     if text.startswith('https://t.me/'):
             #         mentioned_username = text.split('/')[-1]
             #         if mentioned_username.lower() != channel_username.lower():
             #             return True
-        
+
         if message.reply_markup:
             for row in message.reply_markup.rows:
                 for button in row.buttons:
@@ -150,7 +150,7 @@ class BaseUserbotService:
                             mentioned_username = url.split('/')[-1]
                             if mentioned_username.lower() != channel_username.lower():
                                 return True
-        
+
         return False
 
     async def _process_message_or_album(
@@ -162,14 +162,14 @@ class BaseUserbotService:
         processed_albums
     ) -> Tuple[Optional[Dict], int]:
         chat_id = msg.chat_id if hasattr(msg, 'chat_id') else entity.id
-        
+
         post_date = msg.date if hasattr(msg, 'date') else None
-        
+
         if post_date:
             last_post = await Post.objects.filter(
                 source_id__startswith=f"telegram_{chat_id}_"
             ).order_by('-original_date').afirst()
-            
+
             if last_post and last_post.original_date and post_date <= last_post.original_date:
                 logging.info(f"Skipping old post from {post_date} (last in DB: {last_post.original_date})")
                 return None, 0
@@ -215,11 +215,11 @@ class BaseUserbotService:
         base_limit = max(1, limit // len(sources))
         for source in sources:
             source_limits[source['link']] = base_limit
-        
+
         remaining = limit - base_limit * len(sources)
         for source in sources[:remaining]:
             source_limits[source['link']] += 1
-        
+
         return source_limits
 
     async def _process_album(self, client: TelegramClient, entity, initial_msg, source_url: str) -> Optional[Dict]:
@@ -230,12 +230,12 @@ class BaseUserbotService:
                 max_id=initial_msg.id + 10,
                 limit=20
             )
-            
+
             album_messages = [
                 msg for msg in messages
                 if hasattr(msg, 'grouped_id') and msg.grouped_id == initial_msg.grouped_id
             ]
-            
+
             if not album_messages:
                 return None
 
@@ -246,11 +246,11 @@ class BaseUserbotService:
                     texts.append(msg.text)
                 if msg.media:
                     all_media.extend(await self._extract_media(client, msg.media))
-            
+
             downloaded_media = await self._download_media_batch(client, all_media) if all_media else []
-            
+
             original_link = f"https://t.me/c/{entity.id}/{initial_msg.id}"
-            
+
             post_data = {
                 'original_content': "\n\n".join(texts) if texts else "",
                 'text': "\n\n".join(texts) if texts else "",
@@ -261,12 +261,12 @@ class BaseUserbotService:
                 'original_date': initial_msg.date,
                 'source_url': source_url
             }
-            
+
             if not post_data['text'] and not post_data['media']:
                 return None
-                
+
             return post_data
-            
+
         except Exception as e:
             logging.error(f"Error processing album: {str(e)}")
             return None
@@ -274,7 +274,7 @@ class BaseUserbotService:
     async def _process_message(self, client: TelegramClient, msg, source_url: str) -> Optional[Dict]:
         if not msg.text and not msg.media:
             return None
-            
+
         try:
             entity = await msg.get_chat()
             original_link = f"https://t.me/c/{entity.id}/{msg.id}"
@@ -299,7 +299,7 @@ class BaseUserbotService:
 
     async def _extract_media(self, client: TelegramClient, media) -> List[Dict]:
         media_items = []
-        
+
         if hasattr(media, 'photo'):
             media_items.append({
                 'type': 'image',
@@ -312,14 +312,14 @@ class BaseUserbotService:
                 'media_obj': media.document,
                 'file_id': media.document.id
             })
-        
+
         return media_items
 
     async def _download_media_batch(self, client: TelegramClient, media_items: List[Dict]) -> List[Dict]:
         self.logger.info(f"Starting download of {len(media_items)} media files...")
         start_time = time.time()
         downloaded = 0
-        
+
         async def _download_with_progress(item):
             nonlocal downloaded
             try:
@@ -335,12 +335,12 @@ class BaseUserbotService:
             except Exception as e:
                 self.logger.error(f"Error downloading {item['type']}: {str(e)}")
                 return e
-        
+
         tasks = [_download_with_progress(item) for item in media_items]
         downloaded_paths = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         return [
-            {**item, 'path': path} 
+            {**item, 'path': path}
             for item, path in zip(media_items, downloaded_paths)
             if not isinstance(path, Exception) and path
         ]
@@ -353,15 +353,15 @@ class BaseUserbotService:
                     self._temp_files.add(tmp_path)
 
                 await client.download_media(media, file=tmp_path)
-                
+
                 if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
                     return tmp_path
-                
+
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
                     self._temp_files.discard(tmp_path)
                     return None
-                
+
             except Exception as e:
                 logging.error(f"Media download failed: {str(e)}")
                 if 'tmp_path' in locals() and os.path.exists(tmp_path):

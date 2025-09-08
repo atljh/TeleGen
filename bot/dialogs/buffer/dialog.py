@@ -1,5 +1,5 @@
 from aiogram_dialog import Dialog, Window
-from aiogram.enums import ParseMode 
+from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager
 from aiogram_dialog import Dialog, Window
@@ -41,8 +41,8 @@ from .callbacks import (
 )
 
 async def on_dialog_result(
-    event, 
-    manager: DialogManager, 
+    event,
+    manager: DialogManager,
     result
 ):
     if manager.current_state() == BufferError.channel_main:
@@ -63,9 +63,9 @@ async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
 
 def create_buffer_dialog():
     async def on_page_changed(
-        callback: CallbackQuery, 
+        callback: CallbackQuery,
         widget,
-        manager: DialogManager, 
+        manager: DialogManager,
     ):
         data = await paging_getter(manager)
         if data["post"].get("is_selected") and data["post"].get("is_album"):
@@ -98,12 +98,12 @@ def create_buffer_dialog():
             ),
             Format(
                 "{post[full_content]}\n\n"
-                "<b>Заплановано:</b> {post[scheduled_time]}\n" 
+                "<b>Заплановано:</b> {post[scheduled_time]}\n"
                 "{media_indicator}",
                 when=lambda data, widget, manager: data["post"].get("is_selected")
             ),
             DynamicMedia(
-                "media_content", 
+                "media_content",
                 when=lambda data, widget, manager: data["post"].get("is_selected") and not data["post"].get("is_album")
             ),
             StubScroll(id="stub_scroll", pages="pages", on_page_changed=on_page_changed),
@@ -113,33 +113,33 @@ def create_buffer_dialog():
             ),
             Group(
                 Button(
-                    Const("👀 Деталi"), 
-                    id="toggle_details", 
+                    Const("👀 Деталi"),
+                    id="toggle_details",
                     on_click=on_toggle_details,
                     when=lambda data, widget, manager: not data["post"].get("is_selected")
                 ),
                 Button(
                     Const("📋 Сховати"),
-                    id="hide_details", 
+                    id="hide_details",
                     on_click=on_hide_details,
                     when=lambda data, widget, manager: data["post"].get("is_selected")
                 ),
                 Button(
-                    Const("✅ Опублікувати"), 
-                    id="publish_post", 
-                    on_click=show_publish_confirm, 
+                    Const("✅ Опублікувати"),
+                    id="publish_post",
+                    on_click=show_publish_confirm,
                     when=lambda data, widget, manager: data["post"].get("content")
                 ),
                 Button(
-                    Const("✏️ Редагувати"), 
-                    id="edit_post", 
-                    on_click=on_edit_post, 
+                    Const("✏️ Редагувати"),
+                    id="edit_post",
+                    on_click=on_edit_post,
                     when=lambda data, widget, manager: data["post"].get("content")
                 ),
                 Button(
-                    Const("ℹ️ Пост iнфо"), 
-                    id="post_info", 
-                    on_click=on_post_info, 
+                    Const("ℹ️ Пост iнфо"),
+                    id="post_info",
+                    on_click=on_post_info,
                     when=lambda data, widget, manager: data["post"].get("content")
                 ),
                 width=2
@@ -173,7 +173,7 @@ def create_buffer_dialog():
                 "\n{content}\n\n"
                 ),
             DynamicMedia("media"),
-            
+
             Row(
                 Button(Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text),
                 Button(Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media),
@@ -181,9 +181,9 @@ def create_buffer_dialog():
             Row(
                 Button(Const("🔙 Назад"), id='on_back_to_posts', on_click=on_back_to_posts)
             ),
-            
+
             MessageInput(process_edit_input),
-            
+
             getter=edit_post_getter,
             state=BufferMenu.edit_post,
             parse_mode="HTML"

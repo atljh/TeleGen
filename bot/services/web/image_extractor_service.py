@@ -23,11 +23,11 @@ class ImageExtractorService:
     def _is_valid_image(self, img_tag, img_url: str) -> bool:
         if img_url.endswith('.svg'):
             return False
-            
+
         width = self._get_dimension(img_tag, 'width')
         height = self._get_dimension(img_tag, 'height')
-        
-        return (width >= self.min_size[0] and 
+
+        return (width >= self.min_size[0] and
                 height >= self.min_size[1] and
                 not self._is_decorative(img_tag))
 

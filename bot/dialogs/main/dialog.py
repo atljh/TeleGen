@@ -14,13 +14,13 @@ async def on_main_dialog_start(start_data, dialog_manager: DialogManager):
         ],
         resize_keyboard=True,
     )
-    
+
     event = dialog_manager.event
     if hasattr(event, 'message'):
         message = event.message
     else:
         message = event
-    
+
     await message.answer(
         "Оберіть опцію з меню нижче:",
         reply_markup=keyboard

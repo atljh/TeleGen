@@ -17,7 +17,7 @@ class ContentProcessorService:
         self.aisettings_service = aisettings_service
         self.default_processor = DefaultContentProcessor()
         self.logger = logger or logging.getLogger(__name__)
-        
+
     async def process_batch(
         self,
         texts: list[str],

@@ -28,7 +28,7 @@ def get_media_path(media_url: str) -> str:
     return os.path.join(settings.MEDIA_ROOT, media_url.split('/media/')[-1])
 
 async def send_media_album(
-    dialog_manager: DialogManager, 
+    dialog_manager: DialogManager,
     post_data: Dict[str, Any]
 ) -> Optional[Message]:
     bot = dialog_manager.middleware_data['bot']
@@ -50,7 +50,7 @@ async def send_media_album(
         images = post_data.get('images', [])[:10]
         if not images:
             return None
-            
+
         media_group = []
         for i, image in enumerate(images):
             media_path = get_media_path(image.url)
@@ -63,25 +63,25 @@ async def send_media_album(
                 parse_mode=ParseMode.HTML
             )
             media_group.append(media)
-        
+
         if media_group:
             try:
                 await message.delete()
             except:
                 pass
-                
+
             new_messages = await bot.send_media_group(
                 chat_id=chat_id,
                 media=media_group
             )
             message_ids = [msg.message_id for msg in new_messages]
-            
+
             dialog_manager.dialog_data["message_ids"] = message_ids
-            
+
     except Exception as e:
         logging.error(f"Error sending media album: {str(e)}")
         await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
-    
+
     return None
 
 def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
@@ -97,7 +97,7 @@ def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
     return keyboard
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
-    
+
     scroll: StubScroll = dialog_manager.find("stub_scroll")
     current_page = await scroll.get_page() if scroll else 0
 
@@ -134,7 +134,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         try:
             raw_posts = await post_service.get_posts_by_flow_id(flow.id, status=PostStatus.DRAFT)
             posts = []
-            
+
             for idx, post in enumerate(raw_posts):
                 images = post.images if hasattr(post, 'images') else []
                 video_url = post.video_url if hasattr(post, 'video_url') else None
@@ -145,13 +145,13 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 source_url = post.source_url if hasattr(post, 'source_url') else ''
 
                 pub_time = await sync_to_async(
-                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
-                    if hasattr(post, 'publication_date') and post.publication_date 
+                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M")
+                    if hasattr(post, 'publication_date') and post.publication_date
                     else "Без дати"
                 )()
                 created_time = await sync_to_async(
-                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M") 
-                    if hasattr(post, 'created_at') and post.created_at 
+                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M")
+                    if hasattr(post, 'created_at') and post.created_at
                     else "Без дати"
                 )()
 
@@ -196,7 +196,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         posts = dialog_data.get("all_posts", [])
 
     total_pages = len(posts)
-    
+
     dialog_manager.dialog_data['current_page'] = current_page
 
     if posts and current_page < total_pages:
@@ -219,7 +219,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         if not post.get('is_album'):
             media_info = None
             images = post.get('images', [])
-            
+
             if images and len(images) == 1:
                 first_image = images[0]
                 if hasattr(first_image, 'url'):
@@ -234,7 +234,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     'url': post['video_url'],
                     'path': get_media_path(post['video_url'])
                 }
-            
+
             if media_info and media_info.get('path') and os.path.exists(media_info['path']):
                 data["media_content"] = MediaAttachment(
                     path=media_info['path'],
@@ -252,7 +252,7 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
     media_info = None
     images = post.get('images', [])
     video_url = post.get('video_url')
-    
+
     if images and len(images) == 1:
         first_image = images[0]
         if hasattr(first_image, 'url'):
@@ -267,7 +267,7 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
             'url': video_url,
             'path': get_media_path(video_url)
         }
-    
+
     media = None
     if media_info and media_info.get('path') and os.path.exists(media_info['path']):
         media = MediaAttachment(
@@ -292,10 +292,10 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
 async def post_info_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = await paging_getter(dialog_manager)
     post = dialog_data["post"]
-    
+
     original_date = post.get("original_date", "")
     kiev_date = ""
-    
+
     if original_date:
         try:
             if isinstance(original_date, str):
@@ -308,14 +308,14 @@ async def post_info_getter(dialog_manager: DialogManager, **kwargs):
                 dt = original_date
             else:
                 raise ValueError("Unsupported date format")
-            
+
             kiev_tz = pytz.timezone('Europe/Kiev')
             kiev_date = timezone.localtime(dt, timezone=kiev_tz).strftime("%Y-%m-%d %H:%M:%S")
-            
+
         except Exception as e:
             print(f"Error converting date: {e}")
             kiev_date = original_date
-    
+
     return {
         "status": post.get("status", ""),
         "source_url": post.get("source_url", ""),

@@ -12,9 +12,9 @@ class RssUrlManager:
         self.flow_service = flow_service
 
     async def get_or_set_rss_url(
-        self, 
-        flow_id: int, 
-        source: SourceDict, 
+        self,
+        flow_id: int,
+        source: SourceDict,
         *,
         force_refresh: bool = False
     ) -> Optional[str]:
@@ -23,12 +23,12 @@ class RssUrlManager:
                 if new_url := await self._discover_and_cache(flow_id, source):
                     return new_url
                 return None
-            
+
             return await self.flow_service.get_or_set_source_rss_url(
-                flow_id, 
+                flow_id,
                 source['link']
             )
-            
+
         except Exception as e:
             logger.error(
                 f"Failed to get/set RSS URL for {source.get('link')}: {e}",
@@ -55,7 +55,7 @@ class RssUrlManager:
             tasks = [process_source(s) for s in sources]
             results = await asyncio.gather(*tasks)
             return [url for url in results if url]
-        
+
         return [
             url for source in sources
             if (url := await process_source(source))

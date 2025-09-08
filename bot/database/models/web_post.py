@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 class WebPost:
     """
     Data class representing scraped web page content.
-    
+
     Attributes:
         title: Page title
         content: Main text content

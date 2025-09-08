@@ -2,72 +2,72 @@
 
 A professional platform for **automatic content creation and publishing** via Telegram powered by **Artificial Intelligence**.
 
-![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)  
-![Django](https://img.shields.io/badge/Django-4.2-green.svg)  
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13-blue.svg)  
-![Redis](https://img.shields.io/badge/Redis-7-red.svg)  
-![Docker](https://img.shields.io/badge/Docker-20.10-blue.svg)  
-![CI/CD](https://img.shields.io/badge/CI/CD-Github%2520Actions-blue.svg)  
+![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
+![Django](https://img.shields.io/badge/Django-4.2-green.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13-blue.svg)
+![Redis](https://img.shields.io/badge/Redis-7-red.svg)
+![Docker](https://img.shields.io/badge/Docker-20.10-blue.svg)
+![CI/CD](https://img.shields.io/badge/CI/CD-Github%2520Actions-blue.svg)
 
 ---
 
 ## 🚀 Features
 
 ### 🤖 Telegram Bot
-- AI-powered **content generation**  
-- **Auto-posting** to Telegram channels  
-- **RSS aggregation** and processing  
-- **Scheduling system** for posts  
+- AI-powered **content generation**
+- **Auto-posting** to Telegram channels
+- **RSS aggregation** and processing
+- **Scheduling system** for posts
 - Built-in **statistics and analytics**
 
 ### 🎯 Admin Panel
-- Full control over **content & users**  
-- Post and channel **moderation**  
-- **Performance analytics**  
+- Full control over **content & users**
+- Post and channel **moderation**
+- **Performance analytics**
 - **Subscriptions & payments management**
 
 ---
 
 ## 🏗️ Architecture
-- **Telegram Bot** (aiogram 3.x)  
-- **Django Admin Panel**  
-- **Celery Workers** for distributed tasks  
-- **Shared Modules** for business logic, utils, and database  
-- **Monitoring stack** (Prometheus + Grafana + Sentry)  
+- **Telegram Bot** (aiogram 3.x)
+- **Django Admin Panel**
+- **Celery Workers** for distributed tasks
+- **Shared Modules** for business logic, utils, and database
+- **Monitoring stack** (Prometheus + Grafana + Sentry)
 
 ---
 
 ## 🛠️ Tech Stack
 
-**Backend**  
-- Python 3.11+  
-- Django 4.2 (admin panel & web interface)  
-- SQLAlchemy 2.0 (async ORM)  
-- Pydantic (data validation)  
-- Celery (task queue)  
-- Aiogram 3.x (Telegram framework)  
+**Backend**
+- Python 3.11+
+- Django 4.2 (admin panel & web interface)
+- SQLAlchemy 2.0 (async ORM)
+- Pydantic (data validation)
+- Celery (task queue)
+- Aiogram 3.x (Telegram framework)
 
-**Databases**  
-- PostgreSQL 13  
-- Redis 7  
+**Databases**
+- PostgreSQL 13
+- Redis 7
 
-**Infrastructure**  
-- Docker & Docker Compose  
-- Nginx (reverse proxy, static files)  
-- GitHub Actions (CI/CD)  
+**Infrastructure**
+- Docker & Docker Compose
+- Nginx (reverse proxy, static files)
+- GitHub Actions (CI/CD)
 
-**Monitoring**  
-- Structured JSON logging  
-- Sentry (error tracking)  
-- Prometheus + Grafana (metrics & dashboards)  
+**Monitoring**
+- Structured JSON logging
+- Sentry (error tracking)
+- Prometheus + Grafana (metrics & dashboards)
 
 ---
 
 ## 📦 Installation & Setup
 
 ### Prerequisites
-- Docker 20.10+  
-- Docker Compose 2.0+  
+- Docker 20.10+
+- Docker Compose 2.0+
 - Python 3.11+ (for development)
 
 ### Quick Start

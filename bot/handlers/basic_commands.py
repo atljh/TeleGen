@@ -56,7 +56,7 @@ async def menu_command(message: types.Message):
         ],
         resize_keyboard=True
     )
-    
+
     await message.answer(
         "📱 **Головне меню**\n\n"
         "Оберіть потрібний пункт:",

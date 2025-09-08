@@ -9,7 +9,7 @@ from telethon import TelegramClient
 from ..types import TelegramEntity, ConnectionError
 
 class ConnectionService:
-    
+
     def __init__(
         self,
         session_path: str,

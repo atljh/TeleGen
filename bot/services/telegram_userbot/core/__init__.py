@@ -8,7 +8,7 @@ from .base_userbot_service import BaseUserbotService
 __all__ = [
     'TelegramClientManager',
     'ConnectionService',
-    'AuthorizationService', 
+    'AuthorizationService',
     'EntityService',
     'DownloadService',
     'BaseUserbotService',

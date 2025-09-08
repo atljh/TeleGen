@@ -33,17 +33,17 @@ class ContentProcessingService:
             return None
 
         normalized_content = await self._normalize_content(post_dto.content)
-        
+
         processed_content = await self._process_with_ai(normalized_content, flow)
-        
+
         final_content = await self._add_signature(processed_content, flow)
-        
+
         return post_dto.copy(update={'content': final_content})
 
     async def _normalize_content(self, content) -> str:
         if isinstance(content, list):
             content = " ".join(filter(None, content))
-        
+
         return await DefaultContentProcessor().process(content)
 
     async def _process_with_ai(self, text: str, flow: FlowDTO) -> str:

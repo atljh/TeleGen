@@ -51,8 +51,8 @@ class ChatGPTContentProcessor(ContentProcessor):
         api_key: str,
         flow: FlowDTO,
         aisettings_service: AISettingsService,
-        model: str = "gpt-4o-mini", 
-        max_retries: int = 2, 
+        model: str = "gpt-4o-mini",
+        max_retries: int = 2,
         timeout: float = 15.0,
         cache_size_limit: int = 1000,
     ):
@@ -70,7 +70,7 @@ class ChatGPTContentProcessor(ContentProcessor):
     async def process_batch(self, texts: List[str], user_id: int) -> List[str]:
         if not texts:
             return []
-        
+
         results = []
         for i in range(0, len(texts), self.max_batch_size):
             batch = texts[i:i + self.max_batch_size]
@@ -78,20 +78,20 @@ class ChatGPTContentProcessor(ContentProcessor):
                 self.process(text, user_id) for text in batch
             ])
             results.extend(batch_results)
-            
+
             if i + self.max_batch_size < len(texts):
                 await asyncio.sleep(1)
-        
+
         return results
-    
+
     async def _get_or_create_user_prompt(self, text: str, flow: FlowDTO) -> str:
         try:
             default_prompt = await self._build_system_prompt(text, flow)
             return default_prompt
-        
+
             # aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
             # return aisettings.prompt
-            
+
         except AISettingsNotFoundError:
             default_prompt = await self._build_system_prompt(text, flow)
             try:
@@ -105,58 +105,58 @@ class ChatGPTContentProcessor(ContentProcessor):
             except UniqueViolation:
                 existing_settings = await self.aisettings_service.get_aisettings_by_flow(flow)
                 return existing_settings.prompt
-                
+
             except Exception as create_error:
                 logging.error(f"Error creating AI settings: {str(create_error)}")
                 return default_prompt
-                
+
         except Exception as e:
             logging.error(f"Error getting flow prompt: {str(e)}")
             return await self._build_system_prompt(text, flow)
-        
+
     async def process(self, text: str, user_id: int) -> str:
         try:
             if isinstance(text, list):
                 text = " ".join([str(item) for item in text if item])
-                
+
             if not text.strip():
                 return ""
-            
+
             cache_key = hash(f"{text}_{self.flow.id}_{user_id}")
             if cache_key in self.cache:
                 return self.cache[cache_key]
-            
+
             system_prompt = await self._get_prompt(text, self.flow)
             result = await self._call_ai_with_retry(text, system_prompt, self.flow)
-            
+
             if len(self.cache) >= self.cache_size_limit:
                 self.cache.pop(next(iter(self.cache)))
             self.cache[cache_key] = result
-            
+
             return result
-            
+
         except openai.RateLimitError as e:
             logging.error(f"OpenAI quota exceeded: {str(e)}")
             await self._notify_admin(f"OpenAI quota exceeded")
             return text
-            
+
         except openai.APIError as e:
             logging.error(f"OpenAI API error: {str(e)}")
             await self._notify_admin(f"OpenAI API error: {str(e)}")
             return text
-            
+
         except Exception as e:
             logging.error(f"Unexpected processing error: {str(e)}", exc_info=True)
             return text
 
     async def _call_ai_with_retry(self, text: str, system_prompt: str, flow) -> str:
-        
+
         messages = [
             {"role": "system", "content": system_prompt},
         ]
 
         # aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
-        
+
         # if aisettings.role and aisettings.role.strip():
         #     valid_roles = {"system", "assistant", "user", "function", "tool", "developer"}
         #     if aisettings.role.lower() in valid_roles:
@@ -164,9 +164,9 @@ class ChatGPTContentProcessor(ContentProcessor):
         #             "role": aisettings.role.lower(),
         #             "content": aisettings.role_content,
         #         })
-        
+
         messages.append({"role": "user", "content": text})
-        
+
         last_error = None
         for attempt in range(self.max_retries + 1):
             try:
@@ -180,26 +180,26 @@ class ChatGPTContentProcessor(ContentProcessor):
                     timeout=self.request_timeout
                 )
                 return response.choices[0].message.content.strip()
-                
+
             except openai.RateLimitError as e:
                 last_error = e
                 if attempt == self.max_retries:
                     raise
                 wait_time = min(10, 2 ** (attempt + 1))
                 await asyncio.sleep(wait_time)
-                
+
             except openai.APIError as e:
                 last_error = e
                 if attempt == self.max_retries:
                     raise
                 await asyncio.sleep(1)
-                
+
             except Exception as e:
                 last_error = e
                 if attempt == self.max_retries:
                     raise openai.APIError(f"Unexpected error: {str(e)}")
                 await asyncio.sleep(1)
-        
+
         raise last_error if last_error else openai.APIError("Unknown error after retries")
 
     async def _notify_admin(self, message: str):
@@ -227,13 +227,13 @@ class ChatGPTContentProcessor(ContentProcessor):
         if self.flow.use_emojis:
             emoji_type = "premium" if self.flow.use_premium_emojis else "regular"
             rules.append(f"5. Use relevant {emoji_type} emojis")
-        
+
         if self.flow.title_highlight:
             rules.append("6. Format the title using <b> tags, and add an empty line immediately after it.")
-        
+
         if self.flow.cta:
             rules.append(f"7. Add CTA: {self.flow.cta}")
-        
+
         rules.append("Return only the edited content without commentary.")
         return "\n".join(rules)
 

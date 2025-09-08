@@ -21,7 +21,7 @@ async def cmd_start(message: Message):
         ],
         resize_keyboard=True,
     )
-    
+
     await message.answer(
         "📌 *Вітаємо у PROPOST\!* 🎉\n\n"
         "Оберіть опцію з меню нижче:\n"

@@ -11,7 +11,7 @@ from bot.services.post.publish import PostPublishingService
 
 
 class PostSchedulingService:
-    
+
     def __init__(
         self,
         post_base_service: PostBaseService,
@@ -22,14 +22,14 @@ class PostSchedulingService:
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         now = datetime.now(scheduled_time.tzinfo)
-        
+
         if scheduled_time < now:
             raise InvalidOperationError("Не можна запланувати пост у минулому")
-            
+
         post = await self.post_service.get_post(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
-            
+
         await self.post_service.post_repo.schedule_post(post_id, scheduled_time)
         return await self.post_service.get_post(post_id)
 
@@ -46,7 +46,7 @@ class PostSchedulingService:
                 scheduled_time__lte=now
             )
         )
-        
+
         published = []
         for post in posts:
             try:
@@ -55,5 +55,5 @@ class PostSchedulingService:
                 published.append(result)
             except Exception as e:
                 logging.error(f"Failed to publish scheduled post {post.id}: {e}")
-                
+
         return published

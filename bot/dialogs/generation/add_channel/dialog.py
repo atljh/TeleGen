@@ -6,7 +6,7 @@ from aiogram_dialog.widgets.text import Const, Format, Jinja
 from aiogram_dialog.widgets.input import MessageInput
 
 from bot.containers import Container
-from bot.dialogs.generation.add_channel.states import AddChannelMenu 
+from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from .getters import channel_data_getter
 from .callbacks import (
     check_admin_rights,

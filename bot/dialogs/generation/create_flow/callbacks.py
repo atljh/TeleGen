@@ -55,15 +55,15 @@ async def on_custom_theme_entered(message: Message, widget: TextInput, manager: 
 
 async def on_source_type_selected(callback: CallbackQuery, button: Button, manager: DialogManager):
     dialog_data = manager.dialog_data
-    
+
     button_text = button.text.value if hasattr(button.text, 'value') else str(button.text)
-    
+
     dialog_data["selected_source_type"] = button.widget_id
     dialog_data["selected_source_name"] = button_text
-    
+
     if "sources" not in dialog_data:
         dialog_data["sources"] = []
-    
+
     await manager.switch_to(CreateFlowMenu.add_source_link)
     await callback.answer(f"Обрано {button.widget_id}")
 
@@ -71,15 +71,15 @@ async def on_source_link_entered(message: Message, widget: TextInput, manager: D
     if not validate_link(data, manager.dialog_data["selected_source_type"]):
         await message.answer("❌ Невірний формат посилання для цього типу джерела!")
         return
-    
+
     source = {
         "type": manager.dialog_data["selected_source_type"],
         "link": data,
     }
-    
+
     if "sources" not in manager.dialog_data:
         manager.dialog_data["sources"] = []
-    
+
     manager.dialog_data["sources"].append(source)
     manager.dialog_data["source_link"] = data
 
@@ -158,7 +158,7 @@ async def handle_time_input(message: Message, widget, manager: DialogManager):
     if not re.match(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$', message.text):
         await message.answer("❌ Невірний формат часу. Введіть у форматі hh:mm (наприклад, 15:20)")
         return
-    
+
     manager.dialog_data["ad_time"] = message.text
 
     await manager.switch_to(CreateFlowMenu.flow_volume_settings)
@@ -171,7 +171,7 @@ async def reset_ad_time(callback: CallbackQuery, button: Button, manager: Dialog
 
 
 # ==================POSTS VOLUME======================
-    
+
 
 async def on_volume_selected(callback: CallbackQuery, widget, manager: DialogManager, item_id: str):
     manager.dialog_data["flow_volume"] = int(item_id)
@@ -206,7 +206,7 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
 #         flow = await create_new_flow(manager)
 
 #         await manager.switch_to(CreateFlowMenu.confirmation)
-        
+
 #     except Exception as e:
 #         logger.error(f"Signature input error: {e}")
 #         await message.answer("❌ Помилка збереження підпису")
@@ -230,9 +230,9 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
             parse_mode=ParseMode.HTML
         )
         manager.dialog_data["signature"] = new_signature
-        
+
         flow = await create_new_flow(manager)
-        
+
         await manager.switch_to(CreateFlowMenu.confirmation)
 
     except Exception as e:
@@ -245,11 +245,11 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
 async def skip_signature(callback: CallbackQuery, button: Button, manager: DialogManager):
     try:
         manager.dialog_data["signature"] = None
-        
+
         flow = await create_new_flow(manager)
-        
+
         await manager.switch_to(CreateFlowMenu.confirmation)
-        
+
     except ChannelNotFoundError:
         await callback.answer("❌ Канал не знайдено")
         await manager.switch_to(CreateFlowMenu.select_theme)
@@ -272,7 +272,7 @@ async def create_new_flow(manager: DialogManager):
     channel_name = channel.name
 
     flow_service = Container.flow_service()
-    
+
     new_flow = await flow_service.create_flow(
         channel_id=int(channel_id),
         name=channel_name,
@@ -292,7 +292,7 @@ async def create_new_flow(manager: DialogManager):
         "flow_id": new_flow.id,
         "flow_name": new_flow.name,
     }
-    
+
     return new_flow
 
 
@@ -302,15 +302,15 @@ async def start_generation_process(callback: CallbackQuery, button: Button, mana
         channel = manager.dialog_data.get("selected_channel")
 
         flow_id = flow_data.get("flow_id")
-        
+
         if not flow_id:
             raise ValueError("Flow ID not found in dialog data")
-        
+
         flow_service = Container.flow_service()
         flow = await flow_service.get_flow_by_id(flow_id)
-        
+
         logger.info(f"Starting generation for Flow ID: {flow_id}")
-        
+
 
         await callback.answer("🔄 Запускаю генерацію...")
 
@@ -353,7 +353,7 @@ async def start_generation_process(callback: CallbackQuery, button: Button, mana
             f"❌ Помилка: {str(e)}",
             parse_mode="Markdown"
         )
-        
+
     except Exception as e:
         logger.error(f"Error starting generation: {e}")
         await callback.answer("❌ Помилка запуску генерації")

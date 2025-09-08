@@ -34,7 +34,7 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     }
 
 async def send_media_album(
-    dialog_manager: DialogManager, 
+    dialog_manager: DialogManager,
     post_data: Dict[str, Any]
 ) -> Optional[Message]:
     bot = dialog_manager.middleware_data['bot']
@@ -56,38 +56,38 @@ async def send_media_album(
         images = post_data.get('images', [])[:10]
         if not images:
             return None
-            
+
         media_group = []
         for i, image in enumerate(images):
             media_path = get_media_path(image.url)
             if not os.path.exists(media_path):
                 continue
-                
+
             media = InputMediaPhoto(
                 media=FSInputFile(media_path),
                 # caption=post_data['content'] if i == 0 else None,
                 parse_mode='HTML'
             )
             media_group.append(media)
-        
+
         if media_group:
             try:
                 await message.delete()
             except:
                 pass
-                
+
             new_messages = await bot.send_media_group(
                 chat_id=chat_id,
                 media=media_group
             )
             message_ids = [msg.message_id for msg in new_messages]
-            
+
             dialog_manager.dialog_data["message_ids"] = message_ids
-            
+
     except Exception as e:
         logging.error(f"Error sending media album: {str(e)}")
         await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
-    
+
     return None
 
 def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
@@ -112,7 +112,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
     selected_channel = dialog_data.get("selected_channel") or start_data.get("selected_channel")
-    
+
     dialog_manager.dialog_data["selected_channel"] = selected_channel
     dialog_manager.dialog_data['channel_flow'] = dialog_data.get("channel_flow")
 
@@ -179,13 +179,13 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                         scheduled_time = scheduled_time.strftime("%d.%m.%Y %H:%M")
 
                 pub_time = await sync_to_async(
-                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M") 
-                    if hasattr(post, 'publication_date') and post.publication_date 
+                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M")
+                    if hasattr(post, 'publication_date') and post.publication_date
                     else "Без дати"
                 )()
                 created_time = await sync_to_async(
-                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M") 
-                    if hasattr(post, 'created_at') and post.created_at 
+                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M")
+                    if hasattr(post, 'created_at') and post.created_at
                     else "Без дати"
                 )()
                 post_stats = {
@@ -232,13 +232,13 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         posts = dialog_data.get("all_posts", [])
 
     total_pages = len(posts)
-    
+
     selected_post_id = dialog_data.get("selected_post_id")
     dialog_manager.dialog_data['current_page'] = current_page
 
     if posts and current_page < total_pages:
         post = posts[current_page].copy()
-    
+
         media_indicator = ""
         if post.get('is_album'):
             media_indicator = f"📷 Альбом ({post['images_count']} фото)"
@@ -254,12 +254,12 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
             post["content_preview"] = post["full_content"]
         else:
             post["is_selected"] = False
-        
+
         data.update({
             "current_page": current_page + 1,
             "pages": total_pages,
             "post": post,
-            "media_indicator": media_indicator 
+            "media_indicator": media_indicator
         })
 
         messages = dialog_manager.dialog_data.get("message_ids")
@@ -276,7 +276,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
         if post["is_selected"] and not post.get('is_album'):
             media_info = None
             images = post.get('images', [])
-            
+
             if images and len(images) == 1:
                 first_image = images[0]
                 if hasattr(first_image, 'url'):
@@ -291,7 +291,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     'url': post['video_url'],
                     'path': get_media_path(post['video_url'])
                 }
-            
+
             if media_info and media_info.get('path') and os.path.exists(media_info['path']):
                 data["media_content"] = MediaAttachment(
                     path=media_info['path'],
@@ -312,7 +312,7 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
     media_info = None
     images = post.get('images', [])
     video_url = post.get('video_url')
-    
+
     if images and len(images) == 1:
         first_image = images[0]
         if hasattr(first_image, 'url'):
@@ -327,7 +327,7 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
             'url': video_url,
             'path': get_media_path(video_url)
         }
-    
+
     media = None
     if media_info and media_info.get('path') and os.path.exists(media_info['path']):
         media = MediaAttachment(

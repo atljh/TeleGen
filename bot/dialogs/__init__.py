@@ -24,16 +24,16 @@ def register_dialogs(dp: Dispatcher):
     flow_settings_dialog = create_flow_settings_dialog()
 
     support_dialog = create_support_dialog()
-    
+
     payment_dialog = create_payment_dialog()
 
     dp.include_router(generation_dialog)
     dp.include_router(add_channel_dialog)
     dp.include_router(d_flow_dialog)
     dp.include_router(d_create_flow_dialog)
-    
+
     dp.include_router(buffer_dialog)
-    
+
     dp.include_router(settings_dialog)
     dp.include_router(flow_settings_dialog)
 

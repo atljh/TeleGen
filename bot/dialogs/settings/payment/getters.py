@@ -12,9 +12,9 @@ async def packages_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, 
                 "features": "5 каналів • 10 постів"
             },
             {
-                "id": "pro", 
+                "id": "pro",
                 "name": "ПРОФЕСІЙНИЙ",
-                "price": "300 грн/міс", 
+                "price": "300 грн/міс",
                 "features": "15 каналів • 50 постів • AI"
             },
             {
@@ -66,7 +66,7 @@ async def methods_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, A
     selected_package = dialog_manager.dialog_data.get("selected_package")
     selected_period = dialog_manager.dialog_data.get("selected_period")
     total_price = "100.00"
-    
+
     return {
         "package": selected_package,
         "period": selected_period,

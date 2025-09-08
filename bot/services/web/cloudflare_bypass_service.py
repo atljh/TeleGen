@@ -19,7 +19,7 @@ class CloudflareBypass:
         self.logger = logger
         self.success_count = 0
         self.fail_count = 0
-        
+
     async def fetch_with_cloudscraper(self, url: str) -> Optional[str]:
         try:
             resp = await asyncio.to_thread(self.scraper.get, url)
@@ -43,16 +43,16 @@ class CloudflareBypass:
         try:
             driver = uc.Chrome(options=options)
             driver.get(url)
-            
+
             await asyncio.sleep(5)
-            
+
             if "Checking your browser" in driver.page_source:
                 self.logger.info("Solving Cloudflare challenge...")
                 await asyncio.sleep(10)
-            
+
             if "Just a moment" not in driver.page_source:
                 return driver.page_source
-                
+
         except Exception as e:
             self.logger.error(f"Selenium error: {str(e)}")
         finally:
@@ -64,10 +64,10 @@ class CloudflareBypass:
         content = await self.fetch_with_cloudscraper(url)
         if content:
             return content
-            
+
         self.logger.warning("CloudScraper failed, falling back to Selenium")
         return await self.fetch_with_selenium(url)
-    
+
     async def get_page_content(self, url: str) -> Optional[str]:
         start_time = time.time()
         try:

@@ -11,7 +11,7 @@ class ContentLength(StrEnum):
 
 class GenerationFrequency(StrEnum):
     HOURLY = "hourly"
-    EVERY_12_HOURS = "12h" 
+    EVERY_12_HOURS = "12h"
     DAILY = "daily"
 
 class FlowDTO(BaseModel):

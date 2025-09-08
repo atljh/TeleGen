@@ -29,10 +29,10 @@ class WebScraperService:
     async def scrape_page(self, url: str) -> WebPost | None:
         """
         Scrape web page and return structured data.
-        
+
         Args:
             url: URL of the page to scrape
-            
+
         Returns:
             WebPost if successful, None otherwise
         """
@@ -40,10 +40,10 @@ class WebScraperService:
             html = await self._fetch_html(url)
             if not html:
                 return None
-                
+
             soup = BeautifulSoup(html, 'html.parser')
             article = self._find_main_content(soup)
-            
+
             return WebPost(
                 title=self._get_title(soup, url),
                 content=self._extract_text(article),
@@ -73,8 +73,8 @@ class WebScraperService:
 
     def _find_main_content(self, soup: BeautifulSoup) -> BeautifulSoup | None:
         return (
-            soup.find('article') 
-            or soup.find('main') 
+            soup.find('article')
+            or soup.find('main')
             or soup.find(class_='main-content')
             or soup.body
         )

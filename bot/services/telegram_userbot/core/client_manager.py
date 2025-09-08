@@ -12,7 +12,7 @@ from .download_service import DownloadService
 from ..types import TelegramEntity
 
 class TelegramClientManager:
-    
+
     def __init__(
         self,
         api_id: int,
@@ -30,25 +30,25 @@ class TelegramClientManager:
             connection_retries=connection_retries,
             auto_reconnect=auto_reconnect
         )
-        
+
         self.authorization_service = AuthorizationService(phone=phone)
         self.entity_service = EntityService()
         self.download_service = DownloadService(max_retries=download_retries)
-        
+
         self.logger = logging.getLogger(__name__)
 
     @asynccontextmanager
     async def get_client(self) -> AsyncGenerator[TelegramClient, None]:
         client = self.connection_service.create_client()
-        
+
         try:
             await self.connection_service.connect_client(client)
-            
+
             if not await self.authorization_service.is_authorized(client):
                 await self.authorization_service.authorize_client(client)
-            
+
             yield client
-            
+
         except Exception as e:
             self.logger.error(f"Помилка Telegram клієнта: {str(e)}")
             raise

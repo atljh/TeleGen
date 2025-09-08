@@ -14,7 +14,7 @@ from bot.services.post import (
 from bot.services.web.web_service import WebService
 
 class PostService:
-    
+
     def __init__(
         self,
         bot: Bot,
@@ -25,7 +25,7 @@ class PostService:
     ):
         self.flow_repo = flow_repository
         self.bot = bot
-        
+
         self.base_service = PostBaseService(post_repository)
         self.publishing_service = PostPublishingService(bot, self.base_service)
         self.scheduling_service = PostSchedulingService(self.base_service, self.publishing_service)
@@ -75,12 +75,12 @@ class PostService:
         media_list: List[dict]
     ) -> PostDTO:
         post = await self.base_service.post_repo.get(post_id)
-        
+
         post.content = content
         await sync_to_async(post.save)()
-        
+
         await sync_to_async(lambda: post.images.all().delete())()
-        
+
         for media in media_list:
             if media['type'] == 'image':
                 await sync_to_async(PostImage.objects.create)(
@@ -91,7 +91,7 @@ class PostService:
             elif media['type'] == 'video':
                 post.video_url = media['path']
                 await sync_to_async(post.save)()
-        
+
         return await self.get_post(post_id)
 
     async def count_posts_in_flow(self, flow_id: int) -> int:
@@ -110,7 +110,7 @@ class PostService:
     ) -> PostDTO:
         if not await self.flow_repo.exists(flow_id):
             raise PostNotFoundError(f"Flow with id {flow_id} not found")
-        
+
         if scheduled_time and scheduled_time < datetime.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
 

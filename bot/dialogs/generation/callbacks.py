@@ -59,22 +59,22 @@ async def on_channel_selected(
             (channel for channel in channels if str(channel.id) == item_id),
             None
         )
-        
+
         if not selected_channel:
             await callback.answer("Channel not found!")
             return
-        
+
         flow_service = Container.flow_service()
         channel_flow = await flow_service.get_flow_by_channel_id(int(item_id))
         manager.dialog_data['item_id'] = item_id
-        
+
         manager.dialog_data.update({
             "selected_channel": selected_channel,
             "channel_flow": channel_flow
         })
-        
+
         await manager.switch_to(GenerationMenu.channel_main)
-        
+
     except Exception as e:
         logger.error(f"Channel selection error: {e}", exc_info=True)
         await callback.answer("Error processing selection")
@@ -101,7 +101,7 @@ async def on_flow(callback: CallbackQuery, button: Button, manager: DialogManage
             "channel_flow": channel_flow,
             "channel_id": item_id
             },
-        mode=StartMode.RESET_STACK 
+        mode=StartMode.RESET_STACK
     )
 
 async def on_create_flow(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -113,7 +113,7 @@ async def on_create_flow(callback: CallbackQuery, button: Button, manager: Dialo
     await manager.start(
         CreateFlowMenu.select_theme,
         data={"selected_channel": selected_channel},
-        mode=StartMode.RESET_STACK 
+        mode=StartMode.RESET_STACK
     )
 
 async def on_buffer(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -212,7 +212,7 @@ async def show_generated_posts(
 
         post_service = Container.post_service()
         posts = await post_service.get_all_posts_in_flow(flow_id)
-        
+
         if not posts:
             await bot.edit_message_text(
                 chat_id=chat_id,
@@ -230,7 +230,7 @@ async def show_generated_posts(
                 callback_data=f"view_generated_{flow.id}"
             )]
         ])
-        
+
         await bot.send_message(
             chat_id=chat_id,
             text=f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n",

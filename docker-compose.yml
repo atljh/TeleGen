@@ -15,7 +15,7 @@ services:
       - ./bot:/bot
       - ./media:/app/media
       - ./admin_panel/media:/app/admin_panel/media
-      - ./sessions:/app/sessions 
+      - ./sessions:/app/sessions
       - ./tmp:/tmp
       - ./logs:/app/logs
     environment:
@@ -83,8 +83,8 @@ services:
       - ./bot:/bot
       - ./logs:/app/logs
     command: >
-      sh -c "cd / && 
-      PYTHONPATH=/:/admin_panel 
+      sh -c "cd / &&
+      PYTHONPATH=/:/admin_panel
       celery -A bot.celery_app worker --loglevel=info --pool=solo"
     environment:
       PYTHONPATH: /:/admin_panel
@@ -107,7 +107,7 @@ services:
       - ./bot:/bot
     command: >
       sh -c "cd /bot &&
-      PYTHONPATH=/:/admin_panel 
+      PYTHONPATH=/:/admin_panel
       celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     environment:
       PYTHONPATH: /:/admin_panel

@@ -15,16 +15,16 @@ async def flow_volume_getter(dialog_manager: DialogManager, **kwargs):
     }
 async def signature_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data
-    
+
     current_signature = dialog_data.get("display_signature", "Підпис ще не встановлено")
-    
+
     return {
         "current_signature": current_signature,
     }
 
 async def source_type_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data
-    selected_channel = dialog_manager.start_data.get("selected_channel") 
+    selected_channel = dialog_manager.start_data.get("selected_channel")
 
     dialog_manager.dialog_data["selected_channel"] = selected_channel
     selected_sources = dialog_data.get("sources", [])
@@ -32,7 +32,7 @@ async def source_type_getter(dialog_manager: DialogManager, **kwargs):
         f"▫️ {source.get('type', '')} - {source.get('link', '')}"
         for source in selected_sources
     ) if selected_sources else "┄ Джерела ще не додані ┄"
-    
+
     return {
         "selected_sources": sources_list,
         "has_selected_sources": bool(selected_sources)
@@ -46,14 +46,14 @@ async def source_link_getter(dialog_manager: DialogManager, **kwargs):
         "web": "Web-сайт",
         "telegram": "Telegram"
     }.get(source_type, "джерело")
-    
+
     examples = {
         "instagram": "https://instagram.com/username",
         "facebook": "https://facebook.com/page",
         "web": "https://example.com",
         "telegram": "https://t.me/channel"
     }
-    
+
     return {
         "source_name": source_name,
         "link_example": examples.get(source_type, "https://...")
@@ -61,10 +61,10 @@ async def source_link_getter(dialog_manager: DialogManager, **kwargs):
 
 async def source_confirmation_getter(dialog_manager: DialogManager, **kwargs):
     dialog_data = dialog_manager.dialog_data
-    
+
     source_type = dialog_data.get("selected_source_type", "Невідомий")
     source_link = dialog_data.get("source_link", "Не вказано")
-    
+
     return {
         "source_type": str(source_type),
         "source_link": str(source_link)
@@ -80,7 +80,7 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
         '12h': 'Раз на 12 годин',
         'hourly': 'Раз на годину',
     }
-    
+
     words_limit_map = {
         'to_100': 'До 100 слів',
         'to_300': 'До 300 слів',
@@ -89,10 +89,10 @@ async def flow_confirmation_getter(dialog_manager: DialogManager, **kwargs):
 
     }
     sources = "\n".join(
-        f"{src['type']} - {src['link']}" 
+        f"{src['type']} - {src['link']}"
         for src in flow_data.get("sources", [])
     )
-    
+
     return {
         "flow_name": channel_name,
         "theme": flow_data.get("channel_theme", "не вказано"),

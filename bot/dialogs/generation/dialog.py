@@ -50,28 +50,28 @@ def create_generation_dialog():
             ),
             Column(
                 Button(
-                    Const("Флоу"), 
-                    id="flow", 
+                    Const("Флоу"),
+                    id="flow",
                     on_click=on_flow,
                     when="has_flow"
                 ),
                 Button(
-                    Const("Буфер"), 
-                    id="buffer", 
+                    Const("Буфер"),
+                    id="buffer",
                     on_click=on_buffer,
                     when="has_flow"
                 ),
                 Button(
-                    Const("Створити флоу"), 
-                    id="create_flow", 
+                    Const("Створити флоу"),
+                    id="create_flow",
                     on_click=on_create_flow,
                     when="no_flow"
                 ),
                 Button(
-                    Const("Генерацiя"), 
-                    id="force_generate", 
+                    Const("Генерацiя"),
+                    id="force_generate",
                     on_click=on_force_generate,
-                    when="has_flow" 
+                    when="has_flow"
                 ),
             ),
             Row(

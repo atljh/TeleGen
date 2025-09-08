@@ -249,14 +249,14 @@ def get_random_telegram_sources(count: int = 5) -> list:
 def get_random_sources_mix(web_count: int = 3, telegram_count: int = 2) -> list:
     web = get_random_web_sources(web_count)
     telegram = get_random_telegram_sources(telegram_count)
-    
+
     sources = []
     for link in web:
         sources.append({'link': link, 'type': 'web', 'added_at': '2025-01-01T00:00:00'})
-    
+
     for link in telegram:
         sources.append({'link': link, 'type': 'telegram', 'added_at': '2025-01-01T00:00:00'})
-    
+
     return sources
 
 def get_sources_by_category(category: str, count: int = 5) -> list:
@@ -268,7 +268,7 @@ def get_sources_by_category(category: str, count: int = 5) -> list:
 
 __all__ = [
     'WEB_SOURCES',
-    'TELEGRAM_SOURCES', 
+    'TELEGRAM_SOURCES',
     'CATEGORIZED_SOURCES',
     'get_random_web_sources',
     'get_random_telegram_sources',

@@ -128,7 +128,7 @@ async def _start_telegram_generations(
 
     existing_posts = await post_service.get_all_posts_in_flow(flow.id)
     existing_count = len(existing_posts)
-        
+
     user = await flow_service.get_user_by_flow_id(flow.id)
 
     generated_posts = await post_service.generate_auto_posts(
@@ -149,7 +149,7 @@ async def _start_telegram_generations(
         if posts_to_delete > 0:
             old_posts = existing_posts[:posts_to_delete]
             logging.info(f"Deleting {len(old_posts)} oldest posts from flow {flow.id}")
-            
+
             for post in old_posts:
                 await post_service.delete_post(post.id)
 

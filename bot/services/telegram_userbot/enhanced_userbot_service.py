@@ -13,7 +13,7 @@ from bot.services.telegram_userbot import (
 
 
 class EnhancedUserbotService(BaseUserbotService):
-    
+
     def __init__(
         self,
         api_id: int,
@@ -24,15 +24,15 @@ class EnhancedUserbotService(BaseUserbotService):
         **kwargs
     ):
         super().__init__(api_id, api_hash, **kwargs)
-        
+
         self.content_processor = ContentProcessingService(
             openai_key=openai_key,
             aisettings_service=aisettings_service,
             user_service=user_service
         )
-        
+
         self.post_converter = PostConversionService(self.content_processor)
-        
+
         self.user_service = user_service
         self.aisettings_service = aisettings_service
         self.openai_key = openai_key
@@ -40,18 +40,18 @@ class EnhancedUserbotService(BaseUserbotService):
     async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
         try:
             start_time = time.time()
-            
+
             raw_posts = await super().get_last_posts(flow.sources, limit)
-            
+
             processed_posts = await self.post_converter.convert_raw_posts_to_dto(raw_posts, flow)
-            
+
             self.logger.info(
                 f"[Telegram] Processed {len(processed_posts)} posts "
                 f"in {time.time() - start_time:.2f}s"
             )
-            
+
             return processed_posts
-            
+
         except Exception as e:
             self.logger.error(f"Error getting posts: {str(e)}", exc_info=True)
             return []

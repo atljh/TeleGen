@@ -23,7 +23,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         dialog_data.get("channel_flow", False)
         or start_data.get("channel_flow", False)
     )
-    
+
     dialog_manager.dialog_data['selected_channel'] = selected_channel
     dialog_manager.dialog_data['channel_flow'] = channel_flow
 
@@ -39,7 +39,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
             "selected_channel": selected_channel,
             "channel_flow": "Присутнiй" if channel_flow else 'Вiдсутнiй'
         }
-    
+
 def notification_button_getter(manager: DialogManager, **kwargs):
     value = manager.dialog_data.get("notifications_enabled", False)
     text = "✅ Сповіщення увімкнені" if value else "❌ Сповіщення вимкнені"

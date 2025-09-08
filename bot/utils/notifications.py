@@ -26,7 +26,7 @@ async def send_telegram_notification(
     except Exception as e:
         logging.error(f"Помилка відправки сповіщення: {str(e)}")
         return False
-    
+
 
 async def notify_admins(
     message: str,

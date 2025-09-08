@@ -39,39 +39,39 @@ class TelegramLogger:
         self.bot = bot
         self.log_channel_id = settings.TELEGRAM_LOG_CHANNEL_ID
         self.enabled = bool(self.log_channel_id)
-    
+
     def _escape_markdown(self, text: str) -> str:
         escape_chars = r'_*[]()~`>#+-=|{}.!'
         return ''.join(f'\\{char}' if char in escape_chars else char for char in text)
-    
+
     def _format_additional_data(self, data: dict) -> str:
         if not data:
             return ""
-        
+
         lines = []
         for key, value in data.items():
             if value is not None:
                 escaped_key = self._escape_markdown(str(key))
                 escaped_value = self._escape_markdown(str(value))
                 lines.append(f"• *{escaped_key}:* `{escaped_value}`")
-        
+
         return "\n".join(lines)
-    
+
     async def _send_log(self, event: LogEvent) -> bool:
         if not self.enabled:
             return False
-        
+
         try:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
             escaped_timestamp = self._escape_markdown(timestamp)
             escaped_message = self._escape_markdown(event.message)
-            
+
             message_parts = [
                 f" \\| `{escaped_timestamp}`",
                 f"",
                 f"📝 *Message:* {escaped_message}"
             ]
-            
+
             if event.user_id or event.username:
                 user_parts = []
                 if event.user_id:
@@ -79,18 +79,18 @@ class TelegramLogger:
                 if event.username:
                     escaped_username = self._escape_markdown(f"@{event.username}")
                     user_parts.append(escaped_username)
-                
+
                 message_parts.append(f"👤 *User:* {', '.join(user_parts)}")
-            
+
             if event.additional_data:
                 formatted_data = self._format_additional_data(event.additional_data)
                 if formatted_data:
                     message_parts.extend(["", "📊 *Details:*", formatted_data])
-            
+
             message_parts.append("")
-            
+
             full_message = "\n".join(message_parts)
-            
+
             await self.bot.send_message(
                 chat_id=self.log_channel_id,
                 text=full_message,
@@ -98,20 +98,20 @@ class TelegramLogger:
                 disable_web_page_preview=True
             )
             return True
-            
+
         except Exception as e:
             print(f"Failed to send log to Telegram: {e}")
             return False
-    
+
     async def log(self, event: LogEvent) -> bool:
         return await self._send_log(event)
-    
+
     def log_sync(self, event: LogEvent) -> bool:
         try:
             return asyncio.run(self._send_log(event))
         except:
             return False
-    
+
     async def user_created_channel(self, user: BotUser, channel_name: str, channel_id: int) -> bool:
         event = LogEvent(
             level=LogLevel.CHANNEL,
@@ -125,7 +125,7 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
     async def user_deleted_channel(self, user: BotUser, channel_name: str, channel_id: int) -> bool:
         event = LogEvent(
             level=LogLevel.CHANNEL,
@@ -139,7 +139,7 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
 
     async def user_started_generation(
         self,
@@ -163,7 +163,7 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
     async def generation_completed(self, user: BotUser, flow_name: str, flow_id: int, result: str) -> bool:
         event = LogEvent(
             level=LogLevel.SUCCESS,
@@ -178,7 +178,7 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
     async def user_registered(self, user: BotUser) -> bool:
         event = LogEvent(
             level=LogLevel.USER,
@@ -192,7 +192,7 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
     async def payment_received(self, user: BotUser, amount: float, currency: str, plan: str) -> bool:
         event = LogEvent(
             level=LogLevel.MONEY,
@@ -207,28 +207,28 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
     async def settings_updated(
-        self, 
-        user: Any, 
-        setting_type: str, 
-        old_value: str, 
+        self,
+        user: Any,
+        setting_type: str,
+        old_value: str,
         new_value: str,
         additional_data: Optional[Dict] = None
     ) -> bool:
         if not self.enabled:
             return False
-        
+
         try:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
             escaped_timestamp = self._escape_markdown(timestamp)
-            
+
             message_parts = [
                 f"⚙️ *Settings Updated* \\| `{escaped_timestamp}`",
                 f"",
                 f"*Type:* {self._escape_markdown(setting_type)}"
             ]
-            
+
             if user:
                 user_parts = []
                 if hasattr(user, 'id'):
@@ -236,33 +236,33 @@ class TelegramLogger:
                 if hasattr(user, 'username'):
                     escaped_username = self._escape_markdown(f"@{user.username}")
                     user_parts.append(escaped_username)
-                
+
                 if user_parts:
                     message_parts.append(f"*User:* {', '.join(user_parts)}")
-            
+
             if old_value:
                 message_parts.extend([
                     "",
                     "*Old Values:*",
                     f"```\n{self._escape_markdown(old_value)}\n```"
                 ])
-            
+
             if new_value:
                 message_parts.extend([
                     "",
-                    "*New Values:*", 
+                    "*New Values:*",
                     f"```\n{self._escape_markdown(new_value)}\n```"
                 ])
-            
+
             if additional_data:
                 formatted_data = self._format_additional_data(additional_data)
                 if formatted_data:
                     message_parts.extend(["", "*Details:*", formatted_data])
-            
+
             message_parts.append("")
-            
+
             full_message = "\n".join(message_parts)
-            
+
             await self.bot.send_message(
                 chat_id=self.log_channel_id,
                 text=full_message,
@@ -270,11 +270,11 @@ class TelegramLogger:
                 disable_web_page_preview=True
             )
             return True
-            
+
         except Exception as e:
             print(f"Failed to send settings update log: {e}")
             return False
-    
+
     async def error_occurred(self, error_message: str, user: Optional[BotUser] = None, context: Optional[dict] = None) -> bool:
         event = LogEvent(
             level=LogLevel.ERROR,
@@ -288,7 +288,7 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
     async def system_startup(self) -> bool:
         event = LogEvent(
             level=LogLevel.SYSTEM,
@@ -300,7 +300,7 @@ class TelegramLogger:
             }
         )
         return await self.log(event)
-    
+
     async def security_event(self, event_type: str, user: Optional[BotUser] = None, details: Optional[dict] = None) -> bool:
         event = LogEvent(
             level=LogLevel.SECURITY,
@@ -325,7 +325,7 @@ def init_logger(bot: Bot) -> TelegramLogger:
 
 
 class SyncTelegramLogger:
-    
+
     def __init__(self, bot_token: Optional[str] = None):
         self.bot_token = bot_token
         self.log_channel_id = settings.TELEGRAM_LOG_CHANNEL_ID
@@ -339,35 +339,35 @@ class SyncTelegramLogger:
         for char in escape_chars:
             text = text.replace(char, f'\\{char}')
         return text
-    
+
     def _format_additional_data(self, data: Dict) -> str:
         if not data:
             return ""
-        
+
         lines = []
         for key, value in data.items():
             if value is not None:
                 escaped_key = self._escape_markdown(str(key))
                 escaped_value = self._escape_markdown(str(value))
                 lines.append(f"• *{escaped_key}:* `{escaped_value}`")
-        
+
         return "\n".join(lines)
-    
+
     def _send_log_sync(self, event_data: Dict) -> bool:
         if not self.enabled:
             return False
-        
+
         try:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
             escaped_timestamp = self._escape_markdown(timestamp)
             escaped_message = self._escape_markdown(event_data.get('message', ''))
-            
+
             message_parts = [
                 f" \\| `{escaped_timestamp}`",
                 f"",
                 f"📝 *Message:* {escaped_message}"
             ]
-            
+
             if event_data.get('user_id') or event_data.get('username'):
                 user_parts = []
                 if event_data.get('user_id'):
@@ -375,39 +375,39 @@ class SyncTelegramLogger:
                 if event_data.get('username'):
                     escaped_username = self._escape_markdown(f"@{event_data['username']}")
                     user_parts.append(escaped_username)
-                
+
                 message_parts.append(f"👤 *User:* {', '.join(user_parts)}")
-            
+
             if event_data.get('additional_data'):
                 formatted_data = self._format_additional_data(event_data['additional_data'])
                 if formatted_data:
                     message_parts.extend(["", "📊 *Details:*", formatted_data])
-            
+
             message_parts.append("")
-            
+
             full_message = "\n".join(message_parts)
-            
+
             payload = {
                 'chat_id': self.log_channel_id,
                 'text': full_message,
                 'parse_mode': 'MarkdownV2',
                 'disable_web_page_preview': True
             }
-            
+
             response = requests.post(self.api_url, json=payload, timeout=10)
             response.raise_for_status()
-            
+
             return True
-            
+
         except Exception as e:
             logging.error(f"Failed to send log to Telegram: {e}")
             return False
-    
+
     def user_started_generation(
         self,
         user,
         flow_name: str,
-        flow_id: int, 
+        flow_id: int,
         telegram_volume: int,
         web_volume: int,
         auto_generate: bool = False,
@@ -427,12 +427,12 @@ class SyncTelegramLogger:
             }
         }
         return self._send_log_sync(event_data)
-    
+
     def generation_completed(
         self,
         user: BotUser,
         flow_name: str,
-        flow_id: int, 
+        flow_id: int,
         result: str,
         auto_generate: bool = False,
     ) -> bool:
@@ -449,7 +449,7 @@ class SyncTelegramLogger:
             }
         }
         return self._send_log_sync(event_data)
-    
+
     def generation_failed(self, flow_id: int, error_message: str) -> bool:
         event_data = {
             'message': 'Content generation failed',

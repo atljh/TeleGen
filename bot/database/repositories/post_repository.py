@@ -48,7 +48,7 @@ class PostRepository:
                 await self._save_image_from_path(post, image_path)
 
         return post
-    
+
     async def create_with_media(
         self,
         flow: Flow,
@@ -113,7 +113,7 @@ class PostRepository:
                 source_id=source_id,
                 scheduled_time=scheduled_time
             )
-        
+
         post = await _create_post_sync()
         await self._process_media_list(post, media_list)
         return post
@@ -152,7 +152,7 @@ class PostRepository:
     async def _process_single_media(self, post: Post, media: dict):
         media_type = media.get("type")
         local_path = media.get("path")
-        
+
         if not local_path or not media_type:
             return
 
@@ -166,7 +166,7 @@ class PostRepository:
         elif media_type == MediaType.VIDEO.value:
             await sync_to_async(self._update_post_video)(post, permanent_path)
 
-        
+
     def _create_post_image(self, post: Post, image_path: str):
         PostImage.objects.create(
             post=post,
@@ -190,26 +190,26 @@ class PostRepository:
         try:
             if file_path_or_url.startswith(('http://', 'https://')):
                 response = requests.get(file_path_or_url, stream=True)
-                
+
                 ext = os.path.splitext(urlparse(file_path_or_url).path)[1] or ('.jpg' if media_type == 'images' else '.mp4')
                 temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
-                
+
                 with open(temp_file, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
-                
+
                 file_path_or_url = temp_file
-            
+
             media_dir = 'posts/images' if media_type == 'images' else 'posts/videos'
             os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
-            
+
             ext = os.path.splitext(file_path_or_url)[1] or ('.jpg' if media_type == 'images' else '.mp4')
             filename = f"{uuid.uuid4()}{ext}"
             permanent_path = os.path.join(media_dir, filename)
-            
+
             shutil.copy2(file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path))
             return permanent_path
-    
+
         except Exception as e:
             logging.error(f"Failed to store media: {str(e)}")
             raise
@@ -222,24 +222,24 @@ class PostRepository:
             raise PostNotFoundError(f"Post with id={post_id} not found")
 
     async def update_media(
-        self, 
-        post_id: int, 
-        media_file, 
+        self,
+        post_id: int,
+        media_file,
         filename: str,
         media_type: MediaType
     ) -> Post:
         post = await self.get(post_id)
-        
+
         if post.image:
             post.image.delete(save=False)
         if post.video:
             post.video.delete(save=False)
-        
+
         if media_type == MediaType.IMAGE:
             post.image.save(filename, media_file, save=False)
         elif media_type == MediaType.VIDEO:
             post.video.save(filename, media_file, save=False)
-        
+
         await post.asave()
         return post
 
@@ -258,16 +258,16 @@ class PostRepository:
         posts = await self._fetch_posts_from_db(flow_id, status=status)
         # await self._preload_media_for_posts(posts)
         return posts
-    
+
     @sync_to_async
     def _fetch_posts_from_db(self, flow_id: int, status: PostStatus = None) -> List[PostDTO]:
         posts = Post.objects.filter(flow_id=flow_id)
-        
+
         if status is not None:
             posts = posts.filter(status=status)
         else:
             posts = posts.filter(status__in=[PostStatus.PUBLISHED, PostStatus.DRAFT])
-        
+
         posts = posts.select_related('flow')\
             .prefetch_related(
                 Prefetch('images', queryset=PostImage.objects.only('image', 'order').order_by('order'))
@@ -279,7 +279,7 @@ class PostRepository:
                 'original_link', 'original_date', 'source_url'
             )\
             .order_by('-created_at')
-        
+
         return [
             PostDTO.from_orm(post)
             for post in posts
@@ -287,30 +287,30 @@ class PostRepository:
 
     async def _preload_media_for_posts(self, posts: List[PostDTO]):
         tasks = []
-        
+
         for post in posts[:3]:
             if post.images:
                 tasks.append(self._preload_media(post.images[0].url, 'image'))
             elif post.video_url:
                 tasks.append(self._preload_media(post.video_url, 'video'))
-        
+
         if tasks:
             await asyncio.gather(*tasks)
-    
+
     async def _preload_media(self, media_url: str, media_type: str) -> bool:
         try:
             if not media_url:
                 return False
-                
+
             media_path = os.path.join(
-                settings.MEDIA_ROOT, 
+                settings.MEDIA_ROOT,
                 media_url.replace(settings.MEDIA_URL, '').lstrip('/')
             )
-            
+
             if os.path.exists(media_path):
                 return True
             return False
-            
+
         except Exception as e:
             logging.error(f"Error preloading media {media_url}: {str(e)}")
             return False
@@ -328,7 +328,7 @@ class PostRepository:
         offset: int = 0
     ) -> List[Post]:
         query = Post.objects.all()
-        
+
         if flow_id:
             query = query.filter(flow_id=flow_id)
         if status:
@@ -337,9 +337,9 @@ class PostRepository:
             query = query.filter(is_published=is_published)
         if scheduled_before:
             query = query.filter(scheduled_time__lte=scheduled_before)
-            
+
         return [
-            post async for post in 
+            post async for post in
             query.select_related('flow')
                 .order_by('-created_at')
                 [offset:offset+limit]

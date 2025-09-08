@@ -56,7 +56,7 @@ def create_flow_settings_window():
         Format(
         """
         <b>Канал:</b> {channel_name}
-                
+
         <b>Параметри Flow</b>
         - <b>Тематика:</b> {theme}
         - <b>Джерела ({source_count}):</b>
@@ -72,8 +72,8 @@ def create_flow_settings_window():
             Button(Const("⏱ Частота генерації"), id="generation_frequency", on_click=set_generation_frequency),
             Button(Const("🔠 Обмеження по символам"), id="character_limit", on_click=character_limit),
             Button(
-                Format("📌 Виділення заголовку: {title_highlight}"), 
-                id="title_highlight", 
+                Format("📌 Виділення заголовку: {title_highlight}"),
+                id="title_highlight",
                 on_click=toggle_title_highlight
             ),
             # Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
@@ -95,12 +95,12 @@ def create_ad_block_settings_window():
         Const("📢 Налаштування рекламного блоку</b>"),
         Column(
             Button(
-                Const("✅ Включити рекламу"), 
+                Const("✅ Включити рекламу"),
                 id="enable_ads",
                 on_click=toggle_ad_block
             ),
             Button(
-                Const("❌ Вимкнути рекламу"), 
+                Const("❌ Вимкнути рекламу"),
                 id="disable_ads",
                 on_click=toggle_ad_block
             ),
@@ -142,8 +142,8 @@ def create_character_limit_window():
         ),
         Row(
             Button(
-                Const("🔙 Назад"), 
-                id="open_flow_settings", 
+                Const("🔙 Назад"),
+                id="open_flow_settings",
                 on_click=open_flow_settings
             ),
         ),

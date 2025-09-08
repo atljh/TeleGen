@@ -8,7 +8,7 @@ from bot.database.repositories import PostRepository
 from bot.database.exceptions import PostNotFoundError
 
 class PostBaseService:
-    
+
     def __init__(self, post_repository: PostRepository):
         self.post_repo = post_repository
 
@@ -16,7 +16,7 @@ class PostBaseService:
         post = await self.post_repo.get(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
-        
+
         images_qs = await sync_to_async(lambda: list(post.images.all().order_by('order')))()
         return PostDTO.from_orm(post)
 
@@ -31,26 +31,26 @@ class PostBaseService:
         **kwargs
     ) -> PostDTO:
         post = await self.post_repo.get(post_id)
-        
+
         if content is not None:
             post.content = content
         if publication_date:
             post.publication_date = publication_date
         if status:
             post.status = status
-        
+
         if images is not None:
             await self._update_post_images(post, images)
-        
+
         if video_url is not None:
             post.video_url = video_url
-        
+
         await sync_to_async(post.save)()
         return await self.get_post(post_id)
 
     async def _update_post_images(self, post: Post, images: List[dict]):
         await sync_to_async(lambda: post.images.all().delete())()
-        
+
         for img_data in images:
             await sync_to_async(PostImage.objects.create)(
                 post=post,

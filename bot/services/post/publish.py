@@ -12,7 +12,7 @@ from bot.database.exceptions import InvalidOperationError
 from bot.services.post.base import PostBaseService
 
 class PostPublishingService:
-    
+
     def __init__(self, bot: Bot, post_base_service: PostBaseService):
         self.bot = bot
         self.post_service = post_base_service
@@ -21,10 +21,10 @@ class PostPublishingService:
         post = await self.post_service.get_post(post_id)
         if post.status == PostStatus.PUBLISHED:
             raise InvalidOperationError("Пост вже опублiкований!")
-        
+
         try:
             await self._send_post_to_channel(post, channel_id)
-            
+
             return await self.post_service.update_post(
                 post_id=post_id,
                 status=PostStatus.PUBLISHED,
@@ -32,13 +32,13 @@ class PostPublishingService:
                 publication_date=timezone.now(),
                 scheduled_time=None
             )
-            
+
         except Exception as e:
             raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
 
     async def _send_post_to_channel(self, post: PostDTO, channel_id: str):
         caption = post.content[:1024] if len(post.content) > 1024 else post.content
-        
+
         if post.images:
             await self._send_media_group(post, channel_id, caption)
         elif post.video_url:
@@ -48,11 +48,11 @@ class PostPublishingService:
 
     async def _send_media_group(self, post: PostDTO, channel_id: str, caption: str):
         media_group = []
-        
+
         for i, image in enumerate(post.images):
             media = await self._create_media_item(image, caption if i == 0 else None)
             media_group.append(media)
-        
+
         await self.bot.send_media_group(chat_id=channel_id, media=media_group)
 
     async def _create_media_item(self, image, caption: Optional[str] = None) -> InputMediaPhoto:
@@ -78,7 +78,7 @@ class PostPublishingService:
             decoded_path = unquote(post.video_url)
             relative_path = decoded_path.lstrip("/")
             media_path = os.path.join(settings.BASE_DIR, relative_path)
-            
+
             if media_path and os.path.exists(media_path):
                 video = FSInputFile(media_path)
                 await self.bot.send_video(

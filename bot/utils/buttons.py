@@ -17,5 +17,5 @@ async def go_back_to_channel(callback: CallbackQuery, button: Button, manager: D
             "selected_channel": selected_channel,
             "channel_flow": channel_flow,
             },
-        mode=StartMode.RESET_STACK 
+        mode=StartMode.RESET_STACK
     )

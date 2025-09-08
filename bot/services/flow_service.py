@@ -37,14 +37,14 @@ class FlowService:
         cta: bool,
         frequency: GenerationFrequency | str,
         signature: str | None = None,
-        flow_volume: int = 5,          
+        flow_volume: int = 5,
         ad_time: str | None = None
     ) -> FlowDTO:
         channel = await self.channel_repository.get_channel_by_id(channel_id)
-        
+
         if isinstance(content_length, ContentLength):
             content_length = content_length.value
-            
+
         if isinstance(frequency, GenerationFrequency):
             frequency = frequency.value
         try:
@@ -100,18 +100,18 @@ class FlowService:
             flow = await self.flow_repository.get_flow_by_id(flow_id)
             if not flow:
                 raise FlowNotFoundError(f"Flow with ID {flow_id} not found")
-            
+
             old_values = self._get_old_values(flow, kwargs.keys())
-            
+
             for field, value in kwargs.items():
                 setattr(flow, field, value)
-            
+
             updated_flow = await self.flow_repository.update_flow(flow)
-            
+
             await self._log_flow_update(flow, old_values, kwargs)
-            
+
             return FlowDTO.from_orm(updated_flow)
-            
+
         except Exception as e:
             logging.error(f"Error updating flow {flow_id}: {e}")
             raise
@@ -122,18 +122,18 @@ class FlowService:
             if hasattr(flow, field):
                 old_values[field] = getattr(flow, field)
         return old_values
-    
+
 
     async def _log_flow_update(self, flow, old_values: Dict, new_values: Dict):
         if not self.logger:
             return
-            
+
         try:
             channel = await self.channel_repository.get_channel(flow.channel_id)
             user = await sync_to_async(lambda: channel.user)()
-            
+
             changes = self._format_changes_for_log(old_values, new_values)
-            
+
             if changes:
                 await self.logger.settings_updated(
                     user=user,
@@ -146,29 +146,29 @@ class FlowService:
                         'changed_fields': list(new_values.keys())
                     }
                 )
-                
+
         except Exception as e:
             logging.error(f"Error logging flow update: {e}")
 
     def _format_changes_for_log(self, old_values: Dict, new_values: Dict) -> Optional[Dict]:
         if not old_values or not new_values:
             return None
-        
+
         formatted_old = []
         formatted_new = []
-        
+
         for field, new_value in new_values.items():
             old_value = old_values.get(field)
-            
+
             if old_value == new_value:
                 continue
-                
+
             formatted_old.append(f"{field}: {self._format_value(old_value)}")
             formatted_new.append(f"{field}: {self._format_value(new_value)}")
-        
+
         if not formatted_old or not formatted_new:
             return None
-            
+
         return {
             'old': "\n".join(formatted_old),
             'new': "\n".join(formatted_new)
@@ -207,7 +207,7 @@ class FlowService:
     async def force_flows_due_for_generation(self) -> List[FlowDTO]:
         flows = await self.flow_repository.list()
         return flows
-    
+
     async def update_next_generation_time(self, flow_id: int):
         flow = await self.flow_repository.get_flow_by_id(flow_id)
         if flow.frequency == "hourly":
@@ -218,7 +218,7 @@ class FlowService:
             next_time = timezone.now() + timedelta(days=1)
         else:
             next_time = None
-        
+
         await self.update_flow(
             flow.id,
             next_generation_time=next_time,
@@ -233,7 +233,7 @@ class FlowService:
         source = next((s for s in flow.sources if s.get("link") == link), None)
         if not source:
             raise ValueError(f"Source with link {link} not found in flow {flow_id}")
-        
+
         if source.get("type") != "web":
             return None
 
@@ -251,9 +251,9 @@ class FlowService:
         ]
         await self.update_flow(flow_id, sources=updated_sources)
         return rss_url
-    
+
     async def get_user_by_flow_id(self, flow_id: int) -> UserDTO:
-        flow = await self.get_flow_by_id(flow_id) 
+        flow = await self.get_flow_by_id(flow_id)
         channel = await self.channel_repository.get_channel(flow.channel_id)
         user = await sync_to_async(lambda: channel.user)()
         return UserDTO.from_orm(user)

@@ -46,14 +46,14 @@ class Container(containers.DeclarativeContainer):
             "bot.services.post.post_service"
         ]
     )
-    
+
     session = providers.Singleton(AiohttpSession)
     bot = providers.Singleton(
         Bot,
         token=os.getenv("TELEGRAM_BOT_TOKEN"),
         session=session
     )
-    
+
     user_repository = providers.Factory(UserRepository)
     channel_repository = providers.Factory(ChannelRepository)
     flow_repository = providers.Factory(FlowRepository)
@@ -69,13 +69,13 @@ class Container(containers.DeclarativeContainer):
         repository=ai_settings_repository,
         user_repository=user_repository
     )
-    
+
     user_service = providers.Factory(
         UserService,
         user_repository=user_repository,
         channel_repository=channel_repository
     )
-    
+
     userbot_service = providers.Singleton(
         EnhancedUserbotService,
         aisettings_service=ai_settings_service,
@@ -85,7 +85,7 @@ class Container(containers.DeclarativeContainer):
         phone=os.getenv("TELEGRAM_PHONE"),
         openai_key=os.getenv("OPENAI_API_KEY"),
     )
-    
+
     rss_service_factory = providers.Factory(
         RssService,
         rss_app_key=os.getenv("RSS_API_KEY"),
@@ -105,7 +105,7 @@ class Container(containers.DeclarativeContainer):
         flow_repository=flow_repository,
         channel_repository=channel_repository
     )
-    
+
     rss_url_manager = providers.Factory(
         RssUrlManager,
         rss_service=rss_service_factory,
@@ -115,30 +115,30 @@ class Container(containers.DeclarativeContainer):
         CloudflareBypass,
         logger=providers.Singleton(logging.getLogger, "cloudflare_bypass")
     )
-    
+
     web_scraper_service = providers.Factory(
         WebScraperService,
         cf_bypass=cloudflare_bypass,
         logger=providers.Singleton(logging.getLogger, "web_scraper")
     )
-    
+
     image_extractor_service = providers.Factory(
         ImageExtractorService,
         logger=providers.Singleton(logging.getLogger, "image_extractor")
     )
-    
+
     post_builder_service = providers.Factory(
         PostBuilderService,
         logger=providers.Singleton(logging.getLogger, "post_builder")
     )
-    
+
     content_processor_service = providers.Factory(
         ContentProcessorService,
         aisettings_service=ai_settings_service,
         openai_key=os.getenv("OPENAI_API_KEY"),
         logger=providers.Singleton(logging.getLogger, "content_processor")
     )
-    
+
     web_service = providers.Factory(
         WebService,
         post_repository=post_repository,
@@ -152,7 +152,7 @@ class Container(containers.DeclarativeContainer):
         post_builder=post_builder_service,
         logger=providers.Singleton(logging.getLogger, "web_service")
     )
-    
+
     post_service = providers.Factory(
         PostService,
         post_repository=post_repository,
@@ -161,20 +161,20 @@ class Container(containers.DeclarativeContainer):
         userbot_service=userbot_service,
         web_service=web_service,
     )
-    
-    
+
+
     subscription_service = providers.Factory(
         SubscriptionService,
         subscription_repository=subscription_repository,
         logger=providers.Singleton(logging.getLogger, "subscription_service")
     )
-    
+
     payment_service = providers.Factory(
         PaymentService,
         payment_repository=payment_repository,
         logger=providers.Singleton(logging.getLogger, "payment_service")
     )
-    
+
     statistics_service = providers.Factory(
         StatisticsService,
         statistics_repository=statistics_repository,

@@ -83,7 +83,7 @@ class FlowRepository:
 
     async def delete_flow(self, flow: Flow):
         await flow.adelete()
-    
+
     async def list(
         self,
         next_generation_time__lte: datetime | None = None,
@@ -92,13 +92,13 @@ class FlowRepository:
         offset: int = 0
     ) -> list[FlowDTO]:
         queryset = Flow.objects.select_related('channel')
-        
+
         conditions = []
         if next_generation_time__lte is not None:
             conditions.append(models.Q(next_generation_time__lte=next_generation_time__lte))
         if include_null_generation_time:
             conditions.append(models.Q(next_generation_time__isnull=True))
-        
+
         if conditions:
             queryset = queryset.filter(reduce(operator.or_, conditions))
 

@@ -23,7 +23,7 @@ def entity_to_html(entity: MessageEntity, text: str) -> str:
         return f'<a href="{escape_html(text)}">{escape_html(text)}</a>'
     else:
         return escape_html(text)
-    
+
 
 def parse_entities_to_html(message: Message) -> str:
     text = message.text or message.caption or ""
@@ -70,7 +70,7 @@ def apply_formats(text: str, formats: list, all_entities: list) -> str:
     formats_sorted = sorted(formats, key=lambda x: format_priority.index(x) if x in format_priority else 999)
 
     formatted_text = escape_html(text)
-    
+
     for fmt in reversed(formats_sorted):
         if fmt == 'bold':
             formatted_text = f"<b>{formatted_text}</b>"

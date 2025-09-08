@@ -22,7 +22,7 @@ from .callbacks import(
     start_generation_process,
     to_channel,
     to_select_frequency,
-    
+
     on_channel_theme_selected,
     on_custom_theme_entered,
     to_custom_theme_input,
@@ -39,17 +39,17 @@ from .callbacks import(
     on_source_type_selected,
     on_source_link_entered,
     add_more_sources,
-    
+
     confirm_title_highlight,
     reject_title_highlight,
-    
+
     handle_time_input,
     reset_ad_time,
-    
+
     on_volume_selected,
     open_custom_volume_input,
     handle_custom_volume_input,
-    
+
     handle_signature_input,
     skip_signature
 )
@@ -218,8 +218,8 @@ def create_flow_dialog():
             ),
             Row(
                 Button(
-                    Const("✏️ Вказати своє число"), 
-                    id="custom_volume", 
+                    Const("✏️ Вказати своє число"),
+                    id="custom_volume",
                     on_click=open_custom_volume_input
                 ),
             ),

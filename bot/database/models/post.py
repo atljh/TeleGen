@@ -37,7 +37,7 @@ class PostDTO(BaseModel):
     @property
     def is_album(self) -> bool:
         return len(self.images) > 1
-    
+
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
         populate_by_name = True
@@ -49,7 +49,7 @@ class PostDTO(BaseModel):
             for i, media in enumerate(raw_post.get('media', []))
             if media['type'] == 'image'
         ]
-        
+
         video_url = next(
             (media['path'] for media in raw_post.get('media', [])
             if media['type'] == 'video'),
@@ -74,7 +74,7 @@ class PostDTO(BaseModel):
             flow_id=0,
             created_at=datetime.now()
         )
-    
+
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
         data = {}
