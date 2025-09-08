@@ -36,14 +36,15 @@ migrate:
 superuser:
 	$(MANAGE) createsuperuser
 
-test:
+create-test-data:
 	$(MANAGE) generate_test_data --users 3
 
-make clean-test:
+clean-test-data:
 	$(MANAGE) cleanup_test_data
 
 seed:
 	$(MANAGE) seed_data
+
 shell:
 	$(MANAGE) shell
 
@@ -55,3 +56,17 @@ status:
 
 admin:
 	open http://localhost:8000/admin
+
+
+test:
+	cd backend && python -m pytest tests/ -v --cov=.
+
+test-fastapi:
+	cd fastapi && python -m pytest tests/ -v --cov=app
+
+coverage:
+	cd backend && coverage run --source='.' manage.py test && coverage report
+
+security:
+	safety check
+	bandit -r backend/ -x tests,__pycache__,migrations
