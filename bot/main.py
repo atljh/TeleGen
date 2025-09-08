@@ -20,7 +20,7 @@ async def main():
     container = Container()
     bot = container.bot()
 
-    telegram_logger = await setup_logging(bot)
+    telegram_logger = setup_logging(bot)
 
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)

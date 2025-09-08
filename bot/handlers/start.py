@@ -22,7 +22,7 @@ async def cmd_start(message: Message):
     )
 
     await message.answer(
-        "📌 *Вітаємо у PROPOST\!* 🎉\n\nОберіть опцію з меню нижче:\n👇👇👇",
+        "📌 *Вітаємо у PROPOST* 🎉\n\nОберіть опцію з меню нижче:\n👇👇👇",
         reply_markup=keyboard,
         parse_mode="MarkdownV2",
     )
