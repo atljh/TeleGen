@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import list, Optional
 
 from aiogram import Bot
 from asgiref.sync import sync_to_async
@@ -54,7 +54,7 @@ class PostService:
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         return await self.scheduling_service.schedule_post(post_id, scheduled_time)
 
-    async def publish_scheduled_posts(self) -> List[PostDTO]:
+    async def publish_scheduled_posts(self) -> list[PostDTO]:
         return await self.scheduling_service.publish_scheduled_posts()
 
     async def generate_auto_posts(
@@ -62,18 +62,18 @@ class PostService:
     ) -> list[PostDTO]:
         return await self.generation_service.generate_auto_posts(flow_id, auto_generate)
 
-    async def get_all_posts_in_flow(self, flow_id: int) -> List[Post]:
+    async def get_all_posts_in_flow(self, flow_id: int) -> list[Post]:
         return await sync_to_async(list)(
             Post.objects.filter(flow_id=flow_id).order_by("created_at")
         )
 
-    async def get_oldest_posts(self, flow_id: int, limit: int) -> List[Post]:
+    async def get_oldest_posts(self, flow_id: int, limit: int) -> list[Post]:
         return await sync_to_async(list)(
             Post.objects.filter(flow_id=flow_id).order_by("created_at")[:limit]
         )
 
     async def update_post_with_media(
-        self, post_id: int, content: str, media_list: List[dict]
+        self, post_id: int, content: str, media_list: list[dict]
     ) -> PostDTO:
         post = await self.base_service.post_repo.get(post_id)
 
@@ -105,7 +105,7 @@ class PostService:
         original_content: str,
         source_url: Optional[str] = None,
         scheduled_time: Optional[datetime] = None,
-        media_list: Optional[List[str]] = None,
+        media_list: Optional[list[str]] = None,
     ) -> PostDTO:
         if not await self.flow_repo.exists(flow_id):
             raise PostNotFoundError(f"Flow with id {flow_id} not found")

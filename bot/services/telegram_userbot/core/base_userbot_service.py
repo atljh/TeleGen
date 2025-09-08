@@ -3,7 +3,7 @@ import logging
 import os
 import tempfile
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import dict, list, Optional, Tuple
 
 from telethon import TelegramClient
 
@@ -38,7 +38,7 @@ class BaseUserbotService:
                 self.logger.error(f"Error deleting temp file {file_path}: {str(e)}")
         self._temp_files.clear()
 
-    async def get_last_posts(self, sources: List[Dict], limit: int = 10) -> List[Dict]:
+    async def get_last_posts(self, sources: list[dict], limit: int = 10) -> list[dict]:
         telegram_sources = [s for s in sources if s.get("type") == "telegram"]
         if not telegram_sources:
             return []
@@ -157,7 +157,7 @@ class BaseUserbotService:
 
     async def _process_message_or_album(
         self, client, entity, msg, source_link, processed_albums
-    ) -> Tuple[Optional[Dict], int]:
+    ) -> Tuple[Optional[dict], int]:
         chat_id = msg.chat_id if hasattr(msg, "chat_id") else entity.id
 
         post_date = msg.date if hasattr(msg, "date") else None
@@ -216,8 +216,8 @@ class BaseUserbotService:
             return post_data, 1
 
     def _calculate_source_limits(
-        self, sources: List[Dict], limit: int
-    ) -> Dict[str, int]:
+        self, sources: list[dict], limit: int
+    ) -> dict[str, int]:
         source_limits = {}
         base_limit = max(1, limit // len(sources))
         for source in sources:
@@ -231,7 +231,7 @@ class BaseUserbotService:
 
     async def _process_album(
         self, client: TelegramClient, entity, initial_msg, source_url: str
-    ) -> Optional[Dict]:
+    ) -> Optional[dict]:
         try:
             messages = await client.get_messages(
                 entity, min_id=initial_msg.id - 10, max_id=initial_msg.id + 10, limit=20
@@ -283,7 +283,7 @@ class BaseUserbotService:
 
     async def _process_message(
         self, client: TelegramClient, msg, source_url: str
-    ) -> Optional[Dict]:
+    ) -> Optional[dict]:
         if not msg.text and not msg.media:
             return None
 
@@ -309,7 +309,7 @@ class BaseUserbotService:
 
         return post_data
 
-    async def _extract_media(self, client: TelegramClient, media) -> List[Dict]:
+    async def _extract_media(self, client: TelegramClient, media) -> list[dict]:
         media_items = []
 
         if hasattr(media, "photo"):
@@ -334,8 +334,8 @@ class BaseUserbotService:
         return media_items
 
     async def _download_media_batch(
-        self, client: TelegramClient, media_items: List[Dict]
-    ) -> List[Dict]:
+        self, client: TelegramClient, media_items: list[dict]
+    ) -> list[dict]:
         self.logger.info(f"Starting download of {len(media_items)} media files...")
         start_time = time.time()
         downloaded = 0

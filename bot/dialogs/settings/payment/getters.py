@@ -1,9 +1,9 @@
-from typing import Any, Dict
+from typing import Any
 
 from aiogram_dialog import DialogManager
 
 
-async def packages_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+async def packages_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
     return {
         "packages": [
             {
@@ -30,7 +30,7 @@ async def packages_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, 
     }
 
 
-async def periods_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+async def periods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
     selected_package = dialog_manager.dialog_data.get("selected_package", {})
     periods = [
         {"id": "1", "name": "1 місяць", "price": "100 грн", "discount_display": ""},
@@ -54,7 +54,7 @@ async def periods_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, A
     }
 
 
-async def methods_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+async def methods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
     selected_package = dialog_manager.dialog_data.get("selected_package")
     selected_period = dialog_manager.dialog_data.get("selected_period")
     total_price = "100.00"
@@ -66,7 +66,7 @@ async def methods_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, A
     }
 
 
-async def success_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+async def success_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
     return {
         "package": dialog_manager.dialog_data.get("selected_package"),
         "period": dialog_manager.dialog_data.get("selected_period"),

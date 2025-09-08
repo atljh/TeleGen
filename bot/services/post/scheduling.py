@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import list
 
 from asgiref.sync import sync_to_async
 
@@ -41,7 +41,7 @@ class PostSchedulingService:
             .flow.channel.channel_id
         )
 
-    async def publish_scheduled_posts(self) -> List[PostDTO]:
+    async def publish_scheduled_posts(self) -> list[PostDTO]:
         now = datetime.now()
         posts = await sync_to_async(list)(
             Post.objects.filter(

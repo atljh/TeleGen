@@ -1,16 +1,16 @@
 import logging
-from typing import Dict, List, Optional
+from typing import dict, list, Optional
 
 from bot.database.models import PostDTO
 from bot.services.content_processing.processors import ContentProcessor
 
 
 class PostProcessingPipeline:
-    def __init__(self, processors: List[ContentProcessor]):
+    def __init__(self, processors: list[ContentProcessor]):
         self.processors = processors
         self.logger = logging.getLogger(__name__)
 
-    async def process_post(self, raw_post: Dict) -> Optional[PostDTO]:
+    async def process_post(self, raw_post: dict) -> Optional[PostDTO]:
         try:
             post_dto = PostDTO.from_raw_post(raw_post)
             if not post_dto.content:

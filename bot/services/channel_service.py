@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import list, Optional
 
 from asgiref.sync import sync_to_async
 
@@ -89,7 +89,7 @@ class ChannelService:
                 )
             raise
 
-    async def get_user_channels(self, user_telegram_id: int) -> List[ChannelDTO]:
+    async def get_user_channels(self, user_telegram_id: int) -> list[ChannelDTO]:
         try:
             user = await self.user_repository.get_user_by_telegram_id(user_telegram_id)
             if not user:

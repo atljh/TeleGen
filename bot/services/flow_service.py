@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, list, Optional
 
 from asgiref.sync import sync_to_async
 from django.utils import timezone
@@ -117,14 +117,14 @@ class FlowService:
             logging.error(f"Error updating flow {flow_id}: {e}")
             raise
 
-    def _get_old_values(self, flow, fields_to_update) -> Dict[str, Any]:
+    def _get_old_values(self, flow, fields_to_update) -> dict[str, Any]:
         old_values = {}
         for field in fields_to_update:
             if hasattr(flow, field):
                 old_values[field] = getattr(flow, field)
         return old_values
 
-    async def _log_flow_update(self, flow, old_values: Dict, new_values: Dict):
+    async def _log_flow_update(self, flow, old_values: dict, new_values: dict):
         if not self.logger:
             return
 
@@ -151,8 +151,8 @@ class FlowService:
             logging.error(f"Error logging flow update: {e}")
 
     def _format_changes_for_log(
-        self, old_values: Dict, new_values: Dict
-    ) -> Optional[Dict]:
+        self, old_values: dict, new_values: dict
+    ) -> Optional[dict]:
         if not old_values or not new_values:
             return None
 
@@ -194,14 +194,14 @@ class FlowService:
             logging.error(f"Error deleting flow {flow_id}: {e}")
             raise
 
-    async def get_flows_due_for_generation(self) -> List[FlowDTO]:
+    async def get_flows_due_for_generation(self) -> list[FlowDTO]:
         now = timezone.now()
         flows = await self.flow_repository.list(
             next_generation_time__lte=now, include_null_generation_time=True, limit=None
         )
         return flows
 
-    async def force_flows_due_for_generation(self) -> List[FlowDTO]:
+    async def force_flows_due_for_generation(self) -> list[FlowDTO]:
         flows = await self.flow_repository.list()
         return flows
 

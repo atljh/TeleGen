@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List
+from typing import list
 
 from celery import shared_task
 
@@ -18,7 +18,7 @@ async def remove_old_posts(flow_id: int, count: int, post_service):
         await post_service.delete_post(post.id)
 
 
-async def create_new_posts(flow_id: int, posts_dto: List, post_service):
+async def create_new_posts(flow_id: int, posts_dto: list, post_service):
     created_posts = []
     for post_data in posts_dto:
         media_list = [

@@ -1,12 +1,19 @@
 import asyncio
 import logging
-from typing import Awaitable, Callable, Dict, List, Optional
+from typing import Awaitable, Callable, dict, list, Optional
 
 from bs4 import BeautifulSoup
 
 from bot.database.models import FlowDTO, PostDTO
 from bot.database.repositories.post_repository import PostRepository
+from bot.services.aisettings_service import AISettingsService
+from bot.services.flow_service import FlowService
+from bot.services.user_service import UserService
+from bot.services.web.content_processor_service import ContentProcessorService
+from bot.services.web.image_extractor_service import ImageExtractorService
+from bot.services.web.post_builder_service import PostBuilderService
 from bot.services.web.rss_service import RssService
+from bot.services.web.web_scraper_service import WebScraperService
 
 
 class WebService:
@@ -14,13 +21,13 @@ class WebService:
         self,
         post_repository: PostRepository,
         rss_service_factory: Callable[[], Awaitable["RssService"]],
-        content_processor: "ContentProcessorService",
-        user_service: "UserService",
-        flow_service: "FlowService",
-        web_scraper: "WebScraperService",
-        aisettings_service: "AISettingsService",
-        image_extractor: "ImageExtractorService",
-        post_builder: "PostBuilderService",
+        content_processor: ContentProcessorService,
+        user_service: UserService,
+        flow_service: FlowService,
+        web_scraper: WebScraperService,
+        aisettings_service: AISettingsService,
+        image_extractor: ImageExtractorService,
+        post_builder: PostBuilderService,
         logger: logging.Logger | None = None,
     ):
         self.post_repository = post_repository
@@ -34,7 +41,7 @@ class WebService:
         self.post_builder = post_builder
         self.logger = logger or logging.getLogger(__name__)
 
-    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
+    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> list[PostDTO]:
         async with self.rss_service_factory() as rss_service:
             try:
                 raw_posts = [
@@ -55,7 +62,7 @@ class WebService:
 
     async def _get_raw_posts(
         self, rss_service: RssService, flow: FlowDTO, limit: int
-    ) -> List[Dict]:
+    ) -> list[dict]:
         return [
             post
             async for post in rss_service.get_posts_for_flow(
@@ -63,12 +70,12 @@ class WebService:
             )
         ][:limit]
 
-    async def _enrich_posts(self, posts: List[Dict]) -> List[Dict]:
+    async def _enrich_posts(self, posts: list[dict]) -> list[dict]:
         return await asyncio.gather(*[self._enrich_single_post(post) for post in posts])
 
-    async def _enrich_single_post(self, post: Dict) -> Dict:
+    async def _enrich_single_post(self, post: dict) -> dict | None:
         if not post:
-            return
+            return None
         if not post.get("original_link"):
             return post
         try:
@@ -91,8 +98,8 @@ class WebService:
             return post
 
     async def _process_and_build_posts(
-        self, posts: List[Optional[Dict]], flow: FlowDTO
-    ) -> List[PostDTO]:
+        self, posts: list[dict | None], flow: FlowDTO
+    ) -> list[PostDTO]:
         if not posts:
             return []
 

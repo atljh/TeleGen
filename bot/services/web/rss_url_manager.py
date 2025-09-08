@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Optional
+from typing import list, Optional
 
 from bot.services.flow_service import FlowService
 from bot.services.web.rss_service import RssService, SourceDict
@@ -36,11 +36,11 @@ class RssUrlManager:
     async def batch_process_sources(
         self,
         flow_id: int,
-        sources: List[SourceDict],
+        sources: list[SourceDict],
         *,
         parallel: bool = True,
         force_refresh: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         async def process_source(source: SourceDict) -> Optional[str]:
             return await self.get_or_set_rss_url(
                 flow_id, source, force_refresh=force_refresh

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import list, Optional
 
 from asgiref.sync import sync_to_async
 
@@ -27,7 +27,7 @@ class PostBaseService:
         self,
         post_id: int,
         content: Optional[str] = None,
-        images: Optional[List[dict]] = None,
+        images: Optional[list[dict]] = None,
         publication_date: Optional[datetime] = None,
         status: Optional[PostStatus] = None,
         video_url: Optional[str] = None,
@@ -51,7 +51,7 @@ class PostBaseService:
         await sync_to_async(post.save)()
         return await self.get_post(post_id)
 
-    async def _update_post_images(self, post: Post, images: List[dict]):
+    async def _update_post_images(self, post: Post, images: list[dict]):
         await sync_to_async(lambda: post.images.all().delete())()
 
         for img_data in images:

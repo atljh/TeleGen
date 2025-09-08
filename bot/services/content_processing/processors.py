@@ -3,7 +3,7 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from typing import List
+from typing import list
 
 import openai
 from psycopg.errors import UniqueViolation
@@ -68,7 +68,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         self.aisettings_service = aisettings_service
         self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
 
-    async def process_batch(self, texts: List[str], user_id: int) -> List[str]:
+    async def process_batch(self, texts: list[str], user_id: int) -> list[str]:
         if not texts:
             return []
 

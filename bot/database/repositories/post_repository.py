@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import list, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -28,7 +28,7 @@ class PostRepository:
         source_url: Optional[str] = None,
         status: PostStatus = None,
         scheduled_time: Optional[datetime] = None,
-        images: Optional[List[str]] = None,
+        images: Optional[list[str]] = None,
         video_path: Optional[str] = None,
     ) -> Post:
         post = Post(
@@ -53,7 +53,7 @@ class PostRepository:
         self,
         flow: Flow,
         content: str,
-        media_list: List[dict],
+        media_list: list[dict],
         original_link: str,
         original_date: datetime,
         source_url: str,
@@ -93,7 +93,7 @@ class PostRepository:
         self,
         flow: Flow,
         content: str,
-        media_list: List[dict],
+        media_list: list[dict],
         original_link: str,
         original_date: datetime,
         source_url: str,
@@ -141,7 +141,7 @@ class PostRepository:
             scheduled_time=scheduled_time,
         )
 
-    async def _process_media_list(self, post: Post, media_list: List[dict]):
+    async def _process_media_list(self, post: Post, media_list: list[dict]):
         for media in media_list:
             try:
                 await self._process_single_media(post, media)
@@ -255,7 +255,7 @@ class PostRepository:
 
     async def get_posts_by_flow_id(
         self, flow_id: int, status: PostStatus = None
-    ) -> List[PostDTO]:
+    ) -> list[PostDTO]:
         posts = await self._fetch_posts_from_db(flow_id, status=status)
         # await self._preload_media_for_posts(posts)
         return posts
@@ -263,7 +263,7 @@ class PostRepository:
     @sync_to_async
     def _fetch_posts_from_db(
         self, flow_id: int, status: PostStatus = None
-    ) -> List[PostDTO]:
+    ) -> list[PostDTO]:
         posts = Post.objects.filter(flow_id=flow_id)
 
         if status is not None:
@@ -299,7 +299,7 @@ class PostRepository:
 
         return [PostDTO.from_orm(post) for post in posts]
 
-    async def _preload_media_for_posts(self, posts: List[PostDTO]):
+    async def _preload_media_for_posts(self, posts: list[PostDTO]):
         tasks = []
 
         for post in posts[:3]:
@@ -340,7 +340,7 @@ class PostRepository:
         scheduled_before: Optional[datetime] = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[Post]:
+    ) -> list[Post]:
         query = Post.objects.all()
 
         if flow_id:

@@ -2,7 +2,7 @@ import logging
 import os
 import random
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, list
 
 from faker import Faker
 
@@ -35,7 +35,7 @@ class TestDataGenerator:
             logger.error(f"Error setting up Django: {e}")
             raise
 
-    async def create_test_users(self, count: int = 10) -> List[Any]:
+    async def create_test_users(self, count: int = 10) -> list[Any]:
         await self._setup_django()
 
         from asgiref.sync import sync_to_async
@@ -68,7 +68,7 @@ class TestDataGenerator:
 
     async def create_test_channels_for_user(
         self, user: Any, min_channels: int = 1, max_channels: int = 3
-    ) -> List[Any]:
+    ) -> list[Any]:
         await self._setup_django()
 
         from asgiref.sync import sync_to_async
@@ -106,7 +106,7 @@ class TestDataGenerator:
 
     async def create_test_flows_for_channel(
         self, channel: Any, min_flows: int = 1, max_flows: int = 2
-    ) -> List[Any]:
+    ) -> list[Any]:
         await self._setup_django()
 
         from asgiref.sync import sync_to_async
@@ -140,7 +140,7 @@ class TestDataGenerator:
 
     async def add_test_sources_to_flow(
         self, flow: Any, min_sources: int = 2, max_sources: int = 5
-    ) -> List[Dict]:
+    ) -> list[dict]:
         sources = []
         num_sources = random.randint(min_sources, max_sources)
 
@@ -187,7 +187,7 @@ class TestDataGenerator:
         max_flows_per_channel: int = 2,
         min_sources_per_flow: int = 2,
         max_sources_per_flow: int = 5,
-    ) -> Dict:
+    ) -> dict:
         logger.info(f"Starting test data generation for {user_count} users...")
 
         results = {"users": [], "channels": [], "flows": [], "sources": 0}

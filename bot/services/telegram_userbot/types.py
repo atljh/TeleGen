@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional, TypedDict, Union
+from typing import Any, list, Optional, TypedDict, Union
 
 from telethon.tl.types import Channel, Chat, User
 
@@ -38,7 +38,7 @@ class SourceInfo(TypedDict):
 class RawPostData(TypedDict):
     original_content: str
     text: str
-    media: List[MediaInfo]
+    media: list[MediaInfo]
     is_album: bool
     album_size: int
     original_link: Optional[str]
@@ -50,7 +50,7 @@ class RawPostData(TypedDict):
 class ProcessedPostData(TypedDict):
     content: str
     original_content: str
-    media: List[MediaInfo]
+    media: list[MediaInfo]
     original_link: Optional[str]
     original_date: Optional[datetime]
     source_url: str
@@ -82,13 +82,13 @@ class UserbotConfig(TypedDict):
 class DownloadConfig(TypedDict):
     semaphore_limit: int
     max_file_size: int
-    allowed_mime_types: List[str]
+    allowed_mime_types: list[str]
     temp_dir: str
 
 
 class ProcessingConfig(TypedDict):
     max_text_length: int
-    allowed_entities: List[str]
+    allowed_entities: list[str]
     external_links_check: bool
     duplicate_check: bool
 
@@ -104,7 +104,7 @@ class BatchOperationResult(TypedDict):
     total: int
     successful: int
     failed: int
-    results: List[OperationResult]
+    results: list[OperationResult]
 
 
 class UserbotStats(TypedDict):

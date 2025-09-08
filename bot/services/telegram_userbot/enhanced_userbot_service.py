@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Optional
+from typing import dict, list, Optional
 
 from bot.database.models.flow import FlowDTO
 from bot.database.models.post import PostDTO
@@ -36,7 +36,7 @@ class EnhancedUserbotService(BaseUserbotService):
         self.aisettings_service = aisettings_service
         self.openai_key = openai_key
 
-    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> List[PostDTO]:
+    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> list[PostDTO]:
         try:
             start_time = time.time()
 
@@ -63,6 +63,6 @@ class EnhancedUserbotService(BaseUserbotService):
         ).content
 
     async def convert_raw_post(
-        self, raw_post: Dict, flow: FlowDTO
+        self, raw_post: dict, flow: FlowDTO
     ) -> Optional[PostDTO]:
         return await self.post_converter._convert_single_post(raw_post, flow)

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, list, Optional
 
 from telethon import TelegramClient
 
@@ -55,10 +55,10 @@ class DownloadService:
     async def download_media_batch(
         self,
         client: TelegramClient,
-        media_items: List[MediaInfo],
+        media_items: list[MediaInfo],
         output_dir: str,
         max_concurrent: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         semaphore = asyncio.Semaphore(max_concurrent)
         results = []
 
@@ -77,7 +77,7 @@ class DownloadService:
 
     async def _download_single_media(
         self, client: TelegramClient, media_item: MediaInfo, output_dir: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         try:
             file_name = f"{media_item['file_id']}_{media_item['type']}"
             file_path = os.path.join(output_dir, file_name)
@@ -106,7 +106,7 @@ class DownloadService:
             and os.path.getsize(file_path) >= min_size
         )
 
-    async def cleanup_downloads(self, file_paths: List[str]):
+    async def cleanup_downloads(self, file_paths: list[str]):
         for file_path in file_paths:
             try:
                 if os.path.exists(file_path):

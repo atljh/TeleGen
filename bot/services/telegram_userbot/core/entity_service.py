@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import list, Optional
 
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
@@ -54,7 +54,7 @@ class EntityService:
 
     async def search_entities(
         self, client: TelegramClient, query: str, limit: int = 10
-    ) -> List[TelegramEntity]:
+    ) -> list[TelegramEntity]:
         try:
             return await client.get_entity(query)
         except Exception as e:

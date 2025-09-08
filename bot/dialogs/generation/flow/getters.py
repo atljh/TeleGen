@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import pytz
 from aiogram.enums import ParseMode
@@ -30,7 +30,7 @@ def get_media_path(media_url: str) -> str:
 
 
 async def send_media_album(
-    dialog_manager: DialogManager, post_data: Dict[str, Any]
+    dialog_manager: DialogManager, post_data: dict[str, Any]
 ) -> Optional[Message]:
     bot = dialog_manager.middleware_data["bot"]
     chat_id = dialog_manager.middleware_data["event_chat"].id
@@ -104,7 +104,7 @@ def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
     return keyboard
 
 
-async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
     current_page = await scroll.get_page() if scroll else 0
 

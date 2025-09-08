@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Dict, Self
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -52,7 +52,7 @@ class PostDTO(BaseModel):
         return v.isoformat()
 
     @classmethod
-    def from_raw_post(cls, raw_post: Dict) -> "PostDTO":
+    def from_raw_post(cls, raw_post: dict) -> "PostDTO":
         images = [
             PostImageDTO(url=media["path"], order=i)
             for i, media in enumerate(raw_post.get("media", []))

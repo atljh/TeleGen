@@ -15,7 +15,7 @@ class WebPost:
         url: Original page URL
         date: Publication date (if available)
         source: Domain name
-        images: List of image URLs
+        images: list of image URLs
     """
 
     title: str

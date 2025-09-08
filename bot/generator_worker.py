@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-from typing import List
+from typing import list
 
 from aiogram import Bot
 
@@ -50,32 +50,9 @@ class TelegramLogHandler(logging.Handler):
         except Exception as e:
             sys.stderr.write(f"[TelegramLogHandler async ERROR] {e}\n")
 
-
-def setup_logging(bot: Bot = None):
-    logger = logging.getLogger()
-    logger.handlers.clear()
-    logger.setLevel(logging.INFO)
-
-    class FlushingStreamHandler(logging.StreamHandler):
-        def emit(self, record):
-            super().emit(record)
-            self.flush()
-
-    console_handler = FlushingStreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)s | %(message)s", datefmt="%d.%m.%Y %H:%M:%S"
-    )
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-    sys.stdout.reconfigure(line_buffering=True)
-    sys.stderr.reconfigure(line_buffering=True)
-    return logger
-
-
 async def generate_flow(
     flow_id: int, chat_id: int, bot: Bot, status_msg_id: int
-) -> List:
+) -> list:
     try:
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         flow_service = Container.flow_service()
@@ -116,7 +93,7 @@ async def _start_telegram_generations(
     flow_service: FlowService,
     post_service: PostService,
     auto_generate=False,
-) -> List:
+) -> list:
     existing_posts = await post_service.get_all_posts_in_flow(flow.id)
     existing_count = len(existing_posts)
 

@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import list
 
 from bot.database.exceptions import (
     ChannelNotFoundError,
@@ -124,7 +124,7 @@ class SubscriptionService:
                 f"Подписка с id={subscription_id} не найдена."
             )
 
-    async def get_user_subscriptions(self, user_id: int) -> List[SubscriptionDTO]:
+    async def get_user_subscriptions(self, user_id: int) -> list[SubscriptionDTO]:
         try:
             user = await self.user_repository.get_user_by_id(user_id)
             subscriptions = (
@@ -134,7 +134,7 @@ class SubscriptionService:
         except UserNotFoundError:
             raise UserNotFoundError(f"Пользователь с id={user_id} не найден.")
 
-    async def get_channel_subscriptions(self, channel_id: int) -> List[SubscriptionDTO]:
+    async def get_channel_subscriptions(self, channel_id: int) -> list[SubscriptionDTO]:
         try:
             channel = await self.channel_repository.get_channel_by_id(channel_id)
             subscriptions = (

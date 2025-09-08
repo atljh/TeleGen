@@ -6,7 +6,7 @@ import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, list, Optional, TypedDict
 from urllib.parse import urlparse
 
 import aiohttp
@@ -16,6 +16,8 @@ from dateutil import parser as date_parser
 from pydantic import BaseModel, ConfigDict, Field
 
 from bot.database.models import FlowDTO
+from bot.database.repositories.post_repository import PostRepository
+from bot.services.flow_service import FlowService
 from bot.services.web.cloudflare_bypass_service import CloudflareBypass
 from bot.utils.notifications import notify_admins
 
@@ -94,17 +96,14 @@ class RssService:
     async def get_posts_for_flow(
         self,
         flow: FlowDTO,
-        flow_service: "FlowService",
+        flow_service: FlowService,
         limit: int = 10,
-        *,
-        post_repository: Optional["PostRepository"] = None,
-        timeout: Optional[int] = None,
     ) -> AsyncIterator[dict[str, Any]]:
         try:
             rss_urls = await self._get_flow_rss_urls(flow, flow_service)
 
             async for post in self._stream_posts(
-                rss_urls, limit, timeout, post_repository=post_repository
+                rss_urls, limit
             ):
                 yield self._convert_to_web_service_format(post)
 
@@ -114,7 +113,7 @@ class RssService:
             self.logger.error(f"Error getting posts: {e}", exc_info=True)
 
     async def _get_flow_rss_urls(
-        self, flow: FlowDTO, flow_service: "FlowService"
+        self, flow: FlowDTO, flow_service: FlowService
     ) -> list[str]:
         rss_urls = []
         for source in flow.sources:
@@ -143,7 +142,7 @@ class RssService:
         return [await task for task in tasks]
 
     async def fetch_posts(
-        self, rss_urls: list[str], limit: int = 10, *, timeout: int | None = None
+        self, rss_urls: list[str], limit: int = 10, *, timeout: int = 30
     ) -> list[RssPost]:
         if not rss_urls:
             return []
@@ -183,8 +182,6 @@ class RssService:
         self,
         rss_urls: list[str],
         limit: int,
-        timeout: int | None = None,
-        post_repository: Optional["PostRepository"] = None,
     ) -> AsyncIterator[RssPost]:
         if not rss_urls:
             return
@@ -192,10 +189,11 @@ class RssService:
         limits_per_url = self._calculate_limits_per_url(rss_urls, limit)
         for url, url_limit in limits_per_url.items():
             try:
-                async for post in self._fetch_feed_posts_stream(
-                    url, url_limit, timeout, post_repository=post_repository
-                ):
-                    yield post
+                async with asyncio.timeout(30):
+                    async for post in self._fetch_feed_posts_stream(
+                        url, url_limit
+                    ):
+                        yield post
             except Exception as e:
                 self.logger.warning(f"Error streaming posts from {url}: {e}")
 
@@ -203,22 +201,20 @@ class RssService:
         self,
         rss_url: str,
         limit: int,
-        timeout: int | None = None,
-        post_repository: Optional["PostRepository"] = None,
     ) -> AsyncIterator[RssPost]:
         try:
             async with self.session.get(rss_url) as response:
                 if response.status != 200:
                     return
 
-                text = await asyncio.wait_for(response.text(), timeout=timeout)
+                text = await asyncio.wait_for(response.text())
                 feed = feedparser.parse(text)
                 domain = urlparse(rss_url).netloc
 
                 for entry in feed.entries[:limit]:
                     try:
                         yield await self._parse_rss_entry(
-                            entry, domain, rss_url, post_repository=post_repository
+                            entry, domain, rss_url
                         )
                     except Exception as e:
                         self.logger.warning(f"Error parsing entry: {e}")
@@ -629,7 +625,7 @@ class RssService:
             self.logger.error(f"Error deleting feed {feed_id}: {str(e)}")
             return False
 
-    async def create_feed(self, source_url: str) -> Optional[Dict]:
+    async def create_feed(self, source_url: str) -> Optional[dict]:
         if not self.is_configured():
             return None
 
@@ -655,7 +651,7 @@ class RssService:
             self.logger.error(f"Error creating RSS feed: {str(e)}")
             return None
 
-    async def get_all_feeds(self) -> List[Dict]:
+    async def get_all_feeds(self) -> list[dict]:
         if not self.is_configured():
             return []
 

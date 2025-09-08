@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, List, Optional
+from typing import dict, list, Optional
 
 from bot.database.models import FlowDTO, PostDTO
 
@@ -11,8 +11,8 @@ class PostConversionService:
         self.logger = logging.getLogger(__name__)
 
     async def convert_raw_posts_to_dto(
-        self, raw_posts: List[Dict], flow: FlowDTO
-    ) -> List[PostDTO]:
+        self, raw_posts: list[dict], flow: FlowDTO
+    ) -> list[PostDTO]:
         tasks = []
         for raw_post in raw_posts:
             if not raw_post:
@@ -24,7 +24,7 @@ class PostConversionService:
         return [r for r in results if isinstance(r, PostDTO)]
 
     async def _safe_convert_post(
-        self, raw_post: Dict, flow: FlowDTO
+        self, raw_post: dict, flow: FlowDTO
     ) -> Optional[PostDTO]:
         try:
             return await self._convert_single_post(raw_post, flow)
@@ -33,7 +33,7 @@ class PostConversionService:
             return None
 
     async def _convert_single_post(
-        self, raw_post: Dict, flow: FlowDTO
+        self, raw_post: dict, flow: FlowDTO
     ) -> Optional[PostDTO]:
         post_dto = PostDTO.from_raw_post(raw_post)
 
@@ -44,7 +44,7 @@ class PostConversionService:
 
         return await self.content_processor.process_post_content(post_dto, flow)
 
-    def _set_post_metadata(self, post_dto: PostDTO, raw_post: Dict) -> PostDTO:
+    def _set_post_metadata(self, post_dto: PostDTO, raw_post: dict) -> PostDTO:
         update_data = {}
 
         if "original_link" in raw_post:

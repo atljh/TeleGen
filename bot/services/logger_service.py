@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import requests
 from aiogram import Bot
@@ -222,7 +222,7 @@ class TelegramLogger:
         setting_type: str,
         old_value: str,
         new_value: str,
-        additional_data: Optional[Dict] = None,
+        additional_data: Optional[dict] = None,
     ) -> bool:
         if not self.enabled:
             return False
@@ -366,7 +366,7 @@ class SyncTelegramLogger:
             text = text.replace(char, f"\\{char}")
         return text
 
-    def _format_additional_data(self, data: Dict) -> str:
+    def _format_additional_data(self, data: dict) -> str:
         if not data:
             return ""
 
@@ -379,7 +379,7 @@ class SyncTelegramLogger:
 
         return "\n".join(lines)
 
-    def _send_log_sync(self, event_data: Dict) -> bool:
+    def _send_log_sync(self, event_data: dict) -> bool:
         if not self.enabled:
             return False
 
