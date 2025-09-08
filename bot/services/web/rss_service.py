@@ -357,6 +357,7 @@ class RssService:
                 if enc.get("type", "").startswith("image/")
             )
 
+        logging.info(f'==============={images}')
         return sorted(
             url
             for url in images

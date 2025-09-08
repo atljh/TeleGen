@@ -26,7 +26,7 @@ jobs:
             -e DATABASE_URL=postgres://postgres:postgres@db:5432/test_db \
             -e REDIS_URL=redis://redis:6379/0 \
             telegram-bot-test \
-            python -m pytest /bot/tests -v
+            python -m pytest tests -v
 
   build:
     runs-on: ubuntu-latest
