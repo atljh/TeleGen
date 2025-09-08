@@ -3,7 +3,7 @@ import logging
 import os
 import tempfile
 import time
-from typing import dict, list, Optional, Tuple
+from typing import Optional, Tuple
 
 from telethon import TelegramClient
 

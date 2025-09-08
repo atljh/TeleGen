@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import dict, list, Optional
+from typing import Optional
 
 from bot.database.models import FlowDTO, PostDTO
 

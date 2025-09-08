@@ -4,6 +4,7 @@ import asyncio
 import cloudscraper
 import undetected_chromedriver as uc
 
+
 class CloudflareBypass:
     def __init__(self, logger):
         self.scraper = cloudscraper.create_scraper(
@@ -36,7 +37,7 @@ class CloudflareBypass:
 
         driver = None
         try:
-            driver = uc.Chrome(options=options,headless=True,use_subprocess=False)
+            driver = uc.Chrome(options=options, headless=True, use_subprocess=False)
             driver.get(url)
 
             await asyncio.sleep(5)

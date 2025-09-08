@@ -38,10 +38,7 @@ class FlowDTO(BaseModel):
     next_generation_time: datetime | None = None
     last_generated_at: datetime | None = None
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        use_enum_values=True
-    )
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
     @field_validator("ad_time")
     @classmethod

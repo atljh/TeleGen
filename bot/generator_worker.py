@@ -50,6 +50,7 @@ class TelegramLogHandler(logging.Handler):
         except Exception as e:
             sys.stderr.write(f"[TelegramLogHandler async ERROR] {e}\n")
 
+
 async def generate_flow(
     flow_id: int, chat_id: int, bot: Bot, status_msg_id: int
 ) -> list:

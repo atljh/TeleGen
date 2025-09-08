@@ -14,14 +14,13 @@ class ChannelDTO(BaseModel):
     is_active: bool = True
     notifications: bool = True
     timezone: str = "UTC"
-    
-    model_config = ConfigDict(
-        from_attributes=True
-    )
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     @field_serializer("created_at")
     def serialize_created_at(self, v: datetime):
         return v.isoformat()
+
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
         return super().model_validate(obj)

@@ -1,5 +1,5 @@
 import time
-from typing import dict, list, Optional
+from typing import Optional
 
 from bot.database.models.flow import FlowDTO
 from bot.database.models.post import PostDTO

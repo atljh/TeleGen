@@ -83,6 +83,7 @@ class Container(containers.DeclarativeContainer):
         RssService,
         rss_app_key=os.getenv("RSS_API_KEY"),
         rss_app_secret=os.getenv("RSS_API_SECRET"),
+        post_repository=post_repository,
         logger=providers.Singleton(logging.getLogger, "rss_service"),
     )
     channel_service = providers.Factory(

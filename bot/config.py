@@ -1,5 +1,6 @@
 from pydantic import BaseSettings, ConfigDict
 
+
 class Settings(BaseSettings):
     DEBUG: bool
     SECRET_KEY: str

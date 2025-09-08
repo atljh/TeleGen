@@ -16,9 +16,7 @@ class UserDTO(BaseModel):
     payment_method: str | None = None
     created_at: datetime
 
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
 
     @field_serializer("created_at")
     def serialize_created_at(self, v: datetime):

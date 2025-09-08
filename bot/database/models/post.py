@@ -39,13 +39,11 @@ class PostDTO(BaseModel):
     images: list[PostImageDTO] = Field(default_factory=list, alias="images_list")
     video_url: str | None = None
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name = True
-    )
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     @property
     def is_album(self) -> bool:
-        return len(self.images) > 1      
+        return len(self.images) > 1
 
     @field_serializer("created_at")
     def serialize_created_at(self, v: datetime):

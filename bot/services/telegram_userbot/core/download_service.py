@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from telethon import TelegramClient
 
-from ..types import MediaInfo
+from bot.services.telegram_userbot.types import MediaInfo
 
 
 class DownloadService:
