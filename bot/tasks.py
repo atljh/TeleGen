@@ -52,7 +52,6 @@ async def _async_check_flows_generation():
     post_service = Container.post_service()
 
     flows = await flow_service.get_flows_due_for_generation()
-    logger.info(f"Found {len(flows)} flows due for generation")
 
     for flow in flows:
         logger.info(f"Processing flow {flow.id} (volume: {flow.flow_volume})")

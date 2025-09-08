@@ -33,7 +33,8 @@ class TelegramLogHandler(logging.Handler):
 
             try:
                 task = asyncio.create_task(self.logger_service.log(event))
-                task.add_done_callback(lambda t: t.exception() and None)
+                task.add_done_callback(lambda t: t.exception() and None) 
+
             except Exception:
                 pass
 
@@ -47,6 +48,7 @@ def setup_logging(bot: Bot):
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
+            logging.FileHandler('bot.log', encoding='utf-8')
         ],
     )
 

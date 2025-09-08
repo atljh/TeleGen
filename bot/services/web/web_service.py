@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 
 from bot.database.models import FlowDTO, PostDTO
 from bot.database.repositories.post_repository import PostRepository
+from bot.services.web.rss_service import RssService
 
 
 class WebService:
@@ -53,7 +54,7 @@ class WebService:
                 return []
 
     async def _get_raw_posts(
-        self, rss_service: "RssService", flow: FlowDTO, limit: int
+        self, rss_service: RssService, flow: FlowDTO, limit: int
     ) -> List[Dict]:
         return [
             post

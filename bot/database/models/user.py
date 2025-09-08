@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class UserDTO(BaseModel):
@@ -16,9 +16,10 @@ class UserDTO(BaseModel):
     payment_method: str | None = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
         json_encoders = {datetime: lambda v: v.isoformat()}
+    )
 
     @classmethod
     def from_orm(cls, obj: Any) -> Self:

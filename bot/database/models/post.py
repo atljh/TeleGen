@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Dict, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MediaType(StrEnum):
@@ -39,13 +39,14 @@ class PostDTO(BaseModel):
     images: list[PostImageDTO] = Field(default_factory=list, alias="images_list")
     video_url: str | None = None
 
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.isoformat()},
+        populate_by_name = True
+    )
     @property
     def is_album(self) -> bool:
-        return len(self.images) > 1
-
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
-        populate_by_name = True
+        return len(self.images) > 1      
 
     @classmethod
     def from_raw_post(cls, raw_post: Dict) -> "PostDTO":

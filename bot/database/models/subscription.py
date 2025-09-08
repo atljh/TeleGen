@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SubscriptionDTO(BaseModel):
@@ -12,5 +12,4 @@ class SubscriptionDTO(BaseModel):
     end_date: datetime
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import Any, Self
-
-from pydantic import BaseModel
-
+from pydantic import BaseModel, ConfigDict
 
 class AISettingsDTO(BaseModel):
     id: int
@@ -13,9 +11,8 @@ class AISettingsDTO(BaseModel):
     role_content: str | None = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
-        return super().model_validate(obj)
+        return cls.model_validate(obj)

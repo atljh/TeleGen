@@ -1,5 +1,4 @@
-from pydantic import BaseSettings
-
+from pydantic import BaseSettings, ConfigDict
 
 class Settings(BaseSettings):
     DEBUG: bool
@@ -25,5 +24,4 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str
     CELERY_TIMEZONE: str
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(env_file=".env")

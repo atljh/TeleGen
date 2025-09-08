@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class StatisticsDTO(BaseModel):
@@ -13,8 +13,7 @@ class StatisticsDTO(BaseModel):
     total_likes: int = 0
     last_updated: datetime = Field(default_factory=datetime.now)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm(cls, obj: Any) -> Self:

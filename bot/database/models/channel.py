@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChannelDTO(BaseModel):
@@ -14,11 +14,11 @@ class ChannelDTO(BaseModel):
     is_active: bool = True
     notifications: bool = True
     timezone: str = "UTC"
-
-    class Config:
-        from_attributes = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
-
+    
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.isoformat()}
+    )
     @classmethod
     def from_orm(cls, obj: Any) -> Self:
         return super().model_validate(obj)
