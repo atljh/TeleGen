@@ -57,7 +57,6 @@ status:
 admin:
 	open http://localhost:8000/admin
 
-
 test:
 	cd backend && python -m pytest tests/ -v --cov=.
 
