@@ -2,14 +2,14 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, master, dev]
+    branches: [main, master]
   pull_request:
-    branches: [main, master, dev]
+    branches: [main, master]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    
     services:
       postgres:
         image: postgres:15
@@ -34,23 +34,27 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install dependencies
+    - name: Install uv (modern pip alternative)
       run: |
-        pip install -r requirements.txt
-        pip install pytest
+        pip install uv
+
+    - name: Install dependencies from pyproject.toml
+      run: |
+        uv pip install .[dev]  # Устанавливаем основные зависимости + dev опциональные
 
     - name: Run tests
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
         REDIS_URL: redis://localhost:6379/0
         SECRET_KEY: test-secret-key-123
+        DEBUG: "False"
       run: |
         python -m pytest tests/ -v
 
   build:
     runs-on: ubuntu-latest
     needs: test
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -65,3 +69,30 @@ jobs:
     - name: Build admin panel image
       run: |
         docker build -t admin-panel --target admin_panel .
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      run: pip install uv
+
+    - name: Install dev dependencies
+      run: uv pip install .[dev]
+
+    - name: Run black
+      run: black --check .
+
+    - name: Run isort
+      run: isort --check-only .
+
+    - name: Run flake8
+      run: flake8 .
