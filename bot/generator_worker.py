@@ -20,37 +20,6 @@ from bot.services.post import PostService
 from bot.utils.notifications import send_telegram_notification
 
 
-class TelegramLogHandler(logging.Handler):
-    def __init__(self, bot: Bot):
-        super().__init__()
-        self.bot = bot
-        self.logger_service = get_logger()
-
-    def emit(self, record: logging.LogRecord):
-        if not self.logger_service or not self.logger_service.enabled:
-            return
-
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(self._send_log(record))
-            else:
-                loop.run_until_complete(self._send_log(record))
-        except Exception as e:
-            sys.stderr.write(f"[TelegramLogHandler ERROR] {e}\n")
-
-    async def _send_log(self, record: logging.LogRecord):
-        try:
-            log_level = {
-                logging.INFO: LogLevel.INFO,
-            }.get(record.levelno, LogLevel.INFO)
-
-            event = LogEvent(level=log_level, message=self.format(record))
-            await self.logger_service.log(event)
-        except Exception as e:
-            sys.stderr.write(f"[TelegramLogHandler async ERROR] {e}\n")
-
-
 async def generate_flow(
     flow_id: int, chat_id: int, bot: Bot, status_msg_id: int
 ) -> list:

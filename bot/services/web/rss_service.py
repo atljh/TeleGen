@@ -105,7 +105,7 @@ class RssService:
     ) -> AsyncIterator[dict[str, Any]]:
         try:
             rss_urls = await self._get_flow_rss_urls(flow, flow_service)
-
+            self.logger.info(f"Getting posts for flow {flow.id} from {rss_urls}")
             async for post in self._stream_posts(rss_urls, limit):
                 yield self._convert_to_web_service_format(post)
 
@@ -363,7 +363,9 @@ class RssService:
                 if enc.get("type", "").startswith("image/")
             )
 
-        logging.info(f'==============={images}')
+        logging.info(f'+++++++++++++++{images}')
+        self.logger.info(f'==============={images}')
+        
         return sorted(
             url
             for url in images

@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 from bot.containers import Container
 from bot.dialogs import register_dialogs
 from bot.handlers import register_handlers
-from bot.services.logger_service import LogEvent, LogLevel
-from bot.utils.logging import setup_logging
+from bot.utils.logging import init_logging
 from bot.utils.middlaware import MainMiddleware
 
 
@@ -20,7 +19,7 @@ async def main():
     container = Container()
     bot = container.bot()
 
-    telegram_logger = setup_logging(bot)
+    init_logging()
 
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
@@ -38,15 +37,6 @@ async def main():
         )
     except Exception as e:
         logging.error(f"Bot stopped with error: {e}")
-
-        if telegram_logger and telegram_logger.enabled:
-            await telegram_logger.log(
-                LogEvent(
-                    level=LogLevel.ERROR,
-                    message="Bot stopped unexpectedly",
-                    additional_data={"Error": str(e), "Status": "Offline"},
-                )
-            )
         raise
     finally:
         logging.info("Bot shutdown completed")

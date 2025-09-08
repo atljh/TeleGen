@@ -1,6 +1,10 @@
+from __future__ import annotations
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from bot.services.telegram_userbot.processing.content_processing_service import ContentProcessingService
 
 from bot.database.models import FlowDTO, PostDTO
 
@@ -8,7 +12,7 @@ from bot.database.models import FlowDTO, PostDTO
 class PostConversionService:
     def __init__(
         self,
-        content_processor: "ContentProcessingService"
+        content_processor: ContentProcessingService
     ):
         self.content_processor = content_processor
         self.logger = logging.getLogger(__name__)

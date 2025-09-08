@@ -21,6 +21,7 @@ services:
     environment:
       - MEDIA_ROOT=/app/media
       - SESSION_PATH=/app/sessions/userbot.session
+      - LOG_DIR=/app/logs
     command: >
       bash -c "python watcher.py"
 
@@ -105,12 +106,14 @@ services:
     volumes:
       - ./admin_panel:/admin_panel
       - ./bot:/bot
+      - ./logs:/app/logs
     command: >
       sh -c "cd /bot &&
       PYTHONPATH=/:/admin_panel
       celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     environment:
       PYTHONPATH: /:/admin_panel
+      
 
 volumes:
   postgres_data:
