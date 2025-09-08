@@ -12,7 +12,9 @@ from bot.services.post.base import PostBaseService
 from bot.services.post.generation import PostGenerationService
 from bot.services.post.publish import PostPublishingService
 from bot.services.post.scheduling import PostSchedulingService
-from bot.services.telegram_userbot.enhanced_userbot_service import EnhancedUserbotService
+from bot.services.telegram_userbot.enhanced_userbot_service import (
+    EnhancedUserbotService,
+)
 from bot.services.web.web_service import WebService
 
 

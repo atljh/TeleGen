@@ -1,11 +1,11 @@
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.kbd import Button
+
 from bot.dialogs.buffer.states import BufferMenu
+from bot.dialogs.generation.states import GenerationMenu
 from bot.dialogs.settings.states import SettingsMenu
 from bot.dialogs.support.states import SupportMenu
-
-from bot.dialogs.generation.states import GenerationMenu
 
 
 async def on_generation_click(

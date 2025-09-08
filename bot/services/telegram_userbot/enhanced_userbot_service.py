@@ -4,8 +4,12 @@ from typing import Dict, List, Optional
 from bot.database.models.flow import FlowDTO
 from bot.database.models.post import PostDTO
 from bot.services.telegram_userbot.core.base_userbot_service import BaseUserbotService
-from bot.services.telegram_userbot.processing.content_processing_service import ContentProcessingService
-from bot.services.telegram_userbot.processing.post_conversion_service import PostConversionService
+from bot.services.telegram_userbot.processing.content_processing_service import (
+    ContentProcessingService,
+)
+from bot.services.telegram_userbot.processing.post_conversion_service import (
+    PostConversionService,
+)
 
 
 class EnhancedUserbotService(BaseUserbotService):

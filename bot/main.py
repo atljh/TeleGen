@@ -8,9 +8,9 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
 from dotenv import load_dotenv
 
-from bot.handlers import register_handlers
-from bot.dialogs import register_dialogs
 from bot.containers import Container
+from bot.dialogs import register_dialogs
+from bot.handlers import register_handlers
 from bot.services.logger_service import LogEvent, LogLevel
 from bot.utils.logging import setup_logging
 from bot.utils.middlaware import MainMiddleware
