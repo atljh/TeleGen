@@ -31,9 +31,11 @@ def mock_logger():
 
 @pytest.mark.asyncio
 async def test_main_successful_start(mock_container, mock_bot, mock_logger):
-    with patch("bot.main.setup_logging", return_value=mock_logger), patch(
-        "bot.main.Container", return_value=mock_container
-    ), patch("bot.main.Dispatcher") as mock_dp:
+    with (
+        patch("bot.main.setup_logging", return_value=mock_logger),
+        patch("bot.main.Container", return_value=mock_container),
+        patch("bot.main.Dispatcher") as mock_dp,
+    ):
         dp_instance = mock_dp.return_value
         dp_instance.start_polling = AsyncMock()
 

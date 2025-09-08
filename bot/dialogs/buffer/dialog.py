@@ -1,19 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 from aiogram_dialog import Dialog, DialogManager, Window
-from aiogram_dialog.widgets.input import MessageInput, TextInput
+from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Back,
     Button,
-    Calendar,
-    Cancel,
-    Column,
     Group,
     NumberedPager,
     Row,
-    ScrollingGroup,
     Select,
     StubScroll,
 )
@@ -67,9 +63,9 @@ async def get_buffer_data(dialog_manager: DialogManager, **kwargs):
         "publish_time": dialog_data.get("publish_time", datetime.now()).strftime(
             "%d.%m.%Y %H:%M"
         ),
-        "is_scheduled": "🕒 Заплановано"
-        if "publish_time" in dialog_data
-        else "⏳ Не заплановано",
+        "is_scheduled": (
+            "🕒 Заплановано" if "publish_time" in dialog_data else "⏳ Не заплановано"
+        ),
     }
 
 
@@ -190,10 +186,12 @@ def create_buffer_dialog():
             parse_mode=ParseMode.HTML,
         ),
         Window(
-            Format("<b>✏️ Редагування поста</b>\n\n" "\n{content}\n\n"),
+            Format("<b>✏️ Редагування поста</b>\n\n\n{content}\n\n"),
             DynamicMedia("media"),
             Row(
-                Button(Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text),
+                Button(
+                    Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text
+                ),
                 Button(
                     Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media
                 ),

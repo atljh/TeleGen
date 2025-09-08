@@ -1,5 +1,4 @@
 from aiogram import F, Router, types
-from aiogram.dispatcher.dispatcher import Dispatcher
 from aiogram_dialog import DialogManager, StartMode
 
 from bot.dialogs.buffer.states import BufferMenu

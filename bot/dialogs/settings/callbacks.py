@@ -1,11 +1,10 @@
 import logging
 import re
-from html import escape as escape_html
 
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import Dialog, DialogManager, StartMode, Window
-from aiogram_dialog.widgets.kbd import Back, Button, Column, Row
+from aiogram_dialog import Dialog, DialogManager
+from aiogram_dialog.widgets.kbd import Button
 
 from bot.containers import Container
 from bot.utils.formatting import parse_entities_to_html

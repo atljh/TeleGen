@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Awaitable, Callable
 
 from aiogram import Bot
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -35,7 +34,6 @@ from bot.services import (
     WebScraperService,
     WebService,
 )
-from bot.services.logger_service import get_logger
 from bot.services.web.rss_url_manager import RssUrlManager
 
 

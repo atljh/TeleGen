@@ -6,7 +6,7 @@ import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Dict, List, NotRequired, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 from urllib.parse import urlparse
 
 import aiohttp
@@ -418,7 +418,7 @@ class RssService:
 
         try:
             parsed = urlparse(url)
-            if not parsed.scheme in ("http", "https"):
+            if parsed.scheme not in ("http", "https"):
                 return False
 
             path = parsed.path.lower()

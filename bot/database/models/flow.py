@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Self
 
-from pydantic import BaseModel, field_validator, validator
+from pydantic import BaseModel, field_validator
 
 
 class ContentLength(StrEnum):

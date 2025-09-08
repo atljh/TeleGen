@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from telethon import TelegramClient
 
-from ..types import DownloadError, MediaInfo
+from ..types import MediaInfo
 
 
 class DownloadService:

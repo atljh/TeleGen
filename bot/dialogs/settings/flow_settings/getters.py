@@ -50,9 +50,9 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
             getattr(flow_data, "content_length", "to_1000"),
             getattr(flow_data, "content_length", "to_1000"),
         ),
-        "title_highlight": "Так"
-        if getattr(flow_data, "title_highlight", False)
-        else "Ні",
+        "title_highlight": (
+            "Так" if getattr(flow_data, "title_highlight", False) else "Ні"
+        ),
         "flow_volume": getattr(flow_data, "flow_volume", 5),
         "signature": getattr(flow_data, "signature", "Немає підпису"),
     }
@@ -99,7 +99,7 @@ async def get_sources_data(dialog_manager: DialogManager, **kwargs):
         sources_text = "<i>Джерела відсутні</i>"
     else:
         sources_text = "\n".join(
-            f"{idx+1}. <i>{src['type']}</i>: <code>{src['link']}</code>"
+            f"{idx + 1}. <i>{src['type']}</i>: <code>{src['link']}</code>"
             for idx, src in enumerate(sources)
         )
 

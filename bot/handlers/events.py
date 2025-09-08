@@ -1,6 +1,6 @@
 import logging
 
-from aiogram import F, Router, types
+from aiogram import F, Router
 from aiogram.enums import ChatType
 from aiogram.filters import (
     ADMINISTRATOR,
@@ -10,7 +10,7 @@ from aiogram.filters import (
     ChatMemberUpdatedFilter,
     ExceptionTypeFilter,
 )
-from aiogram.types import ChatMemberUpdated, Message
+from aiogram.types import ChatMemberUpdated
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.api.exceptions import UnknownIntent
 

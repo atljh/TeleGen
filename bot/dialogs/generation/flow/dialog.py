@@ -1,5 +1,3 @@
-import html
-import logging
 from itertools import zip_longest
 
 from aiogram.enums import ParseMode
@@ -10,17 +8,14 @@ from aiogram_dialog.widgets.kbd import (
     Back,
     Button,
     Calendar,
-    Cancel,
     Group,
     NumberedPager,
     Row,
-    ScrollingGroup,
-    Select,
     StubScroll,
 )
+from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.link_preview import LinkPreview
 
 from bot.dialogs.generation.flow.states import FlowMenu
 
@@ -152,10 +147,12 @@ def flow_dialog() -> Dialog:
             parse_mode=ParseMode.HTML,
         ),
         Window(
-            Format("<b>✏️ Редагування поста</b>\n\n" "\n{content}\n\n"),
+            Format("<b>✏️ Редагування поста</b>\n\n\n{content}\n\n"),
             DynamicMedia("media"),
             Row(
-                Button(Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text),
+                Button(
+                    Const("📝 Змінити текст"), id="edit_text", on_click=on_edit_text
+                ),
                 Button(
                     Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media
                 ),
@@ -211,7 +208,7 @@ def flow_dialog() -> Dialog:
         ),
         Window(
             Format(
-                "📅 Обрана дата: {dialog_data[scheduled_date_str]}\n" "🕒 Виберіть час:"
+                "📅 Обрана дата: {dialog_data[scheduled_date_str]}\n🕒 Виберіть час:"
             ),
             *[
                 Row(

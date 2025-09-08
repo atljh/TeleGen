@@ -2,11 +2,8 @@ import logging
 import operator
 from datetime import datetime
 from functools import reduce
-from typing import List, Optional
 
-from asgiref.sync import sync_to_async
 from django.db import models
-from django.db.models import Q
 
 from admin_panel.admin_panel.models import Flow
 from bot.database.exceptions import FlowNotFoundError

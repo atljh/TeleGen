@@ -1,21 +1,19 @@
 from aiogram import F
 from aiogram.enums import ParseMode
-from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.input import MessageInput, TextInput
 from aiogram_dialog.widgets.kbd import Back, Button, Column, Next, Row, Select
+from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format
 
-from bot.dialogs.generation.callbacks import on_force_generate
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
 from bot.dialogs.settings.flow_settings.callbacks import start_flow_settings
-from aiogram_dialog.widgets.link_preview import LinkPreview
 
 from .callbacks import (
     add_more_sources,
     confirm_title_highlight,
     handle_custom_volume_input,
     handle_signature_input,
-    handle_time_input,
     on_channel_theme_selected,
     on_custom_theme_entered,
     on_once_a_12,
@@ -29,7 +27,6 @@ from .callbacks import (
     on_volume_selected,
     open_custom_volume_input,
     reject_title_highlight,
-    reset_ad_time,
     skip_signature,
     start_generation_process,
     to_channel,
@@ -37,7 +34,6 @@ from .callbacks import (
     to_select_frequency,
 )
 from .getters import (
-    ad_time_getter,
     flow_confirmation_getter,
     flow_volume_getter,
     signature_getter,
@@ -97,9 +93,13 @@ def create_flow_dialog():
                     on_click=on_source_type_selected,
                 ),
                 Button(
-                    Const("👍 Facebook"), id="facebook", on_click=on_source_type_selected
+                    Const("👍 Facebook"),
+                    id="facebook",
+                    on_click=on_source_type_selected,
                 ),
-                Button(Const("🌐 Web-сайт"), id="web", on_click=on_source_type_selected),
+                Button(
+                    Const("🌐 Web-сайт"), id="web", on_click=on_source_type_selected
+                ),
                 Button(
                     Const("✈️ Telegram"),
                     id="telegram",
@@ -157,7 +157,7 @@ def create_flow_dialog():
             getter=source_confirmation_getter,
         ),
         Window(
-            Const("<b>Етап 3 из 7</b>\n\n" "<b>Оберіть частоту генерацii</b>"),
+            Const("<b>Етап 3 из 7</b>\n\n<b>Оберіть частоту генерацii</b>"),
             Column(
                 Button(Const("Раз на день"), id="daily", on_click=on_once_a_day),
                 Button(Const("Раз на 12 годин"), id="12h", on_click=on_once_a_12),
@@ -186,12 +186,12 @@ def create_flow_dialog():
             parse_mode=ParseMode.HTML,
         ),
         Window(
-            Const(
-                "<b>Етап 5 из 7</b>\n\n" "✏️ <b>Чи потрібно виділяти заголовок?</b>\n\n"
-            ),
+            Const("<b>Етап 5 из 7</b>\n\n✏️ <b>Чи потрібно виділяти заголовок?</b>\n\n"),
             Column(
                 Button(
-                    Const("✅ Так"), id="highlight_yes", on_click=confirm_title_highlight
+                    Const("✅ Так"),
+                    id="highlight_yes",
+                    on_click=confirm_title_highlight,
                 ),
                 Button(
                     Const("❌ Ні"), id="highlight_no", on_click=reject_title_highlight

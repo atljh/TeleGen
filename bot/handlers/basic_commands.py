@@ -63,7 +63,7 @@ async def menu_command(message: types.Message):
     )
 
     await message.answer(
-        "📱 **Головне меню**\n\n" "Оберіть потрібний пункт:",
+        "📱 **Головне меню**\n\nОберіть потрібний пункт:",
         parse_mode="HTML",
         reply_markup=keyboard,
     )

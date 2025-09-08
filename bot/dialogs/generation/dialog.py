@@ -1,12 +1,8 @@
-import logging
-from datetime import datetime
-
 from aiogram.enums import ParseMode
-from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Back, Button, Column, Group, Row, Select
 from aiogram_dialog.widgets.text import Const, Format
 
-from bot.containers import Container
 from bot.dialogs.generation.states import GenerationMenu
 
 from .callbacks import (

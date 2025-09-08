@@ -1,11 +1,9 @@
 import logging
-from datetime import datetime
 
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
-from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.text import Const
 
-from bot.containers import Container
 from bot.dialogs.settings.callbacks import toggle_emoji, toggle_notification
 
 logger = logging.getLogger(__name__)
@@ -65,9 +63,11 @@ async def notification_getter(dialog_manager: DialogManager, **kwargs):
         "notifications_enabled", False
     )
     return {
-        "notifications_enabled": "🟢 Сповіщення увімкнено"
-        if notifications_enabled
-        else "🔴 Сповіщення вимкнено",
+        "notifications_enabled": (
+            "🟢 Сповіщення увімкнено"
+            if notifications_enabled
+            else "🔴 Сповіщення вимкнено"
+        ),
         "channel_name": channel.name,
     }
 

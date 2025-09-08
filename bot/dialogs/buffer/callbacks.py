@@ -1,23 +1,18 @@
 import asyncio
 import logging
 import os
-import re
-from datetime import datetime, time
-from typing import Dict
 
-from aiogram.types import CallbackQuery, ContentType, ForceReply, Message
-from aiogram_dialog import DialogManager, StartMode
-from aiogram_dialog.widgets.kbd import Button, Row
+from aiogram.types import CallbackQuery, ContentType, Message
+from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.kbd import Button
 from django.conf import settings
 
 from bot.containers import Container
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
-from bot.database.models import MediaType, PostImageDTO
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.states import GenerationMenu
-from bot.utils.notifications import notify_admins
 
-from .getters import paging_getter, send_media_album
+from .getters import paging_getter
 
 logger = logging.getLogger()
 
@@ -129,7 +124,7 @@ async def delete_album_messages(manager: DialogManager):
         for msg_id in message_ids:
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            except:
+            except Exception:
                 pass
         manager.dialog_data["message_ids"] = []
 
@@ -151,18 +146,13 @@ async def on_back_to_posts(
     if scroll:
         await scroll.set_page(original_page)
 
-    data = await paging_getter(manager)
-    # if data["post"].get("is_album"):
-    #     await send_media_album(manager, data["post"])
-    # else:
-    #     await manager.show()
+    await paging_getter(manager)
 
 
 async def on_publish_post(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     dialog_data = await paging_getter(manager)
-    start_data = manager.start_data or {}
     current_post = dialog_data["post"]
     post_id = current_post["id"]
     channel = dialog_data.get("selected_channel", None)
@@ -259,7 +249,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 await message.bot.download_file(file.file_path, destination)
 
-                updated_post = await post_service.update_post(
+                await post_service.update_post(
                     post_id=post_id,
                     images=[{"file_path": file_path, "order": 0}],
                     video_url=None,
@@ -316,11 +306,10 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             await message.bot.delete_message(
                 chat_id=message.chat.id, message_id=message.message_id - 1
             )
-        except:
+        except Exception:
             pass
 
         manager.dialog_data.pop("awaiting_input", None)
-        # await manager.show()
 
     except PostNotFoundError:
         await message.answer("Помилка: пост не знайдено")

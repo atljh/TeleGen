@@ -4,10 +4,8 @@ from typing import List
 
 from celery import shared_task
 
-from bot.celery_app import app
 from bot.containers import Container
 from bot.generator_worker import _start_telegram_generations
-from bot.services.post import PostService
 
 logger = logging.getLogger()
 

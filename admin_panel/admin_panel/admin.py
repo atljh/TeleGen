@@ -8,7 +8,6 @@ from .models import (
     Payment,
     Post,
     PostImage,
-    Statistics,
     Subscription,
     User,
 )

@@ -1,4 +1,4 @@
-from aiogram import F, Router
+from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
@@ -22,7 +22,7 @@ async def cmd_start(message: Message):
     )
 
     await message.answer(
-        "📌 *Вітаємо у PROPOST\!* 🎉\n\n" "Оберіть опцію з меню нижче:\n" "👇👇👇",
+        "📌 *Вітаємо у PROPOST\!* 🎉\n\nОберіть опцію з меню нижче:\n👇👇👇",
         reply_markup=keyboard,
         parse_mode="MarkdownV2",
     )

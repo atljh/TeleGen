@@ -1,22 +1,17 @@
-from datetime import datetime
-
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery
 from aiogram_dialog import Dialog, DialogManager, Window
-from aiogram_dialog.widgets.input import MessageInput, TextInput
+from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Back,
     Button,
-    Cancel,
     Column,
     Group,
-    Next,
     Row,
     Select,
     SwitchTo,
 )
-from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.link_preview import LinkPreview
+from aiogram_dialog.widgets.text import Const, Format
 
 from bot.containers import Container
 from bot.dialogs.settings.payment.states import PaymentMenu
@@ -32,16 +27,12 @@ from .callbacks import (
     open_settings,
     open_signature_editor,
     open_timezone_settings,
-    pay_subscription,
     set_timezone,
-    toggle_emoji,
     toggle_notification,
 )
 from .flow_settings.callbacks import start_flow_settings
 from .getters import (
-    emoji_button_getter,
     emoji_getter,
-    notification_button_getter,
     notification_getter,
     selected_channel_getter,
     timezone_getter,

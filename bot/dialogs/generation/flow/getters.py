@@ -22,7 +22,6 @@ from django.utils import timezone
 
 from bot.containers import Container
 from bot.database.models import PostStatus
-from bot.utils.text_cleaner import escape_markdown_v2
 
 
 @lru_cache(maxsize=100)
@@ -158,14 +157,18 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                 source_url = post.source_url if hasattr(post, "source_url") else ""
 
                 pub_time = await sync_to_async(
-                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M")
-                    if hasattr(post, "publication_date") and post.publication_date
-                    else "Без дати"
+                    lambda: (
+                        post.publication_date.strftime("%d.%m.%Y %H:%M")
+                        if hasattr(post, "publication_date") and post.publication_date
+                        else "Без дати"
+                    )
                 )()
                 created_time = await sync_to_async(
-                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M")
-                    if hasattr(post, "created_at") and post.created_at
-                    else "Без дати"
+                    lambda: (
+                        post.created_at.strftime("%d.%m.%Y %H:%M")
+                        if hasattr(post, "created_at") and post.created_at
+                        else "Без дати"
+                    )
                 )()
 
                 post_stats = {
@@ -240,9 +243,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     media_info = {
                         "type": "photo",
                         "url": first_image.url,
-                        "path": get_media_path(first_image.url)
-                        if first_image.url
-                        else None,
+                        "path": (
+                            get_media_path(first_image.url) if first_image.url else None
+                        ),
                     }
             elif post.get("video_url"):
                 media_info = {

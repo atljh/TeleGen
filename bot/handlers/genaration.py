@@ -6,7 +6,6 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
 
 from bot.containers import Container
-from bot.database.models import ChannelDTO, FlowDTO
 from bot.dialogs.generation.flow.states import FlowMenu
 from bot.services.channel_service import ChannelService
 from bot.services.flow_service import FlowService

@@ -3,20 +3,18 @@ import logging
 import os
 import re
 from datetime import datetime, time
-from typing import Dict
 
 import pytz
-from aiogram.types import CallbackQuery, ContentType, ForceReply, Message
-from aiogram_dialog import DialogManager, StartMode
-from aiogram_dialog.widgets.kbd import Button, Row
+from aiogram.types import CallbackQuery, ContentType, Message
+from aiogram_dialog import DialogManager
+from aiogram_dialog.widgets.kbd import Button
 from django.conf import settings
 
 from bot.containers import Container
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.dialogs.generation.flow.states import FlowMenu
-from bot.utils.notifications import notify_admins
 
-from .getters import paging_getter, send_media_album
+from .getters import paging_getter
 
 logger = logging.getLogger()
 

@@ -1,7 +1,6 @@
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram_dialog import Dialog, DialogManager, Window
-from aiogram_dialog.api.entities import StartMode
 from aiogram_dialog.widgets.text import Format
 
 
@@ -27,7 +26,7 @@ def create_main_dialog():
     return Dialog(
         Window(
             Format(
-                "*Вітаємо у PROPOST\\!* 🎉\n\n" "Оберіть опцію з меню нижче\\:\n" "👇👇👇"
+                "*Вітаємо у PROPOST\\!* 🎉\n\nОберіть опцію з меню нижче\\:\n👇👇👇"
             ),
             parse_mode=ParseMode.HTML,
         ),

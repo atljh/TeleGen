@@ -3,9 +3,8 @@ import logging
 from typing import Awaitable, Callable, Dict, List, Optional
 
 from bs4 import BeautifulSoup
-from pydantic import BaseModel
 
-from bot.database.models import FlowDTO, PostDTO, PostStatus
+from bot.database.models import FlowDTO, PostDTO
 from bot.database.repositories.post_repository import PostRepository
 
 

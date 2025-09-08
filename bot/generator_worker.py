@@ -3,12 +3,9 @@ import logging
 import os
 import sys
 import time
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
 from typing import List
 
 from aiogram import Bot
-from asgiref.sync import sync_to_async
 
 from bot.containers import Container
 from bot.database.models import FlowDTO
@@ -16,7 +13,6 @@ from bot.services.flow_service import FlowService
 from bot.services.logger_service import (
     LogEvent,
     LogLevel,
-    TelegramLogger,
     get_logger,
     init_logger,
 )
@@ -109,7 +105,7 @@ async def generate_flow(
         await send_telegram_notification(
             bot_token,
             chat_id,
-            f"❌ Критична помилка під час генерації флоу {flow_id}:\n" f"_{str(e)}_",
+            f"❌ Критична помилка під час генерації флоу {flow_id}:\n_{str(e)}_",
             parse_mode="Markdown",
         )
         raise

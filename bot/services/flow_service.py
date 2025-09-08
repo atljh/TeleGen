@@ -1,11 +1,11 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
-from bot.database.exceptions import ChannelNotFoundError, FlowNotFoundError
+from bot.database.exceptions import FlowNotFoundError
 from bot.database.models.flow import ContentLength, FlowDTO, GenerationFrequency
 from bot.database.models.user import UserDTO
 from bot.database.repositories import ChannelRepository, FlowRepository
@@ -241,9 +241,11 @@ class FlowService:
             return None
 
         updated_sources = [
-            {**s, "rss_url": rss_url}
-            if s.get("link") == link and s.get("type") == "web"
-            else s
+            (
+                {**s, "rss_url": rss_url}
+                if s.get("link") == link and s.get("type") == "web"
+                else s
+            )
             for s in flow.sources
         ]
         await self.update_flow(flow_id, sources=updated_sources)

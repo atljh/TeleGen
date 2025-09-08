@@ -1,9 +1,6 @@
 import logging
 
-from asgiref.sync import sync_to_async
-from django.db import transaction
 
-from bot.database.exceptions import AISettingsNotFoundError
 from bot.database.models import AISettingsDTO, FlowDTO
 from bot.database.repositories import AISettingsRepository, UserRepository
 

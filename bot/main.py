@@ -1,9 +1,7 @@
 import asyncio
 import logging
-import os
 
-from aiogram import Bot, Dispatcher
-from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram import Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
 from dotenv import load_dotenv

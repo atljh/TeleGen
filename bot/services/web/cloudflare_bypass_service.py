@@ -1,8 +1,4 @@
 # import undetected_chromedriver as uc
-import asyncio
-import logging
-import time
-from typing import Optional
 
 import cloudscraper
 

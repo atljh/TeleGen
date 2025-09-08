@@ -138,7 +138,7 @@ class ChatGPTContentProcessor(ContentProcessor):
 
         except openai.RateLimitError as e:
             logging.error(f"OpenAI quota exceeded: {str(e)}")
-            await self._notify_admin(f"OpenAI quota exceeded")
+            await self._notify_admin("OpenAI quota exceeded")
             return text
 
         except openai.APIError as e:
@@ -200,8 +200,8 @@ class ChatGPTContentProcessor(ContentProcessor):
                     raise openai.APIError(f"Unexpected error: {str(e)}")
                 await asyncio.sleep(1)
 
-        raise last_error if last_error else openai.APIError(
-            "Unknown error after retries"
+        raise (
+            last_error if last_error else openai.APIError("Unknown error after retries")
         )
 
     async def _notify_admin(self, message: str):
@@ -216,9 +216,9 @@ class ChatGPTContentProcessor(ContentProcessor):
     async def _build_system_prompt(self, text: str, flow: FlowDTO) -> str:
         rules = [
             "You are a professional post editor.",
-            f"Translate it to Ukranian",
-            f"Edit the text according to the following rules:",
-            f"1. Keep the original meaning, but improve readability and clarity.",
+            "Translate it to Ukranian",
+            "Edit the text according to the following rules:",
+            "1. Keep the original meaning, but improve readability and clarity.",
             # f"2. Remove unnecessary links, formatting artifacts, and special characters.",
             f"3. The text MUST be EXACTLY {self._get_length_instruction()} characters or less. Truncate if needed.",
             f"4. Rewrite the text in the following style: {self.flow.theme}.",

@@ -1,27 +1,20 @@
-import logging
-
-from aiogram import F
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import Dialog, DialogManager, Window
-from aiogram_dialog.widgets.input import MessageInput, TextInput
+from aiogram.types import Message
+from aiogram_dialog import Dialog, Window
+from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import (
-    Back,
     Button,
     Column,
     Row,
     ScrollingGroup,
     Select,
-    SwitchTo,
 )
-from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.link_preview import LinkPreview
+from aiogram_dialog.widgets.text import Const, Format
 
 from .callbacks import (
-    back_to_settings,
     cancel_delete_source,
     character_limit,
-    configure_ad_block,
     confirm_delete_source,
     handle_custom_volume_input,
     input_custom_volume,
@@ -52,7 +45,6 @@ from .getters import (
     flow_settings_getter,
     get_current_source,
     get_source_to_delete_data,
-    get_source_type,
     get_source_type_data,
     get_sources_data,
     get_sources_list,
@@ -241,8 +233,7 @@ def create_sources_dialog():
 def create_custom_volume_window():
     return Window(
         Format(
-            "🔢 <b>Введи свою кількість постів у флоу</b>\n\n"
-            "Вкажи число від 1 до 100:"
+            "🔢 <b>Введи свою кількість постів у флоу</b>\n\nВкажи число від 1 до 100:"
         ),
         TextInput(
             id="handle_custom_volume_input",
@@ -363,9 +354,7 @@ def create_edit_source():
     return Window(
         Format("Редагування джерела:\nТип: {source_type}\nПосилання: {source_link}"),
         Column(
-            Button(
-                Const("✏️ Змінити посилання"), id="edit_link", on_click=to_edit_link
-            ),
+            Button(Const("✏️ Змінити посилання"), id="edit_link", on_click=to_edit_link),
             Button(Const("♻️ Змінити тип"), id="edit_type", on_click=to_edit_type),
         ),
         Row(
@@ -387,7 +376,9 @@ def create_edit_source_type():
                 id="source_instagram",
                 on_click=on_new_type_selected,
             ),
-            Button(Const("🌐 Веб-сайт"), id="source_web", on_click=on_new_type_selected),
+            Button(
+                Const("🌐 Веб-сайт"), id="source_web", on_click=on_new_type_selected
+            ),
             Button(
                 Const("✈️ Telegram"),
                 id="source_telegram",
@@ -460,7 +451,9 @@ def create_confirm_delete_source():
             "Ви впевнені, що хочете видалити джерело {source_to_delete[type]} - {source_to_delete[link]}?"
         ),
         Row(
-            Button(Const("✅ Так"), id="confirm_delete", on_click=confirm_delete_source),
+            Button(
+                Const("✅ Так"), id="confirm_delete", on_click=confirm_delete_source
+            ),
             Button(Const("❌ Ні"), id="cancel_delete", on_click=cancel_delete_source),
         ),
         state=FlowSettingsMenu.confirm_delete_source,

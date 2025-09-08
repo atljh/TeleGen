@@ -8,17 +8,14 @@ from aiogram_dialog.widgets.kbd import (
     Group,
     Row,
     Select,
-    Url,
 )
-from aiogram_dialog.widgets.text import Const, Format, Multi
 from aiogram_dialog.widgets.link_preview import LinkPreview
+from aiogram_dialog.widgets.text import Const, Format, Multi
 
 from bot.dialogs.settings.payment.states import PaymentMenu
 
 from .callbacks import (
     on_back_to_main,
-    on_back_to_methods,
-    on_back_to_periods,
     on_cryptobot_confirm,
     on_method_selected,
     on_monobank_confirm,

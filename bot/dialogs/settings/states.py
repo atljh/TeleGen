@@ -1,5 +1,4 @@
 from aiogram.fsm.state import State, StatesGroup
-from aiogram_dialog import Dialog, Window
 
 
 class SettingsMenu(StatesGroup):

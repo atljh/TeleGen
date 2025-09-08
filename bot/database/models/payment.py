@@ -1,8 +1,6 @@
 from datetime import datetime
-from enum import StrEnum
-from typing import Any, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class PaymentDTO(BaseModel):

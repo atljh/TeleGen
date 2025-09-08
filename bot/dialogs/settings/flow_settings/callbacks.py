@@ -1,10 +1,9 @@
 import logging
 from datetime import datetime
 
-from aiogram import F
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import Dialog, DialogManager, StartMode, Window
+from aiogram_dialog import Dialog, DialogManager, StartMode
 from aiogram_dialog.widgets.kbd import Button
 
 from bot.containers import Container
@@ -156,7 +155,7 @@ async def set_frequency(
             flow_id=manager.dialog_data["channel_flow"].id, frequency=new_frequency
         )
 
-        await callback.answer(f"✅ Частоту оновлено")
+        await callback.answer("✅ Частоту оновлено")
         await manager.back()
         await manager.show()
 
@@ -187,7 +186,7 @@ async def set_character_limit(
 
     manager.dialog_data["words_limit"] = new_limit
 
-    await callback.answer(f"✅ Лiмiт оновлено")
+    await callback.answer("✅ Лiмiт оновлено")
 
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 
@@ -220,7 +219,7 @@ async def set_flow_volume(
     await flow_service.update_flow(
         flow_id=manager.dialog_data["channel_flow"].id, flow_volume=new_volume
     )
-    await callback.answer(f"✅ Лiмiт оновлено")
+    await callback.answer("✅ Лiмiт оновлено")
 
     await manager.switch_to(FlowSettingsMenu.flow_settings)
 

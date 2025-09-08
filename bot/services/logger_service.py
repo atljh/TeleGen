@@ -69,7 +69,7 @@ class TelegramLogger:
 
             message_parts = [
                 f" \\| `{escaped_timestamp}`",
-                f"",
+                "",
                 f"📝 *Message:* {escaped_message}",
             ]
 
@@ -233,7 +233,7 @@ class TelegramLogger:
 
             message_parts = [
                 f"⚙️ *Settings Updated* \\| `{escaped_timestamp}`",
-                f"",
+                "",
                 f"*Type:* {self._escape_markdown(setting_type)}",
             ]
 
@@ -299,9 +299,11 @@ class TelegramLogger:
             user_id=user.user_id if user else None,
             username=user.username if user else None,
             additional_data={
-                "Error Message": error_message[:200] + "..."
-                if len(error_message) > 200
-                else error_message,
+                "Error Message": (
+                    error_message[:200] + "..."
+                    if len(error_message) > 200
+                    else error_message
+                ),
                 "Error Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 **(context or {}),
             },
@@ -388,7 +390,7 @@ class SyncTelegramLogger:
 
             message_parts = [
                 f" \\| `{escaped_timestamp}`",
-                f"",
+                "",
                 f"📝 *Message:* {escaped_message}",
             ]
 
@@ -445,9 +447,9 @@ class SyncTelegramLogger:
             "user_id": getattr(user, "id", None),
             "username": getattr(user, "username", None),
             "additional_data": {
-                "Generation_type": "Auto generation"
-                if auto_generate
-                else "Force generation",
+                "Generation_type": (
+                    "Auto generation" if auto_generate else "Force generation"
+                ),
                 "Flow": flow_name,
                 "Flow ID": flow_id,
                 "Telegram Volume": telegram_volume,
@@ -469,9 +471,9 @@ class SyncTelegramLogger:
             "user_id": getattr(user, "id", None),
             "username": getattr(user, "username", None),
             "additional_data": {
-                "Generation_type": "Auto generation"
-                if auto_generate
-                else "Force generation",
+                "Generation_type": (
+                    "Auto generation" if auto_generate else "Force generation"
+                ),
                 "Flow": flow_name,
                 "Flow ID": flow_id,
                 "Result": result,

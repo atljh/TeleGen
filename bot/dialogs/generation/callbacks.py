@@ -2,12 +2,11 @@ import asyncio
 import logging
 import subprocess
 import sys
-import time
 
 from aiogram import Bot
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager, StartMode
-from aiogram_dialog.widgets.kbd import Button, Row
+from aiogram_dialog.widgets.kbd import Button
 
 from bot.containers import Container
 from bot.dialogs.buffer.states import BufferMenu

@@ -205,14 +205,18 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                         scheduled_time = scheduled_time.strftime("%d.%m.%Y %H:%M")
 
                 pub_time = await sync_to_async(
-                    lambda: post.publication_date.strftime("%d.%m.%Y %H:%M")
-                    if hasattr(post, "publication_date") and post.publication_date
-                    else "Без дати"
+                    lambda: (
+                        post.publication_date.strftime("%d.%m.%Y %H:%M")
+                        if hasattr(post, "publication_date") and post.publication_date
+                        else "Без дати"
+                    )
                 )()
                 created_time = await sync_to_async(
-                    lambda: post.created_at.strftime("%d.%m.%Y %H:%M")
-                    if hasattr(post, "created_at") and post.created_at
-                    else "Без дати"
+                    lambda: (
+                        post.created_at.strftime("%d.%m.%Y %H:%M")
+                        if hasattr(post, "created_at") and post.created_at
+                        else "Без дати"
+                    )
                 )()
                 post_stats = {
                     PostStatus.DRAFT: "Чернетка",
@@ -311,9 +315,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, An
                     media_info = {
                         "type": "photo",
                         "url": first_image.url,
-                        "path": get_media_path(first_image.url)
-                        if first_image.url
-                        else None,
+                        "path": (
+                            get_media_path(first_image.url) if first_image.url else None
+                        ),
                     }
             elif post.get("video_url"):
                 media_info = {

@@ -11,13 +11,13 @@ from urllib.parse import urlparse
 import requests
 from asgiref.sync import sync_to_async
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db.models import Prefetch
 from psycopg.errors import UniqueViolation
 
 from admin_panel.admin_panel.models import Flow, Post, PostImage
 from bot.database.exceptions import PostNotFoundError
-from bot.database.models import MediaType, PostDTO, PostImageDTO, PostStatus
+from bot.database.models import MediaType, PostDTO, PostStatus
 
 
 class PostRepository:
