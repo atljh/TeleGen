@@ -44,10 +44,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install dependencies directly from pyproject.toml
         run: |
           pip install uv
-          uv pip install --system .[dev]
+          # Устанавливаем зависимости без сборки пакета
+          uv pip install -r <(python -c "
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+          for dep in data['project']['dependencies']:
+              print(dep)
+          for dep in data['project']['optional-dependencies']['dev']:
+              print(dep)
+          ")
 
       - name: Run tests
         env:
@@ -87,10 +96,9 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install dependencies directly
         run: |
-          pip install uv
-          uv pip install --system .[dev]
+          pip install black flake8 isort pytest
 
       - name: Run black
         run: black --check .
