@@ -1,15 +1,15 @@
-import re
-import time
 import asyncio
 import logging
+import re
+import time
 from abc import ABC, abstractmethod
 from typing import List
 
 import openai
 from psycopg.errors import UniqueViolation
 
-from bot.database.models import FlowDTO
 from bot.database.exceptions import AISettingsNotFoundError
+from bot.database.models import FlowDTO
 from bot.services.aisettings_service import AISettingsService
 from bot.utils.notifications import notify_admins
 

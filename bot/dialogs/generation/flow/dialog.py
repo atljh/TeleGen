@@ -1,29 +1,28 @@
 import html
 import logging
 from itertools import zip_longest
+
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
-from aiogram_dialog import DialogManager
-from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.media import DynamicMedia
+from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
-    Select,
-    ScrollingGroup,
-    Button,
-    Row,
-    Button,
-    Group,
-    StubScroll,
-    NumberedPager,
-    Cancel,
     Back,
+    Button,
     Calendar,
+    Cancel,
+    Group,
+    NumberedPager,
+    Row,
+    ScrollingGroup,
+    Select,
+    StubScroll,
 )
+from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.flow.states import FlowMenu
-from .getters import edit_post_getter, paging_getter, post_info_getter, send_media_album
+
 from .callbacks import (
     back_to_post_view,
     back_to_select_type,
@@ -43,8 +42,7 @@ from .callbacks import (
     show_time_buttons,
     time_input_handler,
 )
-
-from aiogram_dialog.widgets.kbd import NumberedPager
+from .getters import edit_post_getter, paging_getter, post_info_getter, send_media_album
 
 
 def chunked(iterable, n):

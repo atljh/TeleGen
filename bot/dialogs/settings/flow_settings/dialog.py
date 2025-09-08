@@ -1,29 +1,26 @@
 import logging
+
 from aiogram import F
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import DialogManager, Window, Dialog
-from aiogram_dialog.widgets.kbd import Button, Back, SwitchTo, Select
-from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.kbd import Button, Column, Row, Select, ScrollingGroup
-from aiogram_dialog.widgets.input import TextInput, MessageInput
-
-from .getters import (
-    character_limit_getter,
-    flow_settings_getter,
-    get_current_source,
-    get_source_type,
-    get_source_type_data,
-    get_sources_data,
-    get_sources_list,
-    posts_in_flow_getter,
-    get_source_to_delete_data,
+from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog.widgets.input import MessageInput, TextInput
+from aiogram_dialog.widgets.kbd import (
+    Back,
+    Button,
+    Column,
+    Row,
+    ScrollingGroup,
+    Select,
+    SwitchTo,
 )
-from .states import FlowSettingsMenu
+from aiogram_dialog.widgets.text import Const, Format
+
 from .callbacks import (
     back_to_settings,
     cancel_delete_source,
     character_limit,
+    configure_ad_block,
     confirm_delete_source,
     handle_custom_volume_input,
     input_custom_volume,
@@ -33,6 +30,11 @@ from .callbacks import (
     on_source_selected_for_delete,
     on_source_selected_for_edit,
     on_source_type_selected,
+    open_flow_settings,
+    open_main_settings,
+    open_source_settings,
+    set_character_limit,
+    set_flow_volume,
     set_frequency,
     set_generation_frequency,
     set_posts_in_flow,
@@ -43,13 +45,19 @@ from .callbacks import (
     to_select_source_to_edit,
     toggle_ad_block,
     toggle_title_highlight,
-    configure_ad_block,
-    open_flow_settings,
-    open_main_settings,
-    open_source_settings,
-    set_character_limit,
-    set_flow_volume,
 )
+from .getters import (
+    character_limit_getter,
+    flow_settings_getter,
+    get_current_source,
+    get_source_to_delete_data,
+    get_source_type,
+    get_source_type_data,
+    get_sources_data,
+    get_sources_list,
+    posts_in_flow_getter,
+)
+from .states import FlowSettingsMenu
 
 
 def create_flow_settings_window():

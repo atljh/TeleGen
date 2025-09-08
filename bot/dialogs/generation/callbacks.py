@@ -1,21 +1,20 @@
 import asyncio
+import logging
 import subprocess
 import sys
 import time
-import logging
+
 from aiogram import Bot
 from aiogram.types import CallbackQuery
-from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
+from aiogram_dialog.widgets.kbd import Button, Row
 
-from bot.dialogs.generation.states import GenerationMenu
+from bot.containers import Container
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
-
 from bot.dialogs.generation.flow.states import FlowMenu
-
-from bot.containers import Container
+from bot.dialogs.generation.states import GenerationMenu
 
 logger = logging.getLogger(__name__)
 
@@ -224,7 +223,7 @@ async def show_generated_posts(
 
         await bot.delete_message(chat_id, status_msg_id)
 
-        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[

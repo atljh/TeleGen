@@ -1,6 +1,7 @@
 import asyncio
-from typing import List, Optional
 import logging
+from typing import List, Optional
+
 from bot.services.flow_service import FlowService
 from bot.services.web.rss_service import RssService, SourceDict
 

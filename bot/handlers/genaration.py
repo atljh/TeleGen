@@ -1,14 +1,15 @@
 import logging
-from aiogram import Router, F
-from aiogram.types import CallbackQuery
-from aiogram_dialog import DialogManager, StartMode
 from typing import cast
 
+from aiogram import F, Router
+from aiogram.types import CallbackQuery
+from aiogram_dialog import DialogManager, StartMode
+
 from bot.containers import Container
+from bot.database.models import ChannelDTO, FlowDTO
 from bot.dialogs.generation.flow.states import FlowMenu
-from bot.services.flow_service import FlowService
 from bot.services.channel_service import ChannelService
-from bot.database.models import FlowDTO, ChannelDTO
+from bot.services.flow_service import FlowService
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher.dispatcher import Dispatcher
 from aiogram_dialog import DialogManager, StartMode
-
 from dialogs.support_dialog import SupportMenu
 
 

@@ -1,6 +1,6 @@
 from aiogram.types import CallbackQuery
 from aiogram_dialog import DialogManager
-from aiogram_dialog.widgets.kbd import Select, Button
+from aiogram_dialog.widgets.kbd import Button, Select
 
 from bot.dialogs.settings.payment.states import PaymentMenu
 

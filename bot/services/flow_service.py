@@ -1,15 +1,16 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
-from django.utils import timezone
-from asgiref.sync import sync_to_async
 
+from asgiref.sync import sync_to_async
+from django.utils import timezone
+
+from bot.database.exceptions import ChannelNotFoundError, FlowNotFoundError
 from bot.database.models.flow import ContentLength, FlowDTO, GenerationFrequency
 from bot.database.models.user import UserDTO
-from bot.database.repositories import FlowRepository, ChannelRepository
-from bot.database.exceptions import ChannelNotFoundError, FlowNotFoundError
-from bot.services.web.rss_service import RssService
+from bot.database.repositories import ChannelRepository, FlowRepository
 from bot.services.logger_service import get_logger
+from bot.services.web.rss_service import RssService
 
 
 class FlowService:

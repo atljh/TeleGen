@@ -1,41 +1,42 @@
 import logging
 import os
+from typing import Awaitable, Callable
+
 from aiogram import Bot
 from aiogram.client.session.aiohttp import AiohttpSession
 from dependency_injector import containers, providers
-from typing import Callable, Awaitable
 
 from bot.database.repositories import (
-    UserRepository,
-    ChannelRepository,
-    FlowRepository,
-    PostRepository,
-    DraftRepository,
-    SubscriptionRepository,
-    PaymentRepository,
     AISettingsRepository,
+    ChannelRepository,
+    DraftRepository,
+    FlowRepository,
+    PaymentRepository,
+    PostRepository,
     StatisticsRepository,
+    SubscriptionRepository,
+    UserRepository,
 )
 from bot.services import (
-    UserService,
-    ChannelService,
-    FlowService,
-    PostService,
-    SubscriptionService,
-    PaymentService,
     AISettingsService,
-    StatisticsService,
-    EnhancedUserbotService,
-    WebService,
-    ContentProcessorService,
-    RssService,
+    ChannelService,
     CloudflareBypass,
-    WebScraperService,
+    ContentProcessorService,
+    EnhancedUserbotService,
+    FlowService,
     ImageExtractorService,
+    PaymentService,
     PostBuilderService,
+    PostService,
+    RssService,
+    StatisticsService,
+    SubscriptionService,
+    UserService,
+    WebScraperService,
+    WebService,
 )
-from bot.services.web.rss_url_manager import RssUrlManager
 from bot.services.logger_service import get_logger
+from bot.services.web.rss_url_manager import RssUrlManager
 
 
 class Container(containers.DeclarativeContainer):

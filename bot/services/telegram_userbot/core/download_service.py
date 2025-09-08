@@ -1,11 +1,11 @@
-import os
 import asyncio
 import logging
-from typing import Optional, List, Dict, Any
+import os
+from typing import Any, Dict, List, Optional
 
 from telethon import TelegramClient
 
-from ..types import MediaInfo, DownloadError
+from ..types import DownloadError, MediaInfo
 
 
 class DownloadService:

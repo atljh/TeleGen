@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from typing import Awaitable, Callable, List, Dict, Optional
+from typing import Awaitable, Callable, Dict, List, Optional
 
-from pydantic import BaseModel
 from bs4 import BeautifulSoup
+from pydantic import BaseModel
 
 from bot.database.models import FlowDTO, PostDTO, PostStatus
 from bot.database.repositories.post_repository import PostRepository

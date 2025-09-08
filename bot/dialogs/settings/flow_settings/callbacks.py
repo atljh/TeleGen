@@ -1,16 +1,17 @@
-from datetime import datetime
 import logging
+from datetime import datetime
+
 from aiogram import F
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import DialogManager, StartMode, Window, Dialog
+from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.kbd import Button
+from dialogs.settings.states import SettingsMenu
 
 from bot.containers import Container
 from bot.dialogs.settings.flow_settings.getters import get_sources_data
 
 from .states import FlowSettingsMenu
-from dialogs.settings.states import SettingsMenu
 
 logger = logging.getLogger(__name__)
 

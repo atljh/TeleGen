@@ -1,18 +1,19 @@
 import logging
 from datetime import datetime
+
 from aiogram.enums import ParseMode
-from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.kbd import Button, Row, Back, Group, Select, Column
+from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog.widgets.kbd import Back, Button, Column, Group, Row, Select
 from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog import DialogManager
 
 from bot.containers import Container
 from bot.dialogs.generation.states import GenerationMenu
+
 from .callbacks import (
-    on_channel_selected,
     add_channel,
-    on_create_flow,
     on_buffer,
+    on_channel_selected,
+    on_create_flow,
     on_flow,
     on_force_generate,
 )

@@ -1,6 +1,6 @@
-from bot.database.models import UserDTO, FlowDTO
-from bot.database.repositories.user_repository import UserRepository
+from bot.database.models import FlowDTO, UserDTO
 from bot.database.repositories.channel_repository import ChannelRepository
+from bot.database.repositories.user_repository import UserRepository
 from bot.services.logger_service import get_logger
 
 

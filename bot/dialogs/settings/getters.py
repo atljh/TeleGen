@@ -1,12 +1,12 @@
 import logging
 from datetime import datetime
+
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.containers import Container
 from bot.dialogs.settings.callbacks import toggle_emoji, toggle_notification
-
 
 logger = logging.getLogger(__name__)
 

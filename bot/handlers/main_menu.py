@@ -1,13 +1,11 @@
-from aiogram import types
-from aiogram import Router, F
+from aiogram import F, Router, types
 from aiogram.dispatcher.dispatcher import Dispatcher
 from aiogram_dialog import DialogManager, StartMode
-
 from dialogs.settings.states import SettingsMenu
-from bot.dialogs.buffer.states import BufferMenu
-from bot.dialogs.generation.states import GenerationMenu
 from dialogs.support.states import SupportMenu
 
+from bot.dialogs.buffer.states import BufferMenu
+from bot.dialogs.generation.states import GenerationMenu
 
 router = Router()
 

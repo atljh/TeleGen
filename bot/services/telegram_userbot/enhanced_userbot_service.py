@@ -3,11 +3,10 @@ from typing import Dict, List, Optional
 
 from bot.database.models.flow import FlowDTO
 from bot.database.models.post import PostDTO
-from bot.services import UserService
 from bot.services.telegram_userbot import (
-    PostConversionService,
     BaseUserbotService,
     ContentProcessingService,
+    PostConversionService,
 )
 
 
@@ -17,7 +16,7 @@ class EnhancedUserbotService(BaseUserbotService):
         api_id: int,
         api_hash: str,
         aisettings_service: "AISettingsService",
-        user_service: UserService,
+        user_service: "UserService",
         openai_key: str = None,
         **kwargs,
     ):

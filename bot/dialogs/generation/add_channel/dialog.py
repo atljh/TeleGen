@@ -1,15 +1,17 @@
 import logging
+
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, DialogManager, Window
-from aiogram_dialog.widgets.kbd import Button, Row, Back, Url
-from aiogram_dialog.widgets.text import Const, Format, Jinja
 from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.kbd import Back, Button, Row, Url
+from aiogram_dialog.widgets.text import Const, Format, Jinja
 
 from bot.containers import Container
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
-from .getters import channel_data_getter
-from .callbacks import check_admin_rights, subscribe, on_create_flow
 from utils.buttons import go_back_to_generation
+
+from .callbacks import check_admin_rights, on_create_flow, subscribe
+from .getters import channel_data_getter
 
 
 async def channel_success_getter(dialog_manager: DialogManager, **kwargs):

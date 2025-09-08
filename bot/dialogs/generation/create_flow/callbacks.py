@@ -1,21 +1,21 @@
 import asyncio
-import re
 import logging
+import re
 import subprocess
 import sys
 from html import escape as escape_html
+
+from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.input import TextInput
-from aiogram.enums import ParseMode
+from aiogram_dialog.widgets.kbd import Button, Row
 
-from bot.database.models import ContentLength, GenerationFrequency
+from bot.containers import Container
 from bot.database.exceptions import ChannelNotFoundError
-
+from bot.database.models import ContentLength, GenerationFrequency
 from bot.dialogs.generation.callbacks import show_generated_posts
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
-from bot.containers import Container
 from bot.utils.formatting import parse_entities_to_html
 
 logger = logging.getLogger(__name__)

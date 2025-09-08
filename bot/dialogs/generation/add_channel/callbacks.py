@@ -2,14 +2,13 @@ import logging
 
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, StartMode
-from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.kbd import Button
 
+from bot.containers import Container
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
-
 from bot.dialogs.generation.states import GenerationMenu
-from bot.containers import Container
 
 
 async def on_create_flow(

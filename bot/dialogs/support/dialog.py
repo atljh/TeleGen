@@ -2,12 +2,8 @@ from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import Button, Row
 from aiogram_dialog.widgets.text import Const
 
+from .callbacks import instructions, sms_support
 from .states import SupportMenu
-
-from .callbacks import (
-    instructions,
-    sms_support,
-)
 
 
 def create_support_dialog():

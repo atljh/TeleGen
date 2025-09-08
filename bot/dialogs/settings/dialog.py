@@ -1,28 +1,42 @@
 from datetime import datetime
+
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
-from aiogram_dialog import Dialog, Window
+from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog.widgets.input import MessageInput, TextInput
 from aiogram_dialog.widgets.kbd import (
-    Button,
-    Row,
     Back,
-    Group,
-    Select,
+    Button,
+    Cancel,
     Column,
+    Group,
     Next,
+    Row,
+    Select,
     SwitchTo,
 )
-from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog import DialogManager
-from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import Back, Cancel, Row
-from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.containers import Container
 from bot.dialogs.settings.payment.states import PaymentMenu
-from .states import SettingsMenu
 
+from .callbacks import (
+    cancel_delete_channel,
+    confirm_delete_channel,
+    delete_channel,
+    handle_sig_input,
+    on_channel_selected,
+    open_emoji_settings,
+    open_notification_settings,
+    open_settings,
+    open_signature_editor,
+    open_timezone_settings,
+    pay_subscription,
+    set_timezone,
+    toggle_emoji,
+    toggle_notification,
+)
+from .flow_settings.callbacks import start_flow_settings
 from .getters import (
     emoji_button_getter,
     emoji_getter,
@@ -31,23 +45,7 @@ from .getters import (
     selected_channel_getter,
     timezone_getter,
 )
-from .callbacks import (
-    handle_sig_input,
-    on_channel_selected,
-    open_emoji_settings,
-    open_notification_settings,
-    open_signature_editor,
-    open_timezone_settings,
-    pay_subscription,
-    confirm_delete_channel,
-    delete_channel,
-    cancel_delete_channel,
-    set_timezone,
-    toggle_emoji,
-    toggle_notification,
-    open_settings,
-)
-from .flow_settings.callbacks import start_flow_settings
+from .states import SettingsMenu
 
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):

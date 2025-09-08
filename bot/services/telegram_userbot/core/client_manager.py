@@ -1,15 +1,15 @@
-import os
 import logging
-from typing import AsyncGenerator, Optional
+import os
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Optional
 
 from telethon import TelegramClient
 
-from .connection_service import ConnectionService
-from .authorization_service import AuthorizationService
-from .entity_service import EntityService
-from .download_service import DownloadService
 from ..types import TelegramEntity
+from .authorization_service import AuthorizationService
+from .connection_service import ConnectionService
+from .download_service import DownloadService
+from .entity_service import EntityService
 
 
 class TelegramClientManager:

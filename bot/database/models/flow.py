@@ -1,8 +1,9 @@
+import re
 from datetime import datetime
 from enum import StrEnum
-import re
-from pydantic import BaseModel, validator, field_validator
-from typing import Self, Any
+from typing import Any, Self
+
+from pydantic import BaseModel, field_validator, validator
 
 
 class ContentLength(StrEnum):

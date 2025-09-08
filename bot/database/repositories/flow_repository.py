@@ -1,15 +1,16 @@
 import logging
 import operator
 from datetime import datetime
-from django.db import models
 from functools import reduce
-from django.db.models import Q
 from typing import List, Optional
+
 from asgiref.sync import sync_to_async
+from django.db import models
+from django.db.models import Q
 
 from admin_panel.admin_panel.models import Flow
-from bot.database.models import GenerationFrequency
 from bot.database.exceptions import FlowNotFoundError
+from bot.database.models import GenerationFrequency
 from bot.database.models.flow import FlowDTO
 
 

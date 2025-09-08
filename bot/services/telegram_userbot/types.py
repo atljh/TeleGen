@@ -1,6 +1,7 @@
-from typing import Union, TypedDict, Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional, TypedDict, Union
+
 from telethon.tl.types import Channel, Chat, User
 
 TelegramEntity = Union[Channel, Chat, User]

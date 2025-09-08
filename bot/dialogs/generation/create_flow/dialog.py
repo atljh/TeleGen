@@ -1,49 +1,48 @@
 from aiogram import F
-from aiogram_dialog import Dialog, Window, DialogManager
-from aiogram_dialog.widgets.kbd import Button, Column, Row, Next, Back, Select
-from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.input import MessageInput
 from aiogram.enums import ParseMode
+from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog.widgets.input import MessageInput, TextInput
+from aiogram_dialog.widgets.kbd import Back, Button, Column, Next, Row, Select
+from aiogram_dialog.widgets.text import Const, Format
+from dialogs.settings.flow_settings.callbacks import start_flow_settings
 
 from bot.dialogs.generation.callbacks import on_force_generate
-from dialogs.settings.flow_settings.callbacks import start_flow_settings
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
-from .getters import (
-    ad_time_getter,
-    flow_volume_getter,
-    signature_getter,
-    flow_confirmation_getter,
-    source_link_getter,
-    source_confirmation_getter,
-    source_type_getter,
-)
+
 from .callbacks import (
-    start_generation_process,
-    to_channel,
-    to_select_frequency,
+    add_more_sources,
+    confirm_title_highlight,
+    handle_custom_volume_input,
+    handle_signature_input,
+    handle_time_input,
     on_channel_theme_selected,
     on_custom_theme_entered,
-    to_custom_theme_input,
-    on_once_a_day,
     on_once_a_12,
+    on_once_a_day,
     on_once_an_hour,
+    on_source_link_entered,
+    on_source_type_selected,
     on_to_100,
     on_to_300,
     on_to_1000,
-    on_source_link_entered,
-    on_source_type_selected,
-    on_source_link_entered,
-    add_more_sources,
-    confirm_title_highlight,
-    reject_title_highlight,
-    handle_time_input,
-    reset_ad_time,
     on_volume_selected,
     open_custom_volume_input,
-    handle_custom_volume_input,
-    handle_signature_input,
+    reject_title_highlight,
+    reset_ad_time,
     skip_signature,
+    start_generation_process,
+    to_channel,
+    to_custom_theme_input,
+    to_select_frequency,
+)
+from .getters import (
+    ad_time_getter,
+    flow_confirmation_getter,
+    flow_volume_getter,
+    signature_getter,
+    source_confirmation_getter,
+    source_link_getter,
+    source_type_getter,
 )
 
 

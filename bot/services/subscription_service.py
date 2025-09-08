@@ -1,15 +1,16 @@
 import logging
 from typing import List
+
+from bot.database.exceptions import (
+    ChannelNotFoundError,
+    SubscriptionNotFoundError,
+    UserNotFoundError,
+)
 from bot.database.models import SubscriptionDTO
 from bot.database.repositories import (
-    SubscriptionRepository,
     ChannelRepository,
+    SubscriptionRepository,
     UserRepository,
-)
-from bot.database.exceptions import (
-    SubscriptionNotFoundError,
-    ChannelNotFoundError,
-    UserNotFoundError,
 )
 
 

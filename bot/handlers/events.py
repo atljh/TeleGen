@@ -1,22 +1,20 @@
 import logging
-from aiogram import Router, types, F
+
+from aiogram import F, Router, types
 from aiogram.enums import ChatType
-from aiogram.types import ChatMemberUpdated
-from aiogram.filters import ExceptionTypeFilter
-from aiogram_dialog.api.exceptions import UnknownIntent
 from aiogram.filters import (
-    ChatMemberUpdatedFilter,
-    IS_NOT_MEMBER,
     ADMINISTRATOR,
     IS_MEMBER,
+    IS_NOT_MEMBER,
     KICKED,
+    ChatMemberUpdatedFilter,
+    ExceptionTypeFilter,
 )
-from aiogram_dialog.api.exceptions import UnknownIntent
-from aiogram.types import Message
-
+from aiogram.types import ChatMemberUpdated, Message
 from aiogram_dialog import DialogManager, StartMode
-from bot.containers import Container
+from aiogram_dialog.api.exceptions import UnknownIntent
 
+from bot.containers import Container
 from bot.database.exceptions import ChannelNotFoundError
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 

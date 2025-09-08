@@ -1,7 +1,8 @@
-from typing import List, Dict, Optional
+import logging
+from typing import Dict, List, Optional
+
 from bot.database.models import PostDTO
 from bot.services.content_processing.processors import ContentProcessor
-import logging
 
 
 class PostProcessingPipeline:

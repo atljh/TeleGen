@@ -1,13 +1,13 @@
 import asyncio
 import logging
-from typing import Optional
 from contextlib import asynccontextmanager
+from typing import Optional
 
 from telethon import TelegramClient
 
-# from telethon.errors import ConnectionError as TelethonConnectionError
+from ..types import ConnectionError, TelegramEntity
 
-from ..types import TelegramEntity, ConnectionError
+# from telethon.errors import ConnectionError as TelethonConnectionError
 
 
 class ConnectionService:

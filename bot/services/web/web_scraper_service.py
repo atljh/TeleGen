@@ -1,13 +1,13 @@
-from datetime import datetime
 import logging
-from urllib.parse import urlparse
+from datetime import datetime
 from typing import Self
+from urllib.parse import urlparse
 
 import aiohttp
 from bs4 import BeautifulSoup
 
-from bot.services.web.cloudflare_bypass_service import CloudflareBypass
 from bot.database.models.web_post import WebPost
+from bot.services.web.cloudflare_bypass_service import CloudflareBypass
 
 
 class WebScraperService:

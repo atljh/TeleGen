@@ -1,6 +1,7 @@
 import html
-from aiogram_dialog import DialogManager
 import logging
+
+from aiogram_dialog import DialogManager
 
 
 async def ad_time_getter(dialog_manager: DialogManager, **kwargs):

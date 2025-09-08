@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel
 from typing import Any, Self
+
+from pydantic import BaseModel
 
 
 class UserDTO(BaseModel):

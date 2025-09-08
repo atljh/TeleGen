@@ -1,12 +1,13 @@
 import asyncio
 import logging
-from aiogram import Bot
-from typing import Optional, Dict, Any
-from datetime import datetime
 from dataclasses import dataclass
-from django.conf import settings
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, Optional
+
 import requests
+from aiogram import Bot
+from django.conf import settings
 
 from bot.database.models.user import UserDTO as BotUser
 

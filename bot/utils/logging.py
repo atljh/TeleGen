@@ -1,7 +1,9 @@
 import asyncio
 import logging
+
 from aiogram import Bot
-from bot.services.logger_service import LogEvent, LogLevel, init_logger, get_logger
+
+from bot.services.logger_service import LogEvent, LogLevel, get_logger, init_logger
 
 
 class TelegramLogHandler(logging.Handler):

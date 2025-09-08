@@ -1,6 +1,6 @@
-from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 
 from bot.containers import Container
 

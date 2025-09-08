@@ -1,6 +1,7 @@
-from aiogram import Bot
-from typing import Optional
 import logging
+from typing import Optional
+
+from aiogram import Bot
 
 
 async def check_bot_permissions(bot: Bot, chat_id: str) -> Optional[dict]:

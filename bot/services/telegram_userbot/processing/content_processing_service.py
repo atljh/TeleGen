@@ -1,15 +1,17 @@
 import asyncio
 import logging
 from typing import Optional
+
 import openai
+
+from bot.database.models import FlowDTO
 from bot.database.models.post import PostDTO
+from bot.services.aisettings_service import AISettingsService
 from bot.services.content_processing.processors import (
     ChatGPTContentProcessor,
     DefaultContentProcessor,
 )
-from bot.services.aisettings_service import AISettingsService
 from bot.services.user_service import UserService
-from bot.database.models import FlowDTO
 
 
 class ContentProcessingService:

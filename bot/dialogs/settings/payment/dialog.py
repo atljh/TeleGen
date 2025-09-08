@@ -1,29 +1,30 @@
-from aiogram_dialog import Window, Dialog
-from aiogram_dialog.widgets.text import Const, Format, Multi
+from aiogram.enums import ParseMode
+from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.kbd import (
-    Button,
-    Row,
-    Column,
     Back,
+    Button,
     Cancel,
-    Select,
+    Column,
     Group,
+    Row,
+    Select,
     Url,
 )
-from aiogram.enums import ParseMode
+from aiogram_dialog.widgets.text import Const, Format, Multi
 
 from bot.dialogs.settings.payment.states import PaymentMenu
-from .getters import packages_getter, periods_getter, methods_getter, success_getter
+
 from .callbacks import (
-    on_package_selected,
-    on_period_selected,
-    on_method_selected,
-    on_monobank_confirm,
-    on_cryptobot_confirm,
     on_back_to_main,
     on_back_to_methods,
     on_back_to_periods,
+    on_cryptobot_confirm,
+    on_method_selected,
+    on_monobank_confirm,
+    on_package_selected,
+    on_period_selected,
 )
+from .getters import methods_getter, packages_getter, periods_getter, success_getter
 
 
 def create_payment_dialog():

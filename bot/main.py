@@ -1,18 +1,19 @@
-import os
 import asyncio
 import logging
-from dotenv import load_dotenv
+import os
+
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram_dialog import setup_dialogs
-
-from bot.services.logger_service import LogEvent, LogLevel
-from bot.utils.middlaware import MainMiddleware
-from handlers import register_handlers
-from bot.containers import Container
-from bot.utils.logging import setup_logging
 from dialogs import register_dialogs
+from dotenv import load_dotenv
+from handlers import register_handlers
+
+from bot.containers import Container
+from bot.services.logger_service import LogEvent, LogLevel
+from bot.utils.logging import setup_logging
+from bot.utils.middlaware import MainMiddleware
 
 
 async def main():

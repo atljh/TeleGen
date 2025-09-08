@@ -1,5 +1,5 @@
-from aiogram_dialog import Window, Dialog
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.state import State, StatesGroup
+from aiogram_dialog import Dialog, Window
 
 
 class FlowSettingsMenu(StatesGroup):

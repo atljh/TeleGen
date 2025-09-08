@@ -1,9 +1,8 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.text import Format
-from aiogram_dialog import DialogManager
 from aiogram.enums.parse_mode import ParseMode
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.api.entities import StartMode
+from aiogram_dialog.widgets.text import Format
 
 
 async def on_main_dialog_start(start_data, dialog_manager: DialogManager):

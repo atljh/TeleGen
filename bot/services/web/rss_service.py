@@ -1,18 +1,19 @@
 from __future__ import annotations
+
 import asyncio
 import hashlib
 import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict, NotRequired
+from typing import Any, Dict, List, NotRequired, Optional, TypedDict
 from urllib.parse import urlparse
 
 import aiohttp
 import feedparser
 from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from bot.database.models import FlowDTO
 from bot.services.web.cloudflare_bypass_service import CloudflareBypass

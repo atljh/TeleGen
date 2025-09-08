@@ -1,31 +1,24 @@
-from aiogram_dialog import Dialog, Window
+from datetime import datetime, timedelta
+
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
-from aiogram_dialog import DialogManager
-from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.media import DynamicMedia
-from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, Row, Column, Back, Calendar
-from aiogram_dialog.widgets.text import Const, Format
-from aiogram_dialog.widgets.input import TextInput, MessageInput
+from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog.widgets.input import MessageInput, TextInput
 from aiogram_dialog.widgets.kbd import (
-    Select,
-    ScrollingGroup,
-    Button,
-    Row,
-    Button,
-    Group,
-    StubScroll,
-    NumberedPager,
-    Cancel,
     Back,
+    Button,
     Calendar,
+    Cancel,
+    Column,
+    Group,
+    NumberedPager,
+    Row,
+    ScrollingGroup,
+    Select,
+    StubScroll,
 )
-from aiogram.enums import ParseMode
-
-from aiogram_dialog import DialogManager
-
-from datetime import datetime, timedelta
+from aiogram_dialog.widgets.media import DynamicMedia
+from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.buffer.getters import (
     edit_post_getter,
@@ -34,8 +27,8 @@ from bot.dialogs.buffer.getters import (
     post_info_getter,
     send_media_album,
 )
-
 from bot.dialogs.buffer.states import BufferMenu
+
 from .callbacks import (
     back_to_post_view,
     go_back_to_channels,

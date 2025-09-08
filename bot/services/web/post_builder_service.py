@@ -1,5 +1,6 @@
-from datetime import datetime
 import logging
+from datetime import datetime
+
 from bot.database.models import FlowDTO, PostDTO, PostImageDTO, PostStatus
 
 

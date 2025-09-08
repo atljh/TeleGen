@@ -1,16 +1,16 @@
 from aiogram import Dispatcher
 
-from .generation import (
-    create_generation_dialog,
-    create_add_channel_dialog,
-    flow_dialog,
-    create_flow_dialog,
-)
 from .buffer import create_buffer_dialog
+from .generation import (
+    create_add_channel_dialog,
+    create_flow_dialog,
+    create_generation_dialog,
+    flow_dialog,
+)
 from .settings import create_settings_dialog
 from .settings.flow_settings import create_flow_settings_dialog, create_sources_dialog
-from .support import create_support_dialog
 from .settings.payment import create_payment_dialog
+from .support import create_support_dialog
 
 
 def register_dialogs(dp: Dispatcher):
