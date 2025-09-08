@@ -8,7 +8,7 @@ RUN apt-get update && \
 
 COPY pyproject.toml uv.lock* ./
 
-RUN pip install --user --no-cache-dir .[dev, prod,scraping]
+RUN pip install --user --no-cache-dir .[dev,prod,scraping]
 
 FROM python:3.11-slim-bookworm as base
 
