@@ -6,7 +6,7 @@ import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
 from urllib.parse import urlparse
 
 import aiohttp
@@ -19,6 +19,9 @@ from bot.database.models import FlowDTO
 from bot.database.repositories.post_repository import PostRepository
 from bot.services.web.cloudflare_bypass_service import CloudflareBypass
 from bot.utils.notifications import notify_admins
+
+if TYPE_CHECKING:
+    from bot.services.flow_service import FlowService
 
 
 class SourceDict(TypedDict):
@@ -202,7 +205,10 @@ class RssService:
                 if response.status != 200:
                     return
 
-                text = await asyncio.wait_for(response.text())
+                text = await asyncio.wait_for(
+                    response.text(),
+                    timeout=self.request_timeout
+                )
                 feed = feedparser.parse(text)
                 domain = urlparse(rss_url).netloc
 
