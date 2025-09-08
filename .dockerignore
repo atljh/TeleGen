@@ -6,3 +6,4 @@ __pycache__
 *.pyd
 .env
 *.sqlite3
+.ruff_cache

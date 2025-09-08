@@ -56,5 +56,4 @@ jobs:
         run: |
           docker build -t telegram-bot-lint --target bot .
           docker run --rm telegram-bot-lint black --check /bot
-          docker run --rm telegram-bot-lint isort --check-only /bot
           docker run --rm telegram-bot-lint flake8 /bot

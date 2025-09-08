@@ -186,3 +186,4 @@ staticfiles
 *.json
 tmp/
 media/
+.ruff_cache
