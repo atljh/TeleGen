@@ -6,14 +6,10 @@ on:
   pull_request:
     branches: [main, master, dev]
 
-env:
-  DOCKER_IMAGE_NAME: telegram-bot
-  PYTHON_VERSION: 3.11
-
 jobs:
-  build-dev-image:
-    name: Build Dev Image (for tests & lint)
+  test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,70 +17,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build dev image
-        run: |
-          docker build --target dev -t ${{ env.DOCKER_IMAGE_NAME }}-dev .
+      - name: Build bot image for tests
+        run: docker build -t telegram-bot-test --target bot .
 
-  test:
-    name: Run Tests inside Docker
-    runs-on: ubuntu-latest
-    needs: build-dev-image
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run Django & Bot tests
+      - name: Run tests inside Docker
         run: |
           docker run --rm \
-            -e DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/test_db \
-            -e REDIS_URL=redis://host.docker.internal:6379/0 \
-            -e SECRET_KEY=test-secret-key \
-            -e DEBUG=False \
-            ${{ env.DOCKER_IMAGE_NAME }}-dev \
-            sh -c "python manage.py migrate --noinput && pytest tests/ -v"
+            -e DATABASE_URL=postgres://postgres:postgres@db:5432/test_db \
+            -e REDIS_URL=redis://redis:6379/0 \
+            telegram-bot-test \
+            python -m pytest /bot/tests -v
 
-  lint:
-    name: Run Lint inside Docker
+  build:
     runs-on: ubuntu-latest
-    needs: build-dev-image
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    needs: test
 
-      - name: Run Black, Isort, Flake8
-        run: |
-          docker run --rm ${{ env.DOCKER_IMAGE_NAME }}-dev sh -c \
-            "black --check . && isort --check-only . && flake8 ."
-
-  build-prod-images:
-    name: Build Production Docker Images
-    runs-on: ubuntu-latest
-    needs: [test, lint]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -92,8 +39,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build Bot Image
-        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }}-bot --target bot .
+      - name: Build bot image
+        run: docker build -t telegram-bot --target bot .
 
-      - name: Build Admin Panel Image
-        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }}-admin --target admin_panel .
+      - name: Build admin panel image
+        run: docker build -t admin-panel --target admin_panel .
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run lint inside Docker
+        run: |
+          docker build -t telegram-bot-lint --target bot .
+          docker run --rm telegram-bot-lint black --check /bot
+          docker run --rm telegram-bot-lint isort --check-only /bot
+          docker run --rm telegram-bot-lint flake8 /bot
