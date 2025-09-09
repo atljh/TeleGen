@@ -113,7 +113,7 @@ services:
       celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     environment:
       PYTHONPATH: /:/admin_panel
-      
+
 
 volumes:
   postgres_data:

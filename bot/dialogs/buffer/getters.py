@@ -301,7 +301,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
                 chat_id = dialog_manager.middleware_data["event_chat"].id
                 try:
                     await bot.delete_message(chat_id=chat_id, message_id=message_id)
-                except:
+                except Exception:
                     pass
                 dialog_manager.dialog_data["message_ids"] = []
 
@@ -338,7 +338,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             data["media_content"] = None
 
     data["selected_channel"] = selected_channel
-    if post["is_selected"] and data["post"].get("is_album"):
+    if data["post"].get("is_selected") and data["post"].get("is_album"):
         await send_media_album(dialog_manager, data["post"])
     return data
 

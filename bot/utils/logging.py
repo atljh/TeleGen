@@ -2,12 +2,12 @@ import logging
 from pathlib import Path
 import os
 
+
 def init_logging():
-    log_dir_str = os.getenv('LOG_DIR', '/app/logs')
+    log_dir_str = os.getenv("LOG_DIR", "/app/logs")
     log_dir = Path(log_dir_str)
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
-        print(f"Log directory created: {log_dir}")
     except Exception as e:
         print(f"Failed to create log directory: {e}")
         return
@@ -23,20 +23,23 @@ def init_logging():
         root_logger.removeHandler(handler)
         handler.close()
 
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
     ch.setFormatter(formatter)
     root_logger.addHandler(ch)
 
     try:
         log_file = log_dir / "bot.log"
-        print(f"Log file path: {log_file}")
-        
-        fh = logging.FileHandler(log_file, encoding="utf-8", mode='a')  # 'a' для append
+
+        fh = logging.FileHandler(log_file, encoding="utf-8", mode="a")
+        fh.setLevel(logging.INFO)
         fh.setFormatter(formatter)
         root_logger.addHandler(fh)
-        
+
     except Exception as e:
         print(f"Failed to create file handler: {e}")
 

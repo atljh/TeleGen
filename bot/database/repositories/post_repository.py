@@ -8,12 +8,14 @@ from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 
+import httpx
 import requests
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.db import IntegrityError
 from django.db.models import Prefetch
 from psycopg.errors import UniqueViolation
+from PIL import Image, UnidentifiedImageError
 
 from admin_panel.admin_panel.models import Flow, Post, PostImage
 from bot.database.exceptions import PostNotFoundError
@@ -181,26 +183,44 @@ class PostRepository:
         logging.error(f"Database error: {str(error)}")
         raise error
 
-    async def _store_media_permanently(
-        self, file_path_or_url: str, media_type: str
-    ) -> str:
+    async def _store_media_permanently(self, file_path_or_url: str, media_type: str) -> str:
+        temp_file = None
         try:
+            # Если это URL, скачиваем через httpx
             if file_path_or_url.startswith(("http://", "https://")):
-                response = requests.get(file_path_or_url, stream=True)
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                "Chrome/125.0.0.0 Safari/537.36",
+                    "Referer": "https://www.atptour.com/",
+                    "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                }
 
                 ext = os.path.splitext(urlparse(file_path_or_url).path)[1] or (
                     ".jpg" if media_type == "images" else ".mp4"
                 )
                 temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
 
-                with open(temp_file, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                async with httpx.AsyncClient(timeout=30) as client:
+                    resp = await client.get(file_path_or_url, headers=headers)
+                    resp.raise_for_status()
+                    with open(temp_file, "wb") as f:
+                        f.write(resp.content)
 
                 file_path_or_url = temp_file
 
+            # Проверка изображения (только для картинок)
+            if media_type == "images":
+                try:
+                    with Image.open(file_path_or_url) as img:
+                        img.verify()  # Проверка целостности
+                except UnidentifiedImageError:
+                    raise ValueError(f"Downloaded image is invalid: {file_path_or_url}")
+
+            # Подготовка пути для постоянного хранения
             media_dir = "posts/images" if media_type == "images" else "posts/videos"
-            os.makedirs(os.path.join(settings.MEDIA_ROOT, media_dir), exist_ok=True)
+            permanent_dir = os.path.join(settings.MEDIA_ROOT, media_dir)
+            os.makedirs(permanent_dir, exist_ok=True)
 
             ext = os.path.splitext(file_path_or_url)[1] or (
                 ".jpg" if media_type == "images" else ".mp4"
@@ -208,14 +228,21 @@ class PostRepository:
             filename = f"{uuid.uuid4()}{ext}"
             permanent_path = os.path.join(media_dir, filename)
 
-            shutil.copy2(
-                file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path)
-            )
+            shutil.copy2(file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path))
             return permanent_path
 
         except Exception as e:
             logging.error(f"Failed to store media: {str(e)}")
             raise
+
+        finally:
+            # Удаляем временный файл
+            if temp_file and os.path.exists(temp_file):
+                try:
+                    os.remove(temp_file)
+                except Exception:
+                    pass
+
 
     async def get(self, post_id: int) -> Post:
         try:

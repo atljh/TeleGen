@@ -78,7 +78,6 @@ def create_buffer_dialog():
         data = await paging_getter(manager)
         if data["post"].get("is_selected") and data["post"].get("is_album"):
             await send_media_album(manager, data["post"])
-            return
 
     return Dialog(
         Window(

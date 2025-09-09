@@ -206,8 +206,7 @@ class RssService:
                     return
 
                 text = await asyncio.wait_for(
-                    response.text(),
-                    timeout=self.request_timeout
+                    response.text(), timeout=self.request_timeout
                 )
                 feed = feedparser.parse(text)
                 domain = urlparse(rss_url).netloc
@@ -363,9 +362,10 @@ class RssService:
                 if enc.get("type", "").startswith("image/")
             )
 
-        logging.info(f'+++++++++++++++{images}')
-        self.logger.info(f'==============={images}')
-        
+        logging.info(f"+++++++++++++++{images}")
+        self.logger.info(f"==============={images}")
+        self.logger.warning(f"--------{images}")
+
         return sorted(
             url
             for url in images
