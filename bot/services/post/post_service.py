@@ -29,7 +29,7 @@ class PostService:
     ):
         self.flow_repo = flow_repository
         self.bot = bot
-
+        self.post_repository = post_repository
         self.base_service = PostBaseService(post_repository)
         self.publishing_service = PostPublishingService(bot, self.base_service)
         self.scheduling_service = PostSchedulingService(
@@ -63,13 +63,10 @@ class PostService:
         return await self.generation_service.generate_auto_posts(flow_id, auto_generate)
 
     async def get_all_posts_in_flow(self, flow_id: int, status: PostStatus) -> list[PostDTO]:
-        return await sync_to_async(list)(
-            Post.objects.filter(
-                flow_id=flow_id,
-                status=status
-            ).order_by("created_at")
+        return await self.post_repository.list(
+            flow_id=flow_id,
+            status=status
         )
-
 
     async def get_oldest_posts(self, flow_id: int, limit: int) -> list[Post]:
         return await sync_to_async(list)(
@@ -129,14 +126,6 @@ class PostService:
             media_list=media_list,
         )
         return await sync_to_async(PostDTO.from_orm)(post)
-
-    async def get_posts_by_flow_id(
-        self, flow_id: int, status: PostStatus = None
-    ) -> list[PostDTO]:
-        posts = await self.base_service.post_repo.get_posts_by_flow_id(
-            flow_id=flow_id, status=status
-        )
-        return posts
 
     @sync_to_async
     def get_channel_id(self, post_id: int) -> str:

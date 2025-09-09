@@ -1,13 +1,17 @@
 import asyncio
 import logging
+import os
+import shutil
 from datetime import datetime
 from typing import Optional
 
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.db import IntegrityError
+from django.db.models import Prefetch
 from psycopg.errors import UniqueViolation
 
-from admin_panel.admin_panel.models import Flow, Post
+from admin_panel.admin_panel.models import Flow, Post, PostImage
 from bot.database.exceptions import PostNotFoundError
 from bot.database.models import MediaType, PostDTO, PostStatus
 from bot.database.repositories.post_repository import PostRepository
@@ -149,11 +153,6 @@ class PostService:
         logging.error(f"Database error: {str(error)}")
         raise error
 
-    async def get_posts_by_flow_id(
-        self, flow_id: int, status: PostStatus = None
-    ) -> list[PostDTO]:
-        posts = await self._fetch_posts_from_db(flow_id, status=status)
-        return posts
 
     @sync_to_async
     def _fetch_posts_from_db(

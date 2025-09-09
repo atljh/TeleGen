@@ -138,7 +138,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
     if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
         post_service = Container.post_service()
         try:
-            raw_posts = await post_service.get_posts_by_flow_id(
+            raw_posts = await post_service.get_all_posts_in_flow(
                 flow.id, status=PostStatus.DRAFT
             )
             posts = []
