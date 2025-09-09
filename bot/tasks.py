@@ -10,43 +10,6 @@ from bot.generator_worker import _start_telegram_generations
 logger = logging.getLogger()
 
 
-async def remove_old_posts(flow_id: int, count: int, post_service):
-    old_posts = await post_service.get_oldest_posts(flow_id, count)
-    logger.info(f"Removing {len(old_posts)} old posts for flow {flow_id}")
-
-    for post in old_posts:
-        await post_service.delete_post(post.id)
-
-
-async def create_new_posts(flow_id: int, posts_dto: list, post_service):
-    created_posts = []
-    for post_data in posts_dto:
-        media_list = [
-            {"path": img.url, "type": "image", "order": img.order}
-            for img in post_data.images
-        ]
-        if post_data.video_url:
-            media_list.append(
-                {
-                    "path": post_data.video_url,
-                    "type": "video",
-                    "order": len(post_data.images),
-                }
-            )
-
-        post = await post_service.create_post(
-            original_link=post_data.original_link,
-            original_date=post_data.original_date,
-            flow_id=flow_id,
-            content=post_data.content,
-            media_list=media_list,
-        )
-        created_posts.append(post)
-
-    if created_posts:
-        logger.info(f"Created {len(created_posts)} new posts for flow {flow_id}")
-
-
 async def _async_check_flows_generation():
     flow_service = Container.flow_service()
     post_service = Container.post_service()

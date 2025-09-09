@@ -466,7 +466,6 @@ def create_flow_settings_dialog():
         create_flow_settings_window(),
         create_frequency_settings_window(),
         create_character_limit_window(),
-        # create_ad_block_settings_window(),
         create_posts_in_flow_window(),
         create_custom_volume_window(),
         create_sources_dialog(),
