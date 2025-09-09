@@ -98,10 +98,15 @@ def create_buffer_dialog():
         ),
         Window(
             Format(
+                "Тут будуть відображатися пости",
+                when=lambda data, widget, manager: not data["post"].get("content"),
+            ),
+            Format(
                 "{post[content_preview]}\n\n"
                 "<b>Заплановано:</b> {post[scheduled_time]}\n"
                 "{media_indicator}",
-                when=lambda data, widget, manager: not data["post"].get("is_selected"),
+                when=lambda data, widget, manager: not data["post"].get("is_selected")
+                and data["post"].get("content"),
             ),
             Format(
                 "{post[full_content]}\n\n"
@@ -128,13 +133,14 @@ def create_buffer_dialog():
                     on_click=on_toggle_details,
                     when=lambda data, widget, manager: not data["post"].get(
                         "is_selected"
-                    ),
+                    ) and data["post"].get("content"),
                 ),
                 Button(
                     Const("📋 Сховати"),
                     id="hide_details",
                     on_click=on_hide_details,
-                    when=lambda data, widget, manager: data["post"].get("is_selected"),
+                    when=lambda data, widget, manager: data["post"].get("is_selected")
+                    and data["post"].get("content"),
                 ),
                 Button(
                     Const("✅ Опублікувати"),

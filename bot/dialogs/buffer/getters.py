@@ -127,6 +127,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
     dialog_manager.dialog_data["channel_flow"] = dialog_data.get("channel_flow")
 
     data = {
+        "media_indicator": "",
         "current_page": 1,
         "pages": 0,
         "day": "Немає постів",
