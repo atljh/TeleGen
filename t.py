@@ -9,6 +9,7 @@ headers = {
     "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
 }
 
+
 async def download_image():
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(url, headers=headers)
@@ -16,5 +17,6 @@ async def download_image():
         with open("draper.jpg", "wb") as f:
             f.write(resp.content)
     print("Downloaded successfully")
+
 
 asyncio.run(download_image())

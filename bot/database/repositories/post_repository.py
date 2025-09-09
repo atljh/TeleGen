@@ -9,7 +9,6 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
-import requests
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.db import IntegrityError
@@ -183,15 +182,17 @@ class PostRepository:
         logging.error(f"Database error: {str(error)}")
         raise error
 
-    async def _store_media_permanently(self, file_path_or_url: str, media_type: str) -> str:
+    async def _store_media_permanently(
+        self, file_path_or_url: str, media_type: str
+    ) -> str:
         temp_file = None
         try:
             # Если это URL, скачиваем через httpx
             if file_path_or_url.startswith(("http://", "https://")):
                 headers = {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                "Chrome/125.0.0.0 Safari/537.36",
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/125.0.0.0 Safari/537.36",
                     "Referer": "https://www.atptour.com/",
                     "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
                 }
@@ -228,7 +229,9 @@ class PostRepository:
             filename = f"{uuid.uuid4()}{ext}"
             permanent_path = os.path.join(media_dir, filename)
 
-            shutil.copy2(file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path))
+            shutil.copy2(
+                file_path_or_url, os.path.join(settings.MEDIA_ROOT, permanent_path)
+            )
             return permanent_path
 
         except Exception as e:
@@ -242,7 +245,6 @@ class PostRepository:
                     os.remove(temp_file)
                 except Exception:
                     pass
-
 
     async def get(self, post_id: int) -> Post:
         try:

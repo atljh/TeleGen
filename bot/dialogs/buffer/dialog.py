@@ -133,7 +133,8 @@ def create_buffer_dialog():
                     on_click=on_toggle_details,
                     when=lambda data, widget, manager: not data["post"].get(
                         "is_selected"
-                    ) and data["post"].get("content"),
+                    )
+                    and data["post"].get("content"),
                 ),
                 Button(
                     Const("📋 Сховати"),
