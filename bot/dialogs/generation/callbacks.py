@@ -9,6 +9,7 @@ from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.widgets.kbd import Button
 
 from bot.containers import Container
+from bot.database.models.post import PostStatus
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
@@ -210,7 +211,9 @@ async def show_generated_posts(
             return
 
         post_service = Container.post_service()
-        posts = await post_service.get_all_posts_in_flow(flow_id)
+        posts = await post_service.get_all_posts_in_flow(
+            flow_id, status=PostStatus.DRAFT
+        )
 
         if not posts:
             await bot.edit_message_text(

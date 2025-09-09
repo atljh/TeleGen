@@ -62,11 +62,15 @@ class PostService:
     ) -> list[PostDTO]:
         return await self.generation_service.generate_auto_posts(flow_id, auto_generate)
 
-    async def get_all_posts_in_flow(self, flow_id: int) -> list[Post]:
+    async def get_all_posts_in_flow(self, flow_id: int, status: PostStatus) -> list[PostDTO]:
         return await sync_to_async(list)(
-            Post.objects.filter(flow_id=flow_id).order_by("created_at")
+            Post.objects.filter(
+                flow_id=flow_id,
+                status=status
+            ).order_by("created_at")
         )
-
+    
+    
     async def get_oldest_posts(self, flow_id: int, limit: int) -> list[Post]:
         return await sync_to_async(list)(
             Post.objects.filter(flow_id=flow_id).order_by("created_at")[:limit]

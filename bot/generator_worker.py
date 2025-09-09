@@ -9,6 +9,7 @@ from aiogram import Bot
 
 from bot.containers import Container
 from bot.database.models import FlowDTO
+from bot.database.models.post import PostStatus
 from bot.services.flow_service import FlowService
 from bot.services.logger_service import (
     init_logger,
@@ -61,10 +62,10 @@ async def _start_telegram_generations(
     post_service: PostService,
     auto_generate=False,
 ) -> list:
-    existing_posts = await post_service.get_all_posts_in_flow(flow.id)
+    existing_posts = await post_service.get_all_posts_in_flow(
+        flow.id, status=PostStatus.DRAFT
+    )
     existing_count = len(existing_posts)
-
-    user = await flow_service.get_user_by_flow_id(flow.id)
 
     generated_posts = await post_service.generate_auto_posts(flow.id, auto_generate)
     generated_count = len(generated_posts) if generated_posts else 0
