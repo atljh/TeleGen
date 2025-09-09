@@ -1,26 +1,19 @@
 
-import asyncio
-import logging
+
 import os
 import shutil
-import tempfile
-import uuid
+import logging
 from datetime import datetime
 from typing import Optional
-from urllib.parse import urlparse
 
-import httpx
-from asgiref.sync import sync_to_async
 from django.conf import settings
-from django.db import IntegrityError
-from django.db.models import Prefetch
-from psycopg.errors import UniqueViolation
 from PIL import Image, UnidentifiedImageError
 
 from admin_panel.admin_panel.models import Flow, Post, PostImage
 from bot.database.exceptions import PostNotFoundError
-from bot.database.models import MediaType, PostDTO, PostStatus
+from bot.database.models import MediaType, PostStatus
 
+logger = logging.getLogger(__name__)
 
 class PostRepository:
     async def create(

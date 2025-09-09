@@ -1,19 +1,13 @@
-import asyncio
 import logging
-import os
-import shutil
 from datetime import datetime
 from typing import Optional
 
 from asgiref.sync import sync_to_async
-from django.conf import settings
 from django.db import IntegrityError
-from django.db.models import Prefetch
 from psycopg.errors import UniqueViolation
 
 from admin_panel.admin_panel.models import Flow, Post, PostImage
-from bot.database.exceptions import PostNotFoundError
-from bot.database.models import MediaType, PostDTO, PostStatus
+from bot.database.models import MediaType, PostStatus
 from bot.database.repositories.post_repository import PostRepository
 
 
@@ -153,45 +147,6 @@ class PostService:
         logging.error(f"Database error: {str(error)}")
         raise error
 
-
-    @sync_to_async
-    def _fetch_posts_from_db(
-        self, flow_id: int, status: PostStatus = None
-    ) -> list[PostDTO]:
-        posts = Post.objects.filter(flow_id=flow_id)
-
-        if status is not None:
-            posts = posts.filter(status=status)
-        else:
-            posts = posts.filter(status__in=[PostStatus.PUBLISHED, PostStatus.DRAFT])
-
-        posts = (
-            posts.select_related("flow")
-            .prefetch_related(
-                Prefetch(
-                    "images",
-                    queryset=PostImage.objects.only("image", "order").order_by("order"),
-                )
-            )
-            .only(
-                "id",
-                "content",
-                "source_url",
-                "publication_date",
-                "status",
-                "created_at",
-                "scheduled_time",
-                "video",
-                "flow__id",
-                "flow__name",
-                "original_link",
-                "original_date",
-                "source_url",
-            )
-            .order_by("-created_at")
-        )
-
-        return [PostDTO.from_orm(post) for post in posts]
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> None:
         await sync_to_async(Post.objects.filter(id=post_id).update)(
