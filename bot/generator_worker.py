@@ -19,7 +19,9 @@ from bot.utils.notifications import send_telegram_notification
 
 
 async def generate_flow(
-    flow_id: int, chat_id: int, bot: Bot, status_msg_id: int
+    flow_id: int,
+    chat_id: int,
+    bot: Bot,
 ) -> list:
     try:
         bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -101,6 +103,6 @@ if __name__ == "__main__":
 
     async def main():
         init_logger(bot)
-        await generate_flow(flow_id, chat_id, bot, status_msg_id)
+        await generate_flow(flow_id, chat_id, bot)
 
     asyncio.run(main())
