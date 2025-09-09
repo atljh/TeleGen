@@ -17,10 +17,27 @@ class PostBaseService:
         post = await self.post_repo.get(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
+        return PostDTO.from_orm(post)
 
-        images_qs = await sync_to_async(
-            lambda: list(post.images.all().order_by("order"))
-        )()
+    async def create_post(
+        self,
+        flow,
+        content: str,
+        original_content: str,
+        original_link: str,
+        original_date: datetime,
+        source_url: Optional[str] = None,
+        media_list: Optional[list[str]] = None,
+    ) -> PostDTO:
+        post = await self.post_repo.create_with_media(
+            flow=flow,
+            original_content=original_content,
+            original_link=original_link,
+            original_date=original_date,
+            source_url=source_url,
+            content=content,
+            media_list=media_list,
+        )
         return PostDTO.from_orm(post)
 
     async def update_post(
@@ -34,6 +51,8 @@ class PostBaseService:
         **kwargs,
     ) -> PostDTO:
         post = await self.post_repo.get(post_id)
+        if not post:
+            raise PostNotFoundError(f"Post with id {post_id} not found")
 
         if content is not None:
             post.content = content
@@ -41,22 +60,22 @@ class PostBaseService:
             post.publication_date = publication_date
         if status:
             post.status = status
+        if video_url is not None:
+            post.video_url = video_url
 
         if images is not None:
             await self._update_post_images(post, images)
 
-        if video_url is not None:
-            post.video_url = video_url
-
         await sync_to_async(post.save)()
-        return await self.get_post(post_id)
+        return PostDTO.from_orm(post)
 
-    async def _update_post_images(self, post: Post, images: list[dict]):
+    async def _update_post_images(self, post: Post, images: list[dict]) -> None:
         await sync_to_async(lambda: post.images.all().delete())()
-
         for img_data in images:
             await sync_to_async(PostImage.objects.create)(
-                post=post, image=img_data["file_path"], order=img_data["order"]
+                post=post,
+                image=img_data["file_path"],
+                order=img_data["order"],
             )
 
     async def delete_post(self, post_id: int) -> None:
