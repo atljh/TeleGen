@@ -198,13 +198,13 @@ class PostRepository:
             "Sec-Fetch-Site": "cross-site",
             "Referer": "https://www.google.com/",
         }
-        
+
         domain = urlparse(url).netloc
         if "atptour.com" in domain:
             headers["Referer"] = "https://www.atptour.com/"
         elif "sportarena.com" in domain:
             headers["Referer"] = "https://sportarena.com/"
-        
+
         ext = os.path.splitext(urlparse(url).path)[1] or (
             ".jpg" if media_type == "images" else ".mp4"
         )
@@ -218,12 +218,12 @@ class PostRepository:
             ) as client:
                 resp = await client.get(url)
                 resp.raise_for_status()
-                
+
                 with open(temp_file, "wb") as f:
                     f.write(resp.content)
-                    
+
             return temp_file
-            
+
         except httpx.HTTPStatusError as e:
             logging.warning(f"HTTP error {e.response.status_code} for URL: {url}")
             raise
@@ -244,7 +244,7 @@ class PostRepository:
         ext = os.path.splitext(file_path)[1].lower()
         if ext:
             return ext
-        
+
         return ".jpg" if media_type == "images" else ".mp4"
 
 
@@ -252,7 +252,7 @@ class PostRepository:
         media_dir = "posts/images" if media_type == "images" else "posts/videos"
         permanent_dir = os.path.join(settings.MEDIA_ROOT, media_dir)
         os.makedirs(permanent_dir, exist_ok=True)
-        
+
         filename = f"{uuid.uuid4()}{extension}"
         return os.path.join(media_dir, filename)
 
@@ -263,7 +263,7 @@ class PostRepository:
 
         temp_file = None
         original_is_url = file_path_or_url.startswith(("http://", "https://"))
-        
+
         try:
             if original_is_url:
                 temp_file = await self._download_remote_media(file_path_or_url, media_type)
@@ -278,7 +278,7 @@ class PostRepository:
             permanent_path = self._get_permanent_media_path(media_type, extension)
 
             shutil.copy2(file_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
-            
+
             logging.info(f"Successfully stored media: {permanent_path}")
             return permanent_path
 
@@ -287,7 +287,7 @@ class PostRepository:
                 logging.warning(f"Access denied (403) for URL: {file_path_or_url}")
                 return await self._try_alternative_download(file_path_or_url, media_type)
             raise
-            
+
         except Exception as e:
             logging.error(f"Failed to store media {file_path_or_url}: {str(e)}")
             raise
@@ -311,19 +311,19 @@ class PostRepository:
                 "Accept": "*/*",
                 "Referer": "https://www.google.com/",
             }
-            
+
             async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.get(url, headers=headers)
                 resp.raise_for_status()
-                
+
                 ext = os.path.splitext(urlparse(url).path)[1] or ".jpg"
                 temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
-                
+
                 with open(temp_file, "wb") as f:
                     f.write(resp.content)
-                    
+
                 return await self._store_local_media(temp_file, media_type, is_temp=True)
-                
+
         except Exception as e:
             logging.warning(f"Alternative download failed for {url}: {str(e)}")
             raise
