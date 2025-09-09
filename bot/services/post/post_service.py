@@ -39,63 +39,64 @@ class PostService:
             userbot_service, web_service, flow_repository, self.base_service, self.bot
         )
 
-    async def get_post(self, post_id: int) -> PostDTO:
+    async def get_post(
+        self,
+        post_id: int
+    ) -> PostDTO:
         return await self.base_service.get_post(post_id)
 
-    async def update_post(self, post_id: int, **kwargs) -> PostDTO:
+    async def update_post(
+        self,
+        post_id: int,
+        **kwargs
+    ) -> PostDTO:
         return await self.base_service.update_post(post_id, **kwargs)
 
-    async def delete_post(self, post_id: int) -> None:
+    async def delete_post(
+        self,
+        post_id: int
+    ) -> None:
         return await self.base_service.delete_post(post_id)
 
-    async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
-        return await self.publishing_service.publish_post(post_id, channel_id)
+    async def publish_post(
+        self,
+        post_id: int,
+        channel_id: str
+    ) -> PostDTO:
+        return await self.publishing_service.publish_post(
+            post_id, channel_id
+        )
 
-    async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
-        return await self.scheduling_service.schedule_post(post_id, scheduled_time)
+    async def schedule_post(
+        self,
+        post_id: int,
+        scheduled_time: datetime
+    ) -> PostDTO:
+        return await self.scheduling_service.schedule_post(
+            post_id, scheduled_time
+        )
 
     async def publish_scheduled_posts(self) -> list[PostDTO]:
         return await self.scheduling_service.publish_scheduled_posts()
 
     async def generate_auto_posts(
-        self, flow_id: int, auto_generate: bool = False
+        self,
+        flow_id: int,
+        auto_generate: bool = False
     ) -> list[PostDTO]:
-        return await self.generation_service.generate_auto_posts(flow_id, auto_generate)
+        return await self.generation_service.generate_auto_posts(
+            flow_id, auto_generate
+        )
 
-    async def get_all_posts_in_flow(self, flow_id: int, status: PostStatus) -> list[PostDTO]:
+    async def get_all_posts_in_flow(
+        self,
+        flow_id: int,
+        status: PostStatus
+    ) -> list[PostDTO]:
         return await self.post_repository.list(
             flow_id=flow_id,
             status=status
         )
-
-    async def get_oldest_posts(self, flow_id: int, limit: int) -> list[Post]:
-        return await sync_to_async(list)(
-            Post.objects.filter(flow_id=flow_id).order_by("created_at")[:limit]
-        )
-
-    async def update_post_with_media(
-        self, post_id: int, content: str, media_list: list[dict]
-    ) -> PostDTO:
-        post = await self.base_service.post_repo.get(post_id)
-
-        post.content = content
-        await sync_to_async(post.save)()
-
-        await sync_to_async(lambda: post.images.all().delete())()
-
-        for media in media_list:
-            if media["type"] == "image":
-                await sync_to_async(PostImage.objects.create)(
-                    post=post, image=media["path"], order=media["order"]
-                )
-            elif media["type"] == "video":
-                post.video_url = media["path"]
-                await sync_to_async(post.save)()
-
-        return await self.get_post(post_id)
-
-    async def count_posts_in_flow(self, flow_id: int) -> int:
-        return await self.base_service.post_repo.count_posts_in_flow(flow_id=flow_id)
 
     async def create_post(
         self,
@@ -126,11 +127,3 @@ class PostService:
             media_list=media_list,
         )
         return await sync_to_async(PostDTO.from_orm)(post)
-
-    @sync_to_async
-    def get_channel_id(self, post_id: int) -> str:
-        return (
-            Post.objects.select_related("flow__channel")
-            .get(id=post_id)
-            .flow.channel.channel_id
-        )
