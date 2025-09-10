@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import pytz
 from aiogram.enums import ParseMode
@@ -23,28 +23,41 @@ from django.utils import timezone
 from bot.containers import Container
 from bot.database.models import PostStatus
 
+logger = logging.getLogger(__name__)
+
 
 @lru_cache(maxsize=100)
 def get_media_path(media_url: str) -> str:
     return os.path.join(settings.MEDIA_ROOT, media_url.split("/media/")[-1])
 
 
-async def send_media_album(
-    dialog_manager: DialogManager, post_data: dict[str, Any]
-) -> Optional[Message]:
+async def safe_delete_messages(bot, chat_id: int, message_ids: Sequence[int]) -> None:
+    for msg_id in message_ids:
+        try:
+            await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+        except Exception:
+            logger.debug("Failed to delete message %s in chat %s", msg_id, chat_id, exc_info=True)
+
+
+def build_album_keyboard(post_data: Dict[str, Any]) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Опублікувати", callback_data=f"publish_{post_data['id']}"),
+                InlineKeyboardButton(text="✏️ Редагувати", callback_data=f"edit_{post_data['id']}"),
+            ],
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="go_back")],
+        ]
+    )
+
+async def send_media_album(dialog_manager: DialogManager, post_data: Dict[str, Any]) -> Optional[Message]:
     bot = dialog_manager.middleware_data["bot"]
     chat_id = dialog_manager.middleware_data["event_chat"].id
     message = dialog_manager.event.message
 
     message_ids = dialog_manager.dialog_data.get("message_ids", [])
     if message_ids:
-        bot = dialog_manager.middleware_data["bot"]
-        chat_id = dialog_manager.middleware_data["event_chat"].id
-        for msg_id in message_ids:
-            try:
-                await bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            except:
-                pass
+        await safe_delete_messages(bot, chat_id, message_ids)
         dialog_manager.dialog_data["message_ids"] = []
 
     try:
@@ -52,12 +65,18 @@ async def send_media_album(
         if not images:
             return None
 
-        media_group = []
+        media_group: List[InputMediaPhoto] = []
         for i, image in enumerate(images):
-            media_path = get_media_path(image.url)
-            if not os.path.exists(media_path):
+            image_url = getattr(image, "url", None)
+            if not image_url:
                 continue
-            caption = post_data["content"] if i == 0 else None
+
+            media_path = get_media_path(image_url)
+            if not os.path.exists(media_path):
+                logger.warning("Media file not found on disk: %s", media_path)
+                continue
+
+            caption = post_data.get("content") if i == 0 else None
             media = InputMediaPhoto(
                 media=FSInputFile(media_path),
                 caption=caption,
@@ -65,58 +84,133 @@ async def send_media_album(
             )
             media_group.append(media)
 
-        if media_group:
-            try:
-                await message.delete()
-            except:
-                pass
+        if not media_group:
+            return None
 
-            new_messages = await bot.send_media_group(
-                chat_id=chat_id, media=media_group
-            )
-            message_ids = [msg.message_id for msg in new_messages]
+        try:
+            await message.delete()
+        except Exception:
+            logger.debug("Failed to delete trigger message before sending media group", exc_info=True)
 
-            dialog_manager.dialog_data["message_ids"] = message_ids
+        new_messages = await bot.send_media_group(chat_id=chat_id, media=media_group)
+        dialog_manager.dialog_data["message_ids"] = [m.message_id for m in new_messages]
 
     except Exception as e:
-        logging.error(f"Error sending media album: {str(e)}")
-        await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
+        logger.error("Error sending media album: %s", e, exc_info=True)
+        try:
+            await dialog_manager.event.answer("⚠️ Не вдалось вiдправити альбом")
+        except Exception:
+            logger.debug("Failed to notify user about media error", exc_info=True)
 
     return None
 
 
-def build_album_keyboard(post_data: dict) -> InlineKeyboardMarkup:
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="✅ Опублікувати", callback_data=f"publish_{post_data['id']}"
-                ),
-                InlineKeyboardButton(
-                    text="✏️ Редагувати", callback_data=f"edit_{post_data['id']}"
-                ),
-            ],
-            [
-                InlineKeyboardButton(text="🔙 Назад", callback_data="go_back"),
-            ],
-        ]
-    )
-    return keyboard
+def ensure_list(obj) -> list:
+    if obj is None:
+        return []
+    if isinstance(obj, (list, tuple)):
+        return list(obj)
+    try:
+        return list(obj.all())
+    except Exception:
+        try:
+            return list(obj)
+        except Exception:
+            return []
 
 
-async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
+def format_post_datetime(dt: Optional[datetime]) -> str:
+    if not dt:
+        return "Без дати"
+    try:
+        return dt.strftime("%d.%m.%Y %H:%M")
+    except Exception:
+        return str(dt)
+
+
+def build_post_dict(post: Any, idx: int) -> Dict[str, Any]:
+    images = ensure_list(getattr(post, "images", []))
+    video_url = getattr(post, "video_url", getattr(post, "video", None))
+    content = getattr(post, "content", "") or ""
+    original_link = getattr(post, "original_link", "") or ""
+    original_date = getattr(post, "original_date", "") or ""
+    source_url = getattr(post, "source_url", "") or ""
+
+    pub_time = format_post_datetime(getattr(post, "publication_date", None))
+    created_time = format_post_datetime(getattr(post, "created_at", None))
+
+    post_stats = {
+        PostStatus.DRAFT: "Чернетка",
+        PostStatus.SCHEDULED: "Заплановано",
+        PostStatus.PUBLISHED: "Опублiковано",
+    }
+
+    is_album = len(images) > 1
+    images_count = len(images)
+
+    post_dict = {
+        "id": str(getattr(post, "id", "")),
+        "idx": idx,
+        "content": content,
+        "pub_time": pub_time,
+        "created_time": created_time,
+        "status": post_stats.get(getattr(post, "status", PostStatus.DRAFT), ""),
+        "full_content": content,
+        "has_media": bool(images or video_url),
+        "images_count": images_count,
+        "images": images,
+        "video_url": video_url,
+        "is_album": is_album,
+        "original_date": original_date,
+        "original_link": original_link,
+        "source_url": source_url,
+        "content_preview": f"📷 Альбом ({images_count} фото)" if is_album else (content[:1024] if content else "Тут будуть відображатися пости"),
+    }
+
+    return post_dict
+
+
+async def load_raw_posts(flow_id: int, status: PostStatus) -> List[Any]:
+    post_service = Container.post_service()
+    raw_posts = await post_service.get_all_posts_in_flow(flow_id, status=status)
+
+    if not isinstance(raw_posts, (list, tuple)):
+        try:
+            raw_posts = await sync_to_async(list)(raw_posts)
+        except Exception:
+            raw_posts = list(raw_posts)
+
+    return raw_posts
+
+
+async def build_posts_list(flow_id: int, status: PostStatus) -> List[Dict[str, Any]]:
+    raw_posts = await load_raw_posts(flow_id, status)
+    posts: List[Dict[str, Any]] = []
+
+    for idx, post in enumerate(raw_posts):
+        images = ensure_list(getattr(post, "images", []))
+        try:
+            post_dict = build_post_dict(post, idx=idx)
+            posts.append(post_dict)
+        except Exception as e:
+            logger.error("Failed to build post dict for post id=%s: %s", getattr(post, "id", None), e, exc_info=True)
+            continue
+
+    return posts
+
+
+async def paging_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
     current_page = await scroll.get_page() if scroll else 0
 
     dialog_data = dialog_manager.dialog_data or {}
     start_data = dialog_manager.start_data or {}
-
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
 
     dialog_manager.dialog_data["channel_flow"] = start_data.get("channel_flow")
     dialog_manager.dialog_data["selected_channel"] = start_data.get("selected_channel")
 
-    data = {
+    data: Dict[str, Any] = {
         "current_page": 1,
         "pages": 0,
         "day": "Немає постів",
@@ -136,81 +230,15 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
     }
 
     if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
-        post_service = Container.post_service()
         try:
-            raw_posts = await post_service.get_all_posts_in_flow(
-                flow.id, status=PostStatus.DRAFT
-            )
-            posts = []
-
-            for idx, post in enumerate(raw_posts):
-                images = post.images if hasattr(post, "images") else []
-                video_url = post.video_url if hasattr(post, "video_url") else None
-                content = post.content if hasattr(post, "content") else ""
-
-                original_link = (
-                    post.original_link if hasattr(post, "original_link") else ""
-                )
-                original_date = (
-                    post.original_date if hasattr(post, "original_date") else ""
-                )
-                source_url = post.source_url if hasattr(post, "source_url") else ""
-
-                pub_time = await sync_to_async(
-                    lambda p=post: (
-                        p.publication_date.strftime("%d.%m.%Y %H:%M")
-                        if hasattr(p, "publication_date") and p.publication_date
-                        else "Без дати"
-                    )
-                )()
-
-                created_time = await sync_to_async(
-                    lambda p=post: (
-                        p.created_at.strftime("%d.%m.%Y %H:%M")
-                        if hasattr(p, "created_at") and p.created_at
-                        else "Без дати"
-                    )
-                )()
-
-                post_stats = {
-                    PostStatus.DRAFT: "Чернетка",
-                    PostStatus.SCHEDULED: "Заплановано",
-                    PostStatus.PUBLISHED: "Опублiковано",
-                }
-                is_album = len(images) > 1
-                post_dict = {
-                    "id": str(post.id) if hasattr(post, "id") else "",
-                    "idx": idx,
-                    "content": content,
-                    "pub_time": pub_time,
-                    "created_time": created_time,
-                    "status": post_stats[post.status],
-                    "full_content": content,
-                    "has_media": bool(images or video_url),
-                    "images_count": len(images),
-                    "images": images,
-                    "video_url": video_url,
-                    "is_album": is_album,
-                    "original_date": original_date,
-                    "original_link": original_link,
-                    "source_url": source_url,
-                }
-
-                if is_album:
-                    post_dict["content_preview"] = f"📷 Альбом ({len(images)} фото)"
-                else:
-                    post_dict["content_preview"] = content[:1024]
-
-                posts.append(post_dict)
-
-            dialog_data["all_posts"] = posts
-            dialog_data["total_posts"] = len(posts)
-
+            posts = await build_posts_list(flow.id, status=PostStatus.DRAFT)
+            dialog_manager.dialog_data["all_posts"] = posts
+            dialog_manager.dialog_data["total_posts"] = len(posts)
         except Exception as e:
-            logging.error(f"Помилка завантаження постів: {str(e)}")
-    else:
-        posts = dialog_data.get("all_posts", [])
+            logger.error("Помилка завантаження постів: %s", e, exc_info=True)
+            return data
 
+    posts = dialog_manager.dialog_data.get("all_posts", [])
     total_pages = len(posts)
 
     dialog_manager.dialog_data["current_page"] = current_page
@@ -226,82 +254,62 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             }
         )
 
-        messages = dialog_manager.dialog_data.get("message_ids")
+        messages = dialog_manager.dialog_data.get("message_ids", [])
         if messages and not post.get("is_album"):
-            for message_id in messages:
-                bot = dialog_manager.middleware_data["bot"]
-                chat_id = dialog_manager.middleware_data["event_chat"].id
-                await bot.delete_message(chat_id=chat_id, message_id=message_id)
-                dialog_manager.dialog_data["message_ids"] = []
+            bot = dialog_manager.middleware_data["bot"]
+            chat_id = dialog_manager.middleware_data["event_chat"].id
+            await safe_delete_messages(bot, chat_id, messages)
+            dialog_manager.dialog_data["message_ids"] = []
 
         if not post.get("is_album"):
-            media_info = None
+            media_info: Optional[Dict[str, Any]] = None
             images = post.get("images", [])
 
             if images and len(images) == 1:
                 first_image = images[0]
-                if hasattr(first_image, "url"):
-                    media_info = {
-                        "type": "photo",
-                        "url": first_image.url,
-                        "path": (
-                            get_media_path(first_image.url) if first_image.url else None
-                        ),
-                    }
+                image_url = getattr(first_image, "url", None)
+                if image_url:
+                    media_info = {"type": "photo", "url": image_url, "path": get_media_path(image_url)}
             elif post.get("video_url"):
-                media_info = {
-                    "type": "video",
-                    "url": post["video_url"],
-                    "path": get_media_path(post["video_url"]),
-                }
+                media_info = {"type": "video", "url": post["video_url"], "path": get_media_path(post["video_url"])}
 
-            if (
-                media_info
-                and media_info.get("path")
-                and os.path.exists(media_info["path"])
-            ):
-                data["media_content"] = MediaAttachment(
-                    path=media_info["path"], type=media_info["type"]
-                )
+            if media_info and media_info.get("path") and os.path.exists(media_info["path"]):
+                data["media_content"] = MediaAttachment(path=media_info["path"], type=media_info["type"])
 
     if data["post"].get("is_album"):
         await send_media_album(dialog_manager, data["post"])
+
     return data
 
 
-async def edit_post_getter(dialog_manager: DialogManager, **kwargs):
-    post = dialog_manager.dialog_data.get("editing_post", {})
+async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
+    post = dialog_manager.dialog_data.get("editing_post", {}) or {}
     content = dialog_manager.dialog_data.get("edited_content", post.get("content", ""))
     edited_media = dialog_manager.dialog_data.get("edited_media")
     media_info = None
+
     images = post.get("images", [])
     video_url = post.get("video_url")
 
     if images and len(images) == 1:
         first_image = images[0]
-        if hasattr(first_image, "url"):
-            media_info = {
-                "type": "photo",
-                "url": first_image.url,
-                "path": get_media_path(first_image.url) if first_image.url else None,
-            }
+        image_url = getattr(first_image, "url", None)
+        if image_url:
+            media_info = {"type": "photo", "url": image_url, "path": get_media_path(image_url)}
     elif video_url:
-        media_info = {
-            "type": "video",
-            "url": video_url,
-            "path": get_media_path(video_url),
-        }
+        media_info = {"type": "video", "url": video_url, "path": get_media_path(video_url)}
 
-    media = None
+    media: Optional[MediaAttachment] = None
     if media_info and media_info.get("path") and os.path.exists(media_info["path"]):
         media = MediaAttachment(path=media_info["path"], type=media_info["type"])
     elif edited_media:
         media_path = get_media_path(edited_media["url"])
         media = MediaAttachment(path=media_path, type=edited_media["type"])
+
     return {"post": post, "content": content, "media": media}
 
 
-async def post_info_getter(dialog_manager: DialogManager, **kwargs):
+async def post_info_getter(dialog_manager: DialogManager, **kwargs) -> Dict[str, Any]:
     dialog_data = await paging_getter(dialog_manager)
     post = dialog_data["post"]
 
@@ -314,9 +322,7 @@ async def post_info_getter(dialog_manager: DialogManager, **kwargs):
                 dt = timezone.datetime.fromisoformat(original_date)
                 if not timezone.is_aware(dt):
                     dt = timezone.make_aware(dt, timezone.utc)
-            elif isinstance(original_date, datetime) and not timezone.is_aware(
-                original_date
-            ):
+            elif isinstance(original_date, datetime) and not timezone.is_aware(original_date):
                 dt = timezone.make_aware(original_date, timezone.utc)
             elif isinstance(original_date, datetime):
                 dt = original_date
@@ -324,12 +330,10 @@ async def post_info_getter(dialog_manager: DialogManager, **kwargs):
                 raise ValueError("Unsupported date format")
 
             kiev_tz = pytz.timezone("Europe/Kiev")
-            kiev_date = timezone.localtime(dt, timezone=kiev_tz).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            kiev_date = timezone.localtime(dt, timezone=kiev_tz).strftime("%Y-%m-%d %H:%M:%S")
 
         except Exception as e:
-            print(f"Error converting date: {e}")
+            logger.debug("Error converting date: %s", e, exc_info=True)
             kiev_date = original_date
 
     return {
