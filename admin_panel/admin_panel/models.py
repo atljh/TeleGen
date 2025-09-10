@@ -228,7 +228,7 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         if self.status == self.PUBLISHED and not self.publication_date:
             self.publication_date = timezone.now()
-        elif self.scheduled_time and not self.status == self.PUBLISHED:
+        elif self.scheduled_time and self.status != self.PUBLISHED:
             self.status = self.SCHEDULED
         super().save(*args, **kwargs)
 

@@ -17,7 +17,15 @@ class PostBaseService:
         post = await self.post_repo.get(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
-        return PostDTO.from_orm(post)
+
+        images = await sync_to_async(
+            lambda: list(post.images.all().order_by("order"))
+        )()
+
+        dto = PostDTO.from_orm(post)
+        dto.images = images
+        return dto
+
 
     async def create_post(
         self,
@@ -48,7 +56,6 @@ class PostBaseService:
         publication_date: Optional[datetime] = None,
         status: Optional[PostStatus] = None,
         video_url: Optional[str] = None,
-        **kwargs,
     ) -> PostDTO:
         post = await self.post_repo.get(post_id)
         if not post:
@@ -82,3 +89,22 @@ class PostBaseService:
         if not await self.post_repo.exists(post_id):
             raise PostNotFoundError(f"Post with id {post_id} not found")
         await self.post_repo.delete(post_id)
+
+
+    async def get_all_posts_in_flow(
+        self, flow_id: int, status: PostStatus
+    ) -> list[PostDTO]:
+        posts = await self.post_repo.list(flow_id=flow_id, status=status)
+
+        posts = await sync_to_async(list)(posts)
+
+        result = []
+        for post in posts:
+            images = await sync_to_async(
+                lambda p=post: list(p.images.all().order_by("order"))
+            )()
+            dto = PostDTO.from_orm(post)
+            dto.images = images
+            result.append(dto)
+
+        return result

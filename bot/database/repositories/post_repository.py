@@ -84,13 +84,16 @@ class PostRepository:
 
         return [
             post
-            async for post in query.select_related("flow").order_by("-created_at")[
+            async for post in query.select_related("flow").prefetch_related("images").order_by("-created_at")[
                 offset : offset + limit
             ]
         ]
 
     async def exists(self, post_id: int) -> bool:
         return await Post.objects.filter(id=post_id).aexists()
+
+    async def exists_by_source_id(self, source_id: str) -> bool:
+        return await Post.objects.filter(source_id=source_id).aexists()
 
     async def count_posts_in_flow(self, flow_id: int) -> int:
         return await Post.objects.filter(flow_id=flow_id).acount()

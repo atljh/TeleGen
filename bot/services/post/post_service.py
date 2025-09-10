@@ -1,7 +1,8 @@
+from aiogram import Bot
 from datetime import datetime
 from typing import Optional
+from asgiref.sync import sync_to_async
 
-from aiogram import Bot
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import FlowRepository, PostRepository
@@ -45,7 +46,7 @@ class PostService:
     async def get_all_posts_in_flow(
         self, flow_id: int, status: PostStatus
     ) -> list[PostDTO]:
-        return await self.base_service.post_repo.list(flow_id=flow_id, status=status)
+        return await self.base_service.get_all_posts_in_flow(flow_id, status)
 
     async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
         return await self.publishing_service.publish_post(post_id, channel_id)

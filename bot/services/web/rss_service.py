@@ -301,8 +301,8 @@ class RssService:
         try:
             source_id = f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}"
 
-            if await self.post_repository._post_exists(source_id=source_id):
-                self.logger.debug(f"STOP | Post already exists: {source_id}")
+            if await self.post_repository.exists_by_source_id(source_id=source_id):
+                self.logger.warning(f"STOP | Post already exists: {source_id}")
                 return None
 
             post_data = {
