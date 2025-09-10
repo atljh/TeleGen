@@ -157,16 +157,17 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
                 source_url = post.source_url if hasattr(post, "source_url") else ""
 
                 pub_time = await sync_to_async(
-                    lambda: (
-                        post.publication_date.strftime("%d.%m.%Y %H:%M")
-                        if hasattr(post, "publication_date") and post.publication_date
+                    lambda p=post: (
+                        p.publication_date.strftime("%d.%m.%Y %H:%M")
+                        if hasattr(p, "publication_date") and p.publication_date
                         else "Без дати"
                     )
                 )()
+
                 created_time = await sync_to_async(
-                    lambda: (
-                        post.created_at.strftime("%d.%m.%Y %H:%M")
-                        if hasattr(post, "created_at") and post.created_at
+                    lambda p=post: (
+                        p.created_at.strftime("%d.%m.%Y %H:%M")
+                        if hasattr(p, "created_at") and p.created_at
                         else "Без дати"
                     )
                 )()
