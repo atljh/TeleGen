@@ -49,7 +49,7 @@ class PostService:
             logging.error(f"Unexpected error: {str(e)}")
             raise
 
-    async def _post_exists(self, source_id: str) -> bool:        
+    async def _post_exists(self, source_id: str) -> bool:
         if await self.post_repository.exists_by_source_id(source_id=source_id):
             logging.warning(f"Duplicate post skipped: {source_id}")
             return True

@@ -23,7 +23,7 @@ class PostSchedulingService:
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         if scheduled_time < datetime.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
-        
+
         post = await self.post_service.get_post(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
