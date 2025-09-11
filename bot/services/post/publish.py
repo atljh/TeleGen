@@ -51,12 +51,12 @@ class PostPublishingService:
         media_group = []
 
         for i, image in enumerate(post.images):
-            media = await self._create_media_item(image, caption if i == 0 else None)
+            media = self._create_media_item(image, caption if i == 0 else None)
             media_group.append(media)
 
         await self.bot.send_media_group(chat_id=channel_id, media=media_group)
 
-    async def _create_media_item(
+    def _create_media_item(
         self, image, caption: Optional[str] = None
     ) -> InputMediaPhoto:
         if image.url.startswith(("http://", "https://")):

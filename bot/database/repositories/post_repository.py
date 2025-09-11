@@ -1,49 +1,17 @@
 
 
-import os
-import shutil
 import logging
 from datetime import datetime
 from typing import Optional
 
-from django.conf import settings
-from PIL import Image, UnidentifiedImageError
 
-from admin_panel.admin_panel.models import Flow, Post, PostImage
+from admin_panel.admin_panel.models import Post
 from bot.database.exceptions import PostNotFoundError
-from bot.database.models import MediaType, PostStatus
+from bot.database.models import MediaType
 
 logger = logging.getLogger(__name__)
 
 class PostRepository:
-    async def create(
-        self,
-        flow: Flow,
-        content: str,
-        source_url: Optional[str] = None,
-        status: PostStatus = None,
-        scheduled_time: Optional[datetime] = None,
-        images: Optional[list[str]] = None,
-        video_path: Optional[str] = None,
-    ) -> Post:
-        post = Post(
-            flow=flow,
-            content=content,
-            source_url=source_url,
-            status=status,
-            scheduled_time=scheduled_time,
-        )
-        await post.asave()
-
-        if video_path:
-            await self._save_video_from_path(post, video_path)
-
-        if images:
-            for image_path in images:
-                await self._save_image_from_path(post, image_path)
-
-        return post
-
     async def get(self, post_id: int) -> Post:
         try:
             query = Post.objects.select_related("flow").prefetch_related("images")
@@ -97,36 +65,6 @@ class PostRepository:
 
     async def count_posts_in_flow(self, flow_id: int) -> int:
         return await Post.objects.filter(flow_id=flow_id).acount()
-
-    async def _save_video_from_path(self, post: Post, video_path: str) -> None:
-        if not os.path.exists(video_path):
-            raise FileNotFoundError(f"Video file not found: {video_path}")
-
-        filename = os.path.basename(video_path)
-        destination = os.path.join(settings.MEDIA_ROOT, "videos", filename)
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-
-        shutil.copy2(video_path, destination)
-        post.video = os.path.relpath(destination, settings.MEDIA_ROOT)
-        await post.asave()
-
-    async def _save_image_from_path(self, post: Post, image_path: str) -> None:
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image file not found: {image_path}")
-
-        try:
-            with Image.open(image_path) as img:
-                img.verify()
-        except (IOError, UnidentifiedImageError):
-            raise ValueError(f"Invalid image file: {image_path}")
-
-        filename = os.path.basename(image_path)
-        destination = os.path.join(settings.MEDIA_ROOT, "images", filename)
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-
-        shutil.copy2(image_path, destination)
-        image_path_rel = os.path.relpath(destination, settings.MEDIA_ROOT)
-        PostImage.objects.create(post=post, image=image_path_rel, order=post.images.count())
 
     async def update_media(
         self, post_id: int, media_file, filename: str, media_type: MediaType
