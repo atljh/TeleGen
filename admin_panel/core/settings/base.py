@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_celery_beat",
 
-    "admin_panel.admin_panel",
+    "admin_panel",
     "bot",
 ]
 
@@ -40,8 +40,8 @@ MIDDLEWARE = [
 ]
 
 
-ROOT_URLCONF = "admin_panel.core.urls"
-WSGI_APPLICATION = "admin_panel.core.wsgi.application"
+ROOT_URLCONF = "core.urls"
+WSGI_APPLICATION = "core.wsgi.application"
 
 TEMPLATES = [
     {

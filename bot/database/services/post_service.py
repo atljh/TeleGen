@@ -6,7 +6,7 @@ from asgiref.sync import sync_to_async
 from django.db import IntegrityError
 from psycopg.errors import UniqueViolation
 
-from admin_panel.admin_panel.models import Flow, Post, PostImage
+from admin_panel.models import Flow, Post, PostImage
 from bot.database.models import MediaType, PostStatus
 from bot.database.repositories.post_repository import PostRepository
 

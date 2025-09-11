@@ -21,7 +21,7 @@ services:
       - ./logs:/app/logs
     environment:
       PYTHONPATH: /app
-      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
+      DJANGO_SETTINGS_MODULE: ${ABSOLUTE_DJANGO_SETTINGS_MODULE}
       MEDIA_ROOT: /app/media
       SESSION_PATH: /app/sessions/userbot.session
       LOG_DIR: /app/logs
@@ -38,7 +38,7 @@ services:
       - .env
     depends_on:
       - db
-    working_dir: /app
+    working_dir: /app/admin_panel
     ports:
       - "8000:8000"
     volumes:
@@ -48,33 +48,8 @@ services:
       - ./staticfiles:/app/staticfiles
     environment:
       PYTHONPATH: /app
-      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
-    command: gunicorn admin_panel.core.wsgi:application --bind 0.0.0.0:8000
-
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: bot
-    container_name: celery_worker
-    restart: always
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-    working_dir: /app
-    volumes:
-      - ./bot:/app/bot
-      - ./admin_panel:/app/admin_panel
-      - ./sessions:/app/sessions
-      - ./tmp:/tmp
-      - ./logs:/app/logs
-    environment:
-      PYTHONPATH: /app
-      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
-      SESSION_PATH: /app/sessions/userbot.session
-    command: celery -A bot.celery_app worker --loglevel=info --pool=solo
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
 
   db:
     image: postgres:15
@@ -96,6 +71,31 @@ services:
     volumes:
       - ./data/redis_data:/data
 
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bot
+    container_name: celery_worker
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    working_dir: /app
+    volumes:
+      - ./bot:/app/bot
+      - ./admin_panel:/app/admin_panel
+      - ./sessions:/app/sessions
+      - ./tmp:/tmp
+      - ./logs:/app/logs
+    environment:
+      PYTHONPATH: /app/admin_panel
+      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
+      SESSION_PATH: /app/sessions/userbot.session
+    command: celery -A bot.celery_app worker --loglevel=info --pool=solo
+
   celery_beat:
     build:
       context: .
@@ -114,6 +114,6 @@ services:
       - ./admin_panel:/app/admin_panel
       - ./logs:/app/logs
     environment:
-      PYTHONPATH: /app
+      PYTHONPATH: /app/admin_panel
       DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
     command: celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler

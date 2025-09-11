@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from faker import Faker
 
-from admin_panel.admin_panel.models import (
+from admin_panel.models import (
     AISettings,
     Channel,
     Draft,

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from asgiref.sync import sync_to_async
 
@@ -34,8 +34,8 @@ class PostBaseService:
         original_content: str,
         original_link: str,
         original_date: datetime,
-        source_url: Optional[str] = None,
-        media_list: Optional[list[str]] = None,
+        source_url: str | None = None,
+        media_list: list[str] | None = None,
     ) -> PostDTO:
         post = await self.post_repo.create_with_media(
             flow=flow,
@@ -51,11 +51,12 @@ class PostBaseService:
     async def update_post(
         self,
         post_id: int,
-        content: Optional[str] = None,
-        images: Optional[list[dict]] = None,
-        publication_date: Optional[datetime] = None,
-        status: Optional[PostStatus] = None,
-        video_url: Optional[str] = None,
+        content: str | None = None,
+        images: list[dict[str, Any]] | None = None,
+        publication_date: datetime | None = None,
+        status: PostStatus | None = None,
+        video_url: str | None = None,
+        scheduled_time: datetime | None = None,
     ) -> PostDTO:
         post = await self.post_repo.get(post_id)
         if not post:
@@ -63,12 +64,14 @@ class PostBaseService:
 
         if content is not None:
             post.content = content
-        if publication_date:
+        if publication_date is not None:
             post.publication_date = publication_date
-        if status:
+        if status is not None:
             post.status = status
         if video_url is not None:
             post.video_url = video_url
+        if scheduled_time is not None:
+            post.scheduled_time = scheduled_time
 
         if images is not None:
             await self._update_post_images(post, images)

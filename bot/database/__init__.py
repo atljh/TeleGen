@@ -9,4 +9,4 @@ if not settings.configured:
     django.setup()
 
 
-from admin_panel.admin_panel.models import Channel, Flow, Post, User
+# from admin_panel.models import Channel, Flow, Post, User
