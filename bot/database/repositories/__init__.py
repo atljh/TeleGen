@@ -7,3 +7,16 @@ from bot.database.repositories.post_repository import PostRepository
 from bot.database.repositories.statistic_repository import StatisticsRepository
 from bot.database.repositories.subscription_repository import SubscriptionRepository
 from bot.database.repositories.user_repository import UserRepository
+
+
+__all__ = [
+    "AISettingsRepository",
+    "ChannelRepository",
+    "DraftRepository",
+    "FlowRepository",
+    "PaymentRepository",
+    "PostRepository",
+    "StatisticsRepository",
+    "SubscriptionRepository",
+    "UserRepository",
+]

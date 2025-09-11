@@ -11,20 +11,70 @@ services:
     depends_on:
       - db
       - redis
+    working_dir: /app
     volumes:
-      - ./bot:/bot
+      - ./bot:/app/bot
+      - ./admin_panel:/app/admin_panel
       - ./media:/app/media
-      - ./admin_panel/media:/app/admin_panel/media
       - ./sessions:/app/sessions
       - ./tmp:/tmp
       - ./logs:/app/logs
     environment:
-      - MEDIA_ROOT=/app/media
-      - SESSION_PATH=/app/sessions/userbot.session
-      - LOG_DIR=/app/logs
-    command: >
-      bash -c "python watcher.py"
+      PYTHONPATH: /app
+      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
+      MEDIA_ROOT: /app/media
+      SESSION_PATH: /app/sessions/userbot.session
+      LOG_DIR: /app/logs
+    command: python /app/bot/watcher.py
 
+  admin_panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: admin_panel
+    container_name: admin_panel
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./admin_panel:/app/admin_panel
+      - ./bot:/app/bot
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+    environment:
+      PYTHONPATH: /app
+      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
+    command: gunicorn admin_panel.core.wsgi:application --bind 0.0.0.0:8000
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bot
+    container_name: celery_worker
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    working_dir: /app
+    volumes:
+      - ./bot:/app/bot
+      - ./admin_panel:/app/admin_panel
+      - ./sessions:/app/sessions
+      - ./tmp:/tmp
+      - ./logs:/app/logs
+    environment:
+      PYTHONPATH: /app
+      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
+      SESSION_PATH: /app/sessions/userbot.session
+    command: celery -A bot.celery_app worker --loglevel=info --pool=solo
 
   db:
     image: postgres:15
@@ -46,51 +96,6 @@ services:
     volumes:
       - ./data/redis_data:/data
 
-  admin_panel:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: admin_panel
-    container_name: admin_panel
-    restart: always
-    env_file:
-      - .env
-    depends_on:
-      - db
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./admin_panel:/admin_panel
-      - ./media:/app/media
-      - ./staticfiles:/admin/staticfiles
-    command: ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
-
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: bot
-    container_name: celery_worker
-    restart: always
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./sessions:/app/sessions
-      - ./tmp:/tmp
-      - ./admin_panel:/admin_panel
-      - ./bot:/bot
-      - ./logs:/app/logs
-    command: >
-      sh -c "cd / &&
-      PYTHONPATH=/:/admin_panel
-      celery -A bot.celery_app worker --loglevel=info --pool=solo"
-    environment:
-      PYTHONPATH: /:/admin_panel
-      SESSION_PATH: /app/sessions/userbot.session
-
   celery_beat:
     build:
       context: .
@@ -103,18 +108,12 @@ services:
     depends_on:
       - db
       - redis
+    working_dir: /app
     volumes:
-      - ./admin_panel:/admin_panel
-      - ./bot:/bot
+      - ./bot:/app/bot
+      - ./admin_panel:/app/admin_panel
       - ./logs:/app/logs
-    command: >
-      sh -c "cd /bot &&
-      PYTHONPATH=/:/admin_panel
-      celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     environment:
-      PYTHONPATH: /:/admin_panel
-
-
-volumes:
-  postgres_data:
-  redis_data:
+      PYTHONPATH: /app
+      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
+    command: celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler

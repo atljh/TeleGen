@@ -37,8 +37,7 @@ class RestartHandler(FileSystemEventHandler):
 
 
 def start_bot():
-    return subprocess.Popen([sys.executable, "main.py"])
-
+    return subprocess.Popen([sys.executable, "-m", "bot.main"])
 
 if __name__ == "__main__":
     watch_path = os.path.abspath(".")

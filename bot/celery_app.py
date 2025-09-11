@@ -2,7 +2,7 @@ import os
 
 from celery import Celery
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "admin_panel.core.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "admin_panel.core.settings.prod")
 
 app = Celery("bot")
 app.config_from_object("django.conf:settings", namespace="CELERY")

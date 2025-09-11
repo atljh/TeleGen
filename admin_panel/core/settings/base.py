@@ -23,7 +23,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_celery_beat",
-    "admin_panel",
+
+    "admin_panel.admin_panel",
     "bot",
 ]
 
@@ -38,7 +39,9 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
-ROOT_URLCONF = "core.urls"
+
+ROOT_URLCONF = "admin_panel.core.urls"
+WSGI_APPLICATION = "admin_panel.core.wsgi.application"
 
 TEMPLATES = [
     {
@@ -55,8 +58,6 @@ TEMPLATES = [
         },
     },
 ]
-
-WSGI_APPLICATION = "core.wsgi.application"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -93,11 +94,7 @@ CELERY_WORKER_CONCURRENCY = 10
 
 CELERY_BEAT_SCHEDULE = {
     "check-scheduled-posts": {
-        "task": "bot.tasks.check_scheduled_posts",
+        "task": "bot.tasks.run_scheduled_jobs",
         "schedule": 60.0,
-    },
-    "check-flows-generation": {
-        "task": "bot.tasks.check_flows_generation",
-        "schedule": 360.0,
     },
 }

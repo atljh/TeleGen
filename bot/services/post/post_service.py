@@ -1,7 +1,6 @@
 from aiogram import Bot
 from datetime import datetime
 from typing import Optional
-from asgiref.sync import sync_to_async
 
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
@@ -52,8 +51,6 @@ class PostService:
         return await self.publishing_service.publish_post(post_id, channel_id)
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
-        if scheduled_time < datetime.now():
-            raise InvalidOperationError("Scheduled time cannot be in the past")
         return await self.scheduling_service.schedule_post(post_id, scheduled_time)
 
     async def publish_scheduled_posts(self) -> list[PostDTO]:

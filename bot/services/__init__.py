@@ -3,10 +3,9 @@ import os
 import django
 from django.conf import settings
 
-DJANGO_SETTINGS_MODULE = "admin_panel.core.settings"
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.prod")
 
 if not settings.configured:
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", DJANGO_SETTINGS_MODULE)
     django.setup()
 
 from .aisettings_service import AISettingsService

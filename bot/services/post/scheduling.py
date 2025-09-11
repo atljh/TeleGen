@@ -21,11 +21,9 @@ class PostSchedulingService:
         self.publishing_service = publishing_service
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
-        now = datetime.now(scheduled_time.tzinfo)
-
-        if scheduled_time < now:
-            raise InvalidOperationError("Не можна запланувати пост у минулому")
-
+        if scheduled_time < datetime.now():
+            raise InvalidOperationError("Scheduled time cannot be in the past")
+        
         post = await self.post_service.get_post(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")

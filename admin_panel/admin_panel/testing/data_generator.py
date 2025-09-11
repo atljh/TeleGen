@@ -27,7 +27,7 @@ class TestDataGenerator:
 
             if not settings.configured:
                 os.environ.setdefault(
-                    "DJANGO_SETTINGS_MODULE", "admin_panel.core.settings"
+                    "DJANGO_SETTINGS_MODULE", "admin_panel.core.settings.prod"
                 )
                 django.setup()
 

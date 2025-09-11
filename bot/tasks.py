@@ -1,16 +1,14 @@
-import asyncio
 import logging
-
-
 from celery import shared_task
+from asgiref.sync import async_to_sync
 
 from bot.containers import Container
 from bot.generator_worker import _start_telegram_generations
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
-async def _async_check_flows_generation():
+async def _process_flows():
     flow_service = Container.flow_service()
     post_service = Container.post_service()
 
@@ -26,50 +24,31 @@ async def _async_check_flows_generation():
             logger.error(f"Failed to process flow {flow.id}: {e}")
             continue
 
+async def _publish_scheduled_posts():
+    post_service = Container.post_service()
+    logger.info("Checking for scheduled posts...")
+
+    published = await post_service.publish_scheduled_posts()
+
+    if published:
+        logger.info(f"Successfully published {len(published)} posts")
+    else:
+        logger.info("No posts to publish")
+
+    return [post.dict() for post in published]
+
 
 @shared_task(bind=True, max_retries=3)
-def check_flows_generation(self):
+def run_scheduled_jobs(self):
+    """
+    Unified Celery task:
+    - Processes flows for generation
+    - Publishes scheduled posts
+    """
     try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(_async_check_flows_generation())
+        async_to_sync(_process_flows)()
+        result = async_to_sync(_publish_scheduled_posts)()
+        return result
     except Exception as e:
-        logger.error(f"Task check_flows_generation failed: {e}")
+        logger.error(f"run_scheduled_jobs failed: {e}", exc_info=True)
         self.retry(exc=e, countdown=60)
-    finally:
-        loop.close()
-
-
-@shared_task(bind=True, max_retries=3)
-def check_scheduled_posts(self):
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        try:
-            result = loop.run_until_complete(_async_check_scheduled_posts())
-            return result
-        finally:
-            loop.close()
-
-    except Exception as e:
-        logger.error(f"Task check_scheduled_posts failed: {e}", exc_info=True)
-        self.retry(exc=e, countdown=60)
-
-
-async def _async_check_scheduled_posts():
-    try:
-        post_service = Container.post_service()
-        logger.info("Checking for scheduled posts...")
-
-        published = await post_service.publish_scheduled_posts()
-        if published:
-            logger.info(f"Successfully published {len(published)} posts")
-        else:
-            logger.info("No posts to publish")
-
-        return [post.dict() for post in published]
-
-    except Exception as e:
-        logger.error(f"Error publishing scheduled posts: {e}", exc_info=True)
-        raise

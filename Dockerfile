@@ -10,6 +10,7 @@ COPY pyproject.toml uv.lock* ./
 
 RUN pip install --user --no-cache-dir .[prod,dev]
 
+
 FROM python:3.11-slim-bookworm as base
 
 WORKDIR /app
@@ -24,16 +25,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PATH=/root/.local/bin:$PATH
-ENV PYTHONPATH="${PYTHONPATH}:/app"
+ENV PYTHONPATH="/app"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=UTF-8
 
 COPY . .
 
+
 FROM base AS admin_panel
-WORKDIR /admin_panel
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
+WORKDIR /app/admin_panel
+CMD ["gunicorn", "admin_panel.core.wsgi:application", "--bind", "0.0.0.0:8000"]
+
 
 FROM base AS bot
-WORKDIR /bot
-CMD ["python", "-m", "main"]
+WORKDIR /app/bot
+CMD ["python", "watcher.py"]

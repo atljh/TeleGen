@@ -39,7 +39,7 @@ from bot.services.web.rss_url_manager import RssUrlManager
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
-        modules=["handlers", "dialogs", "bot.services.post.post_service"]
+        modules=["bot.handlers", "bot.dialogs", "bot.services.post.post_service"]
     )
 
     session = providers.Singleton(AiohttpSession)
