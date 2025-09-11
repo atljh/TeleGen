@@ -1,6 +1,6 @@
 import logging
+import asyncio
 from celery import shared_task
-from asgiref.sync import async_to_sync
 
 from bot.containers import Container
 from bot.generator_worker import _start_telegram_generations
@@ -46,9 +46,13 @@ def run_scheduled_jobs(self):
     - Publishes scheduled posts
     """
     try:
-        async_to_sync(_process_flows)()
-        result = async_to_sync(_publish_scheduled_posts)()
+        async def runner():
+            await _process_flows()
+            return await _publish_scheduled_posts()
+
+        result = asyncio.run(runner())
         return result
+
     except Exception as e:
         logger.error(f"run_scheduled_jobs failed: {e}", exc_info=True)
         self.retry(exc=e, countdown=60)

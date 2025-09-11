@@ -1,12 +1,11 @@
 import logging
-from typing import Optional
-
 from asgiref.sync import sync_to_async
 
 from admin_panel.admin_panel.models import Flow
 from bot.database.models.channel import ChannelDTO
 from bot.database.repositories import ChannelRepository, UserRepository
 from bot.services.logger_service import get_logger
+from bot.services.web.rss_service import RssService
 
 
 class ChannelService:
@@ -14,7 +13,7 @@ class ChannelService:
         self,
         channel_repository: ChannelRepository,
         user_repository: UserRepository,
-        rss_service: "RssService",
+        rss_service: RssService,
     ):
         self.channel_repository = channel_repository
         self.user_repository = user_repository
@@ -26,7 +25,7 @@ class ChannelService:
         user_telegram_id: int,
         channel_id: str,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> tuple[ChannelDTO, bool]:
         """
         Get or create channel for user
