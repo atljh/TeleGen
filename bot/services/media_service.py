@@ -1,8 +1,8 @@
 import os
 import uuid
 import shutil
-import logging
 import tempfile
+import logging
 from urllib.parse import urlparse
 
 import aiofiles
@@ -13,24 +13,19 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 class MediaService:
-    async def _download_remote_media(
-        self,
-        url: str,
-        media_type: str
-    ) -> str:
+    def __init__(self):
+        self.image_dir = "posts/images"
+        self.video_dir = "posts/videos"
+
+    async def _download_remote_media(self, url: str, media_type: str) -> str:
         headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/125.0.0.0 Safari/537.36"
-            ),
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/125.0.0.0 Safari/537.36",
             "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
             "Connection": "keep-alive",
-            "Sec-Fetch-Dest": "image",
-            "Sec-Fetch-Mode": "no-cors",
-            "Sec-Fetch-Site": "cross-site",
             "Referer": "https://www.google.com/",
         }
 
@@ -46,58 +41,51 @@ class MediaService:
         temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
 
         try:
-            async with httpx.AsyncClient(
-                timeout=30,
-                follow_redirects=True,
-                headers=headers
-            ) as client:
+            async with httpx.AsyncClient(timeout=30, follow_redirects=True, headers=headers) as client:
                 resp = await client.get(url)
                 resp.raise_for_status()
 
                 async with aiofiles.open(temp_file, "wb") as f:
-                    f.write(resp.content)
+                    await f.write(resp.content)
 
             return temp_file
-
-        except httpx.HTTPStatusError as e:
-            logger.warning(f"HTTP error {e.response.status_code} for URL: {url}")
-            raise
         except Exception as e:
             logger.error(f"Failed to download media from {url}: {str(e)}")
             raise
 
     def _validate_image(self, file_path: str) -> None:
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Image not found: {file_path}")
         try:
             with Image.open(file_path) as img:
                 img.verify()
-        except (UnidentifiedImageError, IOError) as e:
-            raise ValueError(f"Invalid image file: {file_path} - {str(e)}")
+        except (IOError, UnidentifiedImageError) as e:
+            raise ValueError(f"Invalid image: {file_path} - {str(e)}")
 
     def _get_media_extension(self, file_path: str, media_type: str) -> str:
         ext = os.path.splitext(file_path)[1].lower()
         if ext:
             return ext
-
         return ".jpg" if media_type == "images" else ".mp4"
 
-    def _get_permanent_media_path(
-        self,
-        media_type: str,
-        extension: str
-    ) -> str:
-        media_dir = "posts/images" if media_type == "images" else "posts/videos"
+    def _get_permanent_media_path(self, media_type: str, extension: str) -> str:
+        media_dir = self.image_dir if media_type == "images" else self.video_dir
         permanent_dir = os.path.join(settings.MEDIA_ROOT, media_dir)
         os.makedirs(permanent_dir, exist_ok=True)
-
         filename = f"{uuid.uuid4()}{extension}"
         return os.path.join(media_dir, filename)
 
-    async def _store_media_permanently(
-        self,
-        file_path_or_url: str,
-        media_type: str
-    ) -> str:
+    def _store_local_media(self, file_path: str, media_type: str) -> str:
+        if media_type == "images":
+            self._validate_image(file_path)
 
+        extension = self._get_media_extension(file_path, media_type)
+        permanent_path = self._get_permanent_media_path(media_type, extension)
+
+        shutil.copy2(file_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
+        return permanent_path
+
+    async def store_media(self, file_path_or_url: str, media_type: str) -> str:
         temp_file = None
         original_is_url = file_path_or_url.startswith(("http://", "https://"))
 
@@ -108,86 +96,16 @@ class MediaService:
             else:
                 file_path = file_path_or_url
 
-            if media_type == "images":
-                self._validate_image(file_path)
-
-            extension = self._get_media_extension(file_path, media_type)
-            permanent_path = self._get_permanent_media_path(media_type, extension)
-
-            shutil.copy2(file_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
-
-            logger.info(f"Successfully stored media: {permanent_path}")
-            return permanent_path
-
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 403:
-                logger.warning(f"Access denied (403) for URL: {file_path_or_url}")
-                return await self._try_alternative_download(file_path_or_url, media_type)
-            raise
+            stored_path = self._store_local_media(file_path, media_type)
+            logger.info(f"Successfully stored media: {stored_path}")
+            return stored_path
 
         except Exception as e:
             logger.error(f"Failed to store media {file_path_or_url}: {str(e)}")
             raise
-
         finally:
             if temp_file and os.path.exists(temp_file):
                 try:
                     os.remove(temp_file)
                 except Exception as e:
                     logger.warning(f"Failed to remove temp file {temp_file}: {str(e)}")
-
-
-    async def _try_alternative_download(
-        self,
-        url: str,
-        media_type: str
-    ) -> str:
-        try:
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/91.0.4472.124 Safari/537.36"
-                ),
-                "Accept": "*/*",
-                "Referer": "https://www.google.com/",
-            }
-
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.get(url, headers=headers)
-                resp.raise_for_status()
-
-                ext = os.path.splitext(urlparse(url).path)[1] or ".jpg"
-                temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
-
-                async with aiofiles.open(temp_file, "wb") as f:
-                    await f.write(resp.content)
-
-                return await self._store_local_media(temp_file, media_type, is_temp=True)
-
-        except Exception as e:
-            logging.warning(f"Alternative download failed for {url}: {str(e)}")
-            raise
-
-    async def _store_local_media(
-        self,
-        file_path: str,
-        media_type: str,
-        is_temp: bool = False
-    ) -> str:
-        try:
-            if media_type == "images":
-                self._validate_image(file_path)
-
-            extension = self._get_media_extension(file_path, media_type)
-            permanent_path = self._get_permanent_media_path(media_type, extension)
-
-            shutil.copy2(file_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
-            return permanent_path
-
-        finally:
-            if is_temp and os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                except Exception:
-                    pass

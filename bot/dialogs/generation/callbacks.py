@@ -158,7 +158,7 @@ async def on_force_generate(
         process = subprocess.Popen(
             [
                 "python",
-                "generator_worker.py",
+                "/app/bot/generator_worker.py",
                 str(flow.id),
                 str(callback.message.chat.id),
                 str(status_msg.message_id),

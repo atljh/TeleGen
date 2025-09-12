@@ -104,7 +104,7 @@ class PostGenerationService:
                     continue
 
                 media_list = self._prepare_media_list(post_dto)
-                post = await self.post_service.create_with_media(
+                post = await self.post_service.create_post(
                     flow=flow,
                     content=post_dto.content,
                     source_url=post_dto.source_url,

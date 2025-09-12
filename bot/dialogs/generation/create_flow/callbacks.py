@@ -384,7 +384,7 @@ async def start_generation_process(
         process = subprocess.Popen(
             [
                 "python",
-                "generator_worker.py",
+                "/app/bot/generator_worker.py",
                 str(flow.id),
                 str(callback.message.chat.id),
                 str(status_msg.message_id),

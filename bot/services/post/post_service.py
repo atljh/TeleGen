@@ -1,10 +1,10 @@
 from aiogram import Bot
 from datetime import datetime
-from typing import Optional
 
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import FlowRepository, PostRepository
+from bot.services.media_service import MediaService
 from bot.services.post.base import PostBaseService
 from bot.services.post.generation import PostGenerationService
 from bot.services.post.publish import PostPublishingService
@@ -21,10 +21,11 @@ class PostService:
         userbot_service: EnhancedUserbotService,
         post_repository: PostRepository,
         flow_repository: FlowRepository,
-    ):
+    ) -> None:
         self.bot = bot
         self.flow_repo = flow_repository
-        self.base_service = PostBaseService(post_repository)
+        self.media_service = MediaService()
+        self.base_service = PostBaseService(post_repository, self.media_service)
         self.publishing_service = PostPublishingService(bot, self.base_service)
         self.scheduling_service = PostSchedulingService(
             self.base_service, self.publishing_service
@@ -40,7 +41,7 @@ class PostService:
         return await self.base_service.update_post(post_id, **kwargs)
 
     async def delete_post(self, post_id: int) -> None:
-        return await self.base_service.delete_post(post_id)
+        await self.base_service.delete_post(post_id)
 
     async def get_all_posts_in_flow(
         self, flow_id: int, status: PostStatus
@@ -65,12 +66,15 @@ class PostService:
         self,
         flow_id: int,
         content: str,
+        original_content: str,
         original_link: str,
         original_date: datetime,
-        original_content: str,
-        source_url: Optional[str] = None,
-        scheduled_time: Optional[datetime] = None,
-        media_list: Optional[list[str]] = None,
+        source_url: str | None = None,
+        image_paths: list[str] | None = None,
+        video_path: str | None = None,
+        status: PostStatus | None = None,
+        scheduled_time: datetime | None = None,
+        source_id: str | None = None,
     ) -> PostDTO:
         if not await self.flow_repo.exists(flow_id):
             raise PostNotFoundError(f"Flow with id {flow_id} not found")
@@ -86,5 +90,9 @@ class PostService:
             original_link=original_link,
             original_date=original_date,
             source_url=source_url,
-            media_list=media_list,
+            image_paths=image_paths,
+            video_path=video_path,
+            status=status,
+            scheduled_time=scheduled_time,
+            source_id=source_id,
         )
