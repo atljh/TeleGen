@@ -5,13 +5,24 @@ from datetime import datetime
 from typing import Optional
 
 
-from admin_panel.admin_panel.models import Post
+from admin_panel.admin_panel.models import Post, PostImage
 from bot.database.exceptions import PostNotFoundError
 from bot.database.models import MediaType
 
 logger = logging.getLogger(__name__)
 
 class PostRepository:
+    async def save(self, post: Post) -> Post:
+        await post.asave()
+        return post
+
+    async def save_with_relations(self, post: Post) -> Post:
+        await post.asave()
+        if hasattr(post, "images"):
+            for img in post.images:
+                await img.asave()
+        return post
+    
     async def get(self, post_id: int) -> Post:
         try:
             query = Post.objects.select_related("flow").prefetch_related("images")
