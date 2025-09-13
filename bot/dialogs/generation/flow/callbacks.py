@@ -1,8 +1,9 @@
+import re
+import os
 import asyncio
 import logging
-import os
-import re
 from datetime import datetime, time
+from django.utils import timezone
 
 import pytz
 from aiogram.types import CallbackQuery, ContentType, Message
@@ -312,7 +313,9 @@ async def process_time_selection(manager: DialogManager):
     minute = manager.dialog_data.get("selected_minute", 0)
 
     ukraine_tz = pytz.timezone("Europe/Kiev")
+    
     naive_datetime = datetime.combine(date_obj, time(hour=hour, minute=minute))
+    
     scheduled_datetime = ukraine_tz.localize(naive_datetime)
 
     manager.dialog_data["scheduled_datetime"] = scheduled_datetime
@@ -322,30 +325,49 @@ async def process_time_selection(manager: DialogManager):
 
     await manager.switch_to(FlowMenu.confirm_schedule)
 
-
 async def confirm_schedule(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    try:
-        dialog_data = await paging_getter(manager)
-        start_data = manager.start_data or {}
+    # try:
+    dialog_data = await paging_getter(manager)
+    current_post = dialog_data["post"]
+    post_id = current_post["id"]
 
-        current_post = dialog_data["post"]
-        post_id = current_post["id"]
+    scheduled_datetime = manager.dialog_data.get("scheduled_datetime")
+    
+    if not scheduled_datetime:
+        await callback.answer("❌ Час не вибрано")
+        return
 
-        scheduled_datetime = manager.dialog_data["scheduled_datetime"]
+    ukraine_tz = pytz.timezone("Europe/Kiev")
+    
+    if isinstance(scheduled_datetime, str):
+        scheduled_datetime = datetime.fromisoformat(scheduled_datetime.replace('Z', '+00:00'))
+    
+    if timezone.is_naive(scheduled_datetime):
+        scheduled_datetime = ukraine_tz.localize(scheduled_datetime)
+    else:
+        scheduled_datetime = scheduled_datetime.astimezone(ukraine_tz)
 
-        post_service = Container.post_service()
-        await post_service.schedule_post(post_id, scheduled_datetime)
+    if scheduled_datetime <= timezone.now():
+        await callback.answer("❌ Час має бути у майбутньому")
+        return
 
-        await callback.message.answer(
-            f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
-        )
-        await manager.switch_to(FlowMenu.posts_list)
-    except Exception as e:
-        logger.error(f"Error confirming schedule: {e}")
-        await callback.answer(f"❌ Помилка: {str(e)}")
-        await manager.switch_to(FlowMenu.select_date)
+    post_service = Container.post_service()
+    await post_service.schedule_post(post_id, scheduled_datetime)
+
+    await callback.message.answer(
+        f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
+    )
+    await manager.switch_to(FlowMenu.posts_list)
+        
+    # except ValueError as e:
+    #     logger.error(f"Invalid datetime format: {e}")
+    #     await callback.answer("❌ Невірний формат часу")
+    # except Exception as e:
+    #     logger.error(f"Error confirming schedule: {e}")
+    #     await callback.answer(f"❌ Помилка: {str(e)}")       
+    await manager.switch_to(FlowMenu.select_date)
 
 
 async def on_post_info(callback: CallbackQuery, button: Button, manager: DialogManager):

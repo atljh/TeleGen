@@ -192,8 +192,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             elif post.get("video_url"):
                 media_info = {"type": "video", "url": post["video_url"], "path": get_media_path(post["video_url"])}
 
-            if media_info:
-                logging.info(f"{media_info}, {media_info.get('path')}")
             if media_info and media_info.get("path") and os.path.exists(media_info["path"]):    
                 data["media_content"] = MediaAttachment(path=media_info["path"], type=media_info["type"])
 

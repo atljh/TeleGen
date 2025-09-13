@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
-
+from django.utils import timezone
+import pytz
 
 from asgiref.sync import sync_to_async
 
@@ -21,14 +22,23 @@ class PostSchedulingService:
         self.publishing_service = publishing_service
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
-        if scheduled_time < datetime.now():
+
+        
+        if timezone.is_naive(scheduled_time):
+            ukraine_tz = pytz.timezone('Europe/Kiev')
+            scheduled_time = ukraine_tz.localize(scheduled_time)
+        
+        scheduled_time_utc = scheduled_time.astimezone(pytz.UTC)
+        current_time_utc = timezone.now()
+        
+        if scheduled_time_utc < current_time_utc:
             raise InvalidOperationError("Scheduled time cannot be in the past")
 
         post = await self.post_service.get_post(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
 
-        await self.post_service.post_repo.schedule_post(post_id, scheduled_time)
+        await self.post_service.post_repo.schedule_post(post_id, scheduled_time_utc)
         return await self.post_service.get_post(post_id)
 
     @sync_to_async

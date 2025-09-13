@@ -3,11 +3,12 @@
 import logging
 from datetime import datetime
 from typing import Optional
-
+from django.utils import timezone
 
 from admin_panel.admin_panel.models import Post, PostImage
 from bot.database.exceptions import PostNotFoundError
 from bot.database.models import MediaType
+from bot.database.models.post import PostStatus
 
 logger = logging.getLogger(__name__)
 
@@ -98,3 +99,13 @@ class PostRepository:
             post.video = None
         await post.asave()
         return post
+
+    async def schedule_post(self, post_id: int, scheduled_time: datetime) -> Post:
+        post = await self.get(post_id)
+        
+        if timezone.is_naive(scheduled_time):
+            scheduled_time = timezone.make_aware(scheduled_time)
+        
+        post.scheduled_time = scheduled_time
+        post.status = PostStatus.SCHEDULED
+        return await self.save(post)
