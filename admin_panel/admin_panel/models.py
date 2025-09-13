@@ -216,9 +216,9 @@ class Post(models.Model):
 
     @property
     def media_type(self):
-        if self.images:
+        if self.images.exists():
             return "image"
-        elif self.videos:
+        elif self.videos.exists():
             return "video"
         return None
 

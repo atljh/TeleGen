@@ -4,11 +4,14 @@ import shutil
 import tempfile
 import logging
 from urllib.parse import urlparse
+from asgiref.sync import sync_to_async
 
 import aiofiles
 import httpx
 from PIL import Image, UnidentifiedImageError
 from django.conf import settings
+
+from admin_panel.admin_panel.models import Post, PostImage
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +52,8 @@ class MediaService:
                     await f.write(resp.content)
 
             return temp_file
-        except Exception as e:
-            logger.error(f"Failed to download media from {url}: {str(e)}")
+        except Exception:
+            logger.error(f"Failed to download media from {url}")
             raise
 
     def _validate_image(self, file_path: str) -> None:
@@ -70,6 +73,7 @@ class MediaService:
 
     def _get_permanent_media_path(self, media_type: str, extension: str) -> str:
         media_dir = self.image_dir if media_type == "images" else self.video_dir
+        logger.warning(f'{media_dir} | {media_type} | {extension}')
         permanent_dir = os.path.join(settings.MEDIA_ROOT, media_dir)
         os.makedirs(permanent_dir, exist_ok=True)
         filename = f"{uuid.uuid4()}{extension}"
@@ -84,6 +88,51 @@ class MediaService:
 
         shutil.copy2(file_path, os.path.join(settings.MEDIA_ROOT, permanent_path))
         return permanent_path
+
+    async def process_media_list(
+        self,
+        post: Post,
+        media_list: list[dict] | None = None
+    ) -> dict[str, list[str]]:
+        """
+        Saves media (images and videos) and links them to ORM post.
+        Returns stored paths.
+        media_list = [{"path": str, "type": "image"|"video", "order": int}]
+        """
+        stored_images: list[str] = []
+        stored_videos: list[str] = []
+
+        if not media_list:
+            return {"images": stored_images, "videos": stored_videos}
+
+        for media in media_list:
+            try:
+                path = media["path"]
+                media_type = media["type"]
+
+                stored_path = await self.store_media(path, media_type)
+
+                if media_type == "image":
+                    stored_images.append(stored_path)
+                elif media_type == "video":
+                    stored_videos.append(stored_path)
+                else:
+                    logger.warning(f"Unknown media type: {media_type} for {path}")
+
+            except Exception as e:
+                logger.error(f"Failed to process media {media.get('path')}: {str(e)}")
+                continue
+
+            for order, img_path in enumerate(stored_images):
+                await sync_to_async(PostImage.objects.create)(post=post, image=img_path, order=order)
+
+            if stored_videos:
+                post.video = stored_videos[0]
+                await sync_to_async(post.save)()
+
+
+        return {"images": stored_images, "videos": stored_videos}
+
 
     async def store_media(self, file_path_or_url: str, media_type: str) -> str:
         temp_file = None

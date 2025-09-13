@@ -1,14 +1,16 @@
-from datetime import datetime
+import logging
 from typing import Any
-
+from datetime import datetime
 from asgiref.sync import sync_to_async
-from admin_panel.admin_panel.models import Flow, Post, PostImage
+
+from admin_panel.admin_panel.models import Flow, PostImage, Post
 from bot.database.exceptions import PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository
 from bot.factories.post_factory import PostFactory
 from bot.services.media_service import MediaService
 
+logger = logging.getLogger(__name__)
 
 class PostBaseService:
     def __init__(
@@ -25,7 +27,7 @@ class PostBaseService:
             raise PostNotFoundError(f"Post with id {post_id} not found")
 
         images = await sync_to_async(lambda: list(post.images.all().order_by("order")))()
-        dto = PostDTO.from_orm(post)
+        dto = await PostDTO.from_orm_async(post)
         dto.images = images
         return dto
 
@@ -33,25 +35,20 @@ class PostBaseService:
         self,
         flow: Flow,
         content: str,
-        original_content: str,
-        original_link: str,
-        original_date: datetime,
+        original_content: str | None = None,
+        original_link: str | None = None,
+        original_date: datetime | None = None,
         source_url: str | None = None,
-        image_paths: list[str] | None = None,
-        video_path: str | None = None,
+        media_list: list[dict] | None = None,
         status: PostStatus | None = None,
         scheduled_time: datetime | None = None,
-        source_id: str | None = None,
-    ) -> PostDTO:
-
-        stored_images = [self.media_service.save_image(p) for p in image_paths or []]
-        stored_video = self.media_service.save_video(video_path) if video_path else None
-
+        source_id: str | None
+        = None,
+    ) -> Post:
         post = PostFactory.create_post(
             flow=flow,
             content=content,
-            image_paths=stored_images,
-            status=status,
+            status=status or PostStatus.DRAFT,
             scheduled_time=scheduled_time,
             source_url=source_url,
             original_content=original_content,
@@ -60,11 +57,9 @@ class PostBaseService:
             source_id=source_id,
         )
 
-        if stored_video:
-            post.video = stored_video
-
-        post = await self.post_repo.save_with_images(post, stored_images)
-        return PostDTO.from_orm(post)
+        post = await self.post_repo.save(post)
+        await self.media_service.process_media_list(post, media_list)
+        return post
 
     async def update_post(
         self,
@@ -97,7 +92,7 @@ class PostBaseService:
         await sync_to_async(post.save)()
         return PostDTO.from_orm(post)
 
-    async def _update_post_images(self, post: Post, images: list[dict[str, Any]]) -> None:
+    async def _update_post_images(self, post: PostDTO, images: list[dict[str, Any]]) -> None:
         await sync_to_async(lambda: post.images.all().delete())()
         for img_data in images:
             await sync_to_async(PostImage.objects.create)(
@@ -120,7 +115,7 @@ class PostBaseService:
         result: list[PostDTO] = []
         for post in posts:
             images = await sync_to_async(lambda p=post: list(p.images.all().order_by("order")))()
-            dto = PostDTO.from_orm(post)
+            dto = await PostDTO.from_orm_async(post)
             dto.images = images
             result.append(dto)
         return result

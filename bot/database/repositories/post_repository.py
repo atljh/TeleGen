@@ -15,13 +15,6 @@ class PostRepository:
     async def save(self, post: Post) -> Post:
         await post.asave()
         return post
-
-    async def save_with_relations(self, post: Post) -> Post:
-        await post.asave()
-        if hasattr(post, "images"):
-            for img in post.images:
-                await img.asave()
-        return post
     
     async def get(self, post_id: int) -> Post:
         try:

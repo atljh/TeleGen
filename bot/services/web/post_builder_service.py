@@ -12,7 +12,6 @@ class PostBuilderService:
         self, raw_data: dict, processed_content: str, flow: FlowDTO
     ) -> PostDTO:
         signature = f"\n\n{flow.signature}" if flow.signature else ""
-
         return PostDTO(
             id=None,
             flow_id=flow.id,
