@@ -54,7 +54,7 @@ def format_post_datetime(dt: Optional[datetime]) -> str:
 
 def build_post_dict(post: Any, idx: int) -> dict[str, Any]:
     images = ensure_list(getattr(post, "images", []))
-    video_url = getattr(post, "video_url", getattr(post, "video", None))
+    videos = getattr(post, "videos", getattr(post, "videos", None))
     content = getattr(post, "content", "") or ""
     original_link = getattr(post, "original_link", "") or ""
     original_date = getattr(post, "original_date", "") or ""
@@ -80,10 +80,10 @@ def build_post_dict(post: Any, idx: int) -> dict[str, Any]:
         "created_time": created_time,
         "status": post_stats.get(getattr(post, "status", PostStatus.DRAFT), ""),
         "full_content": content,
-        "has_media": bool(images or video_url),
+        "has_media": bool(images or videos),
         "images_count": images_count,
         "images": images,
-        "video_url": video_url,
+        "videos": videos,
         "is_album": is_album,
         "original_date": original_date,
         "original_link": original_link,
@@ -97,7 +97,6 @@ def build_post_dict(post: Any, idx: int) -> dict[str, Any]:
 async def load_raw_posts(flow_id: int, status: PostStatus) -> list[Any]:
     post_service = Container.post_service()
     raw_posts = await post_service.get_all_posts_in_flow(flow_id, status=status)
-
     if not isinstance(raw_posts, (list, tuple)):
         try:
             raw_posts = await sync_to_async(list)(raw_posts)
@@ -111,7 +110,6 @@ async def build_posts_list(flow_id: int, status: PostStatus) -> list[dict[str, A
     posts: list[dict[str, Any]] = []
 
     for idx, post in enumerate(raw_posts):
-        images = ensure_list(getattr(post, "images", []))
         try:
             post_dict = build_post_dict(post, idx=idx)
             posts.append(post_dict)
@@ -186,7 +184,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
         if not post.get("is_album"):
             media_info: Optional[dict[str, Any]] = None
             images = post.get("images", [])
-
             if images and len(images) == 1:
                 first_image = images[0]
                 image_url = getattr(first_image, "url", None)
@@ -195,7 +192,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             elif post.get("video_url"):
                 media_info = {"type": "video", "url": post["video_url"], "path": get_media_path(post["video_url"])}
 
-            if media_info and media_info.get("path") and os.path.exists(media_info["path"]):
+            if media_info:
+                logging.info(f"{media_info}, {media_info.get('path')}")
+            if media_info and media_info.get("path") and os.path.exists(media_info["path"]):    
                 data["media_content"] = MediaAttachment(path=media_info["path"], type=media_info["type"])
 
     if data["post"].get("is_album"):

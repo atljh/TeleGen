@@ -118,8 +118,6 @@ class PostBaseService:
 
         result: list[PostDTO] = []
         for post in posts:
-            images = await sync_to_async(lambda p=post: list(p.images.all().order_by("order")))()
             dto = await PostDTO.from_orm_async(post)
-            dto.images = images
             result.append(dto)
         return result
