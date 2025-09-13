@@ -19,7 +19,7 @@ class PostFactory:
     ) -> Post:
         if original_content is None:
             original_content = ""
-        
+
         post = Post(
             flow=flow,
             content=content,

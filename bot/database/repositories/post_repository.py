@@ -15,7 +15,7 @@ class PostRepository:
     async def save(self, post: Post) -> Post:
         await post.asave()
         return post
-    
+
     async def get(self, post_id: int) -> Post:
         try:
             query = Post.objects.select_related("flow").prefetch_related("images")
