@@ -1,6 +1,7 @@
+from typing import Any
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Self
+from asgiref.sync import sync_to_async
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -21,6 +22,11 @@ class PostImageDTO(BaseModel):
     order: int = Field(default=0, ge=0)
 
 
+class PostVideoDTO(BaseModel):
+    url: str
+    order: int = Field(default=0, ge=0)
+
+
 class PostDTO(BaseModel):
     id: int | None = None
     flow_id: int
@@ -37,7 +43,7 @@ class PostDTO(BaseModel):
     media_type: MediaType | None = None
     media_url: str | None = None
     images: list[PostImageDTO] = Field(default_factory=list, alias="images_list")
-    video_url: str | None = None
+    videos: list[PostVideoDTO] = Field(default_factory=list, alias="videos_list")
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -57,14 +63,11 @@ class PostDTO(BaseModel):
             if media["type"] == "image"
         ]
 
-        video_url = next(
-            (
-                media["path"]
-                for media in raw_post.get("media", [])
-                if media["type"] == "video"
-            ),
-            None,
-        )
+        videos = [
+            PostVideoDTO(url=media["path"], order=i)
+            for i, media in enumerate(raw_post.get("media", []))
+            if media["type"] == "video"
+        ]
 
         status = PostStatus.DRAFT
         if raw_post.get("is_published", False):
@@ -76,7 +79,7 @@ class PostDTO(BaseModel):
             content=raw_post.get("text", ""),
             source_url=raw_post.get("source", {}).get("link"),
             images=images,
-            video_url=video_url,
+            videos=videos,
             status=status,
             original_link=raw_post.get("original_link"),
             original_date=raw_post.get("original_date"),
@@ -86,23 +89,33 @@ class PostDTO(BaseModel):
         )
 
     @classmethod
-    def from_orm(cls, obj: Any) -> Self:
+    async def from_orm_async(cls, obj: Any) -> "PostDTO":
         data = {}
+
         for field in cls.model_fields:
-            value = getattr(obj, field, None)
-
             if field == "images":
+                images = await sync_to_async(list)(obj.images.all().order_by("order"))
                 value = [
-                    PostImageDTO(url=img.image.url, order=img.order)
-                    for img in obj.images.all()
+                    PostImageDTO(url=str(img.image), order=img.order)
+                    for img in images
                 ]
-
-            elif field == "media_url":
-                value = obj.first_image_url or (obj.video.url if obj.video else None)
-
-            elif field == "video_url":
-                value = obj.video.url if obj.video else None
-
+            elif field == "videos":
+                videos = await sync_to_async(list)(obj.videos.all().order_by("order"))
+                value = [
+                    PostVideoDTO(url=str(video.video), order=video.order)
+                    for video in videos
+                ]
+            elif field == "media_type":
+                images_exist = await sync_to_async(obj.images.exists)()
+                videos_exist = await sync_to_async(obj.videos.exists)()
+                if images_exist and not videos_exist:
+                    value = MediaType.IMAGE
+                elif videos_exist and not images_exist:
+                    value = MediaType.VIDEO
+                elif images_exist and videos_exist:
+                    value = MediaType.VIDEO
+                else:
+                    value = None
             else:
                 value = getattr(obj, field, None)
 

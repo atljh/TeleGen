@@ -1,17 +1,16 @@
 from django.db import models
 from django.utils import timezone
 
-
 class User(models.Model):
     telegram_id = models.BigIntegerField(unique=True, verbose_name="Telegram ID")
     username = models.CharField(
-        max_length=100, null=True, blank=True, verbose_name="Telegram username"
+        max_length=100, blank=True, verbose_name="Telegram username"
     )
     first_name = models.CharField(
-        max_length=100, null=True, blank=True, verbose_name="Ім'я"
+        max_length=100, blank=True, verbose_name="Ім'я"
     )
     last_name = models.CharField(
-        max_length=100, null=True, blank=True, verbose_name="Прізвище"
+        max_length=100, blank=True, verbose_name="Прізвище"
     )
     subscription_status = models.BooleanField(
         default=False, verbose_name="Статус підписки"
@@ -21,9 +20,9 @@ class User(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     subscription_type = models.CharField(
-        max_length=50, null=True, blank=True, verbose_name="Тип підписки"
+        max_length=50, blank=True, verbose_name="Тип підписки"
     )
-    payment_method = models.CharField(max_length=50, null=True, blank=True)
+    payment_method = models.CharField(max_length=50, blank=True)
 
     def __str__(self):
         return f"{self.username} (Telegram ID: {self.telegram_id})"
@@ -48,7 +47,7 @@ class Channel(models.Model):
     )
     channel_id = models.CharField(max_length=100, unique=True, verbose_name="ID каналу")
     name = models.CharField(max_length=255, verbose_name="Назва каналу")
-    description = models.TextField(blank=True, null=True, verbose_name="Опис каналу")
+    description = models.TextField(blank=True, verbose_name="Опис каналу")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     is_active = models.BooleanField(default=True, verbose_name="Активний")
     notifications = models.BooleanField(default=False, verbose_name="Сповiщення")
@@ -102,13 +101,12 @@ class Flow(models.Model):
         choices=GenerationFrequency.choices,
         verbose_name="Частота генерації",
     )
-    signature = models.TextField(null=True, blank=True, verbose_name="Підпис до постів")
+    signature = models.TextField(blank=True, verbose_name="Підпис до постів")
     flow_volume = models.PositiveSmallIntegerField(
         default=5, verbose_name="Кількість постів у флоу"
     )
     ad_time = models.CharField(
         max_length=5,
-        null=True,
         blank=True,
         verbose_name="Час для рекламних топів (HH:MM)",
     )
@@ -152,6 +150,23 @@ class PostImage(models.Model):
     def __str__(self):
         return f"Зображення для поста {self.post.id}"
 
+class PostVideo(models.Model):
+    post = models.ForeignKey(
+        "Post", on_delete=models.CASCADE, related_name="videos", verbose_name="Пост"
+    )
+    image = models.FileField(
+        upload_to="posts/videos/", verbose_name="Вiдео", max_length=255
+    )
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортування")
+
+    class Meta:
+        verbose_name = "Вiдео поста"
+        verbose_name_plural = "Вiдео постів"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"Вiдео для поста {self.post.id}"
+
 
 class Post(models.Model):
     DRAFT = "draft"
@@ -169,7 +184,7 @@ class Post(models.Model):
     )
     content = models.TextField(verbose_name="Контент")
     original_content = models.TextField(
-        verbose_name="Оригiнальний текст", blank=True, null=True
+        verbose_name="Оригiнальний текст", blank=True, default=""
     )
     status = models.CharField(
         max_length=10, choices=STATUS_CHOICES, default=DRAFT, verbose_name="Статус"
@@ -186,7 +201,7 @@ class Post(models.Model):
         blank=True, null=True, verbose_name="Посилання на джерело"
     )
     original_link = models.CharField(
-        blank=True, null=True, verbose_name="Посилання на оригiнальний пост"
+        blank=True, verbose_name="Посилання на оригiнальний пост"
     )
     publication_date = models.DateTimeField(
         blank=True, null=True, verbose_name="Дата публікації"
@@ -198,39 +213,19 @@ class Post(models.Model):
         blank=True, null=True, verbose_name="Дата оригiнальної публікації"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
-    video = models.FileField(
-        upload_to="posts/videos/", blank=True, null=True, verbose_name="Відео"
-    )
 
     @property
     def media_type(self):
-        if self.images.exists():
+        if self.images:
             return "image"
-        elif self.video:
+        elif self.videos:
             return "video"
         return None
-
-    @property
-    def first_image_url(self):
-        first_image = self.images.first()
-        if first_image:
-            return first_image.image.url
-        return None
-
-    @property
-    def image_urls(self):
-        return [img.image.url for img in self.images.all()]
 
     @property
     def images_list(self):
         return list(self.images.all())
 
-    def save(self, *args, **kwargs):
-        if self.status == self.PUBLISHED and not self.publication_date:
-            self.publication_date = timezone.now()
-        elif self.scheduled_time and self.status != self.PUBLISHED:
-            self.status = self.SCHEDULED
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"
