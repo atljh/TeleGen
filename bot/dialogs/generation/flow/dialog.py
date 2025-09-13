@@ -19,6 +19,8 @@ from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.flow.states import FlowMenu
 
+from bot.utils.constants.buttons import BACK_BUTTON
+
 from .callbacks import (
     back_to_post_view,
     back_to_select_type,
@@ -120,7 +122,7 @@ def flow_dialog() -> Dialog:
             ),
             Row(
                 Button(
-                    Const("🔙 Назад"),
+                    BACK_BUTTON,
                     id="go_back_to_channels",
                     on_click=go_back_to_channels,
                 )
@@ -139,7 +141,7 @@ def flow_dialog() -> Dialog:
                 "<b>Дата публікації: {original_date}</b>"
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             LinkPreview(is_disabled=True),
             getter=post_info_getter,
@@ -159,7 +161,7 @@ def flow_dialog() -> Dialog:
             ),
             Row(
                 Button(
-                    Const("🔙 Назад"), id="on_back_to_posts", on_click=on_back_to_posts
+                    BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts
                 )
             ),
             MessageInput(process_edit_input),
@@ -172,7 +174,7 @@ def flow_dialog() -> Dialog:
             Calendar(id="calendar", on_click=select_date),
             Row(
                 Button(
-                    Const("🔙 Назад"), id="on_back_to_posts", on_click=on_back_to_posts
+                    BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts
                 )
             ),
             state=FlowMenu.select_date,
@@ -194,7 +196,7 @@ def flow_dialog() -> Dialog:
                     on_click=show_time_buttons,
                 ),
             ),
-            Back(Const("◀️ Змінити дату")),
+            Back(BACK_BUTTON),
             state=FlowMenu.select_type,
         ),
         Window(
@@ -203,7 +205,7 @@ def flow_dialog() -> Dialog:
                 "🕒 Введіть час у форматі HH:MM"
             ),
             MessageInput(time_input_handler),
-            Back(Const("◀️ Назад")),
+            Back(BACK_BUTTON),
             state=FlowMenu.input_time,
         ),
         Window(
@@ -225,7 +227,7 @@ def flow_dialog() -> Dialog:
                 for row in chunked(times, 4)
             ],
             Button(
-                Const("◀️ Назад"),
+                BACK_BUTTON,
                 id="back_to_select_type",
                 on_click=back_to_select_type,
             ),
@@ -235,7 +237,7 @@ def flow_dialog() -> Dialog:
             Format("📅 Заплановано на:\n{dialog_data[scheduled_datetime_str]}"),
             Button(Const("✅ Підтвердити"), id="confirm", on_click=confirm_schedule),
             Button(
-                Const("◀️ Назад"),
+                BACK_BUTTON,
                 id="back_to_select_type",
                 on_click=back_to_select_type,
             ),

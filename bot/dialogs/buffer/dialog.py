@@ -26,6 +26,8 @@ from bot.dialogs.buffer.getters import (
 )
 from bot.dialogs.buffer.states import BufferMenu
 
+from bot.utils.constants.buttons import BACK_BUTTON
+
 from .callbacks import (
     back_to_post_view,
     go_back_to_channels,
@@ -165,7 +167,7 @@ def create_buffer_dialog():
             ),
             Row(
                 Button(
-                    Const("🔙 Назад"),
+                    BACK_BUTTON,
                     id="go_back_to_channels",
                     on_click=go_back_to_channels,
                 )
@@ -184,7 +186,7 @@ def create_buffer_dialog():
                 "<b>Заплановано на: {scheduled_time}</b>"
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             LinkPreview(is_disabled=True),
             getter=post_info_getter,
@@ -204,7 +206,7 @@ def create_buffer_dialog():
             ),
             Row(
                 Button(
-                    Const("🔙 Назад"), id="on_back_to_posts", on_click=on_back_to_posts
+                    BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts
                 )
             ),
             MessageInput(process_edit_input),

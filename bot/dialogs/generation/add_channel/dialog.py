@@ -5,7 +5,9 @@ from aiogram_dialog.widgets.text import Const, Format, Jinja
 
 from bot.containers import Container
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
+
 from bot.utils.buttons import go_back_to_generation
+from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import on_create_flow, subscribe
 from .getters import channel_data_getter
@@ -41,7 +43,7 @@ def create_add_channel_dialog():
                 Url(text=Const("📲 Додати бота автоматично"), url=Jinja("{{bot_url}}")),
             ),
             Row(
-                Button(Const("🔙 Назад"), id="go_back", on_click=go_back_to_generation),
+                Button(BACK_BUTTON, id="go_back", on_click=go_back_to_generation),
             ),
             parse_mode=ParseMode.MARKDOWN_V2,
             state=AddChannelMenu.instructions,
@@ -60,7 +62,7 @@ def create_add_channel_dialog():
                 Button(Const("💎 Підписатися"), id="subscribe", on_click=subscribe),
             ),
             Row(
-                Button(Const("🔙 Назад"), id="back", on_click=go_back_to_generation),
+                Button(BACK_BUTTON, id="back", on_click=go_back_to_generation),
             ),
             parse_mode=ParseMode.HTML,
             state=AddChannelMenu.success,

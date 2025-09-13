@@ -39,6 +39,8 @@ from .getters import (
 )
 from .states import SettingsMenu
 
+from bot.utils.constants.buttons import BACK_BUTTON
+
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     channel_service = Container.channel_service()
@@ -93,7 +95,7 @@ def create_settings_dialog():
                 ),
             ),
             Row(
-                Back(Const("◀️ До списку каналів")),
+                Back(BACK_BUTTON),
             ),
             state=SettingsMenu.channel_settings,
             parse_mode=ParseMode.HTML,
@@ -133,7 +135,7 @@ def create_settings_dialog():
                 ),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=SettingsMenu.channel_main_settings,
             parse_mode=ParseMode.HTML,
@@ -147,7 +149,7 @@ def create_settings_dialog():
                 "Введiть новий підпис: "
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             LinkPreview(is_disabled=True),
             MessageInput(handle_sig_input),

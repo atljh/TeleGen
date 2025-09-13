@@ -7,6 +7,8 @@ from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
+
+from bot.utils.constants.buttons import BACK_BUTTON
 from bot.dialogs.settings.flow_settings.callbacks import start_flow_settings
 
 from .callbacks import (
@@ -73,7 +75,7 @@ def create_flow_dialog():
                 ),
             ),
             Row(
-                Button(Const("🔙 Назад"), id="to_channel", on_click=to_channel),
+                Button(BACK_BUTTON, id="to_channel", on_click=to_channel),
             ),
             state=CreateFlowMenu.select_theme,
             parse_mode=ParseMode.HTML,
@@ -107,7 +109,7 @@ def create_flow_dialog():
                 ),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
                 Button(
                     Const("🔜 Далі"),
                     id="next",
@@ -132,7 +134,7 @@ def create_flow_dialog():
                 filter=F.text & ~F.text.startswith("/"),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             LinkPreview(is_disabled=True),
             state=CreateFlowMenu.add_source_link,
@@ -164,7 +166,7 @@ def create_flow_dialog():
                 Button(Const("Раз на годину"), id="hourly", on_click=on_once_an_hour),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=CreateFlowMenu.select_frequency,
             parse_mode=ParseMode.HTML,
@@ -180,7 +182,7 @@ def create_flow_dialog():
                 Button(Const("До 1000"), id="to_1000", on_click=on_to_1000),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=CreateFlowMenu.select_words_limit,
             parse_mode=ParseMode.HTML,
@@ -198,7 +200,7 @@ def create_flow_dialog():
                 ),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=CreateFlowMenu.title_highlight_confirm,
             parse_mode=ParseMode.HTML,
@@ -246,7 +248,7 @@ def create_flow_dialog():
                 ),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=CreateFlowMenu.flow_volume_settings,
             parse_mode=ParseMode.HTML,
@@ -262,7 +264,7 @@ def create_flow_dialog():
                 handle_custom_volume_input, filter=F.text & ~F.text.startswith("/")
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=CreateFlowMenu.custom_volume_input,
             parse_mode=ParseMode.HTML,
@@ -283,7 +285,7 @@ def create_flow_dialog():
                 Button(
                     Const("⏩ Пропустити"), id="skip_signature", on_click=skip_signature
                 ),
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=CreateFlowMenu.signature_settings,
             parse_mode=ParseMode.HTML,

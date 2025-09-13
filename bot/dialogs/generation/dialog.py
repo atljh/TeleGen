@@ -5,6 +5,8 @@ from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.states import GenerationMenu
 
+from bot.utils.constants.buttons import BACK_BUTTON
+
 from .callbacks import (
     add_channel,
     on_buffer,
@@ -62,7 +64,7 @@ def create_generation_dialog():
                 ),
             ),
             Row(
-                Back(Const("🔙 Назад")),
+                Back(BACK_BUTTON),
             ),
             state=GenerationMenu.channel_main,
             parse_mode=ParseMode.HTML,
