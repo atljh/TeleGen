@@ -4,7 +4,7 @@ from datetime import datetime
 from asgiref.sync import sync_to_async
 
 from admin_panel.admin_panel.models import Flow, PostImage, Post
-from bot.database.exceptions import PostNotFoundError
+from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository
 from bot.factories.post_factory import PostFactory
@@ -45,6 +45,10 @@ class PostBaseService:
         source_id: str | None
         = None,
     ) -> Post:
+        
+        if scheduled_time and scheduled_time < datetime.now():
+            raise InvalidOperationError("Scheduled time cannot be in the past")
+
         post = PostFactory.create_post(
             flow=flow,
             content=content,

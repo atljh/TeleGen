@@ -98,30 +98,30 @@ class PostGenerationService:
         generated_posts = []
 
         for post_dto in post_dtos:
-            # try:
-            if await Post.objects.filter(source_id=post_dto.source_id).aexists():
-                logging.info(f"Skipping duplicate post: {post_dto.source_id}")
+            try:
+                if await Post.objects.filter(source_id=post_dto.source_id).aexists():
+                    logging.info(f"Skipping duplicate post: {post_dto.source_id}")
+                    continue
+
+                media_list = self._prepare_media_list(post_dto)
+                post = await self.post_service.create_post(
+                    flow=flow,
+                    content=post_dto.content,
+                    source_url=post_dto.source_url,
+                    original_date=post_dto.original_date,
+                    original_link=post_dto.original_link,
+                    original_content=post_dto.original_content,
+                    source_id=post_dto.source_id,
+                    media_list=media_list,
+                )
+
+                if post:
+                    post_dto = await PostDTO.from_orm_async(post)
+                    generated_posts.append(post)
+
+            except Exception as e:
+                logging.error(f"Post creation failed: {str(e)}")
                 continue
-
-            media_list = self._prepare_media_list(post_dto)
-            post = await self.post_service.create_post(
-                flow=flow,
-                content=post_dto.content,
-                source_url=post_dto.source_url,
-                original_date=post_dto.original_date,
-                original_link=post_dto.original_link,
-                original_content=post_dto.original_content,
-                source_id=post_dto.source_id,
-                media_list=media_list,
-            )
-
-            if post:
-                post_dto = await PostDTO.from_orm_async(post)
-                generated_posts.append(post)
-
-            # except Exception as e:
-            #     logging.error(f"Post creation failed: {str(e)}")
-            #     continue
 
         return generated_posts
 
