@@ -196,10 +196,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             await safe_delete_messages(bot, chat_id, messages)
             dialog_manager.dialog_data["message_ids"] = []
 
-        logging.info(data["post"].get("is_album"))
         if data["post"].get("is_album"):
             await send_media_album(dialog_manager, data["post"])
-            return
+            return data
 
         if not post.get("is_album"):
             media_info: dict[str, Any] | None = None
