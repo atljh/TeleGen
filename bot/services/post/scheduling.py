@@ -23,14 +23,14 @@ class PostSchedulingService:
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
 
-        
+
         if timezone.is_naive(scheduled_time):
             ukraine_tz = pytz.timezone('Europe/Kiev')
             scheduled_time = ukraine_tz.localize(scheduled_time)
-        
+
         scheduled_time_utc = scheduled_time.astimezone(pytz.UTC)
         current_time_utc = timezone.now()
-        
+
         if scheduled_time_utc < current_time_utc:
             raise InvalidOperationError("Scheduled time cannot be in the past")
 

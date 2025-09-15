@@ -102,10 +102,10 @@ class PostRepository:
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> Post:
         post = await self.get(post_id)
-        
+
         if timezone.is_naive(scheduled_time):
             scheduled_time = timezone.make_aware(scheduled_time)
-        
+
         post.scheduled_time = scheduled_time
         post.status = PostStatus.SCHEDULED
         return await self.save(post)

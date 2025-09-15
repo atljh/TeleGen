@@ -313,9 +313,9 @@ async def process_time_selection(manager: DialogManager):
     minute = manager.dialog_data.get("selected_minute", 0)
 
     ukraine_tz = pytz.timezone("Europe/Kiev")
-    
+
     naive_datetime = datetime.combine(date_obj, time(hour=hour, minute=minute))
-    
+
     scheduled_datetime = ukraine_tz.localize(naive_datetime)
 
     manager.dialog_data["scheduled_datetime"] = scheduled_datetime
@@ -334,16 +334,16 @@ async def confirm_schedule(
     post_id = current_post["id"]
 
     scheduled_datetime = manager.dialog_data.get("scheduled_datetime")
-    
+
     if not scheduled_datetime:
         await callback.answer("❌ Час не вибрано")
         return
 
     ukraine_tz = pytz.timezone("Europe/Kiev")
-    
+
     if isinstance(scheduled_datetime, str):
         scheduled_datetime = datetime.fromisoformat(scheduled_datetime.replace('Z', '+00:00'))
-    
+
     if timezone.is_naive(scheduled_datetime):
         scheduled_datetime = ukraine_tz.localize(scheduled_datetime)
     else:
@@ -360,13 +360,13 @@ async def confirm_schedule(
         f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
     )
     await manager.switch_to(FlowMenu.posts_list)
-        
+
     # except ValueError as e:
     #     logger.error(f"Invalid datetime format: {e}")
     #     await callback.answer("❌ Невірний формат часу")
     # except Exception as e:
     #     logger.error(f"Error confirming schedule: {e}")
-    #     await callback.answer(f"❌ Помилка: {str(e)}")       
+    #     await callback.answer(f"❌ Помилка: {str(e)}")
     await manager.switch_to(FlowMenu.select_date)
 
 
