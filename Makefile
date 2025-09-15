@@ -58,4 +58,4 @@ admin:
 	open http://localhost:8000/admin
 
 test:
-	python -m pytest tests/ -v
+	docker compose run --rm tests

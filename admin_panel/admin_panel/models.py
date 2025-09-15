@@ -201,7 +201,7 @@ class Post(models.Model):
         blank=True, null=True, verbose_name="Посилання на джерело"
     )
     original_link = models.CharField(
-        blank=True, verbose_name="Посилання на оригiнальний пост"
+        blank=True, max_length=500, verbose_name="Посилання на оригiнальний пост"
     )
     publication_date = models.DateTimeField(
         blank=True, null=True, verbose_name="Дата публікації"

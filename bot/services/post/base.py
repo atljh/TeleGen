@@ -47,7 +47,7 @@ class PostBaseService:
         = None,
     ) -> Post:
         
-        if scheduled_time and scheduled_time < datetime.now():
+        if scheduled_time and scheduled_time < timezone.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
 
         post = PostFactory.create_post(
