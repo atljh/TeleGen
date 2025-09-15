@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from bot.containers import Container
 from bot.dialogs import register_dialogs
 from bot.handlers import register_handlers
+from bot.services.logger_service import init_logger
 from bot.utils.logging import init_logging
 from bot.utils.middlaware import MainMiddleware
 
@@ -20,6 +21,7 @@ async def main():
     bot = container.bot()
 
     init_logging()
+    init_logger(bot)
 
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)

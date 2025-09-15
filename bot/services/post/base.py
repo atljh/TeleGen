@@ -88,7 +88,6 @@ class PostBaseService:
         if images is not None:
             await self._update_post_images(post, images)
 
-        # await self.post_repo.update(post.id, **post.dict())
         await post.asave()
         return await PostDTO.from_orm_async(post)
 

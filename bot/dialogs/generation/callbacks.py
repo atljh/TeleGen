@@ -28,7 +28,6 @@ async def go_back_to_channels(
         "channel_flow"
     )
     messages = manager.dialog_data.get("message_ids")
-    bot = manager.middleware_data["bot"]
 
     if messages:
         for message_id in messages:
