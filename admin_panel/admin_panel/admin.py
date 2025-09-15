@@ -10,6 +10,7 @@ from .models import (
     Payment,
     Post,
     PostImage,
+    PostVideo,
     Subscription,
     User,
 )
@@ -85,6 +86,11 @@ class PostImageInline(admin.TabularInline):
     extra = 1
 
 
+class PostVideoInline(admin.TabularInline):
+    model = PostVideo
+    extra = 1
+
+
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = (
@@ -98,7 +104,7 @@ class PostAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
     search_fields = ("content", "source_url")
     list_filter = ("status", "created_at")
-    inlines: ClassVar[list[admin.TabularInline]] = [PostImageInline]
+    inlines: ClassVar[list[admin.TabularInline]] = [PostImageInline, PostVideoInline]
 
 
 @admin.register(Draft)

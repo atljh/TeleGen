@@ -148,7 +148,7 @@ class PostVideo(models.Model):
     post = models.ForeignKey(
         "Post", on_delete=models.CASCADE, related_name="videos", verbose_name="Пост"
     )
-    image = models.FileField(
+    video = models.FileField(
         upload_to="posts/videos/", verbose_name="Вiдео", max_length=255
     )
     order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортування")
