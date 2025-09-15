@@ -75,8 +75,8 @@ def build_post_dict(post: Any, idx: int) -> dict[str, Any]:
         PostStatus.PUBLISHED: "Опублiковано",
     }
 
-    is_album = len(images) > 1
-    images_count = len(images)
+    is_album = len(images) + len(videos) > 1
+    images_count = len(images) + len(videos)
 
     post_dict = {
         "id": str(getattr(post, "id", "")),
@@ -196,9 +196,16 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             await safe_delete_messages(bot, chat_id, messages)
             dialog_manager.dialog_data["message_ids"] = []
 
+        logging.info(data["post"].get("is_album"))
+        if data["post"].get("is_album"):
+            await send_media_album(dialog_manager, data["post"])
+            return
+
         if not post.get("is_album"):
             media_info: dict[str, Any] | None = None
             images = post.get("images", [])
+            videos = post.get("videos", [])
+
             if images and len(images) == 1:
                 first_image = images[0]
                 image_url = getattr(first_image, "url", None)
@@ -208,13 +215,15 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
                         "url": image_url,
                         "path": get_media_path(image_url),
                     }
-            elif post.get("video_url"):
-                media_info = {
-                    "type": "video",
-                    "url": post["video_url"],
-                    "path": get_media_path(post["video_url"]),
-                }
-
+            if videos and len(videos) == 1:
+                first_video = videos[0]
+                video_url = getattr(first_video, "url", None)
+                if video_url:
+                    media_info = {
+                        "type": "video",
+                        "url": video_url,
+                        "path": get_media_path(video_url),
+                    }
             if (
                 media_info
                 and media_info.get("path")
@@ -223,9 +232,6 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
                 data["media_content"] = MediaAttachment(
                     path=media_info["path"], type=media_info["type"]
                 )
-
-    if data["post"].get("is_album"):
-        await send_media_album(dialog_manager, data["post"])
 
     return data
 
@@ -237,7 +243,7 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
     media_info = None
 
     images = post.get("images", [])
-    video_url = post.get("video_url")
+    videos = post.get("videos", [])
 
     if images and len(images) == 1:
         first_image = images[0]
@@ -248,12 +254,15 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
                 "url": image_url,
                 "path": get_media_path(image_url),
             }
-    elif video_url:
-        media_info = {
-            "type": "video",
-            "url": video_url,
-            "path": get_media_path(video_url),
-        }
+    if videos and len(videos) == 1:
+        first_video = videos[0]
+        video_url = getattr(first_video, "url", None)
+        if video_url:
+            media_info = {
+                "type": "video",
+                "url": video_url,
+                "path": get_media_path(video_url),
+            }
 
     media: MediaAttachment | None = None
     if media_info and media_info.get("path") and os.path.exists(media_info["path"]):

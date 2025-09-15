@@ -5,7 +5,7 @@ from functools import lru_cache
 from typing import Any
 
 from aiogram.enums import ParseMode
-from aiogram.types import FSInputFile, InputMediaPhoto, Message
+from aiogram.types import FSInputFile, InputMediaPhoto, InputMediaVideo, Message
 from aiogram_dialog import DialogManager
 from django.conf import settings
 
@@ -29,7 +29,7 @@ async def safe_delete_messages(bot, chat_id: int, message_ids: Sequence[int]) ->
 
 async def send_media_album(
     dialog_manager: DialogManager, post_data: dict[str, Any]
-) -> Message:
+) -> Message | None:
     bot = dialog_manager.middleware_data["bot"]
     chat_id = dialog_manager.middleware_data["event_chat"].id
     message = dialog_manager.event.message
@@ -40,27 +40,39 @@ async def send_media_album(
         dialog_manager.dialog_data["message_ids"] = []
 
     try:
-        images = post_data.get("images", [])[:10]
-        if not images:
+        images = post_data.get("images", [])
+        videos = post_data.get("videos", [])
+
+        media_items = (images + videos)[:10]
+        if not media_items:
             return None
 
-        media_group: list[InputMediaPhoto] = []
-        for i, image in enumerate(images):
-            image_url = getattr(image, "url", None)
-            if not image_url:
+        media_group = []
+        for i, item in enumerate(media_items):
+            file_url = getattr(item, "url", None)
+            if not file_url:
                 continue
 
-            media_path = get_media_path(image_url)
+            media_path = get_media_path(file_url)
             if not os.path.exists(media_path):
                 logger.warning("Media file not found on disk: %s", media_path)
                 continue
 
             caption = post_data.get("content") if i == 0 else None
-            media = InputMediaPhoto(
-                media=FSInputFile(media_path),
-                caption=caption,
-                parse_mode=ParseMode.HTML,
-            )
+
+            if item in images:
+                media = InputMediaPhoto(
+                    media=FSInputFile(media_path),
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                )
+            else:
+                media = InputMediaVideo(
+                    media=FSInputFile(media_path),
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                )
+
             media_group.append(media)
 
         if not media_group:

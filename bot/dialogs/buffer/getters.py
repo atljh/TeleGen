@@ -51,7 +51,7 @@ async def get_post_images(post) -> list:
 
 def build_media_info(post: dict) -> dict | None:
     images = post.get("images", [])
-    video_url = post.get("video_url")
+    videos = post.get("videos", [])
 
     if images and len(images) == 1 and hasattr(images[0], "url"):
         return {
@@ -59,9 +59,12 @@ def build_media_info(post: dict) -> dict | None:
             "url": images[0].url,
             "path": get_media_path(images[0].url),
         }
-
-    if video_url:
-        return {"type": "video", "url": video_url, "path": get_media_path(video_url)}
+    if videos and len(videos) == 1 and hasattr(videos[0], "url"):
+        return {
+            "type": "video",
+            "url": videos[0].url,
+            "path": get_media_path(videos[0].url),
+        }
 
     return None
 
@@ -215,7 +218,7 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
     media_info = None
 
     images = post.get("images", [])
-    video_url = post.get("video_url")
+    videos = post.get("videos", [])
 
     if images and len(images) == 1:
         first_image = images[0]
@@ -226,12 +229,15 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
                 "url": image_url,
                 "path": get_media_path(image_url),
             }
-    elif video_url:
-        media_info = {
-            "type": "video",
-            "url": video_url,
-            "path": get_media_path(video_url),
-        }
+    if videos and len(videos) == 1:
+        first_video = videos[0]
+        video_url = getattr(first_video, "url", None)
+        if video_url:
+            media_info = {
+                "type": "video",
+                "url": video_url,
+                "path": get_media_path(video_url),
+            }
 
     media: MediaAttachment | None = None
     if media_info and media_info.get("path") and os.path.exists(media_info["path"]):

@@ -5,7 +5,7 @@ from typing import Any
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
-from admin_panel.admin_panel.models import Flow, Post, PostImage
+from admin_panel.admin_panel.models import Flow, Post, PostImage, PostVideo
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository
@@ -66,9 +66,9 @@ class PostBaseService:
         post_id: int,
         content: str | None = None,
         images: list[dict[str, Any]] | None = None,
+        videos: list[dict[str, Any]] | None = None,
         publication_date: datetime | None = None,
         status: PostStatus | None = None,
-        video_url: str | None = None,
         scheduled_time: datetime | None = None,
     ) -> PostDTO:
         post = await self.post_repo.get(post_id)
@@ -80,13 +80,13 @@ class PostBaseService:
             post.publication_date = publication_date
         if status is not None:
             post.status = status
-        if video_url is not None:
-            post.video_url = video_url
         if scheduled_time is not None:
             post.scheduled_time = scheduled_time
 
         if images is not None:
             await self._update_post_images(post, images)
+        if videos is not None:
+            await self._update_post_videos(post, videos)
 
         await post.asave()
         return await PostDTO.from_orm_async(post)
@@ -100,6 +100,17 @@ class PostBaseService:
                 post=post,
                 image=img_data["file_path"],
                 order=img_data["order"],
+            )
+
+    async def _update_post_videos(
+        self, post: PostDTO, videos: list[dict[str, Any]]
+    ) -> None:
+        await sync_to_async(lambda: post.videos.all().delete())()
+        for video_data in videos:
+            await sync_to_async(PostVideo.objects.create)(
+                post=post,
+                image=video_data["file_path"],
+                order=video_data["order"],
             )
 
     async def delete_post(self, post_id: int) -> None:

@@ -3,7 +3,7 @@ from urllib.parse import unquote
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.types import FSInputFile, InputMediaPhoto, URLInputFile
+from aiogram.types import FSInputFile, InputMediaPhoto, InputMediaVideo, URLInputFile
 from django.conf import settings
 from django.utils import timezone
 
@@ -39,10 +39,8 @@ class PostPublishingService:
     async def _send_post_to_channel(self, post: PostDTO, channel_id: str):
         caption = post.content[:1024] if len(post.content) > 1024 else post.content
 
-        if post.images:
+        if post.images or post.videos:
             await self._send_media_group(post, channel_id, caption)
-        elif post.video_url:
-            await self._send_video(post, channel_id, caption)
         else:
             await self._send_text_message(post, channel_id)
 
@@ -50,10 +48,23 @@ class PostPublishingService:
         media_group = []
 
         for i, image in enumerate(post.images):
-            media = self._create_media_item(image, caption if i == 0 else None)
+            media = InputMediaPhoto(
+                media=image,
+                caption=caption if i == 0 and not post.videos else None,
+                parse_mode="HTML",
+            )
             media_group.append(media)
 
-        await self.bot.send_media_group(chat_id=channel_id, media=media_group)
+        for j, video in enumerate(post.videos):
+            media = InputMediaVideo(
+                media=video,
+                caption=caption if j == 0 and not post.images else None,
+                parse_mode="HTML",
+            )
+            media_group.append(media)
+
+        if media_group:
+            await self.bot.send_media_group(chat_id=channel_id, media=media_group)
 
     def _create_media_item(self, image, caption: str | None = None) -> InputMediaPhoto:
         if image.url.startswith(("http://", "https://")):
