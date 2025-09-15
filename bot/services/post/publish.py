@@ -1,9 +1,8 @@
 import os
-from urllib.parse import unquote
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.types import FSInputFile, InputMediaPhoto, InputMediaVideo, URLInputFile
+from aiogram.types import FSInputFile, InputMediaPhoto, InputMediaVideo
 from django.conf import settings
 from django.utils import timezone
 
@@ -81,31 +80,6 @@ class PostPublishingService:
                 )
             else:
                 raise InvalidOperationError(f"Файл изображения не найден: {media_path}")
-
-    async def _send_video(self, post: PostDTO, channel_id: str, caption: str):
-        if post.video_url.startswith(("http://", "https://")):
-            video = URLInputFile(post.video_url)
-            await self.bot.send_video(
-                chat_id=channel_id,
-                video=video,
-                caption=caption,
-                parse_mode=ParseMode.HTML,
-            )
-        else:
-            decoded_path = unquote(post.video_url)
-            relative_path = decoded_path.lstrip("/")
-            media_path = os.path.join(settings.BASE_DIR, relative_path)
-
-            if media_path and os.path.exists(media_path):
-                video = FSInputFile(media_path)
-                await self.bot.send_video(
-                    chat_id=channel_id,
-                    video=video,
-                    caption=caption,
-                    parse_mode=ParseMode.HTML,
-                )
-            else:
-                raise InvalidOperationError("Файл видео не найден")
 
     async def _send_text_message(self, post: PostDTO, channel_id: str):
         if len(post.content) > 4096:
