@@ -190,10 +190,14 @@ class RssService:
                     self._parse_rss_entry(entry, domain, rss_url)
                     for entry in feed.entries[:limit]
                 ]
+
                 for coro in asyncio.as_completed(tasks):
-                    post = await coro
-                    if post:
-                        yield post
+                    try:
+                        post = await coro
+                        if post:
+                            yield post
+                    except Exception as e:
+                        self.logger.error(f"Error parsing entry: {e}")
 
         except Exception as e:
             self.logger.error(f"Error fetching feed {rss_url}: {e}")
@@ -270,16 +274,16 @@ class RssService:
 
     async def _parse_rss_entry(
         self,
-        entry: feedparser.FeedParserDict,
+        entry: dict[str, Any],
         domain: str,
         rss_url: str,
     ) -> RssPost | None:
-        await self._random_delay()
-
         try:
             source_id = f"rss_{hashlib.md5(entry.link.encode()).hexdigest()}"
+            if not source_id:
+                return None
 
-            if await self.post_repository.exists_by_source_id(source_id=source_id):
+            if await self.post_repository.exists_by_source_id(source_id):
                 self.logger.warning(f"STOP | Post already exists: {source_id}")
                 return None
 
@@ -298,13 +302,12 @@ class RssService:
             return RssPost(**post_data)
 
         except Exception as e:
-            self.logger.error(f"Error parsing RSS entry: {e}", exc_info=True)
+            self.logger.error(f"Error parsing RSS entry: {e}")
             return None
 
     async def _extract_rss_images(self, entry: feedparser.FeedParserDict) -> list[str]:
         images: set[str] = set()
 
-        # 1. Проверка media_content (стандартный способ)
         if hasattr(entry, "media_content"):
             images.update(
                 media["url"]
@@ -313,7 +316,6 @@ class RssService:
                 or media.get("type", "").startswith("image/")
             )
 
-        # 2. Проверка links
         if hasattr(entry, "links"):
             images.update(
                 link["href"]
@@ -321,18 +323,15 @@ class RssService:
                 if link.get("type", "").startswith("image/")
             )
 
-        # 3. Проверка media_thumbnail (если есть)
         if hasattr(entry, "media_thumbnail"):
             images.update(
                 thumb["url"] for thumb in entry.media_thumbnail if thumb.get("url")
             )
 
-        # 4. Проверка описания (HTML парсинг)
         if hasattr(entry, "description"):
             soup = BeautifulSoup(entry.description, "html.parser")
             images.update(img["src"] for img in soup.find_all("img", src=True))
 
-        # 5. Дополнительная проверка для media:content
         if hasattr(entry, "enclosures"):
             images.update(
                 enc["href"]
