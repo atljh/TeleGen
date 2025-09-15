@@ -140,7 +140,6 @@ async def on_force_generate(
     try:
         dialog_data = manager.dialog_data
         flow = dialog_data.get("channel_flow")
-        channel = dialog_data.get("selected_channel")
 
         if not flow:
             await callback.answer("⚠️ Не обрано флоу для генерації", show_alert=True)
@@ -174,7 +173,6 @@ async def on_force_generate(
                 status_msg_id=status_msg.message_id,
                 bot=bot,
                 flow=flow,
-                channel=channel,
             )
         )
         return task
@@ -191,13 +189,12 @@ async def show_generated_posts(
     status_msg_id: int,
     bot: Bot,
     flow,
-    channel,
 ):
     try:
         while process.poll() is None:
             await asyncio.sleep(1)
 
-        stdout, stderr = process.communicate()
+        _, stderr = process.communicate()
         if process.returncode != 0:
             error_msg = stderr.strip() if stderr else "Невідома помилка"
             await bot.edit_message_text(

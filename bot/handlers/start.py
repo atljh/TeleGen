@@ -10,7 +10,7 @@ router = Router()
 @router.message(Command("start"))
 async def cmd_start(message: Message):
     user_service = Container.user_service()
-    user_dto, created = await user_service.create_or_get_user(
+    await user_service.create_or_get_user(
         telegram_id=message.from_user.id, username=message.from_user.username
     )
     keyboard = ReplyKeyboardMarkup(
