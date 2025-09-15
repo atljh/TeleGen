@@ -350,6 +350,7 @@ def create_edit_source():
                 Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
             ),
         ),
+        LinkPreview(is_disabled=True),
         state=FlowSettingsMenu.edit_source,
         getter=get_current_source,
     )
