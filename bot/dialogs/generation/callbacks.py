@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import subprocess
 import sys
 
 from aiogram import Bot
@@ -183,7 +182,7 @@ async def on_force_generate(
 
 
 async def show_generated_posts(
-    process: subprocess.Popen,
+    process: asyncio.subprocess.Process,
     flow_id: int,
     chat_id: int,
     status_msg_id: int,
@@ -191,12 +190,10 @@ async def show_generated_posts(
     flow,
 ):
     try:
-        while process.poll() is None:
-            await asyncio.sleep(1)
+        _, stderr = await process.communicate()
 
-        _, stderr = process.communicate()
         if process.returncode != 0:
-            error_msg = stderr.strip() if stderr else "Невідома помилка"
+            error_msg = stderr.decode().strip() if stderr else "Невідома помилка"
             await bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=status_msg_id,
@@ -240,7 +237,7 @@ async def show_generated_posts(
         )
 
     except Exception as e:
-        logging.error(f"Помилка показу постів: {e!s}")
+        logging.error(f"Помилка показу постів: {e!s}", exc_info=True)
         await bot.send_message(
             chat_id=chat_id, text=f"❌ Не вдалося показати пости: {e!s}"
         )
