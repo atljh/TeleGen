@@ -1,14 +1,6 @@
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.kbd import (
-    Back,
-    Button,
-    Cancel,
-    Column,
-    Group,
-    Row,
-    Select,
-)
+from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Column, Group, Row, Select
 from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format, Multi
 

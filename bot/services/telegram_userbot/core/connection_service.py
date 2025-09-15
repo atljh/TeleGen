@@ -5,8 +5,6 @@ from telethon import TelegramClient
 
 from ..types import ConnectionError
 
-# from telethon.errors import ConnectionError as TelethonConnectionError
-
 
 class ConnectionService:
     def __init__(
@@ -39,19 +37,16 @@ class ConnectionService:
         try:
             await client.connect()
             return True
-        # except TelethonConnectionError as e:
-        #     self.logger.error(f"Connection failed: {str(e)}")
-        #     raise ConnectionError(f"Connection failed: {str(e)}")
         except Exception as e:
-            self.logger.error(f"Unexpected connection error: {str(e)}")
-            raise ConnectionError(f"Unexpected error: {str(e)}")
+            self.logger.error(f"Unexpected connection error: {e!s}")
+            raise ConnectionError(f"Unexpected error: {e!s}") from e
 
     async def disconnect_client(self, client: TelegramClient) -> bool:
         try:
             await client.disconnect()
             return True
         except Exception as e:
-            self.logger.warning(f"Error during client disconnect: {str(e)}")
+            self.logger.warning(f"Error during client disconnect: {e!s}")
             return False
 
     async def reconnect_client(self, client: TelegramClient) -> bool:
@@ -60,8 +55,8 @@ class ConnectionService:
             await asyncio.sleep(1)
             return await self.connect_client(client)
         except Exception as e:
-            self.logger.error(f"Reconnection failed: {str(e)}")
-            return False
+            self.logger.error(f"Reconnection failed: {e!s}")
+            raise ConnectionError(f"Reconnection failed: {e!s}") from e
 
     def is_client_connected(self, client: TelegramClient) -> bool:
         return client.is_connected()
@@ -70,5 +65,5 @@ class ConnectionService:
         try:
             return await client.is_user_authorized()
         except Exception as e:
-            self.logger.error(f"Connection test failed: {str(e)}")
+            self.logger.error(f"Connection test failed: {e!s}")
             return False

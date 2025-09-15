@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional, TypedDict, Union
+from typing import Any, ClassVar, TypedDict
 
 from telethon.tl.types import Channel, Chat, User
 
-TelegramEntity = Union[Channel, Chat, User]
+TelegramEntity = Channel | Chat | User
 
 
 class MediaType(str, Enum):
@@ -17,9 +17,9 @@ class MediaType(str, Enum):
 class MediaInfo(TypedDict):
     type: MediaType
     media_obj: Any
-    file_id: Optional[int]
-    path: Optional[str]
-    order: Optional[int]
+    file_id: int | None
+    path: str | None
+    order: int | None
 
 
 class SourceType(str, Enum):
@@ -31,8 +31,8 @@ class SourceType(str, Enum):
 class SourceInfo(TypedDict):
     type: SourceType
     link: str
-    name: Optional[str]
-    priority: Optional[int]
+    name: str | None
+    priority: int | None
 
 
 class RawPostData(TypedDict):
@@ -41,39 +41,39 @@ class RawPostData(TypedDict):
     media: list[MediaInfo]
     is_album: bool
     album_size: int
-    original_link: Optional[str]
-    original_date: Optional[datetime]
+    original_link: str | None
+    original_date: datetime | None
     source_url: str
-    source_id: Optional[str]
+    source_id: str | None
 
 
 class ProcessedPostData(TypedDict):
     content: str
     original_content: str
     media: list[MediaInfo]
-    original_link: Optional[str]
-    original_date: Optional[datetime]
+    original_link: str | None
+    original_date: datetime | None
     source_url: str
-    source_id: Optional[str]
-    flow_id: Optional[int]
-    status: Optional[str]
+    source_id: str | None
+    flow_id: int | None
+    status: str | None
 
 
 class AlbumProcessingResult(TypedDict):
-    post_data: Optional[RawPostData]
+    post_data: RawPostData | None
     album_size: int
 
 
 class MessageProcessingResult(TypedDict):
-    post_data: Optional[RawPostData]
+    post_data: RawPostData | None
     post_count: int
 
 
 class UserbotConfig(TypedDict):
     api_id: int
     api_hash: str
-    phone: Optional[str]
-    session_path: Optional[str]
+    phone: str | None
+    session_path: str | None
     download_concurrency: int
     max_retries: int
     timeout: float
@@ -95,8 +95,8 @@ class ProcessingConfig(TypedDict):
 
 class OperationResult(TypedDict):
     success: bool
-    data: Optional[Any]
-    error: Optional[str]
+    data: Any | None
+    error: str | None
     execution_time: float
 
 
@@ -158,7 +158,7 @@ class Constants:
     RETRY_DELAY = 1.0
     SESSION_TIMEOUT = 30.0
 
-    ALLOWED_MEDIA_TYPES = [
+    ALLOWED_MEDIA_TYPES: ClassVar[list[str]] = [
         "image/jpeg",
         "image/png",
         "image/gif",
@@ -166,11 +166,11 @@ class Constants:
         "video/quicktime",
     ]
 
-    EXTERNAL_LINK_DOMAINS = ["t.me", "telegram.me"]
+    EXTERNAL_LINK_DOMAINS: ClassVar[list[str]] = ["t.me", "telegram.me"]
 
 
 def is_telegram_entity(entity: Any) -> bool:
-    return isinstance(entity, (Channel, Chat, User))
+    return isinstance(entity, Channel | Chat | User)
 
 
 def is_valid_media_type(media_info: MediaInfo) -> bool:

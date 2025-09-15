@@ -1,6 +1,5 @@
 import logging
 
-
 from bot.database.models import AISettingsDTO, FlowDTO
 from bot.database.repositories import AISettingsRepository, UserRepository
 

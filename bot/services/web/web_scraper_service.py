@@ -50,7 +50,7 @@ class WebScraperService:
                 date=self._find_publication_date(soup),
             )
         except Exception as e:
-            self.logger.error(f"Scraping error for {url}: {str(e)}", exc_info=True)
+            self.logger.error(f"Scraping error for {url}: {e!s}", exc_info=True)
             return None
 
     async def close(self) -> None:
@@ -66,7 +66,7 @@ class WebScraperService:
                     return await self.cf_bypass.get_page_content(url)
                 self.logger.warning(f"Unexpected status {response.status} for {url}")
         except Exception as e:
-            self.logger.error(f"Failed to fetch {url}: {str(e)}")
+            self.logger.error(f"Failed to fetch {url}: {e!s}")
         return None
 
     def _find_main_content(self, soup: BeautifulSoup) -> BeautifulSoup | None:

@@ -1,16 +1,15 @@
-
-
 import logging
 from datetime import datetime
-from typing import Optional
+
 from django.utils import timezone
 
-from admin_panel.admin_panel.models import Post, PostImage
+from admin_panel.admin_panel.models import Post
 from bot.database.exceptions import PostNotFoundError
 from bot.database.models import MediaType
 from bot.database.models.post import PostStatus
 
 logger = logging.getLogger(__name__)
+
 
 class PostRepository:
     async def save(self, post: Post) -> Post:
@@ -21,8 +20,8 @@ class PostRepository:
         try:
             query = Post.objects.select_related("flow").prefetch_related("images")
             return await query.aget(id=post_id)
-        except Post.DoesNotExist:
-            raise PostNotFoundError(f"Post with id={post_id} not found")
+        except Post.DoesNotExist as e:
+            raise PostNotFoundError(f"Post with id={post_id} not found") from e
 
     async def update(self, post_id: int, **fields) -> Post:
         post = await self.get(post_id)
@@ -37,10 +36,10 @@ class PostRepository:
 
     async def list(
         self,
-        flow_id: Optional[int] = None,
-        status: Optional[str] = None,
-        is_published: Optional[bool] = None,
-        scheduled_before: Optional[datetime] = None,
+        flow_id: int | None = None,
+        status: str | None = None,
+        is_published: bool | None = None,
+        scheduled_before: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[Post]:
@@ -57,9 +56,9 @@ class PostRepository:
 
         return [
             post
-            async for post in query.select_related("flow").prefetch_related("images").order_by("-created_at")[
-                offset : offset + limit
-            ]
+            async for post in query.select_related("flow")
+            .prefetch_related("images")
+            .order_by("-created_at")[offset : offset + limit]
         ]
 
     async def exists(self, post_id: int) -> bool:

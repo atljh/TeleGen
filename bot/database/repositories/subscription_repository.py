@@ -24,10 +24,10 @@ class SubscriptionRepository:
     async def get_subscription_by_id(self, subscription_id: int) -> Subscription:
         try:
             return await Subscription.objects.aget(id=subscription_id)
-        except Subscription.DoesNotExist:
+        except Subscription.DoesNotExist as e:
             raise SubscriptionNotFoundError(
                 f"Subscription with id={subscription_id} not found."
-            )
+            ) from e
 
     async def update_subscription(self, subscription: Subscription) -> Subscription:
         await subscription.asave()

@@ -4,7 +4,7 @@ from bot.services.post.post_service import PostService
 from bot.services.post.publish import PostPublishingService
 from bot.services.post.scheduling import PostSchedulingService
 
-all = [
+__all__ = [
     "PostBaseService",
     "PostGenerationService",
     "PostPublishingService",

@@ -1,5 +1,6 @@
-import logging
 import asyncio
+import logging
+
 from celery import shared_task
 
 from bot.containers import Container
@@ -24,6 +25,7 @@ async def _process_flows():
             logger.error(f"Failed to process flow {flow.id}: {e}")
             continue
 
+
 async def _publish_scheduled_posts():
     post_service = Container.post_service()
     logger.info("Checking for scheduled posts...")
@@ -46,6 +48,7 @@ def run_scheduled_jobs(self):
     - Publishes scheduled posts
     """
     try:
+
         async def runner():
             await _process_flows()
             return await _publish_scheduled_posts()

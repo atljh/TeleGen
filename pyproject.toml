@@ -52,10 +52,16 @@ dependencies = [
     "isort==5.13.2",
     "undetected-chromedriver>=3.5.5",
     "setuptools>=80.9.0",
+    "pre-commit>=4.3.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "flake8-django>=1.1.1",
+    "mypy>=1.9.0",
+    "django-stubs>=5.2.5",
+    "types-requests>=2.32.4.20250913",
+    "types-python-dateutil>=2.9.0.20250822",
     "pytest==8.1.1",
     "pytest-django>=4.8.0",
     "black==24.1.0",
@@ -90,32 +96,39 @@ docs = [
 ]
 
 
-[tool.black]
+[tool.ruff]
 line-length = 88
-target-version = ['py311']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-    \.git
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | build
-  | dist
-  | migrations
-)/
-'''
+target-version = "py311"
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 88
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "DJ",  # django
+    "RUF", # ruff-specific
+]
+exclude = [
+    "migrations/",
+    "**/migrations/",
+    "**/migrations/*.py",
+    "**/migrations/__init__.py",
+]
 
-[tool.flake8]
-max-line-length = 88
-extend-ignore = "E203"
-exclude = ".venv,env,venv,migrations,.mypy_cache,.pytest_cache,.tox,dist,build"
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "D107",  # Missing docstring in __init__
+    "RUF001",
+]
+
+extend-select = ["DJ"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["admin_panel", "bot", "messages"]
+
+[tool.ruff.format]
+quote-style = "double"

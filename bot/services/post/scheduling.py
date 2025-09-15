@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime
-from django.utils import timezone
-import pytz
 
+import pytz
 from asgiref.sync import sync_to_async
+from django.utils import timezone
 
 from admin_panel.admin_panel.models import Post
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
@@ -22,10 +22,8 @@ class PostSchedulingService:
         self.publishing_service = publishing_service
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
-
-
         if timezone.is_naive(scheduled_time):
-            ukraine_tz = pytz.timezone('Europe/Kiev')
+            ukraine_tz = pytz.timezone("Europe/Kiev")
             scheduled_time = ukraine_tz.localize(scheduled_time)
 
         scheduled_time_utc = scheduled_time.astimezone(pytz.UTC)

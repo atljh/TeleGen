@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import re
-import subprocess
 import sys
 
 from aiogram.enums import ParseMode
@@ -15,11 +14,10 @@ from bot.database.exceptions import ChannelNotFoundError
 from bot.database.models import ContentLength, GenerationFrequency
 from bot.dialogs.generation.callbacks import show_generated_posts
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
+from bot.dialogs.generation.states import GenerationMenu
 from bot.utils.formatting import parse_entities_to_html
 
 logger = logging.getLogger(__name__)
-
-from bot.dialogs.generation.states import GenerationMenu
 
 
 async def to_channel(callback: CallbackQuery, button: Button, manager: DialogManager):
@@ -37,9 +35,6 @@ async def to_select_frequency(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     await manager.switch_to(CreateFlowMenu.select_frequency)
-
-
-# ==================THEME======================
 
 
 async def on_channel_theme_selected(
@@ -61,9 +56,6 @@ async def on_custom_theme_entered(
 ):
     manager.dialog_data["channel_theme"] = text
     await manager.switch_to(CreateFlowMenu.select_source)
-
-
-# ==================SOURCE======================
 
 
 async def on_source_type_selected(
@@ -126,12 +118,8 @@ def validate_link(link: str, source_type: str) -> bool:
         "web": r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
         "telegram": r"(https?:\/\/)?(www\.)?t\.me\/(\+)?[A-Za-z0-9_\.]+",
     }
-    import re
 
     return bool(re.fullmatch(patterns.get(source_type.lower(), ""), link))
-
-
-# ==================FREQUENCY======================
 
 
 async def on_once_a_day(
@@ -156,9 +144,6 @@ async def on_once_an_hour(
     await manager.switch_to(CreateFlowMenu.select_words_limit)
 
 
-# ==================WORDS LIMIT======================
-
-
 async def on_to_100(callback: CallbackQuery, button: Button, manager: DialogManager):
     manager.dialog_data["selected_words_limit"] = "to_100"
     await callback.answer("До 100")
@@ -177,9 +162,6 @@ async def on_to_1000(callback: CallbackQuery, button: Button, manager: DialogMan
     await manager.switch_to(CreateFlowMenu.title_highlight_confirm)
 
 
-# ==================TITLE======================
-
-
 async def confirm_title_highlight(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
@@ -194,33 +176,6 @@ async def reject_title_highlight(
     manager.dialog_data["title_highlight"] = False
     await manager.switch_to(CreateFlowMenu.flow_volume_settings)
     await callback.answer("Заголовок не буде виділено")
-
-
-# ==================AD TIME======================
-
-
-async def handle_time_input(message: Message, widget, manager: DialogManager):
-    if not re.match(r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", message.text):
-        await message.answer(
-            "❌ Невірний формат часу. Введіть у форматі hh:mm (наприклад, 15:20)"
-        )
-        return
-
-    manager.dialog_data["ad_time"] = message.text
-
-    await manager.switch_to(CreateFlowMenu.flow_volume_settings)
-    await message.answer(f"✅ Час рекламного топу оновлено: {message.text}")
-
-
-async def reset_ad_time(
-    callback: CallbackQuery, button: Button, manager: DialogManager
-):
-    manager.dialog_data["ad_time"] = None
-    await callback.answer("Час рекламного топу скинуто")
-    await manager.show()
-
-
-# ==================POSTS VOLUME======================
 
 
 async def on_volume_selected(
@@ -251,24 +206,6 @@ async def handle_custom_volume_input(message: Message, widget, manager: DialogMa
         await message.answer("❌ Введіть коректне число")
 
 
-# ==================SIGNATURE======================
-
-
-# async def handle_signature_input(message: Message, widget, manager: DialogManager):
-#     try:
-#         manager.dialog_data["signature_raw"] = message.html_text
-#         manager.dialog_data["signature"] = message.text
-
-#         flow = await create_new_flow(manager)
-
-#         await manager.switch_to(CreateFlowMenu.confirmation)
-
-#     except Exception as e:
-#         logger.error(f"Signature input error: {e}")
-#         await message.answer("❌ Помилка збереження підпису")
-#         await manager.switch_to(CreateFlowMenu.select_theme)
-
-
 async def handle_signature_input(message: Message, widget, manager: DialogManager):
     try:
         new_signature = parse_entities_to_html(message)
@@ -285,12 +222,12 @@ async def handle_signature_input(message: Message, widget, manager: DialogManage
         )
         manager.dialog_data["signature"] = new_signature
 
-        flow = await create_new_flow(manager)
+        await create_new_flow(manager)
 
         await manager.switch_to(CreateFlowMenu.confirmation)
 
     except Exception as e:
-        logging.error(f"Signature processing error: {str(e)}")
+        logging.error(f"Signature processing error: {e!s}")
         await message.answer(
             "⚠️ <b>Помилка!</b> Не вдалось обробити підпис", parse_mode=ParseMode.HTML
         )
@@ -302,7 +239,7 @@ async def skip_signature(
     try:
         manager.dialog_data["signature"] = None
 
-        flow = await create_new_flow(manager)
+        await create_new_flow(manager)
 
         await manager.switch_to(CreateFlowMenu.confirmation)
 
@@ -313,9 +250,6 @@ async def skip_signature(
         logger.error(f"Flow creation error: {e}")
         await callback.answer("❌ Помилка створення Flow")
         await manager.switch_to(CreateFlowMenu.select_theme)
-
-
-# ==================CONFIRMATION======================
 
 
 async def create_new_flow(manager: DialogManager):
@@ -345,7 +279,6 @@ async def create_new_flow(manager: DialogManager):
         frequency=GenerationFrequency(flow_data.get("selected_frequency", "daily")),
         signature=flow_data.get("signature", ""),
         flow_volume=flow_data.get("flow_volume", 5),
-        ad_time=flow_data.get("ad_time"),
     )
     manager.dialog_data["created_flow"] = {
         "flow_id": new_flow.id,
@@ -381,22 +314,18 @@ async def start_generation_process(
             parse_mode="Markdown",
         )
 
-        process = subprocess.Popen(
-            [
-                "python",
-                "/app/bot/generator_worker.py",
-                str(flow.id),
-                str(callback.message.chat.id),
-                str(status_msg.message_id),
-                bot.token,
-            ],
+        process = await asyncio.create_subprocess_exec(
+            "python",
+            "/app/bot/generator_worker.py",
+            str(flow.id),
+            str(callback.message.chat.id),
+            str(status_msg.message_id),
+            bot.token,
             stdout=sys.stdout,
             stderr=sys.stderr,
-            text=True,
-            bufsize=1,
         )
 
-        asyncio.create_task(
+        task = asyncio.create_task(
             show_generated_posts(
                 process=process,
                 flow_id=flow.id,
@@ -407,11 +336,8 @@ async def start_generation_process(
                 channel=channel,
             )
         )
+        return task
 
     except Exception as e:
-        logging.error(f"Помилка запуску генерації: {str(e)}")
-        await callback.message.answer(f"❌ Помилка: {str(e)}", parse_mode="Markdown")
-
-    except Exception as e:
-        logger.error(f"Error starting generation: {e}")
-        await callback.answer("❌ Помилка запуску генерації")
+        logging.error(f"Помилка запуску генерації: {e!s}")
+        await callback.message.answer(f"❌ Помилка: {e!s}", parse_mode="Markdown")

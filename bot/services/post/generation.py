@@ -120,7 +120,7 @@ class PostGenerationService:
                     generated_posts.append(post)
 
             except Exception as e:
-                logging.error(f"Post creation failed: {str(e)}")
+                logging.error(f"Post creation failed: {e!s}")
                 continue
 
         return generated_posts

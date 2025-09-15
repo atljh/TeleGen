@@ -26,7 +26,6 @@ class FlowRepository:
         frequency: str,
         signature: str | None = None,
         flow_volume: int = 5,
-        ad_time: str | None = None,
     ) -> Flow:
         valid_frequencies = [f.value for f in GenerationFrequency]
         if frequency not in valid_frequencies:
@@ -45,7 +44,6 @@ class FlowRepository:
                 frequency=frequency,
                 signature=signature,
                 flow_volume=flow_volume,
-                ad_time=ad_time,
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
             )
@@ -59,14 +57,14 @@ class FlowRepository:
     async def get_flow_by_id(self, id: int) -> Flow:
         try:
             return await Flow.objects.aget(id=id)
-        except Flow.DoesNotExist:
-            raise FlowNotFoundError(f"No flow found with id {id}")
+        except Flow.DoesNotExist as e:
+            raise FlowNotFoundError(f"No flow found with id {id}") from e
 
     async def get_flow_by_channel_id(self, channel_id: int) -> Flow:
         try:
             return await Flow.objects.aget(channel_id=channel_id)
-        except Flow.DoesNotExist:
-            raise FlowNotFoundError(f"No flow found for channel {channel_id}")
+        except Flow.DoesNotExist as e:
+            raise FlowNotFoundError(f"No flow found for channel {channel_id}") from e
 
     async def get_flows_by_channel_id(self, channel_id: int) -> list[Flow]:
         return await Flow.objects.filter(channel_id=channel_id).first()
@@ -123,7 +121,6 @@ class FlowRepository:
             frequency=flow.frequency,
             signature=flow.signature,
             flow_volume=flow.flow_volume,
-            ad_time=flow.ad_time,
             next_generation_time=flow.next_generation_time,
             created_at=flow.created_at,
             updated_at=flow.updated_at,

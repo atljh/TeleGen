@@ -8,7 +8,6 @@ from bot.database.repositories.statistic_repository import StatisticsRepository
 from bot.database.repositories.subscription_repository import SubscriptionRepository
 from bot.database.repositories.user_repository import UserRepository
 
-
 __all__ = [
     "AISettingsRepository",
     "ChannelRepository",

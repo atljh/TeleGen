@@ -182,15 +182,14 @@ async def on_publish_post(
 
     except InvalidOperationError as e:
         logging.error(f"Invalid operation: {e}")
-        await callback.answer(f"❌ Помилка: {str(e)}")
+        await callback.answer(f"❌ Помилка: {e!s}")
         await manager.switch_to(BufferMenu.channel_main)
     except Exception as e:
         logging.exception("Помилка при публікації посту")
-        await callback.answer(f"❌ Сталася неочікувана помилка: {str(e)}")
+        await callback.answer(f"❌ Сталася неочікувана помилка: {e!s}")
         await manager.switch_to(BufferMenu.channel_main)
 
 
-# ===========================================EDIT===========================================
 async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     data = await paging_getter(manager)
     current_page = data["current_page"] - 1
@@ -314,7 +313,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
     except PostNotFoundError:
         await message.answer("Помилка: пост не знайдено")
     except Exception as e:
-        logging.error(f"Помилка збереження: {str(e)}")
+        logging.error(f"Помилка збереження: {e!s}")
         await message.answer("Помилка при збереженні змін")
 
 

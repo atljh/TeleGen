@@ -1,4 +1,6 @@
-WEB_SOURCES = [
+from typing import ClassVar
+
+WEB_SOURCES: ClassVar[list[str]] = [
     "https://top-channel.tv/",
     "https://www.derstandard.at/",
     "https://orf.at/",
@@ -101,7 +103,7 @@ WEB_SOURCES = [
     "https://www.radiosvoboda.org/z/1041",
 ]
 
-TELEGRAM_SOURCES = [
+TELEGRAM_SOURCES: ClassVar[list[str]] = [
     "https://t.me/ukrpravda_news",
     "https://t.me/suspilnenews",
     "https://t.me/hromadske_ua",
@@ -205,7 +207,7 @@ TELEGRAM_SOURCES = [
 ]
 
 # Категоризированные источники (опционально)
-CATEGORIZED_SOURCES = {
+CATEGORIZED_SOURCES: ClassVar[dict[str, list[str]]] = {
     "news": [
         "https://www.bbc.com/news/world/europe",
         "https://www.reuters.com/world/europe/",
@@ -276,11 +278,11 @@ def get_sources_by_category(category: str, count: int = 5) -> list:
 
 
 __all__ = [
-    "WEB_SOURCES",
-    "TELEGRAM_SOURCES",
     "CATEGORIZED_SOURCES",
-    "get_random_web_sources",
-    "get_random_telegram_sources",
+    "TELEGRAM_SOURCES",
+    "WEB_SOURCES",
     "get_random_sources_mix",
+    "get_random_telegram_sources",
+    "get_random_web_sources",
     "get_sources_by_category",
 ]

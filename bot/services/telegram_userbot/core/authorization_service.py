@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
@@ -10,7 +9,7 @@ from ..types import AuthorizationError
 
 
 class AuthorizationService:
-    def __init__(self, phone: Optional[str] = None):
+    def __init__(self, phone: str | None = None):
         self.phone = phone
         self.logger = logging.getLogger(__name__)
 
@@ -21,23 +20,23 @@ class AuthorizationService:
             )
             return True
 
-        except SessionPasswordNeededError:
+        except SessionPasswordNeededError as e:
             await self._handle_password_needed()
-            raise AuthorizationError("Two-factor authentication required")
+            raise AuthorizationError("Two-factor authentication required") from e
 
-        except EOFError:
+        except EOFError as e:
             await self._handle_eof_error()
-            raise AuthorizationError("Reauthorization required")
+            raise AuthorizationError("Reauthorization required") from e
 
         except Exception as e:
             await self._handle_authorization_error(e)
-            raise AuthorizationError(f"Authorization failed: {str(e)}")
+            raise AuthorizationError(f"Authorization failed: {e!s}") from e
 
     async def is_authorized(self, client: TelegramClient) -> bool:
         try:
             return await client.is_user_authorized()
         except Exception as e:
-            self.logger.error(f"Authorization check failed: {str(e)}")
+            self.logger.error(f"Authorization check failed: {e!s}")
             return False
 
     async def _handle_password_needed(self):
@@ -49,14 +48,14 @@ class AuthorizationService:
         await notify_admins("⚠️ Userbot потребує повторної авторизації!")
 
     async def _handle_authorization_error(self, error: Exception):
-        self.logger.error(f"Authorization error: {str(error)}")
-        await notify_admins(f"❌ Помилка авторизації Userbot: {str(error)}")
+        self.logger.error(f"Authorization error: {error!s}")
+        await notify_admins(f"❌ Помилка авторизації Userbot: {error!s}")
 
-    async def send_code_request(self, client: TelegramClient) -> Optional[str]:
+    async def send_code_request(self, client: TelegramClient) -> str | None:
         try:
             return await client.send_code_request(self.phone)
         except Exception as e:
-            self.logger.error(f"Code request failed: {str(e)}")
+            self.logger.error(f"Code request failed: {e!s}")
             return None
 
     async def sign_in_with_code(self, client: TelegramClient, code: str) -> bool:
@@ -64,7 +63,7 @@ class AuthorizationService:
             await client.sign_in(phone=self.phone, code=code)
             return True
         except Exception as e:
-            self.logger.error(f"Sign in with code failed: {str(e)}")
+            self.logger.error(f"Sign in with code failed: {e!s}")
             return False
 
     async def sign_in_with_password(
@@ -74,5 +73,5 @@ class AuthorizationService:
             await client.sign_in(password=password)
             return True
         except Exception as e:
-            self.logger.error(f"Sign in with password failed: {str(e)}")
+            self.logger.error(f"Sign in with password failed: {e!s}")
             return False

@@ -1,31 +1,35 @@
-import os
 import logging
-from typing import Any, Sequence
+import os
+from collections.abc import Sequence
+from functools import lru_cache
+from typing import Any
+
+from aiogram.enums import ParseMode
+from aiogram.types import FSInputFile, InputMediaPhoto, Message
 from aiogram_dialog import DialogManager
 from django.conf import settings
-from functools import lru_cache
-from aiogram.enums import ParseMode
-from aiogram.types import (
-    FSInputFile,
-    InputMediaPhoto,
-    Message,
-)
 
 logger = logging.getLogger(__name__)
+
 
 @lru_cache(maxsize=100)
 def get_media_path(media_url: str) -> str:
     return os.path.join(settings.MEDIA_ROOT, media_url.split("/media/")[-1])
+
 
 async def safe_delete_messages(bot, chat_id: int, message_ids: Sequence[int]) -> None:
     for msg_id in message_ids:
         try:
             await bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except Exception:
-            logger.debug("Failed to delete message %s in chat %s", msg_id, chat_id, exc_info=True)
+            logger.debug(
+                "Failed to delete message %s in chat %s", msg_id, chat_id, exc_info=True
+            )
 
 
-async def send_media_album(dialog_manager: DialogManager, post_data: dict[str, Any]) -> Message:
+async def send_media_album(
+    dialog_manager: DialogManager, post_data: dict[str, Any]
+) -> Message:
     bot = dialog_manager.middleware_data["bot"]
     chat_id = dialog_manager.middleware_data["event_chat"].id
     message = dialog_manager.event.message
@@ -65,7 +69,10 @@ async def send_media_album(dialog_manager: DialogManager, post_data: dict[str, A
         try:
             await message.delete()
         except Exception:
-            logger.debug("Failed to delete trigger message before sending media group", exc_info=True)
+            logger.debug(
+                "Failed to delete trigger message before sending media group",
+                exc_info=True,
+            )
 
         new_messages = await bot.send_media_group(chat_id=chat_id, media=media_group)
         dialog_manager.dialog_data["message_ids"] = [m.message_id for m in new_messages]

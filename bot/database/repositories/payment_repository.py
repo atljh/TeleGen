@@ -20,8 +20,10 @@ class PaymentRepository:
     async def get_payment_by_id(self, payment_id: int) -> Payment:
         try:
             return await Payment.objects.aget(id=payment_id)
-        except Payment.DoesNotExist:
-            raise PaymentNotFoundError(f"Payment with id={payment_id} not found.")
+        except Payment.DoesNotExist as e:
+            raise PaymentNotFoundError(
+                f"Payment with id={payment_id} not found."
+            ) from e
 
     async def update_payment(self, payment: Payment) -> Payment:
         await payment.asave()

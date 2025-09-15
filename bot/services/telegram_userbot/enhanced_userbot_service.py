@@ -1,8 +1,8 @@
 import time
-from typing import Optional
 
 from bot.database.models.flow import FlowDTO
 from bot.database.models.post import PostDTO
+from bot.services.aisettings_service import AISettingsService
 from bot.services.telegram_userbot.core.base_userbot_service import BaseUserbotService
 from bot.services.telegram_userbot.processing.content_processing_service import (
     ContentProcessingService,
@@ -10,6 +10,7 @@ from bot.services.telegram_userbot.processing.content_processing_service import 
 from bot.services.telegram_userbot.processing.post_conversion_service import (
     PostConversionService,
 )
+from bot.services.user_service import UserService
 
 
 class EnhancedUserbotService(BaseUserbotService):
@@ -19,7 +20,7 @@ class EnhancedUserbotService(BaseUserbotService):
         api_hash: str,
         aisettings_service: "AISettingsService",
         user_service: "UserService",
-        openai_key: str = None,
+        openai_key: str | None = None,
         **kwargs,
     ):
         super().__init__(api_id, api_hash, **kwargs)
@@ -54,7 +55,7 @@ class EnhancedUserbotService(BaseUserbotService):
             return processed_posts
 
         except Exception as e:
-            self.logger.error(f"Error getting posts: {str(e)}", exc_info=True)
+            self.logger.error(f"Error getting posts: {e!s}", exc_info=True)
             return []
 
     async def process_content(self, text: str, flow: FlowDTO) -> str:
@@ -62,7 +63,5 @@ class EnhancedUserbotService(BaseUserbotService):
             PostDTO(content=text), flow
         ).content
 
-    async def convert_raw_post(
-        self, raw_post: dict, flow: FlowDTO
-    ) -> Optional[PostDTO]:
+    async def convert_raw_post(self, raw_post: dict, flow: FlowDTO) -> PostDTO | None:
         return await self.post_converter._convert_single_post(raw_post, flow)

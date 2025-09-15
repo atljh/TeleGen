@@ -60,9 +60,6 @@ async def open_settings(
     await manager.switch_to(SettingsMenu.channel_main_settings)
 
 
-# ================== ОБРАБОТЧИКИ ОСНОВНЫХ НАСТРОЕК КАНАЛА ==================
-
-
 async def open_notification_settings(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
@@ -78,11 +75,7 @@ async def open_timezone_settings(
 async def open_emoji_settings(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    # await manager.switch_to(SettingsMenu.emoji_settings)
     await callback.answer("Функція в розробці")
-
-
-# ================== GETTER ДЛЯ ОКНА НАСТРОЕК ==================
 
 
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
@@ -99,9 +92,6 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     except Exception as e:
         logger.error(f"Error getting channel data: {e}")
         return {"selected_channel": None, "channel_flow": None}
-
-
-# ================== ОБРАБОТЧИКИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ==================
 
 
 async def delete_channel(
@@ -139,9 +129,6 @@ async def cancel_delete_channel(
     await manager.switch_to(SettingsMenu.channel_main_settings)
 
 
-# ================== ОБРАБОТЧИКИ ПОДПИСИ КАНАЛА ==================
-
-
 async def open_signature_editor(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
@@ -170,7 +157,7 @@ async def handle_sig_input(message: Message, dialog: Dialog, manager: DialogMana
         await manager.switch_to(SettingsMenu.channel_main_settings)
 
     except Exception as e:
-        logging.error(f"Signature processing error: {str(e)}")
+        logging.error(f"Signature processing error: {e!s}")
         await message.answer(
             "⚠️ <b>Помилка!</b> Не вдалось обробити підпис", parse_mode=ParseMode.HTML
         )
@@ -189,9 +176,6 @@ def escape_markdown_except_links(text: str) -> str:
     parts = re.split(r"(\[[^\]]+\]\([^)]+\))", text)
     escaped = [escape(part) if not part.startswith("[") else part for part in parts]
     return "".join(escaped)
-
-
-# ================== ОБРОБНИКИ ТА GETTERS ==================
 
 
 async def toggle_notification(callback: CallbackQuery, widget, manager: DialogManager):

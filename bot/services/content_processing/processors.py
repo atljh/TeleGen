@@ -1,9 +1,7 @@
 import asyncio
 import logging
 import re
-import time
 from abc import ABC, abstractmethod
-
 
 import openai
 from psycopg.errors import UniqueViolation
@@ -68,7 +66,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         self.aisettings_service = aisettings_service
         self.client = openai.AsyncOpenAI(api_key=api_key, timeout=timeout)
 
-    async def process_batch(self, texts: list[str], user_id: int) -> list[str]:
+    async def process_batch(self, texts: list[str]) -> list[str]:
         if not texts:
             return []
 
@@ -76,7 +74,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         for i in range(0, len(texts), self.max_batch_size):
             batch = texts[i : i + self.max_batch_size]
             batch_results = await asyncio.gather(
-                *[self.process(text, user_id) for text in batch]
+                *[self.process(text) for text in batch]
             )
             results.extend(batch_results)
 
@@ -87,16 +85,16 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     async def _get_or_create_user_prompt(self, text: str, flow: FlowDTO) -> str:
         try:
-            default_prompt = await self._build_system_prompt(text, flow)
+            default_prompt = self._build_system_prompt(text)
             return default_prompt
 
             # aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
             # return aisettings.prompt
 
         except AISettingsNotFoundError:
-            default_prompt = await self._build_system_prompt(text, flow)
+            default_prompt = self._build_system_prompt(text)
             try:
-                aisettings = await self.aisettings_service.create_aisettings(
+                await self.aisettings_service.create_aisettings(
                     flow=flow, prompt=default_prompt, style=str(flow.theme)
                 )
                 return default_prompt
@@ -108,14 +106,14 @@ class ChatGPTContentProcessor(ContentProcessor):
                 return existing_settings.prompt
 
             except Exception as create_error:
-                logging.error(f"Error creating AI settings: {str(create_error)}")
+                logging.error(f"Error creating AI settings: {create_error!s}")
                 return default_prompt
 
         except Exception as e:
-            logging.error(f"Error getting flow prompt: {str(e)}")
-            return await self._build_system_prompt(text, flow)
+            logging.error(f"Error getting flow prompt: {e!s}")
+            return self._build_system_prompt(text)
 
-    async def process(self, text: str, user_id: int) -> str:
+    async def process(self, text: str) -> str:
         try:
             if isinstance(text, list):
                 text = " ".join([str(item) for item in text if item])
@@ -123,12 +121,12 @@ class ChatGPTContentProcessor(ContentProcessor):
             if not text.strip():
                 return ""
 
-            cache_key = hash(f"{text}_{self.flow.id}_{user_id}")
+            cache_key = hash(f"{text}_{self.flow.id}")
             if cache_key in self.cache:
                 return self.cache[cache_key]
 
             system_prompt = await self._get_prompt(text, self.flow)
-            result = await self._call_ai_with_retry(text, system_prompt, self.flow)
+            result = await self._call_ai_with_retry(text, system_prompt)
 
             if len(self.cache) >= self.cache_size_limit:
                 self.cache.pop(next(iter(self.cache)))
@@ -137,20 +135,20 @@ class ChatGPTContentProcessor(ContentProcessor):
             return result
 
         except openai.RateLimitError as e:
-            logging.error(f"OpenAI quota exceeded: {str(e)}")
+            logging.error(f"OpenAI quota exceeded: {e!s}")
             await self._notify_admin("OpenAI quota exceeded")
             return text
 
         except openai.APIError as e:
-            logging.error(f"OpenAI API error: {str(e)}")
-            await self._notify_admin(f"OpenAI API error: {str(e)}")
+            logging.error(f"OpenAI API error: {e!s}")
+            await self._notify_admin(f"OpenAI API error: {e!s}")
             return text
 
         except Exception as e:
-            logging.error(f"Unexpected processing error: {str(e)}", exc_info=True)
+            logging.error(f"Unexpected processing error: {e!s}", exc_info=True)
             return text
 
-    async def _call_ai_with_retry(self, text: str, system_prompt: str, flow) -> str:
+    async def _call_ai_with_retry(self, text: str, system_prompt: str) -> str:
         messages = [
             {"role": "system", "content": system_prompt},
         ]
@@ -170,7 +168,6 @@ class ChatGPTContentProcessor(ContentProcessor):
         last_error = None
         for attempt in range(self.max_retries + 1):
             try:
-                start_time = time.time()
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
@@ -197,7 +194,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             except Exception as e:
                 last_error = e
                 if attempt == self.max_retries:
-                    raise openai.APIError(f"Unexpected error: {str(e)}")
+                    raise openai.APIError(f"Unexpected error: {e!s}") from e
                 await asyncio.sleep(1)
 
         raise (
@@ -208,12 +205,12 @@ class ChatGPTContentProcessor(ContentProcessor):
         try:
             await notify_admins(message)
         except Exception as e:
-            logging.error(f"Failed to send admin notification: {str(e)}")
+            logging.error(f"Failed to send admin notification: {e!s}")
 
     async def _get_prompt(self, text: str, flow: FlowDTO) -> str:
         return await self._get_or_create_user_prompt(text, flow)
 
-    async def _build_system_prompt(self, text: str, flow: FlowDTO) -> str:
+    def _build_system_prompt(self, text: str) -> str:
         rules = [
             "You are a professional post editor.",
             "Translate it to Ukranian",

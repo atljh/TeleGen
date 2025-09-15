@@ -15,6 +15,7 @@ from aiogram_dialog.widgets.text import Const, Format
 
 from bot.containers import Container
 from bot.dialogs.settings.payment.states import PaymentMenu
+from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import (
     cancel_delete_channel,
@@ -39,8 +40,6 @@ from .getters import (
 )
 from .states import SettingsMenu
 
-from bot.utils.constants.buttons import BACK_BUTTON
-
 
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     channel_service = Container.channel_service()
@@ -50,7 +49,6 @@ async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     return {"channels": channels or []}
 
 
-# ================== ГЛАВНЫЙ ДИАЛОГ ==================
 def create_settings_dialog():
     return Dialog(
         Window(

@@ -14,8 +14,6 @@ from .states import FlowSettingsMenu
 
 logger = logging.getLogger(__name__)
 
-# ================== ОБРАБОТЧИКИ ГЛАВНОГО МЕНЮ ФЛОУ ==================
-
 
 async def start_flow_settings(
     callback: CallbackQuery, button: Button, manager: DialogManager
@@ -61,7 +59,6 @@ async def open_main_settings(
         data={"selected_channel": selected_channel, "channel_flow": channel_flow},
         mode=StartMode.RESET_STACK,
     )
-    return
 
 
 async def back_to_settings(callback: CallbackQuery, b: Button, manager: DialogManager):
@@ -75,9 +72,6 @@ async def back_to_settings(callback: CallbackQuery, b: Button, manager: DialogMa
         data={"selected_channel": selected_channel, "channel_flow": channel_flow},
         mode=StartMode.RESET_STACK,
     )
-
-
-# ================== ОСНОВНЫЕ ОБРАБОТЧИКИ ФЛОУ ==================
 
 
 async def set_generation_frequency(
@@ -128,9 +122,6 @@ async def open_source_settings(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     await manager.switch_to(FlowSettingsMenu.source_settings)
-
-
-# ================== ОБРАБОТЧИКИ ПОД-НАСТРОЕК ==================
 
 
 async def set_frequency(
@@ -377,7 +368,7 @@ async def on_new_type_selected(
         await manager.switch_to(FlowSettingsMenu.source_settings)
 
     except ValueError as e:
-        error_msg = f"Помилка валідації: {str(e)}"
+        error_msg = f"Помилка валідації: {e!s}"
         logger.warning(error_msg)
         await callback.answer(error_msg, show_alert=True)
         await manager.back()
@@ -390,7 +381,7 @@ async def on_new_type_selected(
 
     except Exception as e:
         error_msg = "Критична помилка при зміні типу"
-        logger.critical(f"{error_msg}: {str(e)}", exc_info=True)
+        logger.critical(f"{error_msg}: {e!s}", exc_info=True)
         await callback.answer(error_msg, show_alert=True)
         await manager.done()
 
@@ -434,9 +425,7 @@ async def on_source_new_link_entered(
         flow.sources[source_idx]["updated_at"] = datetime.now().isoformat()
 
         flow_service = Container.flow_service()
-        updated_flow = await flow_service.update_flow(
-            flow_id=flow.id, sources=flow.sources
-        )
+        await flow_service.update_flow(flow_id=flow.id, sources=flow.sources)
 
         await message.answer(
             f"✅ Джерело успішно змiнено!:\n\n"
@@ -448,12 +437,12 @@ async def on_source_new_link_entered(
         await manager.switch_to(FlowSettingsMenu.source_settings)
 
     except ValueError as e:
-        logger.warning(f"Validation error: {str(e)}")
-        await message.answer(f"❌ Ошибка: {str(e)}")
+        logger.warning(f"Validation error: {e!s}")
+        await message.answer(f"❌ Ошибка: {e!s}")
         await manager.back()
 
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        logger.error(f"Unexpected error: {e!s}", exc_info=True)
         await message.answer("⛔ Произошла непредвиденная ошибка")
         await manager.done()
 
@@ -488,7 +477,7 @@ async def confirm_delete_source(
             return
 
     flow_service = Container.flow_service()
-    updated_flow = await flow_service.update_flow(flow_id=flow.id, sources=flow.sources)
+    await flow_service.update_flow(flow_id=flow.id, sources=flow.sources)
 
     await callback.answer(
         f"✅ Джерело {deleted_source['type']} видалено!", show_alert=True

@@ -59,5 +59,5 @@ async def view_generated_posts(
         await callback.answer()
 
     except Exception as e:
-        logger.error(f"Error in view_generated_posts: {str(e)}", exc_info=True)
+        logger.error(f"Error in view_generated_posts: {e!s}", exc_info=True)
         await callback.answer("Сталася помилка при обробці запиту")

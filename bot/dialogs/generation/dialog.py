@@ -4,7 +4,6 @@ from aiogram_dialog.widgets.kbd import Back, Button, Column, Group, Row, Select
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.states import GenerationMenu
-
 from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import (

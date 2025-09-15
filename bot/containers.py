@@ -174,7 +174,8 @@ class Container(containers.DeclarativeContainer):
 
     @staticmethod
     async def shutdown_resources():
-        if Container.session.provided:
-            await Container.session().close()
-        if Container.userbot_service.provided:
-            await Container.userbot_service().stop()
+        container = Container()
+        if container.session.provided:
+            await container.session().close()
+        if container.userbot_service.provided:
+            await container.userbot_service().stop()

@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 from urllib.parse import unquote
 
 from aiogram import Bot
@@ -35,7 +34,7 @@ class PostPublishingService:
             )
 
         except Exception as e:
-            raise InvalidOperationError(f"Помилка публiкацiї: {str(e)}")
+            raise InvalidOperationError(f"Помилка публiкацiї: {e!s}") from e
 
     async def _send_post_to_channel(self, post: PostDTO, channel_id: str):
         caption = post.content[:1024] if len(post.content) > 1024 else post.content
@@ -56,9 +55,7 @@ class PostPublishingService:
 
         await self.bot.send_media_group(chat_id=channel_id, media=media_group)
 
-    def _create_media_item(
-        self, image, caption: Optional[str] = None
-    ) -> InputMediaPhoto:
+    def _create_media_item(self, image, caption: str | None = None) -> InputMediaPhoto:
         if image.url.startswith(("http://", "https://")):
             return InputMediaPhoto(
                 media=image.url, caption=caption, parse_mode=ParseMode.HTML

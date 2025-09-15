@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any
 
 from asgiref.sync import sync_to_async
 from django.utils import timezone
@@ -39,7 +39,6 @@ class FlowService:
         frequency: GenerationFrequency | str,
         signature: str | None = None,
         flow_volume: int = 5,
-        ad_time: str | None = None,
     ) -> FlowDTO:
         channel = await self.channel_repository.get_channel_by_id(channel_id)
 
@@ -62,17 +61,16 @@ class FlowService:
                 frequency=frequency,
                 signature=signature,
                 flow_volume=flow_volume,
-                ad_time=ad_time,
             )
         except Exception as e:
             logging.error(f"Flow error {e}", exc_info=True)
-            return
+            raise e
         try:
             flow_dto = FlowDTO.from_orm(flow)
         except Exception as e:
             logging.error(f"DTO conversion error: {e}", exc_info=True)
-            return
-        return FlowDTO.from_orm(flow)
+            raise e
+        return flow_dto
 
     async def get_flow_by_channel_id(self, channel_id: int) -> FlowDTO | None:
         try:
@@ -152,7 +150,7 @@ class FlowService:
 
     def _format_changes_for_log(
         self, old_values: dict, new_values: dict
-    ) -> Optional[dict]:
+    ) -> dict | None:
         if not old_values or not new_values:
             return None
 
@@ -178,7 +176,7 @@ class FlowService:
             return "None"
         elif isinstance(value, bool):
             return "✅" if value else "❌"
-        elif isinstance(value, (list, dict)):
+        elif isinstance(value, list | dict):
             return str(len(value)) if value else "Empty"
         elif isinstance(value, str) and len(value) > 50:
             return f"{value[:50]}..."

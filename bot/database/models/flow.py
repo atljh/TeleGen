@@ -1,9 +1,8 @@
-import re
 from datetime import datetime
 from enum import StrEnum
 from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict
 
 
 class ContentLength(StrEnum):
@@ -32,20 +31,12 @@ class FlowDTO(BaseModel):
     frequency: GenerationFrequency = GenerationFrequency.DAILY
     signature: str | None = None
     flow_volume: int = 5
-    ad_time: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
     next_generation_time: datetime | None = None
     last_generated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True, use_enum_values=True)
-
-    @field_validator("ad_time")
-    @classmethod
-    def validate_ad_time(cls, v: str | None) -> str | None:
-        if v and not re.match(r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$", v):
-            raise ValueError("Invalid time format. Use HH:MM")
-        return v
 
     @classmethod
     def from_orm(cls, obj: Any) -> Self:

@@ -1,17 +1,15 @@
+from typing import ClassVar
+
 from django.db import models
-from django.utils import timezone
+
 
 class User(models.Model):
     telegram_id = models.BigIntegerField(unique=True, verbose_name="Telegram ID")
     username = models.CharField(
         max_length=100, blank=True, verbose_name="Telegram username"
     )
-    first_name = models.CharField(
-        max_length=100, blank=True, verbose_name="Ім'я"
-    )
-    last_name = models.CharField(
-        max_length=100, blank=True, verbose_name="Прізвище"
-    )
+    first_name = models.CharField(max_length=100, blank=True, verbose_name="Ім'я")
+    last_name = models.CharField(max_length=100, blank=True, verbose_name="Прізвище")
     subscription_status = models.BooleanField(
         default=False, verbose_name="Статус підписки"
     )
@@ -24,16 +22,16 @@ class User(models.Model):
     )
     payment_method = models.CharField(max_length=50, blank=True)
 
-    def __str__(self):
-        return f"{self.username} (Telegram ID: {self.telegram_id})"
-
     class Meta:
         verbose_name = "Користувач"
         verbose_name_plural = "Користувачі"
 
+    def __str__(self):
+        return f"{self.username} (Telegram ID: {self.telegram_id})"
+
 
 class Channel(models.Model):
-    TIMEZONE_CHOICES = [
+    TIMEZONE_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("Europe/Kiev", "🇺🇦 Київ (UTC+2)"),
         ("Europe/London", "🇪🇺 Лондон (UTC+0)"),
         ("America/New_York", "🇺🇸 Нью-Йорк (UTC-4)"),
@@ -58,12 +56,12 @@ class Channel(models.Model):
         verbose_name="Часовий пояс",
     )
 
-    def __str__(self):
-        return f"{self.name} (ID: {self.channel_id})"
-
     class Meta:
         verbose_name = "Канал"
         verbose_name_plural = "Канали"
+
+    def __str__(self):
+        return f"{self.name} (ID: {self.channel_id})"
 
 
 class Flow(models.Model):
@@ -105,11 +103,6 @@ class Flow(models.Model):
     flow_volume = models.PositiveSmallIntegerField(
         default=5, verbose_name="Кількість постів у флоу"
     )
-    ad_time = models.CharField(
-        max_length=5,
-        blank=True,
-        verbose_name="Час для рекламних топів (HH:MM)",
-    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата оновлення")
 
@@ -120,17 +113,17 @@ class Flow(models.Model):
         null=True, blank=True, verbose_name="Остання генерація"
     )
 
-    def __str__(self):
-        return f"{self.name} ({self.theme})"
-
     class Meta:
         verbose_name = "Флоу"
         verbose_name_plural = "Флоу"
-        ordering = ["-created_at"]
-        indexes = [
+        ordering: ClassVar[list[str]] = ["-created_at"]
+        indexes: ClassVar[list[models.Index]] = [
             models.Index(fields=["channel", "created_at"]),
             models.Index(fields=["name"]),
         ]
+
+    def __str__(self):
+        return f"{self.name} ({self.theme})"
 
 
 class PostImage(models.Model):
@@ -145,10 +138,11 @@ class PostImage(models.Model):
     class Meta:
         verbose_name = "Зображення поста"
         verbose_name_plural = "Зображення постів"
-        ordering = ["order"]
+        ordering: ClassVar[list[str]] = ["order"]
 
     def __str__(self):
         return f"Зображення для поста {self.post.id}"
+
 
 class PostVideo(models.Model):
     post = models.ForeignKey(
@@ -162,18 +156,18 @@ class PostVideo(models.Model):
     class Meta:
         verbose_name = "Вiдео поста"
         verbose_name_plural = "Вiдео постів"
-        ordering = ["order"]
+        ordering: ClassVar[list[str]] = ["order"]
 
     def __str__(self):
         return f"Вiдео для поста {self.post.id}"
 
 
 class Post(models.Model):
-    DRAFT = "draft"
-    SCHEDULED = "scheduled"
-    PUBLISHED = "published"
+    DRAFT: ClassVar[str] = "draft"
+    SCHEDULED: ClassVar[str] = "scheduled"
+    PUBLISHED: ClassVar[str] = "published"
 
-    STATUS_CHOICES = [
+    STATUS_CHOICES: ClassVar[list[tuple[str, str]]] = [
         (DRAFT, "Чернетка"),
         (SCHEDULED, "Заплановано"),
         (PUBLISHED, "Опубліковано"),
@@ -197,9 +191,7 @@ class Post(models.Model):
         verbose_name="Унікальний ID із джерела",
         help_text="Ідентифікатор посту в оригінальному джерелі (Telegram/Web)",
     )
-    source_url = models.URLField(
-        blank=True, null=True, verbose_name="Посилання на джерело"
-    )
+    source_url = models.URLField(blank=True, verbose_name="Посилання на джерело")
     original_link = models.CharField(
         blank=True, max_length=500, verbose_name="Посилання на оригiнальний пост"
     )
@@ -214,6 +206,20 @@ class Post(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
+    class Meta:
+        verbose_name = "Пост"
+        verbose_name_plural = "Пости"
+        constraints: ClassVar[list[models.UniqueConstraint]] = [
+            models.UniqueConstraint(
+                fields=["source_id"],
+                name="unique_source_id",
+                condition=models.Q(source_id__isnull=False),
+            )
+        ]
+
+    def __str__(self):
+        return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
     @property
     def media_type(self):
         if self.images.exists():
@@ -227,21 +233,6 @@ class Post(models.Model):
         return list(self.images.all())
 
 
-    def __str__(self):
-        return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"
-
-    class Meta:
-        verbose_name = "Пост"
-        verbose_name_plural = "Пости"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["source_id"],
-                name="unique_source_id",
-                condition=models.Q(source_id__isnull=False),
-            )
-        ]
-
-
 class Draft(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="drafts", verbose_name="Користувач"
@@ -251,12 +242,12 @@ class Draft(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
-    def __str__(self):
-        return f"Чернетка для {self.user.username}"
-
     class Meta:
         verbose_name = "Чернетка"
         verbose_name_plural = "Чернетки"
+
+    def __str__(self):
+        return f"Чернетка для {self.user.username}"
 
 
 class Subscription(models.Model):
@@ -277,12 +268,12 @@ class Subscription(models.Model):
     end_date = models.DateTimeField(verbose_name="Дата закінчення")
     is_active = models.BooleanField(default=True, verbose_name="Активна")
 
-    def __str__(self):
-        return f"Підписка {self.subscription_type} для {self.user.username}"
-
     class Meta:
         verbose_name = "Підписка"
         verbose_name_plural = "Підписки"
+
+    def __str__(self):
+        return f"Підписка {self.subscription_type} для {self.user.username}"
 
 
 class Payment(models.Model):
@@ -297,12 +288,12 @@ class Payment(models.Model):
     payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата оплати")
     is_successful = models.BooleanField(default=False, verbose_name="Успішний")
 
-    def __str__(self):
-        return f"Платіж {self.amount} від {self.user.username}"
-
     class Meta:
         verbose_name = "Платіж"
         verbose_name_plural = "Платежі"
+
+    def __str__(self):
+        return f"Платіж {self.amount} від {self.user.username}"
 
 
 class AISettings(models.Model):
@@ -320,12 +311,12 @@ class AISettings(models.Model):
     style = models.CharField(max_length=100, verbose_name="Стиль", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
-    def __str__(self):
-        return f"Налаштування AI для {self.flow}"
-
     class Meta:
         verbose_name = "Налаштування AI"
         verbose_name_plural = "Налаштування AI"
+
+    def __str__(self):
+        return f"Налаштування AI для {self.flow}"
 
 
 class Statistics(models.Model):
@@ -346,9 +337,9 @@ class Statistics(models.Model):
     total_likes = models.IntegerField(default=0, verbose_name="Всього лайків")
     last_updated = models.DateTimeField(auto_now=True, verbose_name="Останнє оновлення")
 
-    def __str__(self):
-        return f"Статистика для {self.user.username}"
-
     class Meta:
         verbose_name = "Статистика"
         verbose_name_plural = "Статистика"
+
+    def __str__(self):
+        return f"Статистика для {self.user.username}"

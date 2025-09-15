@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from admin_panel.admin_panel.models import Post, Flow
+from admin_panel.admin_panel.models import Flow, Post
 from bot.database.models import PostStatus
 
 
@@ -11,7 +11,7 @@ class PostFactory:
         content: str,
         status: PostStatus | None = None,
         scheduled_time: datetime | None = None,
-        source_url: str | None  = None,
+        source_url: str | None = None,
         original_link: str | None = None,
         original_date: datetime | None = None,
         source_id: str | None = None,

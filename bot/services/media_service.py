@@ -1,19 +1,20 @@
+import logging
 import os
-import uuid
 import shutil
 import tempfile
-import logging
+import uuid
 from urllib.parse import urlparse
-from asgiref.sync import sync_to_async
 
 import aiofiles
 import httpx
-from PIL import Image, UnidentifiedImageError
+from asgiref.sync import sync_to_async
 from django.conf import settings
+from PIL import Image, UnidentifiedImageError
 
 from admin_panel.admin_panel.models import Post, PostImage
 
 logger = logging.getLogger(__name__)
+
 
 class MediaService:
     def __init__(self):
@@ -23,8 +24,8 @@ class MediaService:
     async def _download_remote_media(self, url: str, media_type: str) -> str:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/125.0.0.0 Safari/537.36",
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/125.0.0.0 Safari/537.36",
             "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
@@ -44,7 +45,9 @@ class MediaService:
         temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
 
         try:
-            async with httpx.AsyncClient(timeout=30, follow_redirects=True, headers=headers) as client:
+            async with httpx.AsyncClient(
+                timeout=30, follow_redirects=True, headers=headers
+            ) as client:
                 resp = await client.get(url)
                 resp.raise_for_status()
 
@@ -62,8 +65,8 @@ class MediaService:
         try:
             with Image.open(file_path) as img:
                 img.verify()
-        except (IOError, UnidentifiedImageError) as e:
-            raise ValueError(f"Invalid image: {file_path} - {str(e)}")
+        except (OSError, UnidentifiedImageError) as e:
+            raise ValueError(f"Invalid image: {file_path} - {e!s}") from e
 
     def _get_media_extension(self, file_path: str, media_type: str) -> str:
         ext = os.path.splitext(file_path)[1].lower()
@@ -73,7 +76,7 @@ class MediaService:
 
     def _get_permanent_media_path(self, media_type: str, extension: str) -> str:
         media_dir = self.image_dir if media_type == "image" else self.video_dir
-        logger.warning(f'{media_dir} | {media_type} | {extension}')
+        logger.warning(f"{media_dir} | {media_type} | {extension}")
         permanent_dir = os.path.join(settings.MEDIA_ROOT, media_dir)
         os.makedirs(permanent_dir, exist_ok=True)
         filename = f"{uuid.uuid4()}{extension}"
@@ -90,9 +93,7 @@ class MediaService:
         return permanent_path
 
     async def process_media_list(
-        self,
-        post: Post,
-        media_list: list[dict] | None = None
+        self, post: Post, media_list: list[dict] | None = None
     ) -> dict[str, list[str]]:
         """
         Saves media (images and videos) and links them to ORM post.
@@ -120,19 +121,19 @@ class MediaService:
                     logger.warning(f"Unknown media type: {media_type} for {path}")
 
             except Exception as e:
-                logger.error(f"Failed to process media {media.get('path')}: {str(e)}")
+                logger.error(f"Failed to process media {media.get('path')}: {e!s}")
                 continue
 
             for order, img_path in enumerate(stored_images):
-                await sync_to_async(PostImage.objects.create)(post=post, image=img_path, order=order)
+                await sync_to_async(PostImage.objects.create)(
+                    post=post, image=img_path, order=order
+                )
 
             if stored_videos:
                 post.video = stored_videos[0]
                 await sync_to_async(post.save)()
 
-
         return {"images": stored_images, "videos": stored_videos}
-
 
     async def store_media(self, file_path_or_url: str, media_type: str) -> str:
         temp_file = None
@@ -140,7 +141,9 @@ class MediaService:
 
         try:
             if original_is_url:
-                temp_file = await self._download_remote_media(file_path_or_url, media_type)
+                temp_file = await self._download_remote_media(
+                    file_path_or_url, media_type
+                )
                 file_path = temp_file
             else:
                 file_path = file_path_or_url
@@ -150,11 +153,11 @@ class MediaService:
             return stored_path
 
         except Exception as e:
-            logger.error(f"Failed to store media {file_path_or_url}: {str(e)}")
+            logger.error(f"Failed to store media {file_path_or_url}: {e!s}")
             raise
         finally:
             if temp_file and os.path.exists(temp_file):
                 try:
                     os.remove(temp_file)
                 except Exception as e:
-                    logger.warning(f"Failed to remove temp file {temp_file}: {str(e)}")
+                    logger.warning(f"Failed to remove temp file {temp_file}: {e!s}")

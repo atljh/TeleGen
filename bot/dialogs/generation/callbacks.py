@@ -155,22 +155,18 @@ async def on_force_generate(
             parse_mode="Markdown",
         )
 
-        process = subprocess.Popen(
-            [
-                "python",
-                "/app/bot/generator_worker.py",
-                str(flow.id),
-                str(callback.message.chat.id),
-                str(status_msg.message_id),
-                bot.token,
-            ],
+        process = await asyncio.create_subprocess_exec(
+            "python",
+            "/app/bot/generator_worker.py",
+            str(flow.id),
+            str(callback.message.chat.id),
+            str(status_msg.message_id),
+            bot.token,
             stdout=sys.stdout,
             stderr=sys.stderr,
-            text=True,
-            bufsize=1,
         )
 
-        asyncio.create_task(
+        task = asyncio.create_task(
             show_generated_posts(
                 process=process,
                 flow_id=flow.id,
@@ -181,10 +177,11 @@ async def on_force_generate(
                 channel=channel,
             )
         )
+        return task
 
     except Exception as e:
-        logging.error(f"Помилка запуску генерації: {str(e)}")
-        await callback.message.answer(f"❌ Помилка: {str(e)}", parse_mode="Markdown")
+        logging.error(f"Помилка запуску генерації: {e!s}")
+        await callback.message.answer(f"❌ Помилка: {e!s}", parse_mode="Markdown")
 
 
 async def show_generated_posts(
@@ -246,7 +243,7 @@ async def show_generated_posts(
         )
 
     except Exception as e:
-        logging.error(f"Помилка показу постів: {str(e)}")
+        logging.error(f"Помилка показу постів: {e!s}")
         await bot.send_message(
-            chat_id=chat_id, text=f"❌ Не вдалося показати пости: {str(e)}"
+            chat_id=chat_id, text=f"❌ Не вдалося показати пости: {e!s}"
         )

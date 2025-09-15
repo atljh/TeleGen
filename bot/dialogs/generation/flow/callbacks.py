@@ -1,15 +1,15 @@
-import re
-import os
 import asyncio
 import logging
+import os
+import re
 from datetime import datetime, time
-from django.utils import timezone
 
 import pytz
 from aiogram.types import CallbackQuery, ContentType, Message
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
 from django.conf import settings
+from django.utils import timezone
 
 from bot.containers import Container
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
@@ -33,7 +33,7 @@ async def on_back_to_posts(
         for msg_id in message_ids:
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            except:
+            except Exception:
                 pass
         manager.dialog_data["message_ids"] = []
 
@@ -46,14 +46,7 @@ async def on_back_to_posts(
     if scroll:
         await scroll.set_page(original_page)
 
-    data = await paging_getter(manager)
-    # if data["post"].get("is_album"):
-    #     await send_media_album(manager, data["post"])
-    # else:
-    #     await manager.show()
-
-
-# ===========================================PUBLISH===========================================
+    await paging_getter(manager)
 
 
 async def show_publish_confirm(
@@ -103,15 +96,14 @@ async def on_publish_post(
 
     except InvalidOperationError as e:
         logging.error(f"Invalid operation: {e}")
-        await callback.answer(f"❌ Помилка: {str(e)}")
+        await callback.answer(f"❌ Помилка: {e!s}")
         await manager.switch_to(FlowMenu.posts_list)
     except Exception as e:
         logging.exception("Помилка при публікації посту")
-        await callback.answer(f"❌ Сталася неочікувана помилка: {str(e)}")
+        await callback.answer(f"❌ Сталася неочікувана помилка: {e!s}")
         await manager.switch_to(FlowMenu.posts_list)
 
 
-# ===========================================EDIT===========================================
 async def on_edit_post(callback: CallbackQuery, button: Button, manager: DialogManager):
     data = await paging_getter(manager)
     current_page = data["current_page"] - 1
@@ -170,7 +162,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 await message.bot.download_file(file.file_path, destination)
 
-                updated_post = await post_service.update_post(
+                await post_service.update_post(
                     post_id=post_id,
                     images=[{"file_path": file_path, "order": 0}],
                     video_url=None,
@@ -227,29 +219,16 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             await message.bot.delete_message(
                 chat_id=message.chat.id, message_id=message.message_id - 1
             )
-        except:
+        except Exception:
             pass
 
         manager.dialog_data.pop("awaiting_input", None)
-        # await manager.show()
 
     except PostNotFoundError:
         await message.answer("Помилка: пост не знайдено")
     except Exception as e:
-        logging.error(f"Помилка збереження: {str(e)}")
+        logging.error(f"Помилка збереження: {e!s}")
         await message.answer("Помилка при збереженні змін")
-
-
-async def on_save_to_buffer(
-    callback: CallbackQuery, button: Button, manager: DialogManager
-):
-    post_id = manager.dialog_data.get("current_post_id")
-    # post_service = Container.post_service()
-    # await post_service.save_to_buffer(post_id)
-    await callback.answer("Пост збережено в буфер!")
-
-
-# ===========================================SCHEDULE===========================================
 
 
 async def on_schedule_post(
@@ -325,48 +304,51 @@ async def process_time_selection(manager: DialogManager):
 
     await manager.switch_to(FlowMenu.confirm_schedule)
 
+
 async def confirm_schedule(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    # try:
-    dialog_data = await paging_getter(manager)
-    current_post = dialog_data["post"]
-    post_id = current_post["id"]
+    try:
+        dialog_data = await paging_getter(manager)
+        current_post = dialog_data["post"]
+        post_id = current_post["id"]
 
-    scheduled_datetime = manager.dialog_data.get("scheduled_datetime")
+        scheduled_datetime = manager.dialog_data.get("scheduled_datetime")
 
-    if not scheduled_datetime:
-        await callback.answer("❌ Час не вибрано")
-        return
+        if not scheduled_datetime:
+            await callback.answer("❌ Час не вибрано")
+            return
 
-    ukraine_tz = pytz.timezone("Europe/Kiev")
+        ukraine_tz = pytz.timezone("Europe/Kiev")
 
-    if isinstance(scheduled_datetime, str):
-        scheduled_datetime = datetime.fromisoformat(scheduled_datetime.replace('Z', '+00:00'))
+        if isinstance(scheduled_datetime, str):
+            scheduled_datetime = datetime.fromisoformat(
+                scheduled_datetime.replace("Z", "+00:00")
+            )
 
-    if timezone.is_naive(scheduled_datetime):
-        scheduled_datetime = ukraine_tz.localize(scheduled_datetime)
-    else:
-        scheduled_datetime = scheduled_datetime.astimezone(ukraine_tz)
+        if timezone.is_naive(scheduled_datetime):
+            scheduled_datetime = ukraine_tz.localize(scheduled_datetime)
+        else:
+            scheduled_datetime = scheduled_datetime.astimezone(ukraine_tz)
 
-    if scheduled_datetime <= timezone.now():
-        await callback.answer("❌ Час має бути у майбутньому")
-        return
+        if scheduled_datetime <= timezone.now():
+            await callback.answer("❌ Час має бути у майбутньому")
+            return
 
-    post_service = Container.post_service()
-    await post_service.schedule_post(post_id, scheduled_datetime)
+        post_service = Container.post_service()
+        await post_service.schedule_post(post_id, scheduled_datetime)
 
-    await callback.message.answer(
-        f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
-    )
-    await manager.switch_to(FlowMenu.posts_list)
+        await callback.message.answer(
+            f"✅ Пост заплановано на {scheduled_datetime.strftime('%d.%m.%Y о %H:%M')}"
+        )
+        await manager.switch_to(FlowMenu.posts_list)
 
-    # except ValueError as e:
-    #     logger.error(f"Invalid datetime format: {e}")
-    #     await callback.answer("❌ Невірний формат часу")
-    # except Exception as e:
-    #     logger.error(f"Error confirming schedule: {e}")
-    #     await callback.answer(f"❌ Помилка: {str(e)}")
+    except ValueError as e:
+        logger.error(f"Invalid datetime format: {e}")
+        await callback.answer("❌ Невірний формат часу")
+    except Exception as e:
+        logger.error(f"Error confirming schedule: {e}")
+        await callback.answer(f"❌ Помилка: {e!s}")
     await manager.switch_to(FlowMenu.select_date)
 
 

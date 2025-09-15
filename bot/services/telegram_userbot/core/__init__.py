@@ -6,10 +6,10 @@ from .download_service import DownloadService
 from .entity_service import EntityService
 
 __all__ = [
-    "TelegramClientManager",
-    "ConnectionService",
     "AuthorizationService",
-    "EntityService",
-    "DownloadService",
     "BaseUserbotService",
+    "ConnectionService",
+    "DownloadService",
+    "EntityService",
+    "TelegramClientManager",
 ]

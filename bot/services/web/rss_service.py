@@ -6,7 +6,7 @@ import logging
 import random
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 from urllib.parse import urlparse
 
 import aiohttp
@@ -100,7 +100,7 @@ class RssService:
     async def get_posts_for_flow(
         self,
         flow: FlowDTO,
-        flow_service: "FlowService",
+        flow_service: FlowService,
         limit: int = 10,
     ) -> AsyncIterator[dict[str, Any]]:
         try:
@@ -109,13 +109,13 @@ class RssService:
             async for post in self._stream_posts(rss_urls, limit):
                 yield self._convert_to_web_service_format(post)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.logger.warning(f"Timeout getting posts for flow {flow.id}")
         except Exception as e:
             self.logger.error(f"Error getting posts: {e}", exc_info=True)
 
     async def _get_flow_rss_urls(
-        self, flow: FlowDTO, flow_service: "FlowService"
+        self, flow: FlowDTO, flow_service: FlowService
     ) -> list[str]:
         rss_urls = []
         for source in flow.sources:
@@ -161,7 +161,7 @@ class RssService:
                 for post in sublist
             ]
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.logger.warning("Timeout while fetching posts")
             return []
         except Exception as e:
@@ -295,7 +295,7 @@ class RssService:
         entry: feedparser.FeedParserDict,
         domain: str,
         rss_url: str,
-    ) -> Optional[RssPost]:
+    ) -> RssPost | None:
         await self._random_delay()
 
         try:
@@ -472,7 +472,7 @@ class RssService:
                 break
 
         self.logger.error(
-            f"All {max_retries + 1} attempts failed for {url}. Last error: {str(last_error)}"
+            f"All {max_retries + 1} attempts failed for {url}. Last error: {last_error!s}"
         )
         return None
 
@@ -558,10 +558,10 @@ class RssService:
             return await self._delete_feed(feed_id)
 
         except Exception as e:
-            self.logger.error(f"Error deleting RSS feed {rss_url}: {str(e)}")
+            self.logger.error(f"Error deleting RSS feed {rss_url}: {e!s}")
             return False
 
-    async def _find_feed_id_by_url(self, rss_url: str) -> Optional[str]:
+    async def _find_feed_id_by_url(self, rss_url: str) -> str | None:
         try:
             async with aiohttp.ClientSession() as session:
                 page = 1
@@ -591,7 +591,7 @@ class RssService:
                         page += 1
 
         except Exception as e:
-            self.logger.error(f"Error searching for feed: {str(e)}")
+            self.logger.error(f"Error searching for feed: {e!s}")
             return None
 
     async def _delete_feed(self, feed_id: str) -> bool:
@@ -616,10 +616,10 @@ class RssService:
                         return False
 
         except Exception as e:
-            self.logger.error(f"Error deleting feed {feed_id}: {str(e)}")
+            self.logger.error(f"Error deleting feed {feed_id}: {e!s}")
             return False
 
-    async def create_feed(self, source_url: str) -> Optional[dict]:
+    async def create_feed(self, source_url: str) -> dict | None:
         if not self.is_configured():
             return None
 
@@ -642,7 +642,7 @@ class RssService:
                         return None
 
         except Exception as e:
-            self.logger.error(f"Error creating RSS feed: {str(e)}")
+            self.logger.error(f"Error creating RSS feed: {e!s}")
             return None
 
     async def get_all_feeds(self) -> list[dict]:
@@ -677,5 +677,5 @@ class RssService:
             return all_feeds
 
         except Exception as e:
-            self.logger.error(f"Error fetching feeds: {str(e)}")
+            self.logger.error(f"Error fetching feeds: {e!s}")
             return []

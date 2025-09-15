@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bot.services.telegram_userbot.processing.content_processing_service import (
@@ -29,9 +30,7 @@ class PostConversionService:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return [r for r in results if isinstance(r, PostDTO)]
 
-    async def _safe_convert_post(
-        self, raw_post: dict, flow: FlowDTO
-    ) -> Optional[PostDTO]:
+    async def _safe_convert_post(self, raw_post: dict, flow: FlowDTO) -> PostDTO | None:
         try:
             return await self._convert_single_post(raw_post, flow)
         except Exception as e:
@@ -40,7 +39,7 @@ class PostConversionService:
 
     async def _convert_single_post(
         self, raw_post: dict, flow: FlowDTO
-    ) -> Optional[PostDTO]:
+    ) -> PostDTO | None:
         post_dto = PostDTO.from_raw_post(raw_post)
 
         if not post_dto.content:

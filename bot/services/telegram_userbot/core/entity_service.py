@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
@@ -13,7 +12,7 @@ class EntityService:
 
     async def get_entity(
         self, client: TelegramClient, source_link: str
-    ) -> Optional[TelegramEntity]:
+    ) -> TelegramEntity | None:
         try:
             return await client.get_entity(source_link)
         except Exception as e:
@@ -25,7 +24,7 @@ class EntityService:
 
     async def _join_private_chat(
         self, client: TelegramClient, source_link: str
-    ) -> Optional[TelegramEntity]:
+    ) -> TelegramEntity | None:
         try:
             invite_hash = self._extract_invite_hash(source_link)
             await client(ImportChatInviteRequest(invite_hash))
@@ -49,7 +48,7 @@ class EntityService:
                 "type": type(entity).__name__,
             }
         except Exception as e:
-            self.logger.error(f"Failed to get entity info: {str(e)}")
+            self.logger.error(f"Failed to get entity info: {e!s}")
             return {}
 
     async def search_entities(
@@ -58,7 +57,7 @@ class EntityService:
         try:
             return await client.get_entity(query)
         except Exception as e:
-            self.logger.error(f"Entity search failed: {str(e)}")
+            self.logger.error(f"Entity search failed: {e!s}")
             return []
 
     async def verify_entity_access(
@@ -68,5 +67,5 @@ class EntityService:
             await client.get_entity(entity)
             return True
         except Exception as e:
-            self.logger.warning(f"Entity access verification failed: {str(e)}")
+            self.logger.warning(f"Entity access verification failed: {e!s}")
             return False

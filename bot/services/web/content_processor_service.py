@@ -13,7 +13,7 @@ class ContentProcessorService:
     def __init__(
         self,
         aisettings_service: AISettingsService,
-        openai_key: str = None,
+        openai_key: str | None = None,
         logger: logging.Logger | None = None,
     ):
         self.openai_key = openai_key
@@ -21,9 +21,7 @@ class ContentProcessorService:
         self.default_processor = DefaultContentProcessor()
         self.logger = logger or logging.getLogger(__name__)
 
-    async def process_batch(
-        self, texts: list[str], flow: FlowDTO, user_id: int
-    ) -> list[str]:
+    async def process_batch(self, texts: list[str], flow: FlowDTO) -> list[str]:
         if self.openai_key:
             processor = ChatGPTContentProcessor(
                 api_key=self.openai_key,
@@ -32,7 +30,7 @@ class ContentProcessorService:
                 max_retries=2,
                 timeout=30.0,
             )
-            return await processor.process_batch(texts, user_id)
+            return await processor.process_batch(texts)
         return await asyncio.gather(
             *[self.default_processor.process(text) for text in texts]
         )

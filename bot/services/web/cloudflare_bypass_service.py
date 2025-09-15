@@ -1,6 +1,6 @@
-import time
-from typing import Optional
 import asyncio
+import time
+
 import cloudscraper
 import undetected_chromedriver as uc
 
@@ -16,17 +16,17 @@ class CloudflareBypass:
         self.success_count = 0
         self.fail_count = 0
 
-    async def fetch_with_cloudscraper(self, url: str) -> Optional[str]:
+    async def fetch_with_cloudscraper(self, url: str) -> str | None:
         try:
             resp = await asyncio.to_thread(self.scraper.get, url)
             if resp.status_code == 200:
                 return resp.text
             self.logger.warning(f"CloudScraper failed with status {resp.status_code}")
         except Exception as e:
-            self.logger.error(f"CloudScraper error: {str(e)}")
+            self.logger.error(f"CloudScraper error: {e!s}")
         return None
 
-    async def fetch_with_selenium(self, url: str) -> Optional[str]:
+    async def fetch_with_selenium(self, url: str) -> str | None:
         options = uc.ChromeOptions()
         options.add_argument("--headless=new")
         options.add_argument("--disable-blink-features=AutomationControlled")
@@ -50,13 +50,13 @@ class CloudflareBypass:
                 return driver.page_source
 
         except Exception as e:
-            self.logger.error(f"Selenium error: {str(e)}")
+            self.logger.error(f"Selenium error: {e!s}")
         finally:
             if driver:
                 driver.quit()
         return None
 
-    async def _try_methods(self, url: str) -> Optional[str]:
+    async def _try_methods(self, url: str) -> str | None:
         content = await self.fetch_with_cloudscraper(url)
         if content:
             return content
@@ -64,7 +64,7 @@ class CloudflareBypass:
         self.logger.warning("CloudScraper failed, falling back to Selenium")
         return await self.fetch_with_selenium(url)
 
-    async def get_page_content(self, url: str) -> Optional[str]:
+    async def get_page_content(self, url: str) -> str | None:
         start_time = time.time()
         try:
             result = await self._try_methods(url)
@@ -75,5 +75,5 @@ class CloudflareBypass:
                 self.fail_count += 1
             return result
         except Exception as e:
-            self.logger.error(f"Critical error: {str(e)}")
+            self.logger.error(f"Critical error: {e!s}")
             return None

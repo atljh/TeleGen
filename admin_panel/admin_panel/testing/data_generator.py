@@ -2,7 +2,7 @@ import logging
 import os
 import random
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from faker import Faker
 
@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class TestDataGenerator:
+    telegram_channels: ClassVar[list] = WEB_SOURCES
+    web_sources: ClassVar[list] = TELEGRAM_SOURCES
+
     def __init__(self):
         self.fake = Faker()
 
-        self.telegram_channels = WEB_SOURCES
-        self.web_sources = TELEGRAM_SOURCES
-
-    async def _setup_django(self):
+    def _setup_django(self):
         try:
             import django
             from django.conf import settings
@@ -36,7 +36,7 @@ class TestDataGenerator:
             raise
 
     async def create_test_users(self, count: int = 10) -> list[Any]:
-        await self._setup_django()
+        self._setup_django()
 
         from asgiref.sync import sync_to_async
 
@@ -144,7 +144,7 @@ class TestDataGenerator:
         sources = []
         num_sources = random.randint(min_sources, max_sources)
 
-        for i in range(num_sources):
+        for _ in range(num_sources):
             try:
                 source_type = random.choice(["telegram", "web"])
 

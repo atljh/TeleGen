@@ -7,9 +7,8 @@ from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
-
-from bot.utils.constants.buttons import BACK_BUTTON
 from bot.dialogs.settings.flow_settings.callbacks import start_flow_settings
+from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import (
     add_more_sources,
@@ -154,6 +153,7 @@ def create_flow_dialog():
                 ),
                 Next(Const("🔜 Ні, продовжити"), id="continue_flow"),
             ),
+            LinkPreview(is_disabled=True),
             state=CreateFlowMenu.source_confirmation,
             parse_mode=ParseMode.HTML,
             getter=source_confirmation_getter,
@@ -205,24 +205,6 @@ def create_flow_dialog():
             state=CreateFlowMenu.title_highlight_confirm,
             parse_mode=ParseMode.HTML,
         ),
-        # Window(
-        #     Format("⏰ <b>Налаштування рекламного топу<b>\n\n"
-        #       "Введіть час рекламного топу в форматі\n"
-        #       "<code>hh:mm</code>\n\n"
-        #       "Поточне повідомлення:\n"
-        #       "{message}"),
-        #     MessageInput(
-        #         handle_time_input,
-        #         filter=F.text & ~F.text.startswith('/')
-        #     ),
-        #     Row(
-        #         Back(Const("🔙 Назад")),
-        #         Button(Const("🔄 Скинути"), id="reset_time", on_click=reset_ad_time),
-        #     ),
-        #     state=CreateFlowMenu.ad_time_settings,
-        #     parse_mode=ParseMode.HTML,
-        #     getter=ad_time_getter
-        # ),
         Window(
             Format(
                 "<b>Етап 6 из 7</b>\n\n"

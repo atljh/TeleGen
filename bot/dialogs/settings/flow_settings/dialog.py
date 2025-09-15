@@ -2,13 +2,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import Message
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import (
-    Button,
-    Column,
-    Row,
-    ScrollingGroup,
-    Select,
-)
+from aiogram_dialog.widgets.kbd import Button, Column, Row, ScrollingGroup, Select
 from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format
 
@@ -260,9 +254,6 @@ async def volume_filter(message: Message):
     return True
 
 
-# =======================================ADD FLOW===========================================
-
-
 async def link_filter(message: Message):
     text = message.text
     if not (text.startswith("http://") or text.startswith("https://")):
@@ -319,9 +310,6 @@ def create_input_source_link():
         parse_mode=ParseMode.HTML,
         getter=get_source_type_data,
     )
-
-
-# =======================================EDIT FLOW===========================================
 
 
 def create_select_edit_source():
@@ -415,9 +403,6 @@ def create_edit_source_link():
         parse_mode=ParseMode.HTML,
         getter=get_source_type_data,
     )
-
-
-# =======================================DELETE FLOW===========================================
 
 
 def create_select_delete_source():

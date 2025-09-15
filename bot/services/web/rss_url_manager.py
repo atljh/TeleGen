@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import Optional
 
 from bot.services.flow_service import FlowService
 from bot.services.web.rss_service import RssService, SourceDict
@@ -15,7 +14,7 @@ class RssUrlManager:
 
     async def get_or_set_rss_url(
         self, flow_id: int, source: SourceDict, *, force_refresh: bool = False
-    ) -> Optional[str]:
+    ) -> str | None:
         try:
             if force_refresh:
                 if new_url := await self._discover_and_cache(flow_id, source):
@@ -41,7 +40,7 @@ class RssUrlManager:
         parallel: bool = True,
         force_refresh: bool = False,
     ) -> list[str]:
-        async def process_source(source: SourceDict) -> Optional[str]:
+        async def process_source(source: SourceDict) -> str | None:
             return await self.get_or_set_rss_url(
                 flow_id, source, force_refresh=force_refresh
             )
@@ -53,9 +52,7 @@ class RssUrlManager:
 
         return [url for source in sources if (url := await process_source(source))]
 
-    async def _discover_and_cache(
-        self, flow_id: int, source: SourceDict
-    ) -> Optional[str]:
+    async def _discover_and_cache(self, flow_id: int, source: SourceDict) -> str | None:
         try:
             if discovered_url := await self.rss_service._discover_rss_for_source(
                 source

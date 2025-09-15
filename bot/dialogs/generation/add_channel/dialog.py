@@ -5,7 +5,6 @@ from aiogram_dialog.widgets.text import Const, Format, Jinja
 
 from bot.containers import Container
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
-
 from bot.utils.buttons import go_back_to_generation
 from bot.utils.constants.buttons import BACK_BUTTON
 

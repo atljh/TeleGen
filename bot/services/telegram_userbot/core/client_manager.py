@@ -1,7 +1,7 @@
 import logging
 import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
 
 from telethon import TelegramClient
 
@@ -17,8 +17,8 @@ class TelegramClientManager:
         self,
         api_id: int,
         api_hash: str,
-        phone: Optional[str] = None,
-        session_path: Optional[str] = None,
+        phone: str | None = None,
+        session_path: str | None = None,
         connection_retries: int = 5,
         auto_reconnect: bool = True,
         download_retries: int = 3,
@@ -50,14 +50,14 @@ class TelegramClientManager:
             yield client
 
         except Exception as e:
-            self.logger.error(f"Помилка Telegram клієнта: {str(e)}")
+            self.logger.error(f"Помилка Telegram клієнта: {e!s}")
             raise
         finally:
             await self.connection_service.disconnect_client(client)
 
     async def get_entity(
         self, client: TelegramClient, source_link: str
-    ) -> Optional[TelegramEntity]:
+    ) -> TelegramEntity | None:
         return await self.entity_service.get_entity(client, source_link)
 
     async def download_media_with_retry(
@@ -65,8 +65,8 @@ class TelegramClientManager:
         client: TelegramClient,
         media,
         file_path: str,
-        max_retries: Optional[int] = None,
-        retry_delay: Optional[float] = None,
+        max_retries: int | None = None,
+        retry_delay: float | None = None,
     ) -> bool:
         return await self.download_service.download_media_with_retry(
             client, media, file_path, max_retries, retry_delay
@@ -82,7 +82,7 @@ class TelegramClientManager:
         try:
             return await client.get_messages(entity, limit=limit, offset_id=offset_id)
         except Exception as e:
-            self.logger.error(f"Failed to get messages: {str(e)}")
+            self.logger.error(f"Failed to get messages: {e!s}")
             return []
 
     def is_client_connected(self, client: TelegramClient) -> bool:

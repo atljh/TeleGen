@@ -1,5 +1,6 @@
-from aiogram import Bot
 from datetime import datetime
+
+from aiogram import Bot
 
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
@@ -9,7 +10,9 @@ from bot.services.post.base import PostBaseService
 from bot.services.post.generation import PostGenerationService
 from bot.services.post.publish import PostPublishingService
 from bot.services.post.scheduling import PostSchedulingService
-from bot.services.telegram_userbot.enhanced_userbot_service import EnhancedUserbotService
+from bot.services.telegram_userbot.enhanced_userbot_service import (
+    EnhancedUserbotService,
+)
 from bot.services.web.web_service import WebService
 
 

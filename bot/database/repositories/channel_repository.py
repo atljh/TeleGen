@@ -23,16 +23,16 @@ class ChannelRepository:
     async def get_channel(self, id: int) -> Channel:
         try:
             return await Channel.objects.aget(id=id)
-        except Channel.DoesNotExist:
-            raise ChannelNotFoundError(f"Channel with id={id} not found.")
+        except Channel.DoesNotExist as e:
+            raise ChannelNotFoundError(f"Channel with id={id} not found.") from e
 
     async def get_channel_by_id(self, channel_id: str) -> Channel:
         try:
             return await Channel.objects.aget(channel_id=channel_id)
-        except Channel.DoesNotExist:
+        except Channel.DoesNotExist as e:
             raise ChannelNotFoundError(
                 f"Channel with channel_id={channel_id} not found."
-            )
+            ) from e
 
     async def update_channel(self, channel: Channel) -> Channel:
         await channel.asave()

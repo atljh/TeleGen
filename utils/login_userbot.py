@@ -15,7 +15,7 @@ async def main():
     print(PHONE, API_ID, API_HASH)
     client = TelegramClient("sessions/userbot", API_ID, API_HASH)
     await client.start(phone=PHONE)
-    print("Авторизацiя пройшла успiшно.")
+    print("Authorization was successful.")
     await client.disconnect()
 
 

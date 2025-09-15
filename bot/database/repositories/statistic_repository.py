@@ -17,16 +17,18 @@ class StatisticsRepository:
     async def get_statistics_by_id(self, statistics_id: int) -> Statistics:
         try:
             return await Statistics.objects.aget(id=statistics_id)
-        except Statistics.DoesNotExist:
+        except Statistics.DoesNotExist as e:
             raise StatisticsNotFoundError(
                 f"Statistics with id={statistics_id} not found."
-            )
+            ) from e
 
     async def get_user_staistics(self, user: User) -> Statistics:
         try:
             return await Statistics.objects.aget(user=user)
-        except Statistics.DoesNotExist:
-            raise StatisticsNotFoundError(f"Statistics with user={user} not found.")
+        except Statistics.DoesNotExist as e:
+            raise StatisticsNotFoundError(
+                f"Statistics with user={user} not found."
+            ) from e
 
     async def update_statistics(self, statistics: Statistics) -> Statistics:
         await statistics.asave()

@@ -1,5 +1,5 @@
 import logging
-from typing import dict, list, Optional
+from typing import dict, list
 
 from bot.database.models import PostDTO
 from bot.services.content_processing.processors import ContentProcessor
@@ -10,7 +10,7 @@ class PostProcessingPipeline:
         self.processors = processors
         self.logger = logging.getLogger(__name__)
 
-    async def process_post(self, raw_post: dict) -> Optional[PostDTO]:
+    async def process_post(self, raw_post: dict) -> PostDTO | None:
         try:
             post_dto = PostDTO.from_raw_post(raw_post)
             if not post_dto.content:
@@ -29,5 +29,5 @@ class PostProcessingPipeline:
             return post_dto.copy(update={"content": processed_text})
 
         except Exception as e:
-            self.logger.error(f"Error processing post: {str(e)}", exc_info=True)
+            self.logger.error(f"Error processing post: {e!s}", exc_info=True)
             return None

@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from django.contrib import admin
 
 from .models import (
@@ -55,7 +57,10 @@ class UserAdmin(admin.ModelAdmin):
         "payment_method",
     )
 
-    inlines = [ChannelInline, SubscriptionInline]
+    inlines: ClassVar[list[admin.TabularInline]] = [
+        ChannelInline,
+        SubscriptionInline,
+    ]
 
 
 @admin.register(Channel)
@@ -72,7 +77,7 @@ class FlowAdmin(admin.ModelAdmin):
     list_filter = ("frequency",)
     search_fields = ("name", "theme")
 
-    inlines = [AISettingsInline]
+    inlines: ClassVar[list[admin.TabularInline]] = [AISettingsInline]
 
 
 class PostImageInline(admin.TabularInline):
@@ -93,7 +98,7 @@ class PostAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
     search_fields = ("content", "source_url")
     list_filter = ("status", "created_at")
-    inlines = [PostImageInline]
+    inlines: ClassVar[list[admin.TabularInline]] = [PostImageInline]
 
 
 @admin.register(Draft)
@@ -129,10 +134,3 @@ class AISettingsAdmin(admin.ModelAdmin):
     list_display = ("flow", "style", "created_at")
     search_fields = ("style",)
     list_filter = ("style", "created_at")
-
-
-# @admin.register(Statistics)
-# class StatisticsAdmin(admin.ModelAdmin):
-#     list_display = ('user', 'channel', 'total_posts', 'total_views', 'total_likes', 'last_updated')
-#     search_fields = ('user__username', 'channel__name')
-#     list_filter = ('last_updated',)

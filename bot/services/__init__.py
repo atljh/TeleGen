@@ -3,11 +3,6 @@ import os
 import django
 from django.conf import settings
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.prod")
-
-if not settings.configured:
-    django.setup()
-
 from .aisettings_service import AISettingsService
 from .channel_service import ChannelService
 from .flow_service import FlowService
@@ -25,21 +20,26 @@ from .web.rss_service import RssService
 from .web.web_scraper_service import WebScraperService
 from .web.web_service import WebService
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.prod")
+
+if not settings.configured:
+    django.setup()
+
 __all__ = [
-    "WebService",
-    "UserService",
-    "ChannelService",
-    "FlowService",
-    "PostService",
     "AISettingsService",
-    "SubscriptionService",
-    "PaymentService",
-    "StatisticsService",
-    "EnhancedUserbotService",
-    "RssService",
+    "ChannelService",
     "CloudflareBypass",
-    "WebScraperService",
-    "ImageExtractorService",
-    "PostBuilderService",
     "ContentProcessorService",
+    "EnhancedUserbotService",
+    "FlowService",
+    "ImageExtractorService",
+    "PaymentService",
+    "PostBuilderService",
+    "PostService",
+    "RssService",
+    "StatisticsService",
+    "SubscriptionService",
+    "UserService",
+    "WebScraperService",
+    "WebService",
 ]

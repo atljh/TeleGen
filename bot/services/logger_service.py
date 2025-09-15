@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 import requests
 from aiogram import Bot
@@ -30,9 +30,9 @@ class LogLevel(Enum):
 class LogEvent:
     level: LogLevel
     message: str
-    user_id: Optional[int] = None
-    username: Optional[str] = None
-    additional_data: Optional[dict] = None
+    user_id: int | None = None
+    username: str | None = None
+    additional_data: dict | None = None
 
 
 class TelegramLogger:
@@ -110,7 +110,7 @@ class TelegramLogger:
     def log_sync(self, event: LogEvent) -> bool:
         try:
             return asyncio.run(self._send_log(event))
-        except:
+        except Exception:
             return False
 
     async def user_created_channel(
@@ -222,7 +222,7 @@ class TelegramLogger:
         setting_type: str,
         old_value: str,
         new_value: str,
-        additional_data: Optional[dict] = None,
+        additional_data: dict | None = None,
     ) -> bool:
         if not self.enabled:
             return False
@@ -290,8 +290,8 @@ class TelegramLogger:
     async def error_occurred(
         self,
         error_message: str,
-        user: Optional[BotUser] = None,
-        context: Optional[dict] = None,
+        user: BotUser | None = None,
+        context: dict | None = None,
     ) -> bool:
         event = LogEvent(
             level=LogLevel.ERROR,
@@ -325,8 +325,8 @@ class TelegramLogger:
     async def security_event(
         self,
         event_type: str,
-        user: Optional[BotUser] = None,
-        details: Optional[dict] = None,
+        user: BotUser | None = None,
+        details: dict | None = None,
     ) -> bool:
         event = LogEvent(
             level=LogLevel.SECURITY,
@@ -341,7 +341,7 @@ class TelegramLogger:
 _logger_instance = None
 
 
-def get_logger() -> Optional[TelegramLogger]:
+def get_logger() -> TelegramLogger | None:
     return _logger_instance
 
 
@@ -352,7 +352,7 @@ def init_logger(bot: Bot) -> TelegramLogger:
 
 
 class SyncTelegramLogger:
-    def __init__(self, bot_token: Optional[str] = None):
+    def __init__(self, bot_token: str | None = None):
         self.bot_token = bot_token
         self.log_channel_id = settings.TELEGRAM_LOG_CHANNEL_ID
         self.enabled = bool(bot_token)

@@ -72,7 +72,6 @@ async def character_limit_getter(dialog_manager: DialogManager, **kwargs):
 
 
 async def posts_in_flow_getter(dialog_manager: DialogManager, **kwargs):
-    volume_map = {"volume_5": "5", "volume_10": "10", "volume_20": "20"}
     if "channel_flow" not in dialog_manager.dialog_data:
         dialog_manager.dialog_data["channel_flow"] = dialog_manager.start_data[
             "channel_flow"

@@ -30,7 +30,7 @@ async def on_bot_added_to_channel(
 ):
     channel_service = Container.channel_service()
     try:
-        channel = await channel_service.get_or_create_channel(
+        await channel_service.get_or_create_channel(
             user_telegram_id=event.from_user.id,
             channel_id=str(event.chat.id),
             name=event.chat.title,

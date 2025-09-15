@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import Optional
 
 import openai
 
@@ -17,7 +16,7 @@ from bot.services.user_service import UserService
 class ContentProcessingService:
     def __init__(
         self,
-        openai_key: str = None,
+        openai_key: str | None = None,
         aisettings_service: AISettingsService = None,
         user_service: UserService = None,
     ):
@@ -36,7 +35,7 @@ class ContentProcessingService:
 
     async def process_post_content(
         self, post_dto: PostDTO, flow: FlowDTO
-    ) -> Optional[PostDTO]:
+    ) -> PostDTO | None:
         if not post_dto.content:
             return None
 
@@ -63,7 +62,7 @@ class ContentProcessingService:
 
     async def _process_with_chatgpt(self, text: str, flow: FlowDTO) -> str:
         try:
-            user = await self.user_service.get_user_by_flow(flow)
+            await self.user_service.get_user_by_flow(flow)
             processor = ChatGPTContentProcessor(
                 api_key=self.openai_key,
                 flow=flow,
@@ -71,9 +70,9 @@ class ContentProcessingService:
                 timeout=15.0,
                 aisettings_service=self.aisettings_service,
             )
-            return await processor.process(text, user.id)
+            return await processor.process(text)
         except Exception as e:
-            self.logger.error(f"ChatGPT processing failed: {str(e)}")
+            self.logger.error(f"ChatGPT processing failed: {e!s}")
             return text
 
     async def _add_signature(self, text: str, flow: FlowDTO) -> str:

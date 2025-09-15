@@ -8,7 +8,7 @@ from .generation import (
     flow_dialog,
 )
 from .settings import create_settings_dialog
-from .settings.flow_settings import create_flow_settings_dialog, create_sources_dialog
+from .settings.flow_settings import create_flow_settings_dialog
 from .settings.payment import create_payment_dialog
 from .support import create_support_dialog
 

@@ -1,10 +1,11 @@
 import logging
-from typing import Any
 from datetime import datetime
+from typing import Any
+
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
-from admin_panel.admin_panel.models import Flow, PostImage, Post
+from admin_panel.admin_panel.models import Flow, Post, PostImage
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository
@@ -13,11 +14,10 @@ from bot.services.media_service import MediaService
 
 logger = logging.getLogger(__name__)
 
+
 class PostBaseService:
     def __init__(
-        self,
-        post_repository: PostRepository,
-        media_service: MediaService
+        self, post_repository: PostRepository, media_service: MediaService
     ) -> None:
         self.post_repo = post_repository
         self.media_service = media_service
@@ -27,7 +27,9 @@ class PostBaseService:
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
 
-        images = await sync_to_async(lambda: list(post.images.all().order_by("order")))()
+        images = await sync_to_async(
+            lambda: list(post.images.all().order_by("order"))
+        )()
         dto = await PostDTO.from_orm_async(post)
         dto.images = images
         return dto
@@ -43,10 +45,8 @@ class PostBaseService:
         media_list: list[dict] | None = None,
         status: PostStatus | None = None,
         scheduled_time: datetime | None = None,
-        source_id: str | None
-        = None,
+        source_id: str | None = None,
     ) -> Post:
-
         if scheduled_time and scheduled_time < timezone.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
 
@@ -97,7 +97,9 @@ class PostBaseService:
         await sync_to_async(post.save)()
         return PostDTO.from_orm(post)
 
-    async def _update_post_images(self, post: PostDTO, images: list[dict[str, Any]]) -> None:
+    async def _update_post_images(
+        self, post: PostDTO, images: list[dict[str, Any]]
+    ) -> None:
         await sync_to_async(lambda: post.images.all().delete())()
         for img_data in images:
             await sync_to_async(PostImage.objects.create)(

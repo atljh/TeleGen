@@ -1,10 +1,9 @@
 import asyncio
 import logging
 import os
-import tempfile
 import time
-from typing import Optional, Tuple
 
+from aiofiles import tempfile
 from telethon import TelegramClient
 
 from admin_panel.admin_panel.models import Post
@@ -17,8 +16,8 @@ class BaseUserbotService:
         self,
         api_id: int,
         api_hash: str,
-        phone: str = None,
-        session_path: Optional[str] = None,
+        phone: str | None = None,
+        session_path: str | None = None,
     ):
         self.phone = phone
         self.download_semaphore = asyncio.Semaphore(10)
@@ -35,7 +34,7 @@ class BaseUserbotService:
                 if os.path.exists(file_path):
                     os.unlink(file_path)
             except Exception as e:
-                self.logger.error(f"Error deleting temp file {file_path}: {str(e)}")
+                self.logger.error(f"Error deleting temp file {file_path}: {e!s}")
         self._temp_files.clear()
 
     async def get_last_posts(self, sources: list[dict], limit: int = 10) -> list[dict]:
@@ -79,7 +78,7 @@ class BaseUserbotService:
 
                 except Exception as e:
                     self.logger.error(
-                        f"Error processing source {source['link']}: {str(e)}"
+                        f"Error processing source {source['link']}: {e!s}"
                     )
                     continue
 
@@ -126,7 +125,6 @@ class BaseUserbotService:
             return False
 
         channel_username = getattr(channel_entity, "username", None)
-        channel_id = channel_entity.id
 
         # for entity in message.entities:
         # if isinstance(entity, MessageEntityTextUrl):
@@ -157,7 +155,7 @@ class BaseUserbotService:
 
     async def _process_message_or_album(
         self, client, entity, msg, source_link, processed_albums
-    ) -> Tuple[Optional[dict], int]:
+    ) -> tuple[dict | None, int]:
         chat_id = msg.chat_id if hasattr(msg, "chat_id") else entity.id
 
         post_date = msg.date if hasattr(msg, "date") else None
@@ -231,7 +229,7 @@ class BaseUserbotService:
 
     async def _process_album(
         self, client: TelegramClient, entity, initial_msg, source_url: str
-    ) -> Optional[dict]:
+    ) -> dict | None:
         try:
             messages = await client.get_messages(
                 entity, min_id=initial_msg.id - 10, max_id=initial_msg.id + 10, limit=20
@@ -278,12 +276,12 @@ class BaseUserbotService:
             return post_data
 
         except Exception as e:
-            logging.error(f"Error processing album: {str(e)}")
+            logging.error(f"Error processing album: {e!s}")
             return None
 
     async def _process_message(
         self, client: TelegramClient, msg, source_url: str
-    ) -> Optional[dict]:
+    ) -> dict | None:
         if not msg.text and not msg.media:
             return None
 
@@ -291,7 +289,7 @@ class BaseUserbotService:
             entity = await msg.get_chat()
             original_link = f"https://t.me/c/{entity.id}/{msg.id}"
         except Exception as e:
-            logging.error(f"Could not generate original link: {str(e)}")
+            logging.error(f"Could not generate original link: {e!s}")
             original_link = None
         post_data = {
             "original_content": msg.text or "",
@@ -304,12 +302,12 @@ class BaseUserbotService:
             "source_url": source_url,
         }
         if msg.media:
-            media_items = await self._extract_media(client, msg.media)
+            media_items = self._extract_media(msg.media)
             post_data["media"] = await self._download_media_batch(client, media_items)
 
         return post_data
 
-    async def _extract_media(self, client: TelegramClient, media) -> list[dict]:
+    def _extract_media(self, media) -> list[dict]:
         media_items = []
 
         if hasattr(media, "photo"):
@@ -355,7 +353,7 @@ class BaseUserbotService:
                 )
                 return path
             except Exception as e:
-                self.logger.error(f"Error downloading {item['type']}: {str(e)}")
+                self.logger.error(f"Error downloading {item['type']}: {e!s}")
                 return e
 
         tasks = [_download_with_progress(item) for item in media_items]
@@ -363,16 +361,16 @@ class BaseUserbotService:
 
         return [
             {**item, "path": path}
-            for item, path in zip(media_items, downloaded_paths)
+            for item, path in zip(media_items, downloaded_paths, strict=False)
             if not isinstance(path, Exception) and path
         ]
 
     async def _download_media_file(
         self, client: TelegramClient, media, media_type: str
-    ) -> Optional[str]:
+    ) -> str | None:
         async with self.download_semaphore:
             try:
-                with tempfile.NamedTemporaryFile(
+                async with tempfile.NamedTemporaryFile(
                     delete=False, suffix=f".{media_type}"
                 ) as tmp_file:
                     tmp_path = tmp_file.name
@@ -389,12 +387,12 @@ class BaseUserbotService:
                     return None
 
             except Exception as e:
-                logging.error(f"Media download failed: {str(e)}")
+                logging.error(f"Media download failed: {e!s}")
                 if "tmp_path" in locals() and os.path.exists(tmp_path):
                     try:
                         os.unlink(tmp_path)
                         self._temp_files.discard(tmp_path)
-                    except:
+                    except Exception as e:
                         pass
                 return None
 

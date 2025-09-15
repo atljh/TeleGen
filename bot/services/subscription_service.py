@@ -1,6 +1,5 @@
 import logging
 
-
 from bot.database.exceptions import (
     ChannelNotFoundError,
     SubscriptionNotFoundError,
@@ -50,10 +49,10 @@ class SubscriptionService:
             )
             return SubscriptionDTO.from_orm(subscription)
 
-        except UserNotFoundError:
-            raise UserNotFoundError(f"Пользователь с id={user_id} не найден.")
-        except ChannelNotFoundError:
-            raise ChannelNotFoundError(f"Канал с id={channel_id} не найден.")
+        except UserNotFoundError as e:
+            raise UserNotFoundError(f"Пользователь с id={user_id} не найден.") from e
+        except ChannelNotFoundError as e:
+            raise ChannelNotFoundError(f"Канал с id={channel_id} не найден.") from e
 
     async def get_subscription_by_id(self, subscription_id: int) -> SubscriptionDTO:
         try:
@@ -61,18 +60,18 @@ class SubscriptionService:
                 subscription_id
             )
             return SubscriptionDTO.from_orm(subscription)
-        except SubscriptionNotFoundError:
+        except SubscriptionNotFoundError as e:
             raise SubscriptionNotFoundError(
                 f"Подписка с id={subscription_id} не найдена."
-            )
+            ) from e
 
     async def update_subscription(
         self,
         subscription_id: int,
-        subscription_type: str = None,
+        subscription_type: str | None = None,
         start_date=None,
         end_date=None,
-        is_active: bool = None,
+        is_active: bool | None = None,
     ) -> SubscriptionDTO:
         try:
             subscription = await self.subscription_repository.get_subscription_by_id(
@@ -93,10 +92,10 @@ class SubscriptionService:
             )
             return SubscriptionDTO.from_orm(updated_subscription)
 
-        except SubscriptionNotFoundError:
+        except SubscriptionNotFoundError as e:
             raise SubscriptionNotFoundError(
                 f"Подписка с id={subscription_id} не найдена."
-            )
+            ) from e
 
     async def deactivate_subscription(self, subscription_id: int) -> SubscriptionDTO:
         try:
@@ -108,10 +107,10 @@ class SubscriptionService:
                 await self.subscription_repository.update_subscription(subscription)
             )
             return SubscriptionDTO.from_orm(updated_subscription)
-        except SubscriptionNotFoundError:
+        except SubscriptionNotFoundError as e:
             raise SubscriptionNotFoundError(
                 f"Подписка с id={subscription_id} не найдена."
-            )
+            ) from e
 
     async def delete_subscription(self, subscription_id: int):
         try:
@@ -119,10 +118,10 @@ class SubscriptionService:
                 subscription_id
             )
             await self.subscription_repository.delete_subscription(subscription)
-        except SubscriptionNotFoundError:
+        except SubscriptionNotFoundError as e:
             raise SubscriptionNotFoundError(
                 f"Подписка с id={subscription_id} не найдена."
-            )
+            ) from e
 
     async def get_user_subscriptions(self, user_id: int) -> list[SubscriptionDTO]:
         try:
@@ -131,8 +130,8 @@ class SubscriptionService:
                 await self.subscription_repository.get_subscriptions_by_user(user)
             )
             return [SubscriptionDTO.from_orm(sub) for sub in subscriptions]
-        except UserNotFoundError:
-            raise UserNotFoundError(f"Пользователь с id={user_id} не найден.")
+        except UserNotFoundError as e:
+            raise UserNotFoundError(f"Пользователь с id={user_id} не найден.") from e
 
     async def get_channel_subscriptions(self, channel_id: int) -> list[SubscriptionDTO]:
         try:
@@ -141,5 +140,5 @@ class SubscriptionService:
                 await self.subscription_repository.get_subscriptions_by_channel(channel)
             )
             return [SubscriptionDTO.from_orm(sub) for sub in subscriptions]
-        except ChannelNotFoundError:
-            raise ChannelNotFoundError(f"Канал с id={channel_id} не найден.")
+        except ChannelNotFoundError as e:
+            raise ChannelNotFoundError(f"Канал с id={channel_id} не найден.") from e

@@ -1,8 +1,8 @@
-from typing import Any
 from datetime import datetime
 from enum import StrEnum
-from asgiref.sync import sync_to_async
+from typing import Any
 
+from asgiref.sync import sync_to_async
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
@@ -96,8 +96,7 @@ class PostDTO(BaseModel):
             if field == "images":
                 images = await sync_to_async(list)(obj.images.all().order_by("order"))
                 value = [
-                    PostImageDTO(url=str(img.image), order=img.order)
-                    for img in images
+                    PostImageDTO(url=str(img.image), order=img.order) for img in images
                 ]
             elif field == "videos":
                 videos = await sync_to_async(list)(obj.videos.all().order_by("order"))

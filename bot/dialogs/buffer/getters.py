@@ -1,21 +1,23 @@
-import os
-import pytz
 import logging
+import os
 from datetime import datetime
+from typing import Any
 from zoneinfo import ZoneInfo
-from typing import Any, Optional
-from django.utils import timezone
 
-from asgiref.sync import sync_to_async
+import pytz
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.entities import MediaAttachment
 from aiogram_dialog.widgets.kbd import StubScroll
+from asgiref.sync import sync_to_async
+from django.utils import timezone
 
 from bot.containers import Container
 from bot.database.models import PostStatus
+
 from .utils import get_media_path, send_media_album
 
 logger = logging.getLogger(__name__)
+
 
 def format_datetime(value: Any) -> str:
     if not value:
@@ -33,28 +35,36 @@ def format_datetime(value: Any) -> str:
 
     return "Без дати"
 
+
 async def safe_format(post, field: str, default: str = "Без дати") -> str:
     value = getattr(post, field, None)
     if not value:
         return default
     return await sync_to_async(format_datetime)(value)
 
+
 async def get_post_images(post) -> list:
     if hasattr(post, "images"):
         return await sync_to_async(list)(post.images)
     return []
+
 
 def build_media_info(post: dict) -> dict | None:
     images = post.get("images", [])
     video_url = post.get("video_url")
 
     if images and len(images) == 1 and hasattr(images[0], "url"):
-        return {"type": "photo", "url": images[0].url, "path": get_media_path(images[0].url)}
+        return {
+            "type": "photo",
+            "url": images[0].url,
+            "path": get_media_path(images[0].url),
+        }
 
     if video_url:
         return {"type": "video", "url": video_url, "path": get_media_path(video_url)}
 
     return None
+
 
 async def build_post_dict(post, idx: int) -> dict:
     images = await get_post_images(post)
@@ -88,12 +98,14 @@ async def build_post_dict(post, idx: int) -> dict:
         "is_selected": False,
     }
 
+
 async def get_user_channels_data(dialog_manager: DialogManager, **kwargs):
     channel_service = Container.channel_service()
     user_telegram_id = dialog_manager.event.from_user.id
     channels = await channel_service.get_user_channels(user_telegram_id)
     dialog_manager.dialog_data["channels"] = channels or []
     return {"channels": channels or []}
+
 
 async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
     scroll: StubScroll = dialog_manager.find("stub_scroll")
@@ -103,7 +115,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
     start_data = dialog_manager.start_data or {}
 
     flow = start_data.get("channel_flow") or dialog_data.get("channel_flow")
-    selected_channel = dialog_data.get("selected_channel") or start_data.get("selected_channel")
+    selected_channel = dialog_data.get("selected_channel") or start_data.get(
+        "selected_channel"
+    )
 
     dialog_manager.dialog_data.update(
         {"selected_channel": selected_channel, "channel_flow": flow}
@@ -134,13 +148,15 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
     if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
         post_service = Container.post_service()
         try:
-            raw_posts = await post_service.get_all_posts_in_flow(flow.id, status=PostStatus.SCHEDULED)
+            raw_posts = await post_service.get_all_posts_in_flow(
+                flow.id, status=PostStatus.SCHEDULED
+            )
             dialog_data["all_posts"] = [
                 await build_post_dict(post, idx) for idx, post in enumerate(raw_posts)
             ]
             dialog_data["total_posts"] = len(dialog_data["all_posts"])
         except Exception as e:
-            logging.error(f"Помилка завантаження постів: {str(e)}")
+            logging.error(f"Помилка завантаження постів: {e!s}")
 
     posts = dialog_data.get("all_posts", [])
     total_pages = len(posts)
@@ -180,7 +196,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             await send_media_album(dialog_manager, post)
         else:
             media_info = build_media_info(post)
-            if media_info and media_info.get("path") and os.path.exists(media_info["path"]):
+            if (
+                media_info
+                and media_info.get("path")
+                and os.path.exists(media_info["path"])
+            ):
                 data["media_content"] = MediaAttachment(
                     path=media_info["path"], type=media_info["type"]
                 )
@@ -201,11 +221,19 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
         first_image = images[0]
         image_url = getattr(first_image, "url", None)
         if image_url:
-            media_info = {"type": "photo", "url": image_url, "path": get_media_path(image_url)}
+            media_info = {
+                "type": "photo",
+                "url": image_url,
+                "path": get_media_path(image_url),
+            }
     elif video_url:
-        media_info = {"type": "video", "url": video_url, "path": get_media_path(video_url)}
+        media_info = {
+            "type": "video",
+            "url": video_url,
+            "path": get_media_path(video_url),
+        }
 
-    media: Optional[MediaAttachment] = None
+    media: MediaAttachment | None = None
     if media_info and media_info.get("path") and os.path.exists(media_info["path"]):
         media = MediaAttachment(path=media_info["path"], type=media_info["type"])
     elif edited_media:
@@ -228,7 +256,9 @@ async def post_info_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
                 dt = timezone.datetime.fromisoformat(original_date)
                 if not timezone.is_aware(dt):
                     dt = timezone.make_aware(dt, timezone.utc)
-            elif isinstance(original_date, datetime) and not timezone.is_aware(original_date):
+            elif isinstance(original_date, datetime) and not timezone.is_aware(
+                original_date
+            ):
                 dt = timezone.make_aware(original_date, timezone.utc)
             elif isinstance(original_date, datetime):
                 dt = original_date
@@ -236,7 +266,9 @@ async def post_info_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
                 raise ValueError("Unsupported date format")
 
             kiev_tz = pytz.timezone("Europe/Kiev")
-            kiev_date = timezone.localtime(dt, timezone=kiev_tz).strftime("%Y-%m-%d %H:%M:%S")
+            kiev_date = timezone.localtime(dt, timezone=kiev_tz).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
 
         except Exception as e:
             logger.debug("Error converting date: %s", e, exc_info=True)

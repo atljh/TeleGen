@@ -25,7 +25,6 @@ from bot.dialogs.buffer.getters import (
     send_media_album,
 )
 from bot.dialogs.buffer.states import BufferMenu
-
 from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import (
@@ -204,11 +203,7 @@ def create_buffer_dialog():
                     Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media
                 ),
             ),
-            Row(
-                Button(
-                    BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts
-                )
-            ),
+            Row(Button(BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts)),
             MessageInput(process_edit_input),
             getter=edit_post_getter,
             state=BufferMenu.edit_post,

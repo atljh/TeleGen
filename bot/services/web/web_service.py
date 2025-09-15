@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from bs4 import BeautifulSoup
 
@@ -21,7 +23,7 @@ class WebService:
     def __init__(
         self,
         post_repository: PostRepository,
-        rss_service_factory: Callable[[], Awaitable["RssService"]],
+        rss_service_factory: Callable[[], Awaitable[RssService]],
         content_processor: ContentProcessorService,
         user_service: UserService,
         flow_service: FlowService,
@@ -94,7 +96,7 @@ class WebService:
             return []
 
         try:
-            user = await self.user_service.get_user_by_flow(flow)
+            await self.user_service.get_user_by_flow(flow)
 
             valid_posts = [
                 p
@@ -107,11 +109,11 @@ class WebService:
                 return []
 
             processed_contents = await self.content_processor.process_batch(
-                [p["content"] for p in valid_posts], flow, user.id
+                [p["content"] for p in valid_posts], flow
             )
 
             result = []
-            for post, content in zip(valid_posts, processed_contents):
+            for post, content in zip(valid_posts, processed_contents, strict=False):
                 if isinstance(content, Exception):
                     self.logger.warning(
                         f"Content processing failed for post {post.get('source_id')}: {content}"

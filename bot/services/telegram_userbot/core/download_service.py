@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 from telethon import TelegramClient
 
@@ -19,8 +19,8 @@ class DownloadService:
         client: TelegramClient,
         media: Any,
         file_path: str,
-        max_retries: Optional[int] = None,
-        retry_delay: Optional[float] = None,
+        max_retries: int | None = None,
+        retry_delay: float | None = None,
     ) -> bool:
         max_retries = max_retries or self.max_retries
         retry_delay = retry_delay or self.retry_delay
@@ -32,7 +32,7 @@ class DownloadService:
                     return True
 
             except Exception as e:
-                self.logger.warning(f"Download attempt {attempt + 1} failed: {str(e)}")
+                self.logger.warning(f"Download attempt {attempt + 1} failed: {e!s}")
 
             if attempt < max_retries - 1:
                 await asyncio.sleep(retry_delay * (attempt + 1))
@@ -77,7 +77,7 @@ class DownloadService:
 
     async def _download_single_media(
         self, client: TelegramClient, media_item: MediaInfo, output_dir: str
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         try:
             file_name = f"{media_item['file_id']}_{media_item['type']}"
             file_path = os.path.join(output_dir, file_name)
@@ -95,7 +95,7 @@ class DownloadService:
                 }
 
         except Exception as e:
-            self.logger.error(f"Media download failed: {str(e)}")
+            self.logger.error(f"Media download failed: {e!s}")
 
         return None
 
@@ -112,4 +112,4 @@ class DownloadService:
                 if os.path.exists(file_path):
                     os.unlink(file_path)
             except Exception as e:
-                self.logger.warning(f"Failed to cleanup file {file_path}: {str(e)}")
+                self.logger.warning(f"Failed to cleanup file {file_path}: {e!s}")

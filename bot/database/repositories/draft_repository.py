@@ -9,8 +9,8 @@ class DraftRepository:
     async def get_draft_by_id(self, draft_id: int) -> Draft:
         try:
             return await Draft.objects.aget(id=draft_id)
-        except Draft.DoesNotExist:
-            raise DraftNotFoundError(f"Draft with id={draft_id} not found.")
+        except Draft.DoesNotExist as e:
+            raise DraftNotFoundError(f"Draft with id={draft_id} not found.") from e
 
     async def update_draft(self, draft: Draft) -> Draft:
         await draft.asave()

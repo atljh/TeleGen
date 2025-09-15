@@ -25,10 +25,12 @@ class DraftService:
 
             draft = await self.draft_repository.create_draft(user=user, post=post)
             return draft
-        except UserNotFoundError:
-            raise UserNotFoundError(f"User with telegram_id={telegram_id} not found.")
-        except PostNotFoundError:
-            raise PostNotFoundError(f"Post with id={post_id} not found.")
+        except UserNotFoundError as e:
+            raise UserNotFoundError(
+                f"User with telegram_id={telegram_id} not found."
+            ) from e
+        except PostNotFoundError as e:
+            raise PostNotFoundError(f"Post with id={post_id} not found.") from e
 
     async def get_draft_by_id(self, draft_id: int) -> DraftDTO:
         draft = await self.draft_repository.get_draft_by_id(draft_id)
