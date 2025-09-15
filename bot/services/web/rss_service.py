@@ -143,31 +143,6 @@ class RssService:
 
         return [await task for task in tasks]
 
-    async def fetch_posts(self, rss_urls: list[str], limit: int = 10) -> list[RssPost]:
-        if not rss_urls:
-            return []
-
-        try:
-            limits_per_url = self._calculate_limits_per_url(rss_urls, limit)
-            tasks = [
-                self._fetch_feed_posts(url, limits_per_url[url]) for url in rss_urls
-            ]
-            async with asyncio.timeout(30):
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-            return [
-                post
-                for sublist in results
-                if not isinstance(sublist, Exception)
-                for post in sublist
-            ]
-
-        except TimeoutError:
-            self.logger.warning("Timeout while fetching posts")
-            return []
-        except Exception as e:
-            self.logger.error(f"Error fetching posts: {e}")
-            return []
-
     async def close(self) -> None:
         if self._session and not self._session.closed:
             await self._session.close()
