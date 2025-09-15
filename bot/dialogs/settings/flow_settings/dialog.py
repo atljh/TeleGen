@@ -441,6 +441,7 @@ def create_confirm_delete_source():
             ),
             Button(Const("❌ Ні"), id="cancel_delete", on_click=cancel_delete_source),
         ),
+        LinkPreview(is_disabled=True),
         state=FlowSettingsMenu.confirm_delete_source,
         getter=get_source_to_delete_data,
     )
