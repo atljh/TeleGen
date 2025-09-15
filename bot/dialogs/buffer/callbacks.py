@@ -178,11 +178,11 @@ async def on_publish_post(
 
         await asyncio.sleep(1)
         await manager.switch_to(BufferMenu.channel_main)
-        await callback.answer("Пост успішно опубліковано!")
+        await callback.message.answer("✅ Пост успішно опубліковано!")
 
     except InvalidOperationError as e:
         logging.error(f"Invalid operation: {e}")
-        await callback.answer(f"❌ Помилка: {e!s}")
+        await callback.answer("❌ Помилка")
         await manager.switch_to(BufferMenu.channel_main)
     except Exception as e:
         logging.exception("Помилка при публікації посту")

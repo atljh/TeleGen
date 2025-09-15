@@ -61,7 +61,7 @@ class PostPublishingService:
                 media=image.url, caption=caption, parse_mode=ParseMode.HTML
             )
         else:
-            media_path = os.path.join(settings.BASE_DIR, image.url.lstrip("/"))
+            media_path = os.path.join(settings.MEDIA_ROOT, image.url.lstrip("/"))
             if os.path.exists(media_path):
                 return InputMediaPhoto(
                     media=FSInputFile(media_path),
@@ -69,7 +69,7 @@ class PostPublishingService:
                     parse_mode=ParseMode.HTML,
                 )
             else:
-                raise InvalidOperationError(f"Файл изображения не найден: {image.url}")
+                raise InvalidOperationError(f"Файл изображения не найден: {media_path}")
 
     async def _send_video(self, post: PostDTO, channel_id: str, caption: str):
         if post.video_url.startswith(("http://", "https://")):

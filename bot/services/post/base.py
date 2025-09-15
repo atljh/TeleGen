@@ -27,12 +27,7 @@ class PostBaseService:
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
 
-        images = await sync_to_async(
-            lambda: list(post.images.all().order_by("order"))
-        )()
-        dto = await PostDTO.from_orm_async(post)
-        dto.images = images
-        return dto
+        return await PostDTO.from_orm_async(post)
 
     async def create_post(
         self,
@@ -79,7 +74,6 @@ class PostBaseService:
         post = await self.post_repo.get(post_id)
         if not post:
             raise PostNotFoundError(f"Post with id {post_id} not found")
-
         if content is not None:
             post.content = content
         if publication_date is not None:
@@ -94,8 +88,9 @@ class PostBaseService:
         if images is not None:
             await self._update_post_images(post, images)
 
-        await sync_to_async(post.save)()
-        return PostDTO.from_orm(post)
+        # await self.post_repo.update(post.id, **post.dict())
+        await post.asave()
+        return await PostDTO.from_orm_async(post)
 
     async def _update_post_images(
         self, post: PostDTO, images: list[dict[str, Any]]
