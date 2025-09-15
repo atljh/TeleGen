@@ -293,7 +293,7 @@ async def start_generation_process(
 ):
     try:
         flow_data = manager.dialog_data.get("created_flow", {})
-        channel = manager.dialog_data.get("selected_channel")
+        manager.dialog_data.get("selected_channel")
 
         flow_id = flow_data.get("flow_id")
 
@@ -333,7 +333,6 @@ async def start_generation_process(
                 status_msg_id=status_msg.message_id,
                 bot=bot,
                 flow=flow,
-                channel=channel,
             )
         )
         return task
