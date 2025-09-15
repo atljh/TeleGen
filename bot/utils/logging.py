@@ -47,5 +47,6 @@ def init_logging():
     logging.getLogger("aiohttp").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("rss_service").setLevel(logging.INFO)
 
     logging.info("Logging initialized successfully")

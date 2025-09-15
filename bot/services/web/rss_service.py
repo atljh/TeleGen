@@ -211,11 +211,14 @@ class RssService:
                 feed = feedparser.parse(text)
                 domain = urlparse(rss_url).netloc
 
-                for entry in feed.entries[:limit]:
-                    try:
-                        yield await self._parse_rss_entry(entry, domain, rss_url)
-                    except Exception as e:
-                        self.logger.warning(f"Error parsing entry: {e}")
+                tasks = [
+                    self._parse_rss_entry(entry, domain, rss_url)
+                    for entry in feed.entries[:limit]
+                ]
+                for coro in asyncio.as_completed(tasks):
+                    post = await coro
+                    if post:
+                        yield post
 
         except Exception as e:
             self.logger.error(f"Error fetching feed {rss_url}: {e}")
@@ -314,7 +317,7 @@ class RssService:
                 "original_date": self._parse_rss_date(entry.get("published")),
                 "source_url": rss_url,
                 "source_id": source_id,
-                "images": self._extract_rss_images(entry),
+                "images": await self._extract_rss_images(entry),
                 "domain": domain,
             }
             return RssPost(**post_data)
@@ -323,7 +326,7 @@ class RssService:
             self.logger.error(f"Error parsing RSS entry: {e}", exc_info=True)
             return None
 
-    def _extract_rss_images(self, entry: feedparser.FeedParserDict) -> list[str]:
+    async def _extract_rss_images(self, entry: feedparser.FeedParserDict) -> list[str]:
         images: set[str] = set()
 
         # 1. Проверка media_content (стандартный способ)
@@ -362,8 +365,7 @@ class RssService:
                 if enc.get("type", "").startswith("image/")
             )
 
-        logging.info(f"+++++++++++++++{images}")
-        self.logger.info(f"==============={images}")
+        self.logger.info(f"+++++++++++++++{images}")
         self.logger.warning(f"--------{images}")
 
         return sorted(

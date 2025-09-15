@@ -76,7 +76,6 @@ class MediaService:
 
     def _get_permanent_media_path(self, media_type: str, extension: str) -> str:
         media_dir = self.image_dir if media_type == "image" else self.video_dir
-        logger.warning(f"{media_dir} | {media_type} | {extension}")
         permanent_dir = os.path.join(settings.MEDIA_ROOT, media_dir)
         os.makedirs(permanent_dir, exist_ok=True)
         filename = f"{uuid.uuid4()}{extension}"
