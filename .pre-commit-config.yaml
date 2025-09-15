@@ -7,3 +7,49 @@ repos:
       - id: check-yaml
       - id: check-json
       - id: check-added-large-files
+
+  - repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort (python)
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-django]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - django-stubs
+          - types-requests
+          - types-python-dateutil
+
+  - repo: local
+    hooks:
+      - id: django-migrations-check
+        name: Check for uncreated migrations
+        entry: python manage.py makemigrations --check --dry-run
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: django-test
+        name: Run Django tests
+        entry: python manage.py test --keepdb --noinput
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [push]
