@@ -165,7 +165,6 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
                 await post_service.update_post(
                     post_id=post_id,
                     images=[{"file_path": file_path, "order": 0}],
-                    video_url=None,
                 )
 
                 manager.dialog_data["edited_media"] = {
@@ -187,8 +186,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
 
                 await post_service.update_post(
                     post_id=post_id,
-                    video_url=os.path.join(settings.MEDIA_URL, file_path),
-                    images=[],
+                    videos=[{"file_path": file_path, "order": 0}],
                 )
 
                 manager.dialog_data["edited_media"] = {
@@ -200,21 +198,6 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
             else:
                 await message.answer("Будь ласка, надішліть фото або відео")
                 return
-
-        if input_type == "text":
-            manager.dialog_data["editing_post"]["content"] = new_text
-        elif input_type == "media":
-            if message.content_type == ContentType.PHOTO:
-                manager.dialog_data["editing_post"]["images"] = [
-                    {"url": os.path.join(settings.MEDIA_URL, file_path), "order": 0}
-                ]
-                manager.dialog_data["editing_post"]["video_url"] = None
-            else:
-                manager.dialog_data["editing_post"]["video_url"] = os.path.join(
-                    settings.MEDIA_URL, file_path
-                )
-                manager.dialog_data["editing_post"]["images"] = []
-
         try:
             await message.bot.delete_message(
                 chat_id=message.chat.id, message_id=message.message_id - 1

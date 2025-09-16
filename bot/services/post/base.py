@@ -109,7 +109,7 @@ class PostBaseService:
         for video_data in videos:
             await sync_to_async(PostVideo.objects.create)(
                 post=post,
-                image=video_data["file_path"],
+                video=video_data["file_path"],
                 order=video_data["order"],
             )
 

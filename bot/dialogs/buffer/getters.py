@@ -71,7 +71,7 @@ def build_media_info(post: dict) -> dict | None:
 
 async def build_post_dict(post, idx: int) -> dict:
     images = await get_post_images(post)
-    video_url = getattr(post, "video_url", None)
+    videos = getattr(post, "videos", None)
     content = getattr(post, "content", "")
 
     post_stats = {
@@ -87,10 +87,10 @@ async def build_post_dict(post, idx: int) -> dict:
         "pub_time": await safe_format(post, "publication_date"),
         "created_time": await safe_format(post, "created_at"),
         "status": post_stats.get(post.status, "Невідомо"),
-        "has_media": bool(images or video_url),
+        "has_media": bool(images or videos),
         "images_count": len(images),
         "images": images,
-        "video_url": video_url,
+        "videos": videos,
         "is_album": len(images) > 1,
         "original_date": format_datetime(getattr(post, "original_date", "")),
         "original_link": getattr(post, "original_link", ""),
@@ -175,7 +175,7 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
         media_indicator = f"📷 Альбом ({post['images_count']} фото)"
     elif post.get("images") and len(post["images"]) == 1:
         media_indicator = "🖼️ 1 фото"
-    elif post.get("video_url"):
+    elif post.get("videos"):
         media_indicator = "🎥 Відео"
     elif post.get("has_media"):
         media_indicator = "📎 Медіа"
