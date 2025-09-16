@@ -1,3 +1,4 @@
+import logging
 import os
 
 from aiogram import Bot
@@ -9,6 +10,8 @@ from django.utils import timezone
 from bot.database.exceptions import InvalidOperationError
 from bot.database.models import PostDTO, PostStatus
 from bot.services.post.base import PostBaseService
+
+logger = logging.getLogger(__name__)
 
 
 class PostPublishingService:
@@ -33,7 +36,8 @@ class PostPublishingService:
             )
 
         except Exception as e:
-            raise InvalidOperationError(f"Помилка публiкацiї: {e!s}") from e
+            logger.error(e)
+            raise InvalidOperationError("Помилка публiкацiї") from e
 
     async def _send_post_to_channel(self, post: PostDTO, channel_id: str):
         caption = post.content[:1024] if len(post.content) > 1024 else post.content
@@ -47,16 +51,18 @@ class PostPublishingService:
         media_group = []
 
         for i, image in enumerate(post.images):
+            media_path = os.path.join(settings.MEDIA_ROOT, image.url.lstrip("/"))
             media = InputMediaPhoto(
-                media=image,
+                media=FSInputFile(media_path),
                 caption=caption if i == 0 and not post.videos else None,
                 parse_mode="HTML",
             )
             media_group.append(media)
 
         for j, video in enumerate(post.videos):
+            media_path = os.path.join(settings.MEDIA_ROOT, video.url.lstrip("/"))
             media = InputMediaVideo(
-                media=video,
+                media=FSInputFile(media_path),
                 caption=caption if j == 0 and not post.images else None,
                 parse_mode="HTML",
             )
