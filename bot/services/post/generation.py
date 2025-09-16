@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aiogram import Bot
@@ -95,35 +96,42 @@ class PostGenerationService:
         return (telegram_userbot_volume, web_volume)
 
     async def _create_posts_from_dtos(self, flow, post_dtos: list) -> list[PostDTO]:
-        generated_posts = []
+        semaphore = asyncio.Semaphore(10)
 
-        for post_dto in post_dtos:
-            try:
-                if await Post.objects.filter(source_id=post_dto.source_id).aexists():
-                    logging.info(f"Skipping duplicate post: {post_dto.source_id}")
-                    continue
+        async def _process_single_post(post_dto: PostDTO) -> PostDTO | None:
+            async with semaphore:
+                try:
+                    exists = await Post.objects.filter(
+                        source_id=post_dto.source_id
+                    ).aexists()
+                    if exists:
+                        logging.info(f"Skipping duplicate post: {post_dto.source_id}")
+                        return None
 
-                media_list = self._prepare_media_list(post_dto)
-                post = await self.post_service.create_post(
-                    flow=flow,
-                    content=post_dto.content,
-                    source_url=post_dto.source_url,
-                    original_date=post_dto.original_date,
-                    original_link=post_dto.original_link,
-                    original_content=post_dto.original_content,
-                    source_id=post_dto.source_id,
-                    media_list=media_list,
-                )
+                    media_list = self._prepare_media_list(post_dto)
 
-                if post:
-                    post_dto = await PostDTO.from_orm_async(post)
-                    generated_posts.append(post)
+                    post = await self.post_service.create_post(
+                        flow=flow,
+                        content=post_dto.content,
+                        source_url=post_dto.source_url,
+                        original_date=post_dto.original_date,
+                        original_link=post_dto.original_link,
+                        original_content=post_dto.original_content,
+                        source_id=post_dto.source_id,
+                        media_list=media_list,
+                    )
 
-            except Exception as e:
-                logging.error(f"Post creation failed: {e!s}")
-                continue
+                    if post:
+                        return await PostDTO.from_orm_async(post)
 
-        return generated_posts
+                except Exception as e:
+                    logging.error(f"Post creation failed: {e!s}", exc_info=True)
+                    return None
+
+        tasks = [_process_single_post(dto) for dto in post_dtos]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        return [res for res in results if isinstance(res, PostDTO)]
 
     def _prepare_media_list(self, post_dto) -> list[dict]:
         media_list = [
