@@ -77,6 +77,7 @@ class Container(containers.DeclarativeContainer):
         api_hash=os.getenv("USERBOT_API_HASH"),
         phone=os.getenv("TELEGRAM_PHONE"),
         openai_key=os.getenv("OPENAI_API_KEY"),
+        logger=providers.Singleton(logging.getLogger, "userbot_service"),
     )
 
     rss_service_factory = providers.Factory(

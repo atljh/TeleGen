@@ -52,10 +52,7 @@ class PostService:
         return await self.base_service.get_all_posts_in_flow(flow_id, status)
 
     async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
-        try:
-            return await self.publishing_service.publish_post(post_id, channel_id)
-        except Exception as e:
-            raise e
+        return await self.publishing_service.publish_post(post_id, channel_id)
 
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         return await self.scheduling_service.schedule_post(post_id, scheduled_time)

@@ -7,19 +7,17 @@ from urllib.parse import urlparse
 
 import aiofiles
 import httpx
-from asgiref.sync import sync_to_async
 from django.conf import settings
 from PIL import Image, UnidentifiedImageError
 
-from admin_panel.admin_panel.models import Post, PostImage
-
-logger = logging.getLogger(__name__)
+from admin_panel.admin_panel.models import Post, PostImage, PostVideo
 
 
 class MediaService:
     def __init__(self):
         self.image_dir = "posts/images"
         self.video_dir = "posts/videos"
+        self.logger = logging.getLogger(__name__)
 
     async def _download_remote_media(self, url: str, media_type: str) -> str:
         headers = {
@@ -56,7 +54,7 @@ class MediaService:
 
             return temp_file
         except Exception:
-            logger.error(f"Failed to download media from {url}")
+            self.logger.error(f"Failed to download media from {url}")
             raise
 
     def _validate_image(self, file_path: str) -> None:
@@ -117,20 +115,18 @@ class MediaService:
                 elif media_type == "video":
                     stored_videos.append(stored_path)
                 else:
-                    logger.warning(f"Unknown media type: {media_type} for {path}")
+                    self.logger.warning(f"Unknown media type: {media_type} for {path}")
 
             except Exception as e:
-                logger.error(f"Failed to process media {media.get('path')}: {e!s}")
+                self.logger.error(f"Failed to process media {media.get('path')}: {e!s}")
                 continue
 
             for order, img_path in enumerate(stored_images):
-                await sync_to_async(PostImage.objects.create)(
-                    post=post, image=img_path, order=order
-                )
+                await PostImage.objects.acreate(post=post, image=img_path, order=order)
 
-            if stored_videos:
-                post.video = stored_videos[0]
-                await sync_to_async(post.save)()
+            for order, vid_path in enumerate(stored_videos):
+                self.logger.warning(vid_path)
+                await PostVideo.objects.acreate(post=post, video=vid_path, order=order)
 
         return {"images": stored_images, "videos": stored_videos}
 
@@ -148,15 +144,17 @@ class MediaService:
                 file_path = file_path_or_url
 
             stored_path = self._store_local_media(file_path, media_type)
-            logger.info(f"Successfully stored media: {stored_path}")
+            self.logger.info(f"Successfully stored media: {stored_path}")
             return stored_path
 
         except Exception as e:
-            logger.error(f"Failed to store media {file_path_or_url}: {e!s}")
+            self.logger.error(f"Failed to store media {file_path_or_url}: {e!s}")
             raise
         finally:
             if temp_file and os.path.exists(temp_file):
                 try:
                     os.remove(temp_file)
                 except Exception as e:
-                    logger.warning(f"Failed to remove temp file {temp_file}: {e!s}")
+                    self.logger.warning(
+                        f"Failed to remove temp file {temp_file}: {e!s}"
+                    )

@@ -41,7 +41,7 @@ class PostConversionService:
         self, raw_post: dict, flow: FlowDTO
     ) -> PostDTO | None:
         post_dto = PostDTO.from_raw_post(raw_post)
-
+        logging.info(post_dto)
         if not post_dto.content:
             return None
 

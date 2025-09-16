@@ -1,3 +1,4 @@
+import logging
 import time
 
 from bot.database.models.flow import FlowDTO
@@ -21,6 +22,7 @@ class EnhancedUserbotService(BaseUserbotService):
         aisettings_service: "AISettingsService",
         user_service: "UserService",
         openai_key: str | None = None,
+        logger: logging.Logger | None = None,
         **kwargs,
     ):
         super().__init__(api_id, api_hash, **kwargs)
@@ -32,7 +34,7 @@ class EnhancedUserbotService(BaseUserbotService):
         )
 
         self.post_converter = PostConversionService(self.content_processor)
-
+        self.logger = logger or logging.getLogger(__name__)
         self.user_service = user_service
         self.aisettings_service = aisettings_service
         self.openai_key = openai_key
@@ -46,7 +48,7 @@ class EnhancedUserbotService(BaseUserbotService):
             processed_posts = await self.post_converter.convert_raw_posts_to_dto(
                 raw_posts, flow
             )
-
+            self.logger.info(processed_posts)
             self.logger.info(
                 f"[Telegram] Processed {len(processed_posts)} posts "
                 f"in {time.time() - start_time:.2f}s"
@@ -59,9 +61,17 @@ class EnhancedUserbotService(BaseUserbotService):
             return []
 
     async def process_content(self, text: str, flow: FlowDTO) -> str:
-        return await self.content_processor.process_post_content(
+        post = await self.content_processor.process_post_content(
             PostDTO(content=text), flow
-        ).content
+        )
+        return post.content
 
     async def convert_raw_post(self, raw_post: dict, flow: FlowDTO) -> PostDTO | None:
         return await self.post_converter._convert_single_post(raw_post, flow)
+
+    async def __aenter__(self):
+        await super().__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await super().__aexit__(exc_type, exc_val, exc_tb)
