@@ -38,7 +38,7 @@ class MediaService:
             headers["Referer"] = "https://sportarena.com/"
 
         ext = os.path.splitext(urlparse(url).path)[1] or (
-            ".jpg" if media_type == "images" else ".mp4"
+            ".jpg" if media_type == "image" else ".mp4"
         )
         temp_file = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4()}{ext}")
 
@@ -67,10 +67,7 @@ class MediaService:
             raise ValueError(f"Invalid image: {file_path} - {e!s}") from e
 
     def _get_media_extension(self, file_path: str, media_type: str) -> str:
-        ext = os.path.splitext(file_path)[1].lower()
-        if ext:
-            return ext
-        return ".jpg" if media_type == "images" else ".mp4"
+        return ".jpg" if media_type == "image" else ".mp4"
 
     def _get_permanent_media_path(self, media_type: str, extension: str) -> str:
         media_dir = self.image_dir if media_type == "image" else self.video_dir
@@ -80,9 +77,8 @@ class MediaService:
         return os.path.join(media_dir, filename)
 
     def _store_local_media(self, file_path: str, media_type: str) -> str:
-        if media_type == "images":
+        if media_type == "image":
             self._validate_image(file_path)
-
         extension = self._get_media_extension(file_path, media_type)
         permanent_path = self._get_permanent_media_path(media_type, extension)
 
@@ -108,11 +104,12 @@ class MediaService:
                 path = media["path"]
                 media_type = media["type"]
 
-                # stored_path = await self.store_media(path, media_type)
-
                 if media_type == "image":
-                    # stored_images.append(stored_path)
-                    stored_images.append(media["path"])
+                    if path.startswith("/tmp/"):
+                        stored_path = await self.store_media(path, media_type)
+                        stored_images.append(stored_path)
+                    else:
+                        stored_images.append(media["path"])
                 elif media_type == "video":
                     stored_path = await self.store_media(path, media_type)
                     stored_videos.append(stored_path)
@@ -124,8 +121,14 @@ class MediaService:
                 continue
 
             for order, img_path in enumerate(stored_images):
-                await PostImage.objects.acreate(post=post, url=img_path, order=order)
-                # await PostImage.objects.acreate(post=post, image=img_path, order=order)
+                if img_path.startswith("posts/"):
+                    await PostImage.objects.acreate(
+                        post=post, image=img_path, order=order
+                    )
+                else:
+                    await PostImage.objects.acreate(
+                        post=post, url=img_path, order=order
+                    )
 
             for order, vid_path in enumerate(stored_videos):
                 await PostVideo.objects.acreate(post=post, video=vid_path, order=order)

@@ -203,11 +203,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             media_info: dict[str, Any] | None = None
             images = post.get("images", [])
             videos = post.get("videos", [])
-            logger.warning(images)
             if images and len(images) == 1:
                 first_image = images[0]
                 image_url = getattr(first_image, "url", None)
-                logger.warning(first_image)
                 if image_url:
                     media_info = {
                         "type": "photo",
@@ -227,7 +225,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
                 media_info
                 and media_info.get("path")
                 and os.path.exists(media_info["path"])
-            ) or (media_info and media_info.get("url")):
+            ):
+                data["media_content"] = MediaAttachment(
+                    path=media_info["path"], type=media_info["type"]
+                )
+            elif media_info and media_info.get("url"):
                 data["media_content"] = MediaAttachment(
                     url=media_info["url"], type=media_info["type"]
                 )
