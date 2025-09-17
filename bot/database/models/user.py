@@ -10,9 +10,6 @@ class UserDTO(BaseModel):
     username: str | None = None
     first_name: str | None = None
     last_name: str | None = None
-    subscription_type: str | None = None
-    subscription_status: bool = False
-    subscription_end_date: datetime | None = None
     payment_method: str | None = None
     created_at: datetime
 

@@ -229,7 +229,8 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
                 and os.path.exists(media_info["path"])
             ):
                 data["media_content"] = MediaAttachment(
-                    path=media_info["path"], type=media_info["type"]
+                    url="https://www.atptour.com/-/media/images/news/2025/09/14/15/41/collignon-bergs-davis-cup-2025-qualifiers-r2-sunday.jpg",
+                    type=media_info["type"],
                 )
 
     return data

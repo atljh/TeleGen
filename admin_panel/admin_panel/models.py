@@ -10,16 +10,7 @@ class User(models.Model):
     )
     first_name = models.CharField(max_length=100, blank=True, verbose_name="Ім'я")
     last_name = models.CharField(max_length=100, blank=True, verbose_name="Прізвище")
-    subscription_status = models.BooleanField(
-        default=False, verbose_name="Статус підписки"
-    )
-    subscription_end_date = models.DateTimeField(
-        null=True, blank=True, verbose_name="Дата закінчення підписки"
-    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
-    subscription_type = models.CharField(
-        max_length=50, blank=True, verbose_name="Тип підписки"
-    )
     payment_method = models.CharField(max_length=50, blank=True)
 
     class Meta:
@@ -133,6 +124,7 @@ class PostImage(models.Model):
     image = models.ImageField(
         upload_to="posts/images/", verbose_name="Зображення", max_length=255
     )
+    url = models.URLField(verbose_name="Посилання на зображення", blank=True)
     order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортування")
 
     class Meta:
@@ -142,6 +134,12 @@ class PostImage(models.Model):
 
     def __str__(self):
         return f"Зображення для поста {self.post.id}"
+
+    @property
+    def source_url(self):
+        if self.url:
+            return self.image
+        return self.image
 
 
 class PostVideo(models.Model):
@@ -250,33 +248,11 @@ class Draft(models.Model):
         return f"Чернетка для {self.user.username}"
 
 
-class Subscription(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="subscriptions",
-        verbose_name="Користувач",
-    )
-    channel = models.ForeignKey(
-        Channel,
-        on_delete=models.CASCADE,
-        related_name="subscriptions",
-        verbose_name="Канал",
-    )
-    subscription_type = models.CharField(max_length=50, verbose_name="Тип підписки")
-    start_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата початку")
-    end_date = models.DateTimeField(verbose_name="Дата закінчення")
-    is_active = models.BooleanField(default=True, verbose_name="Активна")
-
-    class Meta:
-        verbose_name = "Підписка"
-        verbose_name_plural = "Підписки"
-
-    def __str__(self):
-        return f"Підписка {self.subscription_type} для {self.user.username}"
-
-
 class Payment(models.Model):
+    class PaymentMethod(models.TextChoices):
+        CARD = "card", "Банківська карта"
+        CRYPTO = "crypto", "Криптовалюта"
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -284,16 +260,28 @@ class Payment(models.Model):
         verbose_name="Користувач",
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сума")
-    payment_method = models.CharField(max_length=50, verbose_name="Метод оплати")
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        verbose_name="Метод оплати",
+    )
     payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата оплати")
     is_successful = models.BooleanField(default=False, verbose_name="Успішний")
+    subscription = models.ForeignKey(
+        "Subscription",
+        on_delete=models.CASCADE,
+        related_name="payments",
+        verbose_name="Підписка",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Платіж"
         verbose_name_plural = "Платежі"
 
     def __str__(self):
-        return f"Платіж {self.amount} від {self.user.username}"
+        return f"{self.get_payment_method_display()} – {self.amount}₴ ({'✅' if self.is_successful else '❌'})"
 
 
 class AISettings(models.Model):
@@ -343,3 +331,99 @@ class Statistics(models.Model):
 
     def __str__(self):
         return f"Статистика для {self.user.username}"
+
+
+class Tariff(models.Model):
+    FREE = "free"
+    BASIC = "basic"
+    PRO = "pro"
+
+    TARIFF_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        (FREE, "Безкоштовний"),
+        (BASIC, "Базовий"),
+        (PRO, "Професійний"),
+    ]
+
+    code = models.CharField(
+        max_length=50, choices=TARIFF_CHOICES, unique=True, verbose_name="Код тарифу"
+    )
+    name = models.CharField(max_length=100, verbose_name="Назва")
+    description = models.TextField(blank=True, verbose_name="Опис")
+    level = models.PositiveSmallIntegerField(
+        default=1, help_text="Рівень тарифу (1 - безкоштовний, 2 - базовий, 3 - профі)"
+    )
+    features = models.JSONField(
+        default=dict,
+        verbose_name="Особливості тарифу",
+        help_text="Напр. {'channels': 3, 'posts': 100}",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Активний")
+
+    class Meta:
+        verbose_name = "Тариф"
+        verbose_name_plural = "Тарифи"
+        ordering: ClassVar[list[str]] = ["level"]
+
+    def __str__(self):
+        return self.get_code_display()
+
+
+class TariffPeriod(models.Model):
+    PERIOD_CHOICES: ClassVar[list[tuple[int, str]]] = [
+        (1, "1 місяць"),
+        (6, "6 місяців"),
+        (9, "9 місяців"),
+        (12, "1 рік"),
+    ]
+
+    tariff = models.ForeignKey(
+        Tariff, on_delete=models.CASCADE, related_name="periods", verbose_name="Тариф"
+    )
+    months = models.PositiveSmallIntegerField(
+        choices=PERIOD_CHOICES, verbose_name="Термін підписки"
+    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна")
+    promo_code = models.CharField(max_length=50, blank=True, verbose_name="Промокод")
+    discount_percent = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Знижка (%)"
+    )
+
+    class Meta:
+        verbose_name = "Термін тарифу"
+        verbose_name_plural = "Терміни тарифів"
+        unique_together = ("tariff", "months")
+
+    def __str__(self):
+        return f"{self.tariff} – {self.get_months_display()} ({self.price}₴)"
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        verbose_name="Користувач",
+    )
+    channel = models.ForeignKey(
+        Channel,
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        verbose_name="Канал",
+    )
+    tariff_period = models.ForeignKey(
+        TariffPeriod,
+        on_delete=models.PROTECT,
+        related_name="subscriptions",
+        verbose_name="Тариф + період",
+    )
+    start_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата початку")
+    end_date = models.DateTimeField(verbose_name="Дата закінчення")
+    is_active = models.BooleanField(default=True, verbose_name="Активна")
+    is_trial = models.BooleanField(default=False, verbose_name="Тестовий період")
+
+    class Meta:
+        verbose_name = "Підписка"
+        verbose_name_plural = "Підписки"
+
+    def __str__(self):
+        return f"{self.user.username} – {self.tariff_period}"

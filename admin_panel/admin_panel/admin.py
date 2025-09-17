@@ -12,6 +12,8 @@ from .models import (
     PostImage,
     PostVideo,
     Subscription,
+    Tariff,
+    TariffPeriod,
     User,
 )
 
@@ -26,7 +28,7 @@ class AISettingsInline(admin.StackedInline):
 class SubscriptionInline(admin.TabularInline):
     model = Subscription
     extra = 0
-    fields = ("channel", "subscription_type", "end_date", "is_active")
+    fields = ("channel", "tariff_period", "end_date", "is_active")
 
 
 class ChannelInline(admin.TabularInline):
@@ -44,7 +46,6 @@ class UserAdmin(admin.ModelAdmin):
     list_display = (
         "telegram_id",
         "username",
-        "subscription_status",
     )
     readonly_fields = ("created_at",)
     fields = (
@@ -52,15 +53,12 @@ class UserAdmin(admin.ModelAdmin):
         "username",
         "first_name",
         "last_name",
-        "subscription_status",
-        "subscription_end_date",
-        "subscription_type",
         "payment_method",
     )
 
     inlines: ClassVar[list[admin.TabularInline]] = [
-        ChannelInline,
         SubscriptionInline,
+        ChannelInline,
     ]
 
 
@@ -114,20 +112,6 @@ class DraftAdmin(admin.ModelAdmin):
     list_filter = ("created_at",)
 
 
-@admin.register(Subscription)
-class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = (
-        "user",
-        "channel",
-        "subscription_type",
-        "start_date",
-        "end_date",
-        "is_active",
-    )
-    search_fields = ("user__username", "channel__name")
-    list_filter = ("subscription_type", "is_active")
-
-
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ("user", "amount", "payment_method", "payment_date", "is_successful")
@@ -140,3 +124,33 @@ class AISettingsAdmin(admin.ModelAdmin):
     list_display = ("flow", "style", "created_at")
     search_fields = ("style",)
     list_filter = ("style", "created_at")
+
+
+@admin.register(Tariff)
+class TariffAdmin(admin.ModelAdmin):
+    list_display = ("name", "description")
+    search_fields = ("name", "description")
+
+
+@admin.register(TariffPeriod)
+class TariffPeriodAdmin(admin.ModelAdmin):
+    list_display = ("tariff", "months", "price")
+    list_filter = ("tariff", "months")
+    search_fields = ("tariff__name",)
+    ordering = ("tariff", "months")
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "channel",
+        "tariff_period",
+        "start_date",
+        "end_date",
+        "is_active",
+        "is_trial",
+    )
+    list_filter = ("is_active", "is_trial", "tariff_period__tariff")
+    search_fields = ("user__username", "channel__name", "tariff_period__tariff__name")
+    ordering = ("-start_date",)

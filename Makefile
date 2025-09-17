@@ -33,7 +33,7 @@ migrate:
 	$(MANAGE) makemigrations
 	$(MANAGE) migrate
 
-superuser:
+createsuperuser:
 	$(MANAGE) createsuperuser
 
 create-test-data:

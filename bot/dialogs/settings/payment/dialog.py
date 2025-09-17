@@ -21,7 +21,7 @@ def create_payment_dialog():
     return Dialog(
         Window(
             Multi(
-                Format("✨ *Підписка на бота*"),
+                Format("*Підписка на бота*"),
                 Format(""),
                 Format("*Ваш поточний статус:*"),
                 Format("    `{current_plan}` •  `{days_left} днів`"),
