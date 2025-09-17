@@ -355,9 +355,13 @@ class Tariff(models.Model):
     features = models.JSONField(
         default=dict,
         verbose_name="Особливості тарифу",
-        help_text="Напр. {'channels': 3, 'posts': 100}",
+        help_text="Напр. {'channels': 3, 'sources': 5, 'generations': 300}",
     )
     is_active = models.BooleanField(default=True, verbose_name="Активний")
+    is_trial = models.BooleanField(default=False, verbose_name="Тестовий період")
+    trial_duration_days = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Тривалість тестового періоду (днів)"
+    )
 
     class Meta:
         verbose_name = "Тариф"
@@ -404,12 +408,6 @@ class Subscription(models.Model):
         related_name="subscriptions",
         verbose_name="Користувач",
     )
-    channel = models.ForeignKey(
-        Channel,
-        on_delete=models.CASCADE,
-        related_name="subscriptions",
-        verbose_name="Канал",
-    )
     tariff_period = models.ForeignKey(
         TariffPeriod,
         on_delete=models.PROTECT,
@@ -419,7 +417,6 @@ class Subscription(models.Model):
     start_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата початку")
     end_date = models.DateTimeField(verbose_name="Дата закінчення")
     is_active = models.BooleanField(default=True, verbose_name="Активна")
-    is_trial = models.BooleanField(default=False, verbose_name="Тестовий період")
 
     class Meta:
         verbose_name = "Підписка"

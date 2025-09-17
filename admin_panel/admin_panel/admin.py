@@ -28,7 +28,7 @@ class AISettingsInline(admin.StackedInline):
 class SubscriptionInline(admin.TabularInline):
     model = Subscription
     extra = 0
-    fields = ("channel", "tariff_period", "end_date", "is_active")
+    fields = ("tariff_period", "end_date")
 
 
 class ChannelInline(admin.TabularInline):
@@ -144,13 +144,11 @@ class TariffPeriodAdmin(admin.ModelAdmin):
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = (
         "user",
-        "channel",
         "tariff_period",
         "start_date",
         "end_date",
         "is_active",
-        "is_trial",
     )
-    list_filter = ("is_active", "is_trial", "tariff_period__tariff")
+    list_filter = ("is_active", "tariff_period__tariff")
     search_fields = ("user__username", "channel__name", "tariff_period__tariff__name")
     ordering = ("-start_date",)
