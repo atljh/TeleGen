@@ -96,7 +96,10 @@ class PostDTO(BaseModel):
             if field == "images":
                 images = await sync_to_async(list)(obj.images.all().order_by("order"))
                 value = [
-                    PostImageDTO(url=img.source_url, order=img.order) for img in images
+                    PostImageDTO(
+                        url=str(img.image) if img.image else img.url, order=img.order
+                    )
+                    for img in images
                 ]
             elif field == "videos":
                 videos = await sync_to_async(list)(obj.videos.all().order_by("order"))

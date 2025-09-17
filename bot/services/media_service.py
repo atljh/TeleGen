@@ -108,11 +108,13 @@ class MediaService:
                 path = media["path"]
                 media_type = media["type"]
 
-                stored_path = await self.store_media(path, media_type)
+                # stored_path = await self.store_media(path, media_type)
 
                 if media_type == "image":
-                    stored_images.append(stored_path)
+                    # stored_images.append(stored_path)
+                    stored_images.append(media["path"])
                 elif media_type == "video":
+                    stored_path = await self.store_media(path, media_type)
                     stored_videos.append(stored_path)
                 else:
                     self.logger.warning(f"Unknown media type: {media_type} for {path}")
@@ -122,10 +124,10 @@ class MediaService:
                 continue
 
             for order, img_path in enumerate(stored_images):
-                await PostImage.objects.acreate(post=post, image=img_path, order=order)
+                await PostImage.objects.acreate(post=post, url=img_path, order=order)
+                # await PostImage.objects.acreate(post=post, image=img_path, order=order)
 
             for order, vid_path in enumerate(stored_videos):
-                self.logger.warning(vid_path)
                 await PostVideo.objects.acreate(post=post, video=vid_path, order=order)
 
         return {"images": stored_images, "videos": stored_videos}

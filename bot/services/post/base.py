@@ -123,6 +123,7 @@ class PostBaseService:
     ) -> list[PostDTO]:
         posts = await self.post_repo.list(flow_id=flow_id, status=status)
         posts = await sync_to_async(list)(posts)
+        logger.warning(posts)
 
         result: list[PostDTO] = []
         for post in posts:

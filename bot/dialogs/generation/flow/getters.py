@@ -117,7 +117,6 @@ async def load_raw_posts(flow_id: int, status: PostStatus) -> list[Any]:
 async def build_posts_list(flow_id: int, status: PostStatus) -> list[dict[str, Any]]:
     raw_posts = await load_raw_posts(flow_id, status)
     posts: list[dict[str, Any]] = []
-
     for idx, post in enumerate(raw_posts):
         try:
             post_dict = build_post_dict(post, idx=idx)
@@ -204,10 +203,11 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
             media_info: dict[str, Any] | None = None
             images = post.get("images", [])
             videos = post.get("videos", [])
-
+            logger.warning(images)
             if images and len(images) == 1:
                 first_image = images[0]
                 image_url = getattr(first_image, "url", None)
+                logger.warning(first_image)
                 if image_url:
                     media_info = {
                         "type": "photo",
@@ -227,10 +227,9 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
                 media_info
                 and media_info.get("path")
                 and os.path.exists(media_info["path"])
-            ):
+            ) or (media_info and media_info.get("url")):
                 data["media_content"] = MediaAttachment(
-                    url="https://www.atptour.com/-/media/images/news/2025/09/14/15/41/collignon-bergs-davis-cup-2025-qualifiers-r2-sunday.jpg",
-                    type=media_info["type"],
+                    url=media_info["url"], type=media_info["type"]
                 )
 
     return data
