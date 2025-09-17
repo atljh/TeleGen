@@ -268,6 +268,8 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
     media: MediaAttachment | None = None
     if media_info and media_info.get("path") and os.path.exists(media_info["path"]):
         media = MediaAttachment(path=media_info["path"], type=media_info["type"])
+    elif media_info and media_info.get("url"):
+        media = MediaAttachment(url=media_info["url"], type=media_info["type"])
     elif edited_media:
         media_path = get_media_path(edited_media["url"])
         media = MediaAttachment(path=media_path, type=edited_media["type"])
