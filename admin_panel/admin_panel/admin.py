@@ -53,7 +53,6 @@ class UserAdmin(admin.ModelAdmin):
         "username",
         "first_name",
         "last_name",
-        "payment_method",
     )
 
     inlines: ClassVar[list[admin.TabularInline]] = [
