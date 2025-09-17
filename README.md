@@ -1,4 +1,4 @@
-# 🤖 Content Generation Bot
+# Content Generation Bot
 
 A professional platform for **automatic content creation and publishing** via Telegram powered by **Artificial Intelligence**.
 
@@ -11,16 +11,16 @@ A professional platform for **automatic content creation and publishing** via Te
 
 ---
 
-## 🚀 Features
+## Features
 
-### 🤖 Telegram Bot
+### Telegram Bot
 - AI-powered **content generation**
 - **Auto-posting** to Telegram channels
 - **RSS aggregation** and processing
 - **Scheduling system** for posts
 - Built-in **statistics and analytics**
 
-### 🎯 Admin Panel
+### Admin Panel
 - Full control over **content & users**
 - Post and channel **moderation**
 - **Performance analytics**
@@ -28,7 +28,7 @@ A professional platform for **automatic content creation and publishing** via Te
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 - **Telegram Bot** (aiogram 3.x)
 - **Django Admin Panel**
 - **Celery Workers** for distributed tasks
@@ -37,7 +37,7 @@ A professional platform for **automatic content creation and publishing** via Te
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 **Backend**
 - Python 3.11+
@@ -63,7 +63,7 @@ A professional platform for **automatic content creation and publishing** via Te
 
 ---
 
-## 📦 Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 - Docker 20.10+
@@ -118,7 +118,7 @@ DEBUG=False
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-## 🧪 Testing
+## Testing
 ```
 make test          # Run all tests
 make test-unit     # Unit tests
@@ -136,7 +136,7 @@ make security     # Security audit
 ```
 
 
-## 📊 Monitoring & Logging
+## Monitoring & Logging
 
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000
@@ -155,7 +155,7 @@ Logs are output in JSON format for easy parsing:
 
 ```
 
-## 🔧 Makefile Commands
+## Makefile Commands
 ```
 make up         # Start app
 make down       # Stop app
@@ -168,7 +168,7 @@ make clean      # Clean cache
 ```
 
 
-## 🚀 Performance
+## Performance
 
 **Optimizations:**
 
@@ -185,7 +185,7 @@ make clean      # Clean cache
 - <50ms queue processing
 
 
-## 🤝 Development
+## Development
 **Setup for Local Development**
 ```
 python -m venv venv
@@ -205,7 +205,7 @@ python -m src.bot.main
 - mypy (type checking)
 - pydocstyle (docstrings)
 
-## 📈 Stats
+## Stats
 
 - 99% uptime
 - 10,000+ messages/day
@@ -214,7 +214,7 @@ python -m src.bot.main
 - 0.01% error rate
 
 
-## 🆘 Support
+## Support
 
 **If you face issues:**
 
@@ -226,11 +226,11 @@ make logs
 3. Open a GitHub issue
 4. Contact Telegram: @technosexuall
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See LICENSE
 
-## 🏆 Contributing
+## Contributing
 
 Contributions are welcome!
 Please read the Contributing Guide
