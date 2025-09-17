@@ -34,7 +34,6 @@ class PostPublishingService:
                 publication_date=timezone.now(),
                 scheduled_time=None,
             )
-
         except Exception as e:
             logger.error(e)
             raise InvalidOperationError("Помилка публiкацiї") from e
@@ -51,13 +50,21 @@ class PostPublishingService:
         media_group = []
 
         for i, image in enumerate(post.images):
-            media_path = os.path.join(settings.MEDIA_ROOT, image.url.lstrip("/"))
-            media = InputMediaPhoto(
-                media=FSInputFile(media_path),
-                caption=caption if i == 0 and not post.videos else None,
-                parse_mode="HTML",
-            )
-            media_group.append(media)
+            if image.url.startswith(("http://", "https://")):
+                media = InputMediaPhoto(
+                    media=image.url,
+                    caption=caption if i == 0 and not post.videos else None,
+                    parse_mode="HTML",
+                )
+                media_group.append(media)
+            else:
+                media_path = os.path.join(settings.MEDIA_ROOT, image.url.lstrip("/"))
+                media = InputMediaPhoto(
+                    media=FSInputFile(media_path),
+                    caption=caption if i == 0 and not post.videos else None,
+                    parse_mode="HTML",
+                )
+                media_group.append(media)
 
         for j, video in enumerate(post.videos):
             media_path = os.path.join(settings.MEDIA_ROOT, video.url.lstrip("/"))
