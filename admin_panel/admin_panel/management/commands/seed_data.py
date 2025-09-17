@@ -27,9 +27,6 @@ class Command(BaseCommand):
             User.objects.create(
                 telegram_id=fake.random_int(min=100000000, max=999999999),
                 username=fake.user_name(),
-                subscription_type=random.choice(["Basic", "Premium", "Pro"]),
-                subscription_end_date=fake.future_date(),
-                payment_method=random.choice(["Credit Card", "Stars", "Crypto"]),
             )
 
         users = User.objects.all()
@@ -96,7 +93,7 @@ class Command(BaseCommand):
             Payment.objects.create(
                 user=user,
                 amount=fake.random_int(min=10, max=1000),
-                payment_method=random.choice(["Credit Card", "Stars", "Crypto"]),
+                payment_method=random.choice(["Credit Card", "Crypto"]),
                 is_successful=fake.boolean(),
             )
 

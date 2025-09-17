@@ -11,7 +11,6 @@ class User(models.Model):
     first_name = models.CharField(max_length=100, blank=True, verbose_name="Ім'я")
     last_name = models.CharField(max_length=100, blank=True, verbose_name="Прізвище")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
-    payment_method = models.CharField(max_length=50, blank=True)
 
     class Meta:
         verbose_name = "Користувач"
