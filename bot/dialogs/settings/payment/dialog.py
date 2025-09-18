@@ -1,18 +1,29 @@
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
-from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Column, Group, Row, Select
+from aiogram_dialog.widgets.input import TextInput
+from aiogram_dialog.widgets.kbd import (
+    Back,
+    Button,
+    Cancel,
+    Column,
+    Group,
+    Row,
+    Select,
+)
 from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format, Multi
 
 from bot.dialogs.settings.payment.states import PaymentMenu
 
 from .callbacks import (
+    back_to_packages,
     on_back_to_main,
     on_cryptobot_confirm,
     on_method_selected,
     on_monobank_confirm,
     on_package_selected,
     on_period_selected,
+    on_promocode_entered,
 )
 from .getters import methods_getter, packages_getter, periods_getter, success_getter
 
@@ -40,13 +51,32 @@ def create_payment_dialog():
                 ),
             ),
             Row(
-                Button(Const("Маю промокод"), id="input_promocode"),
+                Button(
+                    Const("🎟 Маю промокод"),
+                    id="input_promocode",
+                    on_click=lambda c, w, m: m.switch_to(PaymentMenu.promocode),
+                ),
             ),
             Row(
                 Cancel(Const("🔙 Назад")),
             ),
             state=PaymentMenu.main,
             getter=packages_getter,
+            parse_mode=ParseMode.MARKDOWN,
+        ),
+        Window(
+            Multi(
+                Const("🎟 *Введіть промокод:*"),
+                Format("(наприклад: WELCOME10)"),
+                sep="\n",
+            ),
+            TextInput(
+                id="promocode_input",
+                on_success=on_promocode_entered,
+                on_error=lambda m, d, e: m.dialog().show(Const("❌ Невірний формат")),
+            ),
+            Back(Const("🔙 Назад")),
+            state=PaymentMenu.promocode,
             parse_mode=ParseMode.MARKDOWN,
         ),
         Window(
@@ -68,7 +98,9 @@ def create_payment_dialog():
                 width=2,
                 id="periods_scroll",
             ),
-            Back(Const("🔙 До пакетів")),
+            Button(
+                Const("🔙 До пакетів"), id="back_to_packages", on_click=back_to_packages
+            ),
             state=PaymentMenu.choose_period,
             getter=periods_getter,
             parse_mode=ParseMode.MARKDOWN,
@@ -84,7 +116,6 @@ def create_payment_dialog():
                 sep="\n",
             ),
             Group(
-                # Url(Const("💳 Monobank"), url="https://send.monobank.ua/XXXXXX"),
                 Button(
                     Const("💳 Monobank"), id="monobank_pay", on_click=on_method_selected
                 ),
@@ -108,9 +139,7 @@ def create_payment_dialog():
                 Format("*Термін:* {period[name]}"),
                 Format("*Сума:* {total_price}"),
                 Format(""),
-                Format(
-                    "➡️ [Перейдіть за посиланням для оплати](https://pay.monobank.ua/example)"
-                ),
+                Format("➡️ [Перейдіть за посиланням для оплати]({monobank_link})"),
                 Format(""),
                 Format("✅ *Після оплати натисніть кнопку нижче*"),
                 sep="\n",
@@ -134,9 +163,7 @@ def create_payment_dialog():
                 Format("*Термін:* {period[name]}"),
                 Format("*Сума:* {total_price}"),
                 Format(""),
-                Format(
-                    "➡️ [Оплатити через CryptoBot](https://t.me/CryptoBot?start=example)"
-                ),
+                Format("➡️ [Оплатити через CryptoBot]({cryptobot_link})"),
                 Format(""),
                 Format("✅ *Після оплати натисніть кнопку нижче*"),
                 sep="\n",
