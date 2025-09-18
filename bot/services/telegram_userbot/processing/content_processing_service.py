@@ -40,7 +40,6 @@ class ContentProcessingService:
             return None
 
         normalized_content = await self._normalize_content(post_dto.content)
-
         processed_content = await self._process_with_ai(normalized_content, flow)
 
         final_content = await self._add_signature(processed_content, flow)

@@ -48,8 +48,7 @@ class EnhancedUserbotService(BaseUserbotService):
             processed_posts = await self.post_converter.convert_raw_posts_to_dto(
                 raw_posts, flow
             )
-            self.logger.info(processed_posts)
-            self.logger.info(
+            self.logger.warning(
                 f"[Telegram] Processed {len(processed_posts)} posts "
                 f"in {time.time() - start_time:.2f}s"
             )

@@ -18,28 +18,25 @@ class ContentProcessor(ABC):
         pass
 
 
-class DefaultContentProcessor(ContentProcessor):
+class DefaultContentProcessor:
     def __init__(self):
         self.patterns = {
-            "url": re.compile(r"https?://\S+|www\.\S+"),
-            "username": re.compile(r"@\w+"),
-            "bold_asterisks": re.compile(r"\*\*([^*]+)\*\*"),
             "hidden_chars": re.compile(r"[\u200B-\u200D\uFEFF]"),
-            "emoji": re.compile(r"[^\w\s,.!?;:@#%&*+-=]"),
+            "bold_asterisks": re.compile(r"\*\*([^*]+)\*\*"),
             "markdown_links": re.compile(r"\[([^\]]+)\]\([^)]+\)"),
-            "telegram_commands": re.compile(r"/\w+"),
+            "urls": re.compile(r"https?://\S+|www\.\S+"),
         }
 
     async def process(self, text: str) -> str:
         if not text:
             return ""
-        text = text.replace("_", "")
 
-        for pattern_name, pattern in self.patterns.items():
-            if pattern_name == "markdown_links":
-                text = pattern.sub(r"\1", text)
-            else:
-                text = pattern.sub("", text)
+        text = self.patterns["hidden_chars"].sub("", text)
+
+        text = self.patterns["urls"].sub("", text)
+        text = self.patterns["markdown_links"].sub("", text)
+
+        text = self.patterns["bold_asterisks"].sub(r"<b>\1</b>", text)
 
         text = " ".join(text.split())
         return text.strip()
@@ -216,9 +213,10 @@ class ChatGPTContentProcessor(ContentProcessor):
             "Translate it to Ukranian",
             "Edit the text according to the following rules:",
             "1. Keep the original meaning, but improve readability and clarity.",
-            # f"2. Remove unnecessary links, formatting artifacts, and special characters.",
-            f"3. The text MUST be EXACTLY {self._get_length_instruction()} characters or less. Truncate if needed.",
+            "2. Remove unnecessary links, formatting artifacts, hashtags, and special characters.",
+            f"3. Ensure the text does not exceed {self._get_length_instruction()} characters. "
             f"4. Rewrite the text in the following style: {self.flow.theme}.",
+            "Do not remove or truncate text if it is already within the limit.",
         ]
 
         if self.flow.use_emojis:

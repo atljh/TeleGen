@@ -41,13 +41,12 @@ class PostConversionService:
         self, raw_post: dict, flow: FlowDTO
     ) -> PostDTO | None:
         post_dto = PostDTO.from_raw_post(raw_post)
-        logging.info(post_dto)
         if not post_dto.content:
             return None
 
         post_dto = self._set_post_metadata(post_dto, raw_post)
-
-        return await self.content_processor.process_post_content(post_dto, flow)
+        result = await self.content_processor.process_post_content(post_dto, flow)
+        return result
 
     def _set_post_metadata(self, post_dto: PostDTO, raw_post: dict) -> PostDTO:
         update_data = {}
