@@ -6,8 +6,7 @@ from pydantic import BaseModel, ConfigDict
 class SubscriptionDTO(BaseModel):
     id: int
     user_id: int
-    channel_id: int
-    subscription_type: str
+    tariff_period_id: int
     start_date: datetime
     end_date: datetime
     is_active: bool
