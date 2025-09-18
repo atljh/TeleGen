@@ -1,8 +1,13 @@
 import logging
+from datetime import datetime
 
+from dateutil.relativedelta import relativedelta
+
+from admin_panel.admin_panel.models import Tariff, TariffPeriod
 from bot.database.exceptions import (
     ChannelNotFoundError,
     SubscriptionNotFoundError,
+    TariffPeriodNotFoundError,
     UserNotFoundError,
 )
 from bot.database.models import SubscriptionDTO
@@ -27,32 +32,58 @@ class SubscriptionService:
         self.logger = logger or logging.getLogger(__name__)
 
     async def create_subscription(
-        self,
-        user_id: int,
-        channel_id: int,
-        subscription_type: str,
-        start_date,
-        end_date,
-        is_active: bool = True,
+        self, user_id: int, tariff_code: str, months: int | None = None
     ) -> SubscriptionDTO:
         try:
+            tariff_codes = {
+                "free": Tariff.FREE,
+                "basic": Tariff.BASIC,
+                "pro": Tariff.PRO,
+            }
+
+            if tariff_code not in tariff_codes:
+                raise ValueError(f"Неизвестный тариф: {tariff_code}")
+
             user = await self.user_repository.get_user_by_id(user_id)
-            channel = await self.channel_repository.get_channel_by_id(channel_id)
+
+            tariff = await Tariff.objects.aget(code=tariff_codes[tariff_code])
+
+            if months:
+                tariff_period = await TariffPeriod.objects.aget(
+                    tariff=tariff, months=months
+                )
+            else:
+                tariff_period = (
+                    await TariffPeriod.objects.filter(tariff=tariff)
+                    .order_by("months")
+                    .afirst()
+                )
+
+            if not tariff_period:
+                raise TariffPeriodNotFoundError(
+                    f"Не найден период для тарифа {tariff.code}"
+                )
+
+            start_date = datetime.now()
+            end_date = start_date + relativedelta(months=tariff_period.months)
 
             subscription = await self.subscription_repository.create_subscription(
                 user=user,
-                channel=channel,
-                subscription_type=subscription_type,
+                tariff_period=tariff_period,
                 start_date=start_date,
                 end_date=end_date,
-                is_active=is_active,
+                is_active=True,
             )
             return SubscriptionDTO.from_orm(subscription)
 
+        except Tariff.DoesNotExist as e:
+            raise TariffPeriodNotFoundError(f"Тариф {tariff_code} не найден.") from e
+        except TariffPeriod.DoesNotExist as e:
+            raise TariffPeriodNotFoundError(
+                f"Тарифный период для {tariff_code} не найден."
+            ) from e
         except UserNotFoundError as e:
             raise UserNotFoundError(f"Пользователь с id={user_id} не найден.") from e
-        except ChannelNotFoundError as e:
-            raise ChannelNotFoundError(f"Канал с id={channel_id} не найден.") from e
 
     async def get_subscription_by_id(self, subscription_id: int) -> SubscriptionDTO:
         try:

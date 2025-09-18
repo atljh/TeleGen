@@ -63,10 +63,19 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
     )
 
+    subscription_service = providers.Factory(
+        SubscriptionService,
+        channel_repository=channel_repository,
+        user_repository=user_repository,
+        subscription_repository=subscription_repository,
+        logger=providers.Singleton(logging.getLogger, "subscription_service"),
+    )
+
     user_service = providers.Factory(
         UserService,
         user_repository=user_repository,
         channel_repository=channel_repository,
+        subscription_service=subscription_service,
     )
 
     userbot_service = providers.Singleton(
@@ -153,12 +162,6 @@ class Container(containers.DeclarativeContainer):
         bot=bot,
         userbot_service=userbot_service,
         web_service=web_service,
-    )
-
-    subscription_service = providers.Factory(
-        SubscriptionService,
-        subscription_repository=subscription_repository,
-        logger=providers.Singleton(logging.getLogger, "subscription_service"),
     )
 
     payment_service = providers.Factory(

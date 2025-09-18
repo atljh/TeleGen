@@ -2,6 +2,10 @@ class UserNotFoundError(Exception):
     pass
 
 
+class TariffPeriodNotFoundError(Exception):
+    pass
+
+
 class ChannelNotFoundError(Exception):
     pass
 

@@ -2,12 +2,17 @@ from bot.database.models import FlowDTO, UserDTO
 from bot.database.repositories.channel_repository import ChannelRepository
 from bot.database.repositories.user_repository import UserRepository
 from bot.services.logger_service import get_logger
+from bot.services.subscription_service import SubscriptionService
 
 
 class UserService:
     def __init__(
-        self, user_repository: UserRepository, channel_repository: ChannelRepository
+        self,
+        user_repository: UserRepository,
+        channel_repository: ChannelRepository,
+        subscription_service: SubscriptionService,
     ):
+        self.subscription_service = subscription_service
         self.user_repository = user_repository
         self.channel_repository = channel_repository
         self.logger = get_logger()
@@ -19,6 +24,7 @@ class UserService:
             telegram_id, username
         )
         if created:
+            await self.subscription_service.create_subscription(user.id, "free")
             await self.logger.user_registered(user)
         return UserDTO.from_orm(user), created
 

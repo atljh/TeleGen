@@ -1,4 +1,4 @@
-from admin_panel.admin_panel.models import Subscription
+from admin_panel.admin_panel.models import Subscription, TariffPeriod
 from bot.database.exceptions import SubscriptionNotFoundError
 
 
@@ -6,16 +6,14 @@ class SubscriptionRepository:
     async def create_subscription(
         self,
         user,
-        channel,
-        subscription_type: str,
+        tariff_period: TariffPeriod,
         start_date,
         end_date,
         is_active: bool = True,
     ) -> Subscription:
         return await Subscription.objects.acreate(
             user=user,
-            channel=channel,
-            subscription_type=subscription_type,
+            tariff_period=tariff_period,
             start_date=start_date,
             end_date=end_date,
             is_active=is_active,
