@@ -343,21 +343,45 @@ class Tariff(models.Model):
         (PRO, "Професійний"),
     ]
 
+    PLATFORM_TG = "tg"
+    PLATFORM_WEB = "web"
+    PLATFORM_BOTH = "both"
+
+    PLATFORM_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        (PLATFORM_TG, "Telegram"),
+        (PLATFORM_WEB, "Web"),
+        (PLATFORM_BOTH, "Telegram + Web"),
+    ]
+
     code = models.CharField(
         max_length=50, choices=TARIFF_CHOICES, unique=True, verbose_name="Код тарифу"
     )
     name = models.CharField(max_length=100, verbose_name="Назва")
     description = models.TextField(blank=True, verbose_name="Опис")
+
     level = models.PositiveSmallIntegerField(
         default=1, help_text="Рівень тарифу (1 - безкоштовний, 2 - базовий, 3 - профі)"
     )
-    features = models.JSONField(
-        default=dict,
-        verbose_name="Особливості тарифу",
-        help_text="Напр. {'channels': 3, 'sources': 5, 'generations': 300}",
+
+    channels_available = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Доступно каналів"
     )
+    sources_available = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Доступно джерел"
+    )
+    generations_available = models.PositiveSmallIntegerField(
+        default=0, verbose_name="Достпуно генерацій"
+    )
+
+    platforms = models.CharField(
+        max_length=10,
+        choices=PLATFORM_CHOICES,
+        default=PLATFORM_TG,
+        verbose_name="Платформи",
+    )
+
     is_active = models.BooleanField(default=True, verbose_name="Активний")
-    is_trial = models.BooleanField(default=False, verbose_name="Тестовий період")
+
     trial_duration_days = models.PositiveSmallIntegerField(
         default=0, verbose_name="Тривалість тестового періоду (днів)"
     )
@@ -368,7 +392,13 @@ class Tariff(models.Model):
         ordering: ClassVar[list[str]] = ["level"]
 
     def __str__(self):
-        return self.get_code_display()
+        return f"{self.get_name_display()} ({self.get_code_display()})"
+
+    def get_name_display(self):
+        return self.name
+
+    def get_code_display(self):
+        return self.code
 
 
 class TariffPeriod(models.Model):
