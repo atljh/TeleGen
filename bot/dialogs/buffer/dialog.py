@@ -205,6 +205,7 @@ def create_buffer_dialog():
             ),
             Row(Button(BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts)),
             MessageInput(process_edit_input),
+            LinkPreview(is_disabled=True),
             getter=edit_post_getter,
             state=BufferMenu.edit_post,
             parse_mode="HTML",

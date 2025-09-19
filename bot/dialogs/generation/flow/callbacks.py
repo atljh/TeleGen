@@ -135,7 +135,7 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
     input_type = manager.dialog_data.get("awaiting_input")
     post_data = manager.dialog_data.get("editing_post", {})
     post_id = post_data.get("id")
-    flow = manager.dialog_data.get("channel_flow")
+    # flow = manager.dialog_data.get("channel_flow")
     if not post_id:
         await message.answer("Помилка: ID поста не знайдено")
         return
@@ -144,13 +144,13 @@ async def process_edit_input(message: Message, widget, manager: DialogManager):
 
     try:
         if input_type == "text":
-            new_text = message.text
-            text = new_text + f"\n\n{flow.signature}"
+            text = message.html_text
+            # text = new_text + f"\n\n{flow.signature}"
 
             manager.dialog_data["edited_content"] = text
             manager.dialog_data["needs_refresh"] = True
             await post_service.update_post(post_id=post_id, content=text)
-            await message.answer("Текст успішно оновлено!")
+            await message.answer("Текст (с HTML) успішно оновлено!")
 
         elif input_type == "media":
             if message.content_type == ContentType.PHOTO:

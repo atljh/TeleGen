@@ -159,6 +159,7 @@ def flow_dialog() -> Dialog:
             ),
             Row(Button(BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts)),
             MessageInput(process_edit_input),
+            LinkPreview(is_disabled=True),
             getter=edit_post_getter,
             state=FlowMenu.edit_post,
             parse_mode="HTML",
