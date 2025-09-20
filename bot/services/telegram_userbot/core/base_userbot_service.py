@@ -307,7 +307,6 @@ class BaseUserbotService:
         }
         if msg.media:
             media_items = self._extract_media(msg.media)
-            logging.warning(media_items)
             post_data["media"] = await self._download_media_batch(client, media_items)
 
         return post_data

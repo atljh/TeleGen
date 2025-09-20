@@ -60,7 +60,6 @@ class PostGenerationService:
             flow, telegram_userbot_volume
         )
         web_posts = await self.web_service.get_last_posts(flow, web_volume)
-
         combined_posts = userbot_posts + web_posts
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
 
@@ -109,7 +108,6 @@ class PostGenerationService:
                         return None
 
                     media_list = self._prepare_media_list(post_dto)
-
                     post = await self.post_service.create_post(
                         flow=flow,
                         content=post_dto.content,

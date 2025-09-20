@@ -120,18 +120,14 @@ class MediaService:
                 self.logger.error(f"Failed to process media {media.get('path')}: {e!s}")
                 continue
 
-            for order, img_path in enumerate(stored_images):
-                if img_path.startswith("posts/"):
-                    await PostImage.objects.acreate(
-                        post=post, image=img_path, order=order
-                    )
-                else:
-                    await PostImage.objects.acreate(
-                        post=post, url=img_path, order=order
-                    )
+        for order, img_path in enumerate(stored_images):
+            if img_path.startswith("posts/"):
+                await PostImage.objects.acreate(post=post, image=img_path, order=order)
+            else:
+                await PostImage.objects.acreate(post=post, url=img_path, order=order)
 
-            for order, vid_path in enumerate(stored_videos):
-                await PostVideo.objects.acreate(post=post, video=vid_path, order=order)
+        for order, vid_path in enumerate(stored_videos):
+            await PostVideo.objects.acreate(post=post, video=vid_path, order=order)
 
         return {"images": stored_images, "videos": stored_videos}
 
