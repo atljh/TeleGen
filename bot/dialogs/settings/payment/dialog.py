@@ -9,9 +9,10 @@ from aiogram_dialog.widgets.kbd import (
     Group,
     Row,
     Select,
+    Url,
 )
 from aiogram_dialog.widgets.link_preview import LinkPreview
-from aiogram_dialog.widgets.text import Const, Format, Multi
+from aiogram_dialog.widgets.text import Const, Format, Jinja, Multi
 
 from bot.dialogs.settings.payment.states import PaymentMenu
 from bot.utils.constants.buttons import BACK_BUTTON
@@ -19,14 +20,20 @@ from bot.utils.constants.buttons import BACK_BUTTON
 from .callbacks import (
     back_to_packages,
     on_back_to_main,
-    on_cryptobot_confirm,
     on_method_selected,
     on_monobank_confirm,
     on_package_selected,
     on_period_selected,
     on_promocode_entered,
 )
-from .getters import methods_getter, packages_getter, periods_getter, success_getter
+from .getters import (
+    cryptobot_getter,
+    methods_getter,
+    monobank_getter,
+    packages_getter,
+    periods_getter,
+    success_getter,
+)
 
 
 def create_payment_dialog():
@@ -118,10 +125,10 @@ def create_payment_dialog():
             ),
             Group(
                 Button(
-                    Const("💳 Monobank"), id="monobank_pay", on_click=on_method_selected
+                    Const("Monobank"), id="monobank_pay", on_click=on_method_selected
                 ),
                 Button(
-                    Const("₿ CryptoBot"),
+                    Const("CryptoBot"),
                     id="cryptobot_pay",
                     on_click=on_method_selected,
                 ),
@@ -134,50 +141,48 @@ def create_payment_dialog():
         ),
         Window(
             Multi(
-                Format("💳 *Оплата через Monobank*"),
+                Format("*Оплата через Monobank*"),
                 Format(""),
                 Format("*Пакет:* {package[name]}"),
                 Format("*Термін:* {period[name]}"),
                 Format("*Сума:* {total_price}"),
                 Format(""),
-                Format("➡️ [Перейдіть за посиланням для оплати]({monobank_link})"),
                 Format(""),
-                Format("✅ *Після оплати натисніть кнопку нижче*"),
                 sep="\n",
             ),
+            Row(Url(text=Const("Сплатити"), url=Jinja("{{monobank_link}}"))),
             Button(
-                Const("✅ Я сплатив"),
+                Const("Перевiрити оплату"),
                 id="confirm_monobank",
                 on_click=on_monobank_confirm,
             ),
             Back(Const("🔙 До способів")),
             LinkPreview(is_disabled=True),
             state=PaymentMenu.monobank_payment,
-            getter=methods_getter,
+            getter=monobank_getter,
             parse_mode=ParseMode.MARKDOWN,
         ),
         Window(
             Multi(
-                Format("₿ *Оплата через CryptoBot*"),
+                Format("*Оплата через CryptoBot*"),
                 Format(""),
                 Format("*Пакет:* {package[name]}"),
                 Format("*Термін:* {period[name]}"),
                 Format("*Сума:* {total_price}"),
                 Format(""),
-                Format("➡️ [Оплатити через CryptoBot]({cryptobot_link})"),
                 Format(""),
-                Format("✅ *Після оплати натисніть кнопку нижче*"),
                 sep="\n",
             ),
+            Row(Url(text=Const("Сплатити"), url=Jinja("{{cryptobot_link}}"))),
             Button(
-                Const("✅ Я сплатив"),
-                id="confirm_cryptobot",
-                on_click=on_cryptobot_confirm,
+                Const("Перевiрити оплату"),
+                id="confirm_monobank",
+                on_click=on_monobank_confirm,
             ),
             Back(Const("🔙 До способів")),
             LinkPreview(is_disabled=True),
             state=PaymentMenu.cryptobot_payment,
-            getter=methods_getter,
+            getter=cryptobot_getter,
             parse_mode=ParseMode.MARKDOWN,
         ),
         Window(

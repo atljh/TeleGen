@@ -101,8 +101,6 @@ async def methods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, A
         "package": selected_package,
         "period": selected_period,
         "total_price": total_price,
-        "monobank_link": "https://pay.monobank.ua/example",
-        "cryptobot_link": "https://t.me/CryptoBot?start=example",
     }
 
 

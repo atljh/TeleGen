@@ -82,7 +82,6 @@ class BaseUserbotService:
                     )
                     continue
 
-        self.logger.warning(result)
         self.logger.warning(
             f"Final result length: {len(result)} | Needed: {total_posts_needed}"
         )
