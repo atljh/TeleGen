@@ -53,7 +53,10 @@ class TelegramClientManager:
             self.logger.error(f"Помилка Telegram клієнта: {e!s}")
             raise
         finally:
-            await self.connection_service.disconnect_client(client)
+            try:
+                await client.disconnect()
+            except Exception as e:
+                self.logger.warning(f"Помилка при закритті клієнта: {e!s}")
 
     async def get_entity(
         self, client: TelegramClient, source_link: str

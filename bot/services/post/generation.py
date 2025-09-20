@@ -40,7 +40,7 @@ class PostGenerationService:
         telegram_userbot_volume, web_volume = self._calculate_volumes(flow)
         user = await sync_to_async(lambda: flow.channel.user)()
 
-        logging.info(
+        logging.warning(
             f"Generating posts: userbot={telegram_userbot_volume}, web={web_volume}, user: {user}"
         )
 

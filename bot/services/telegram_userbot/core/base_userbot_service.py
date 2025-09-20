@@ -82,7 +82,10 @@ class BaseUserbotService:
                     )
                     continue
 
-        self.logger.info(f"Final result length: {len(result)}")
+        self.logger.warning(result)
+        self.logger.warning(
+            f"Final result length: {len(result)} | Needed: {total_posts_needed}"
+        )
         return result[:total_posts_needed]
 
     async def _process_source_messages(
@@ -105,14 +108,13 @@ class BaseUserbotService:
                 self.logger.info("Post contains external link. PASS")
                 continue
 
-            process_result = await self._process_message_or_album(
+            post_data, post_count = await self._process_message_or_album(
                 client, entity, msg, source["link"], processed_albums
             )
 
-            if process_result is None:
+            if post_data is None:
                 continue
 
-            post_data, post_count = process_result
             result.append(post_data)
 
             self.logger.info(
@@ -172,21 +174,20 @@ class BaseUserbotService:
                 and last_post.original_date
                 and post_date <= last_post.original_date
             ):
-                logging.info(
+                logging.warning(
                     f"Skipping old post from {post_date} (last in DB: {last_post.original_date})"
                 )
                 return None, 0
 
         if hasattr(msg, "grouped_id") and msg.grouped_id:
             if msg.grouped_id in processed_albums:
-                logging.info(f"Skipping already processed album {msg.grouped_id}")
                 return None, 0
 
             source_id = f"telegram_{chat_id}_album_{msg.grouped_id}"
 
             if await Post.objects.filter(source_id=source_id).aexists():
                 processed_albums.add(msg.grouped_id)
-                logging.info(f"Album {msg.grouped_id} already exists in DB")
+                logging.warning(f"Album {msg.grouped_id} already exists in DB")
                 return None, 0
 
             processed_albums.add(msg.grouped_id)
@@ -195,21 +196,19 @@ class BaseUserbotService:
                 return None, 0
 
             album_size = post_data.get("album_size", 1)
-            logging.info(f"Processed album {msg.grouped_id} with {album_size} messages")
             post_data["source_id"] = source_id
             return post_data, album_size
         else:
             source_id = f"telegram_{chat_id}_{msg.id}"
 
             if await Post.objects.filter(source_id=source_id).aexists():
-                logging.info(f"Message {msg.id} already exists in DB")
+                logging.warning(f"Message {msg.id} already exists in DB")
                 return None, 0
 
             post_data = await self._process_message(client, msg, source_link)
             if not post_data:
                 return None, 0
 
-            logging.info(f"Processed single message {msg.id}")
             post_data["source_id"] = source_id
             return post_data, 1
 
@@ -235,23 +234,28 @@ class BaseUserbotService:
                 entity, min_id=initial_msg.id - 10, max_id=initial_msg.id + 10, limit=20
             )
 
-            album_messages = [
-                msg
+            album_messages = {
+                msg.id: msg
                 for msg in messages
                 if hasattr(msg, "grouped_id")
                 and msg.grouped_id == initial_msg.grouped_id
-            ]
+            }.values()
 
             if not album_messages:
                 return None
 
             all_media = []
             texts = []
+            seen_media = set()
+
             for msg in album_messages:
                 if msg.text:
                     texts.append(msg.text)
                 if msg.media:
-                    all_media.extend(await self._extract_media(client, msg.media))
+                    for m in self._extract_media(msg.media):
+                        if m["file_id"] not in seen_media:
+                            seen_media.add(m["file_id"])
+                            all_media.append(m)
 
             downloaded_media = (
                 await self._download_media_batch(client, all_media) if all_media else []
@@ -303,6 +307,7 @@ class BaseUserbotService:
         }
         if msg.media:
             media_items = self._extract_media(msg.media)
+            logging.warning(media_items)
             post_data["media"] = await self._download_media_batch(client, media_items)
 
         return post_data
