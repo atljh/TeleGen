@@ -311,7 +311,7 @@ def create_flow_dialog():
                 on_success=on_custom_theme_entered,
                 filter=F.text & ~F.text.startswith("/"),
             ),
-            Back(Const("🔙 Назад")),
+            Back(BACK_BUTTON),
             state=CreateFlowMenu.input_custom_theme,
             parse_mode=ParseMode.HTML,
         ),

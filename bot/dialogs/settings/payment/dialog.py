@@ -14,6 +14,7 @@ from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format, Multi
 
 from bot.dialogs.settings.payment.states import PaymentMenu
+from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import (
     back_to_packages,
@@ -58,7 +59,7 @@ def create_payment_dialog():
                 ),
             ),
             Row(
-                Cancel(Const("🔙 Назад")),
+                Cancel(BACK_BUTTON),
             ),
             state=PaymentMenu.main,
             getter=packages_getter,
@@ -75,7 +76,7 @@ def create_payment_dialog():
                 on_success=on_promocode_entered,
                 on_error=lambda m, d, e: m.dialog().show(Const("❌ Невірний формат")),
             ),
-            Back(Const("🔙 Назад")),
+            Back(BACK_BUTTON),
             state=PaymentMenu.promocode,
             parse_mode=ParseMode.MARKDOWN,
         ),

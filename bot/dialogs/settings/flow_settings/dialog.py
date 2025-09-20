@@ -6,6 +6,8 @@ from aiogram_dialog.widgets.kbd import Button, Column, Row, ScrollingGroup, Sele
 from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format
 
+from bot.utils.constants.buttons import BACK_BUTTON
+
 from .callbacks import (
     cancel_delete_source,
     character_limit,
@@ -93,9 +95,7 @@ def create_flow_settings_window():
             ),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_main_settings", on_click=open_main_settings
-            ),
+            Button(BACK_BUTTON, id="open_main_settings", on_click=open_main_settings),
         ),
         LinkPreview(is_disabled=True),
         state=FlowSettingsMenu.flow_settings,
@@ -116,9 +116,7 @@ def create_ad_block_settings_window():
             ),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.ad_block_settings,
         parse_mode=ParseMode.HTML,
@@ -137,9 +135,7 @@ def create_frequency_settings_window():
             Button(Const("Раз на день"), id="freq_24h", on_click=set_frequency),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.generation_frequency,
         parse_mode=ParseMode.HTML,
@@ -159,9 +155,7 @@ def create_character_limit_window():
             Button(Const("До 1000"), id="limit_1000", on_click=set_character_limit),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.character_limit,
         parse_mode=ParseMode.HTML,
@@ -187,9 +181,7 @@ def create_posts_in_flow_window():
             ),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.posts_in_flow,
         parse_mode=ParseMode.HTML,
@@ -217,7 +209,7 @@ def create_sources_dialog():
                 on_click=to_select_source_to_delete,
             ),
         ),
-        Button(Const("🔙 Назад"), id="back_to_settings", on_click=open_flow_settings),
+        Button(BACK_BUTTON, id="back_to_settings", on_click=open_flow_settings),
         state=FlowSettingsMenu.source_settings,
         parse_mode=ParseMode.HTML,
         getter=get_sources_data,
@@ -236,7 +228,7 @@ def create_custom_volume_window():
         ),
         Row(
             Button(
-                Const("🔙 Назад"),
+                BACK_BUTTON,
                 id="back_to_flow_window",
                 on_click=lambda c, b, m: m.switch_to(FlowSettingsMenu.posts_in_flow),
             ),
@@ -281,9 +273,7 @@ def create_select_source_type():
             ),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.add_source_type,
         parse_mode=ParseMode.HTML,
@@ -302,9 +292,7 @@ def create_input_source_link():
             filter=link_filter,
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.add_source_link,
         parse_mode=ParseMode.HTML,
@@ -328,9 +316,7 @@ def create_select_edit_source():
             height=5,
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.edit_select_source,
         parse_mode=ParseMode.HTML,
@@ -346,9 +332,7 @@ def create_edit_source():
             Button(Const("♻️ Змінити тип"), id="edit_type", on_click=to_edit_type),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         LinkPreview(is_disabled=True),
         state=FlowSettingsMenu.edit_source,
@@ -375,9 +359,7 @@ def create_edit_source_type():
             ),
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.edit_source_type,
         parse_mode=ParseMode.HTML,
@@ -396,9 +378,7 @@ def create_edit_source_link():
             filter=link_filter,
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.edit_source_link,
         parse_mode=ParseMode.HTML,
@@ -422,9 +402,7 @@ def create_select_delete_source():
             id="delete_select",
         ),
         Row(
-            Button(
-                Const("🔙 Назад"), id="open_flow_settings", on_click=open_flow_settings
-            ),
+            Button(BACK_BUTTON, id="open_flow_settings", on_click=open_flow_settings),
         ),
         state=FlowSettingsMenu.select_source_to_delete,
         getter=get_sources_data,

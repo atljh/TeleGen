@@ -164,7 +164,7 @@ def create_settings_dialog():
                     on_click=toggle_notification,
                 )
             ),
-            Button(Const("🔙 Назад"), id="open_settings", on_click=open_settings),
+            Button(BACK_BUTTON, id="open_settings", on_click=open_settings),
             LinkPreview(is_disabled=True),
             state=SettingsMenu.notification_settings,
             parse_mode=ParseMode.HTML,
@@ -191,7 +191,7 @@ def create_settings_dialog():
                     on_click=set_timezone,
                 ),
             ),
-            Button(Const("🔙 Назад"), id="open_settings", on_click=open_settings),
+            Button(BACK_BUTTON, id="open_settings", on_click=open_settings),
             state=SettingsMenu.timezone_settings,
             parse_mode=ParseMode.HTML,
             getter=timezone_getter,
@@ -201,7 +201,7 @@ def create_settings_dialog():
                 "😊 <b>Налаштування емодзі для {channel_name}</b>\n\n"
                 "Додавати випадкові емодзі перед заголовками"
             ),
-            Button(Const("🔙 Назад"), id="open_settings", on_click=open_settings),
+            Button(BACK_BUTTON, id="open_settings", on_click=open_settings),
             state=SettingsMenu.emoji_settings,
             parse_mode=ParseMode.HTML,
             getter=emoji_getter,
