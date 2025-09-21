@@ -275,6 +275,9 @@ class Payment(models.Model):
         blank=True,
     )
 
+    order_id = models.CharField(max_length=100, blank=True)
+    pay_url = models.URLField(blank=True)
+
     class Meta:
         verbose_name = "Платіж"
         verbose_name_plural = "Платежі"

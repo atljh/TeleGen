@@ -9,12 +9,16 @@ class PaymentRepository:
         amount: float,
         payment_method: str,
         is_successful: bool = False,
+        order_id: str | None = None,
+        pay_url: str | None = None,
     ) -> Payment:
         return await Payment.objects.acreate(
             user=user,
             amount=amount,
             payment_method=payment_method,
             is_successful=is_successful,
+            order_id=order_id,
+            pay_url=pay_url,
         )
 
     async def get_payment_by_id(self, payment_id: int) -> Payment:

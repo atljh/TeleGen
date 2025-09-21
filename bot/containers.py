@@ -167,6 +167,9 @@ class Container(containers.DeclarativeContainer):
     payment_service = providers.Factory(
         PaymentService,
         payment_repository=payment_repository,
+        user_repository=user_repository,
+        monobank_token=os.getenv("MONOBANK_TOKEN"),
+        cryptobot_token=os.getenv("CRYPTOBOT_TOKEN"),
         logger=providers.Singleton(logging.getLogger, "payment_service"),
     )
 

@@ -4,6 +4,7 @@ from aiogram_dialog import DialogManager
 from asgiref.sync import sync_to_async
 
 from admin_panel.admin_panel.models import Subscription, Tariff, TariffPeriod
+from bot.containers import Container
 
 
 async def packages_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
@@ -70,7 +71,7 @@ async def periods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, A
             "name": f"{period.months} місяць"
             if period.months == 1
             else f"{period.months} місяців",
-            "price": f"{period.price} грн",
+            "price": f"{period.price}",
             "discount_display": f" -{period.discount_percent}%"
             if period.discount_percent
             else "",
@@ -96,7 +97,6 @@ async def methods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, A
 
         if tariff_period:
             total_price = f"{tariff_period.price:.2f}"
-
     return {
         "package": selected_package,
         "period": selected_period,
@@ -121,26 +121,48 @@ async def promocode_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
 
 
 async def monobank_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
+    payment_service = Container.payment_service()
+
     package = dialog_manager.dialog_data.get("selected_package")
     period = dialog_manager.dialog_data.get("selected_period")
     total_price = dialog_manager.dialog_data.get("total_price")
+    user_id = dialog_manager.event.from_user.id
+
+    payment_dto = await payment_service.create_payment(
+        user_id=user_id,
+        amount=total_price,
+        payment_method="monobank",
+        description=f"Підписка: {package['name']} • {period['name']}",
+        currency="UAH",
+    )
 
     return {
         "package": package,
         "period": period,
         "total_price": total_price,
-        "monobank_link": "https://pay.monobank.ua/example",
+        "monobank_link": payment_dto.pay_url,
     }
 
 
 async def cryptobot_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
+    payment_service = Container.payment_service()
+
     package = dialog_manager.dialog_data.get("selected_package")
     period = dialog_manager.dialog_data.get("selected_period")
     total_price = dialog_manager.dialog_data.get("total_price")
+    user_id = dialog_manager.event.from_user.id
+
+    payment_dto = await payment_service.create_payment(
+        user_id=user_id,
+        amount=total_price,
+        payment_method="cryptobot",
+        description=f"Підписка: {package['name']} • {period['name']}",
+        currency="USDT",
+    )
 
     return {
         "package": package,
         "period": period,
         "total_price": total_price,
-        "cryptobot_link": "https://t.me/CryptoBot?start=example",
+        "cryptobot_link": payment_dto.pay_url,
     }
