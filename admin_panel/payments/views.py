@@ -23,7 +23,6 @@ def monobank_webhook(request):
     except Exception:
         return HttpResponseForbidden("Invalid JSON")
 
-    # пример: проверка статуса инвойса
     invoice_id = payload.get("invoiceId")
     status = payload.get("status")
 
