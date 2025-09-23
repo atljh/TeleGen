@@ -5,6 +5,7 @@ from asgiref.sync import sync_to_async
 from admin_panel.models import Flow
 from bot.database.models.channel import ChannelDTO
 from bot.database.repositories import ChannelRepository, UserRepository
+from bot.services.limit_service import LimitService
 from bot.services.logger_service import get_logger
 from bot.services.web.rss_service import RssService
 
@@ -15,10 +16,12 @@ class ChannelService:
         channel_repository: ChannelRepository,
         user_repository: UserRepository,
         rss_service: RssService,
+        limit_service: LimitService,
     ):
         self.channel_repository = channel_repository
         self.user_repository = user_repository
         self.rss_service = rss_service
+        self.limit_service = limit_service
         self.logger = get_logger()
 
     async def get_or_create_channel(
@@ -28,35 +31,26 @@ class ChannelService:
         name: str,
         description: str | None = None,
     ) -> tuple[ChannelDTO, bool]:
-        """
-        Get or create channel for user
-
-        Args:
-            user_telegram_id: User's Telegram ID
-            channel_id: Channel ID (from Telegram)
-            name: Channel name
-            description: Optional channel description
-
-        Returns:
-            Tuple of (ChannelDTO, created_flag)
-
-        Raises:
-            ValueError: Invalid input parameters
-            RuntimeError: Failed to create/get channel
-        """
         try:
             if not isinstance(user_telegram_id, int) or user_telegram_id <= 0:
-                raise ValueError("Invalid user Telegram ID")
+                raise ValueError("Невірний Telegram ID користувача")
 
             if not channel_id or not isinstance(channel_id, str):
-                raise ValueError("Invalid channel ID")
+                raise ValueError("Невірний ID каналу")
 
             if not name or not isinstance(name, str):
-                raise ValueError("Invalid channel name")
+                raise ValueError("Невірна назва каналу")
 
             user = await self.user_repository.get_user_by_telegram_id(user_telegram_id)
             if not user:
-                raise ValueError(f"User with Telegram ID {user_telegram_id} not found")
+                raise ValueError(
+                    f"Користувач з Telegram ID {user_telegram_id} не знайдений"
+                )
+
+            can_create_channel = await self.limit_service.check_channels_limit(user)
+            self.logger.info(can_create_channel)
+            if not can_create_channel:
+                raise ValueError("Досягнуто ліміт кількості каналів за тарифом")
 
             channel, created = await self.channel_repository.get_or_create_channel(
                 user=user,
@@ -65,9 +59,6 @@ class ChannelService:
                 description=description or "",
             )
 
-            if not channel:
-                raise RuntimeError("Failed to create or get channel")
-
             if self.logger:
                 await self.logger.user_created_channel(user, name, channel_id)
 
@@ -75,11 +66,11 @@ class ChannelService:
 
         except Exception as e:
             logging.error(
-                f"Error in get_or_create_channel for user {user_telegram_id}: {e}"
+                f"Помилка при get_or_create_channel для користувача {user_telegram_id}: {e}"
             )
             if self.logger:
                 await self.logger.error_occurred(
-                    error_message=f"Channel creation failed: {e}",
+                    error_message=f"Не вдалося створити канал: {e}",
                     user=user if "user" in locals() else None,
                     context={
                         "user_telegram_id": user_telegram_id,
@@ -166,16 +157,6 @@ class ChannelService:
             raise
 
     async def delete_channel(self, channel_id: str):
-        """
-        Delete channel and all associated RSS feeds
-
-        Args:
-            channel_id: Telegram channel ID to delete
-
-        Raises:
-            ValueError: Channel not found
-            Exception: Error during deletion
-        """
         try:
             channel = await self.channel_repository.get_channel_by_id(channel_id)
             if not channel:
@@ -207,15 +188,6 @@ class ChannelService:
             raise
 
     async def _delete_associated_rss_feeds(self, channel_id: str):
-        """
-        Delete all RSS feeds associated with the channel
-
-        Args:
-            channel_id: Telegram channel ID
-
-        Note:
-            Continues deletion even if some feeds fail to delete
-        """
         try:
             flows = await sync_to_async(list)(
                 Flow.objects.filter(channel__channel_id=channel_id)

@@ -34,6 +34,7 @@ from bot.services import (
     WebScraperService,
     WebService,
 )
+from bot.services.limit_service import LimitService
 from bot.services.web.rss_url_manager import RssUrlManager
 
 
@@ -88,6 +89,10 @@ class Container(containers.DeclarativeContainer):
         openai_key=os.getenv("OPENAI_API_KEY"),
         logger=providers.Singleton(logging.getLogger, "userbot_service"),
     )
+    limit_service = providers.Factory(
+        LimitService,
+        logger=providers.Singleton(logging.getLogger, "limit_service"),
+    )
 
     rss_service_factory = providers.Factory(
         RssService,
@@ -101,6 +106,7 @@ class Container(containers.DeclarativeContainer):
         channel_repository=channel_repository,
         user_repository=user_repository,
         rss_service=rss_service_factory,
+        limit_service=limit_service,
     )
 
     flow_service = providers.Factory(
