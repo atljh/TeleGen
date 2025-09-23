@@ -12,12 +12,20 @@ class User(models.Model):
     last_name = models.CharField(max_length=100, blank=True, verbose_name="Прізвище")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
+    generated_posts_count = models.PositiveIntegerField(
+        default=0, verbose_name="Кількість генерацій"
+    )
+
     class Meta:
         verbose_name = "Користувач"
         verbose_name_plural = "Користувачі"
 
     def __str__(self):
         return f"{self.username} (Telegram ID: {self.telegram_id})"
+
+    def increment_generation(self):
+        self.generated_posts_count += 1
+        self.save(update_fields=["generated_posts_count"])
 
 
 class Channel(models.Model):
