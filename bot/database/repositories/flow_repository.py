@@ -5,7 +5,7 @@ from functools import reduce
 
 from django.db import models
 
-from admin_panel.admin_panel.models import Flow
+from admin_panel.models import Flow
 from bot.database.exceptions import FlowNotFoundError
 from bot.database.models import GenerationFrequency
 from bot.database.models.flow import FlowDTO

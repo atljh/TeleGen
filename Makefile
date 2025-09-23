@@ -36,6 +36,9 @@ migrate:
 createsuperuser:
 	$(MANAGE) createsuperuser
 
+collectstatic:
+	$(MANAGE) collectstatic --noinput
+
 create-test-data:
 	$(MANAGE) generate_test_data --users 3
 
@@ -47,6 +50,9 @@ seed:
 
 shell:
 	$(MANAGE) shell
+
+bash:
+	docker-compose exec admin_panel bash
 
 db-shell:
 	docker-compose exec db psql -U $(DB_USER) -d $(DB_NAME)

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.utils import timezone
 
-from admin_panel.admin_panel.models import Post
+from admin_panel.models import Post
 from bot.database.exceptions import PostNotFoundError
 from bot.database.models import MediaType
 from bot.database.models.post import PostStatus

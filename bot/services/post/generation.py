@@ -4,7 +4,7 @@ import logging
 from aiogram import Bot
 from asgiref.sync import sync_to_async
 
-from admin_panel.admin_panel.models import Post
+from admin_panel.models import Post
 from bot.database.models import PostDTO
 from bot.database.repositories import FlowRepository
 from bot.services.logger_service import SyncTelegramLogger, get_logger, init_logger

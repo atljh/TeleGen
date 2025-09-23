@@ -1,4 +1,4 @@
-from admin_panel.admin_panel.models import AISettings
+from admin_panel.models import AISettings
 from bot.database.exceptions import AISettingsNotFoundError
 
 

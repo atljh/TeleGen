@@ -3,7 +3,7 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from admin_panel.admin_panel.models import Tariff, TariffPeriod
+from admin_panel.models import Tariff, TariffPeriod
 from bot.database.exceptions import (
     ChannelNotFoundError,
     SubscriptionNotFoundError,

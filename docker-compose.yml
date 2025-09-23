@@ -21,7 +21,7 @@ services:
       - ./logs:/app/logs
     environment:
       PYTHONPATH: /app
-      DJANGO_SETTINGS_MODULE: ${ABSOLUTE_DJANGO_SETTINGS_MODULE}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
       MEDIA_ROOT: /app/media
       SESSION_PATH: /app/sessions/userbot.session
       LOG_DIR: /app/logs
@@ -38,17 +38,18 @@ services:
       - .env
     depends_on:
       - db
+      - redis
     working_dir: /app/admin_panel
     ports:
       - "8000:8000"
     volumes:
       - ./admin_panel:/app/admin_panel
+      - ./logs:/app/logs
       - ./bot:/app/bot
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
     environment:
-      PYTHONPATH: /app
-      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+      DJANGO_SETTINGS_MODULE: core.settings.prod
     command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
 
   db:
@@ -70,7 +71,6 @@ services:
     restart: always
     volumes:
       - ./data/redis_data:/data
-
   celery_worker:
     build:
       context: .
@@ -87,14 +87,10 @@ services:
     volumes:
       - ./bot:/app/bot
       - ./admin_panel:/app/admin_panel
-      - ./sessions:/app/sessions
-      - ./tmp:/tmp
       - ./logs:/app/logs
     environment:
-      PYTHONPATH: /app/admin_panel
-      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
-      SESSION_PATH: /app/sessions/userbot.session
-    command: celery -A bot.celery_app worker --loglevel=info --pool=solo
+      DJANGO_SETTINGS_MODULE: core.settings.prod
+    command: celery -A core.celery_app worker -l info --pool=solo
 
   celery_beat:
     build:
@@ -114,6 +110,5 @@ services:
       - ./admin_panel:/app/admin_panel
       - ./logs:/app/logs
     environment:
-      PYTHONPATH: /app/admin_panel
-      DJANGO_SETTINGS_MODULE: admin_panel.core.settings.prod
-    command: celery -A bot.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      DJANGO_SETTINGS_MODULE: core.settings.prod
+    command: celery -A core.celery_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler

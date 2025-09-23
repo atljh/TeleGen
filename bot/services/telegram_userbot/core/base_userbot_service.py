@@ -6,7 +6,7 @@ import time
 from aiofiles import tempfile
 from telethon import TelegramClient
 
-from admin_panel.admin_panel.models import Post
+from admin_panel.models import Post
 
 from .client_manager import TelegramClientManager
 

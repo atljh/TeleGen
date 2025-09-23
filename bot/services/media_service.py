@@ -10,7 +10,7 @@ import httpx
 from django.conf import settings
 from PIL import Image, UnidentifiedImageError
 
-from admin_panel.admin_panel.models import Post, PostImage, PostVideo
+from admin_panel.models import Post, PostImage, PostVideo
 
 
 class MediaService:
@@ -145,7 +145,6 @@ class MediaService:
                 file_path = file_path_or_url
 
             stored_path = self._store_local_media(file_path, media_type)
-            self.logger.info(f"Successfully stored media: {stored_path}")
             return stored_path
 
         except Exception as e:

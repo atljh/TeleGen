@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from admin_panel.admin_panel.models import Flow, Post
+from admin_panel.models import Flow, Post
 from bot.database.models import PostStatus
 
 

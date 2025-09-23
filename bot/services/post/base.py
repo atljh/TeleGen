@@ -5,7 +5,7 @@ from typing import Any
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
-from admin_panel.admin_panel.models import Flow, Post, PostImage, PostVideo
+from admin_panel.models import Flow, Post, PostImage, PostVideo
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
 from bot.database.models import PostDTO, PostStatus
 from bot.database.repositories import PostRepository

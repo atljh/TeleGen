@@ -1,6 +1,6 @@
 import logging
 
-from admin_panel.admin_panel.models import Payment
+from .models import Payment
 
 logger = logging.getLogger(__name__)
 

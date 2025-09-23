@@ -1,4 +1,4 @@
-from admin_panel.admin_panel.models import Draft
+from admin_panel.models import Draft
 from bot.database.exceptions import DraftNotFoundError
 
 

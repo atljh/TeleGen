@@ -1,4 +1,4 @@
-from admin_panel.admin_panel.models import Statistics, User
+from admin_panel.models import Statistics, User
 from bot.database.exceptions import StatisticsNotFoundError
 
 

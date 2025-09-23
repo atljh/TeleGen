@@ -3,7 +3,7 @@ from typing import Any
 from aiogram_dialog import DialogManager
 from asgiref.sync import sync_to_async
 
-from admin_panel.admin_panel.models import Subscription, Tariff, TariffPeriod
+from admin_panel.models import Subscription, Tariff, TariffPeriod
 from bot.containers import Container
 
 

@@ -1,4 +1,4 @@
-from admin_panel.admin_panel.models import Subscription, TariffPeriod
+from admin_panel.models import Subscription, TariffPeriod
 from bot.database.exceptions import SubscriptionNotFoundError
 
 

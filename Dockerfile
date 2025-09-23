@@ -29,8 +29,9 @@ ENV PYTHONPATH="/app"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=UTF-8
 
-COPY . .
-
+COPY . /app
+ENV PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=core.settings.prod
 
 FROM base AS admin_panel
 WORKDIR /app/admin_panel

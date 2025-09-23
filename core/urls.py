@@ -1,10 +1,9 @@
-# urls.py
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 
-from admin_panel import cryptobot_webhook, monobank_webhook
+from admin_panel.views import cryptobot_webhook, monobank_webhook
 
 urlpatterns = [
     path("admin/", admin.site.urls),

@@ -72,7 +72,6 @@ class PaymentService:
             "redirectUrl": "https://t.me/neurogram_soft_bot",
             "webHookUrl": "http://138.199.209.176:8000/webhook/monobank",
         }
-        logging.info(self.monobank_token)
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 self.MONOBANK_API, json=payload, headers=headers

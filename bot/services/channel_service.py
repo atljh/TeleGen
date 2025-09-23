@@ -2,7 +2,7 @@ import logging
 
 from asgiref.sync import sync_to_async
 
-from admin_panel.admin_panel.models import Flow
+from admin_panel.models import Flow
 from bot.database.models.channel import ChannelDTO
 from bot.database.repositories import ChannelRepository, UserRepository
 from bot.services.logger_service import get_logger
