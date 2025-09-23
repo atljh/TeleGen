@@ -1,5 +1,5 @@
 DOCKER_COMPOSE = docker-compose
-MANAGE = docker-compose exec admin_panel python manage.py
+MANAGE = docker-compose exec admin_panel python /app/manage.py
 
 .PHONY: up down build restart logs clean migrate superuser test
 
@@ -64,4 +64,4 @@ admin:
 	open http://localhost:8000/admin
 
 test:
-	docker compose run --rm tests
+	docker-compose run --rm tests
