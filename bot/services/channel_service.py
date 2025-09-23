@@ -3,6 +3,7 @@ import logging
 from asgiref.sync import sync_to_async
 
 from admin_panel.models import Flow
+from bot.database.exceptions import ChannelLimitExceeded
 from bot.database.models.channel import ChannelDTO
 from bot.database.repositories import ChannelRepository, UserRepository
 from bot.services.limit_service import LimitService
@@ -47,10 +48,7 @@ class ChannelService:
                     f"Користувач з Telegram ID {user_telegram_id} не знайдений"
                 )
 
-            can_create_channel = await self.limit_service.check_channels_limit(user)
-            self.logger.info(can_create_channel)
-            if not can_create_channel:
-                raise ValueError("Досягнуто ліміт кількості каналів за тарифом")
+            await self.limit_service.check_channels_limit(user)
 
             channel, created = await self.channel_repository.get_or_create_channel(
                 user=user,
@@ -64,6 +62,8 @@ class ChannelService:
 
             return ChannelDTO.from_orm(channel), created
 
+        except ChannelLimitExceeded as e:
+            raise e
         except Exception as e:
             logging.error(
                 f"Помилка при get_or_create_channel для користувача {user_telegram_id}: {e}"

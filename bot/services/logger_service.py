@@ -296,7 +296,7 @@ class TelegramLogger:
         event = LogEvent(
             level=LogLevel.ERROR,
             message="An error occurred in the system",
-            user_id=user.user_id if user else None,
+            user_id=user.id if user else None,
             username=user.username if user else None,
             additional_data={
                 "Error Message": (

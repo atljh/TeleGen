@@ -15,7 +15,7 @@ from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.api.exceptions import UnknownIntent
 
 from bot.containers import Container
-from bot.database.exceptions import ChannelNotFoundError
+from bot.database.exceptions import ChannelLimitExceeded, ChannelNotFoundError
 from bot.dialogs.generation.add_channel.states import AddChannelMenu
 
 channel_router = Router()
@@ -52,11 +52,37 @@ async def on_bot_added_to_channel(
             mode=StartMode.RESET_STACK,
         )
 
+    except ChannelLimitExceeded as e:
+        logging.warning(f"Ліміт користувача: {e}")
+        await event.bot.send_message(event.from_user.id, f"{e}")
+        try:
+            await event.bot.leave_chat(event.chat.id)
+        except Exception as leave_error:
+            logging.error(f"Не вдалося вийти з каналу {event.chat.id}: {leave_error}")
+
+    except ValueError as e:
+        logging.warning(
+            f"ValueError при додаванні каналу для {event.from_user.id}: {e}"
+        )
+        await event.bot.send_message(
+            event.from_user.id, f"❌ Не вдалося додати канал: {e}"
+        )
+        try:
+            await event.bot.leave_chat(event.chat.id)
+        except Exception as leave_error:
+            logging.error(f"Не вдалося вийти з каналу {event.chat.id}: {leave_error}")
+
     except Exception as e:
-        logging.error(f"Error adding channel: {e}")
+        logging.error(
+            f"Помилка при додаванні каналу для {event.from_user.id}: {e}", exc_info=True
+        )
         await event.bot.send_message(
             event.from_user.id, "❌ Помилка при додаванні каналу. Спробуйте ще раз."
         )
+        try:
+            await event.bot.leave_chat(event.chat.id)
+        except Exception as leave_error:
+            logging.error(f"Не вдалося вийти з каналу {event.chat.id}: {leave_error}")
 
 
 @channel_router.my_chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> KICKED))

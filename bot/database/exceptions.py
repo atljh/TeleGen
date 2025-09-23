@@ -40,3 +40,15 @@ class StatisticsNotFoundError(Exception):
 
 class InvalidOperationError(Exception):
     pass
+
+
+class ChannelLimitExceeded(Exception):
+    pass
+
+
+class SourceLimitExceeded(Exception):
+    pass
+
+
+class GenerationLimitExceeded(Exception):
+    pass
