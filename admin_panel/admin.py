@@ -43,16 +43,14 @@ class ChannelInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = (
-        "telegram_id",
-        "username",
-    )
+    list_display = ("telegram_id", "username", "generated_posts_count")
     readonly_fields = ("created_at",)
     fields = (
         "telegram_id",
         "username",
         "first_name",
         "last_name",
+        "generated_posts_count",
     )
 
     inlines: ClassVar[list[admin.TabularInline]] = [
