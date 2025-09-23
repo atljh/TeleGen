@@ -49,7 +49,7 @@ services:
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
     environment:
-      DJANGO_SETTINGS_MODULE: core.settings.prod
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
     command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
 
   db:
@@ -89,7 +89,7 @@ services:
       - ./admin_panel:/app/admin_panel
       - ./logs:/app/logs
     environment:
-      DJANGO_SETTINGS_MODULE: core.settings.prod
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
     command: celery -A core.celery_app worker -l info --pool=solo
 
   celery_beat:
@@ -110,5 +110,5 @@ services:
       - ./admin_panel:/app/admin_panel
       - ./logs:/app/logs
     environment:
-      DJANGO_SETTINGS_MODULE: core.settings.prod
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
     command: celery -A core.celery_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
