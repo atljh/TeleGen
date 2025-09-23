@@ -5,8 +5,10 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode
 from aiogram_dialog.widgets.kbd import Button
+from asgiref.sync import sync_to_async
 
 from bot.containers import Container
+from bot.database.exceptions import SourceLimitExceeded
 from bot.dialogs.settings.flow_settings.getters import get_sources_data
 from bot.dialogs.settings.states import SettingsMenu
 
@@ -301,6 +303,15 @@ async def on_source_link_entered(
 
         if any(src["link"] == link for src in flow.sources):
             await message.answer("⚠️ Це джерело вже додано!")
+            return
+
+        limit_service = Container.limit_service()
+        try:
+            user = await sync_to_async(lambda: flow.channel.user)()
+            await limit_service.check_sources_limit(user, new_flow=flow)
+        except SourceLimitExceeded as e:
+            await message.answer(str(e))
+            await manager.switch_to(FlowSettingsMenu.source_settings)
             return
 
         flow.sources.append(new_source)

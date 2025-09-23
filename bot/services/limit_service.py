@@ -1,5 +1,7 @@
 import logging
 
+from asgiref.sync import sync_to_async
+
 from admin_panel.models import Flow, Tariff, User
 from bot.database.exceptions import (
     ChannelLimitExceeded,
@@ -44,9 +46,12 @@ class LimitService:
         if not tariff:
             return
 
-        flows_sources = await Flow.objects.filter(channel__user_id=user.id).values_list(
-            "sources", flat=True
+        flows_sources = await sync_to_async(list)(
+            Flow.objects.filter(channel__user_id=user.id).values_list(
+                "sources", flat=True
+            )
         )
+
         sources_total = sum(len(sources) for sources in flows_sources)
         if new_flow:
             sources_total += len(new_flow.sources)
