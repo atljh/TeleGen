@@ -1,6 +1,8 @@
 from typing import ClassVar
 
+from dateutil.relativedelta import relativedelta
 from django.db import models
+from django.utils import timezone
 
 
 class User(models.Model):
@@ -16,7 +18,10 @@ class User(models.Model):
         default=0, verbose_name="Кількість генерацій"
     )
     generation_reset_at = models.DateTimeField(
-        null=True, blank=True, verbose_name="Час наступного скидання генерацій"
+        default=lambda: timezone.now() + relativedelta(months=1),
+        null=True,
+        blank=True,
+        verbose_name="Час наступного скидання генерацій",
     )
 
     class Meta:
