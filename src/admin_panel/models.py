@@ -5,6 +5,10 @@ from django.db import models
 from django.utils import timezone
 
 
+def default_generation_reset_at():
+    return timezone.now() + relativedelta(months=1)
+
+
 class User(models.Model):
     telegram_id = models.BigIntegerField(unique=True, verbose_name="Telegram ID")
     username = models.CharField(
@@ -18,7 +22,7 @@ class User(models.Model):
         default=0, verbose_name="Кількість генерацій"
     )
     generation_reset_at = models.DateTimeField(
-        default=lambda: timezone.now() + relativedelta(months=1),
+        default=default_generation_reset_at,
         null=True,
         blank=True,
         verbose_name="Час наступного скидання генерацій",
