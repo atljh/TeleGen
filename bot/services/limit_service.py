@@ -41,7 +41,9 @@ class LimitService:
                 f"❌ Ліміт каналів досягнуто ({tariff.channels_available})"
             )
 
-    async def check_sources_limit(self, user: User, new_flow: Flow | None = None):
+    async def check_sources_limit(
+        self, user: User, dialog_sources: list[dict] | None = None
+    ):
         tariff = await self.get_user_tariff(user)
         if not tariff:
             return
@@ -51,10 +53,12 @@ class LimitService:
                 "sources", flat=True
             )
         )
-
         sources_total = sum(len(sources) for sources in flows_sources)
-        if new_flow:
-            sources_total += len(new_flow.sources)
+
+        if dialog_sources:
+            sources_total += len(dialog_sources)
+        else:
+            sources_total += 1
 
         if sources_total > tariff.sources_available:
             self.logger.warning(

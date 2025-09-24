@@ -10,7 +10,7 @@ from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import Button
 
 from bot.containers import Container
-from bot.database.exceptions import ChannelNotFoundError
+from bot.database.exceptions import ChannelNotFoundError, SourceLimitExceeded
 from bot.database.models import ContentLength, GenerationFrequency
 from bot.dialogs.generation.callbacks import show_generated_posts
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
@@ -84,7 +84,7 @@ async def on_source_link_entered(
         await message.answer("❌ Невірний формат посилання для цього типу джерела!")
         return
 
-    source = {
+    new_source = {
         "type": manager.dialog_data["selected_source_type"],
         "link": data,
     }
@@ -92,7 +92,19 @@ async def on_source_link_entered(
     if "sources" not in manager.dialog_data:
         manager.dialog_data["sources"] = []
 
-    manager.dialog_data["sources"].append(source)
+    limit_service = Container.limit_service()
+    user_repository = Container.user_repository()
+    user = await user_repository.get_user_by_telegram_id(message.from_user.id)
+    try:
+        await limit_service.check_sources_limit(
+            user=user,
+            dialog_sources=manager.dialog_data["sources"] + [new_source],
+        )
+    except SourceLimitExceeded as e:
+        await message.answer(str(e))
+        return
+
+    manager.dialog_data["sources"].append(new_source)
     manager.dialog_data["source_link"] = data
 
     await manager.switch_to(CreateFlowMenu.source_confirmation)
