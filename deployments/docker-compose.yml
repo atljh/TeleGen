@@ -1,54 +1,50 @@
 services:
   bot:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deployments/Dockerfile
       target: bot
     container_name: telegram_bot
     restart: always
     env_file:
-      - .env
+      - ../.env
     depends_on:
       - db
       - redis
-    working_dir: /app
+    working_dir: /app/src
     volumes:
-      - ./bot:/app/bot
-      - ./admin_panel:/app/admin_panel
-      - ./media:/app/media
-      - ./sessions:/app/sessions
-      - ./tmp:/tmp
-      - ./logs:/app/logs
+      - ../media:/app/src/media
+      - ../sessions:/app/src/sessions
+      - ../logs:/app/src/logs
     environment:
-      PYTHONPATH: /app
+      PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
-      MEDIA_ROOT: /app/media
-      SESSION_PATH: /app/sessions/userbot.session
-      LOG_DIR: /app/logs
-    command: python /app/bot/watcher.py
+      MEDIA_ROOT: /app/src/media
+      SESSION_PATH: /app/src/sessions/userbot.session
+      LOG_DIR: /app/src/logs
+    command: python bot/watcher.py
 
   admin_panel:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deployments/Dockerfile
       target: admin_panel
     container_name: admin_panel
     restart: always
     env_file:
-      - .env
+      - ../.env
     depends_on:
       - db
       - redis
-    working_dir: /app/admin_panel
+    working_dir: /app/src
     ports:
       - "8000:8000"
     volumes:
-      - ./admin_panel:/app/admin_panel
-      - ./logs:/app/logs
-      - ./bot:/app/bot
-      - ./media:/app/media
-      - ./staticfiles:/app/staticfiles
+      - ../media:/app/src/media
+      - ../staticfiles:/app/src/staticfiles
+      - ../logs:/app/src/logs
     environment:
+      PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
     command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
 
@@ -57,9 +53,9 @@ services:
     container_name: telegram_bot_db
     restart: always
     env_file:
-      - .env
+      - ../.env
     volumes:
-      - ./data/postgres_data:/var/lib/postgresql/data
+      - ../data/postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -70,45 +66,44 @@ services:
     container_name: telegram_bot_redis
     restart: always
     volumes:
-      - ./data/redis_data:/data
+      - ../data/redis_data:/data
+
   celery_worker:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deployments/Dockerfile
       target: bot
     container_name: celery_worker
     restart: always
     env_file:
-      - .env
+      - ../.env
     depends_on:
       - db
       - redis
-    working_dir: /app
+    working_dir: /app/src
     volumes:
-      - ./bot:/app/bot
-      - ./admin_panel:/app/admin_panel
-      - ./logs:/app/logs
+      - ../logs:/app/src/logs
     environment:
+      PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
     command: celery -A core.celery_app worker -l info --pool=solo
 
   celery_beat:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deployments/Dockerfile
       target: bot
     container_name: celery_beat
     restart: always
     env_file:
-      - .env
+      - ../.env
     depends_on:
       - db
       - redis
-    working_dir: /app
+    working_dir: /app/src
     volumes:
-      - ./bot:/app/bot
-      - ./admin_panel:/app/admin_panel
-      - ./logs:/app/logs
+      - ../logs:/app/src/logs
     environment:
+      PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
     command: celery -A core.celery_app beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler

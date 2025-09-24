@@ -10,7 +10,6 @@ COPY pyproject.toml uv.lock* ./
 
 RUN pip install --user --no-cache-dir .[prod,dev]
 
-
 FROM python:3.11-slim-bookworm as base
 
 WORKDIR /app
@@ -25,19 +24,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PATH=/root/.local/bin:$PATH
-ENV PYTHONPATH="/app"
+ENV PYTHONPATH="/app/src"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=UTF-8
 
 COPY . /app
+
 ENV PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=core.settings.prod
 
 FROM base AS admin_panel
-WORKDIR /app/admin_panel
+WORKDIR /app/src
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
 
-
 FROM base AS bot
-WORKDIR /app/bot
-CMD ["python", "watcher.py"]
+WORKDIR /app/src
+CMD ["python", "bot/watcher.py"]
