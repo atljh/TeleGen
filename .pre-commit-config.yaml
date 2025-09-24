@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: django-migrations-check
         name: Check for uncreated migrations
-        entry: cd admin_panel && python manage.py makemigrations --check --dry-run
+        entry: cd src/admin_panel && python manage.py makemigrations --check --dry-run
         language: system
         types: [python]
         pass_filenames: false
