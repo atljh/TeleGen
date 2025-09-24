@@ -18,7 +18,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Build bot image for tests
-        run: docker build -t telegram-bot-test --target bot .
+        run: docker build -t telegram-bot-test --target bot -f deployments/Dockerfile .
 
       - name: Run tests inside Docker
         run: |
