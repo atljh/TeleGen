@@ -1,4 +1,5 @@
-from pydantic import BaseSettings, ConfigDict
+from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):

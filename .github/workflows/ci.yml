@@ -29,7 +29,8 @@ jobs:
             -e SECRET_KEY=test-secret-key-123 \
             -e DEBUG=False \
             telegram-bot-test \
-            python -m pytest /app/tests/ -v
+            python -m pytest /app/tests/ -v --ds=core.settings.testing
+
 
   lint:
     runs-on: ubuntu-latest
