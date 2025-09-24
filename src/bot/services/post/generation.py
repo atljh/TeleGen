@@ -41,29 +41,33 @@ class PostGenerationService:
             return []
 
         user = await sync_to_async(lambda: flow.channel.user)()
-        tariff = await self.limit_service.get_user_tariff(user)
-        if not tariff:
-            return []
 
-        remaining = tariff.generations_available - user.generated_posts_count
-        if remaining <= 0:
-            raise GenerationLimitExceeded(
-                f"❌ Ліміт генерацій досягнуто ({tariff.generations_available}/місяць)"
-            )
+        try:
+            await self.limit_service.check_generations_limit(user, new_generations=0)
+        except GenerationLimitExceeded as e:
+            raise e
 
-        requested = self._calculate_requested_volume(flow)
-        max_to_generate = self._resolve_generation_volume(
-            requested, remaining, allow_partial
+        telegram_userbot_volume, web_volume = self._calculate_volumes(flow)
+
+        userbot_posts = await self.userbot_service.get_last_posts(
+            flow, telegram_userbot_volume
         )
+        web_posts = await self.web_service.get_last_posts(flow, web_volume)
+        combined_posts = userbot_posts + web_posts
+        combined_posts.sort(key=lambda x: x.created_at, reverse=True)
 
-        combined_posts = await self._fetch_candidate_posts(flow)
+        try:
+            await self.limit_service.check_generations_limit(
+                user, new_generations=len(combined_posts)
+            )
+        except GenerationLimitExceeded as e:
+            if not allow_partial:
+                raise e
+            tariff = await self.limit_service.get_user_tariff(user)
+            remaining = tariff.generations_available - user.generated_posts_count
+            combined_posts = combined_posts[:remaining]
 
-        combined_posts = combined_posts[:max_to_generate]
-
-        created = await self._create_posts_from_dtos(flow, combined_posts)
-        await self.limit_service.increment_generations(user, len(created))
-
-        return created
+        return await self._create_posts_from_dtos(flow, combined_posts)
 
     def _calculate_volumes(self, flow) -> tuple[int, int]:
         total_volume = flow.flow_volume

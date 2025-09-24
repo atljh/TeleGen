@@ -28,6 +28,7 @@ class LimitService:
 
     async def _reset_generations_if_needed(self, user: User):
         now = timezone.now()
+        logging.warning(now)
         if not user.generation_reset_at or now >= user.generation_reset_at:
             user.generated_posts_count = 0
             user.generation_reset_at = now + relativedelta(months=1)
