@@ -7,7 +7,6 @@ from aiogram_dialog.widgets.link_preview import LinkPreview
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.create_flow.states import CreateFlowMenu
-from bot.dialogs.settings.flow_settings.callbacks import start_flow_settings
 from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import (
@@ -288,11 +287,11 @@ def create_flow_dialog():
                 "▪️ <b>Підпис до постів:</b> {signature}\n\n"
             ),
             Column(
-                Button(
-                    Const("Налаштування Flow"),
-                    id="to_settings",
-                    on_click=start_flow_settings,
-                ),
+                # Button(
+                #     Const("Налаштування Flow"),
+                #     id="to_settings",
+                #     on_click=start_flow_settings,
+                # ),
                 Button(
                     Const("Почати генерацiю"),
                     id="start_generation",
