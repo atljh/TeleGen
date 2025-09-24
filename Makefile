@@ -1,5 +1,5 @@
-DOCKER_COMPOSE = docker-compose
-MANAGE = docker-compose exec admin_panel python /app/manage.py
+DOCKER_COMPOSE = docker-compose -f deployments/docker-compose.yml --env-file .env
+MANAGE = $(DOCKER_COMPOSE) exec admin_panel python manage.py
 
 .PHONY: up down build restart logs clean migrate superuser test
 
@@ -16,12 +16,11 @@ down:
 	$(DOCKER_COMPOSE) down
 
 restart:
-	$(DOCKER_COMPOSE) down
-	$(DOCKER_COMPOSE) up
+	$(DOCKER_COMPOSE) restart
 
 rebuild:
 	$(DOCKER_COMPOSE) down
-	$(DOCKER_COMPOSE) up --build
+	$(DOCKER_COMPOSE) up --build -d
 
 logs:
 	$(DOCKER_COMPOSE) logs -f
@@ -52,10 +51,10 @@ shell:
 	$(MANAGE) shell
 
 bash:
-	docker-compose exec admin_panel bash
+	$(DOCKER_COMPOSE) exec admin_panel bash
 
 db-shell:
-	docker-compose exec db psql -U $(DB_USER) -d $(DB_NAME)
+	$(DOCKER_COMPOSE) exec db psql -U $(DB_USER) -d $(DB_NAME)
 
 status:
 	$(DOCKER_COMPOSE) ps
@@ -64,4 +63,27 @@ admin:
 	open http://localhost:8000/admin
 
 test:
-	docker-compose run --rm tests
+	$(DOCKER_COMPOSE) run --rm admin_panel python -m pytest
+
+bot-logs:
+	$(DOCKER_COMPOSE) logs -f bot
+
+celery-logs:
+	$(DOCKER_COMPOSE) logs -f celery_worker
+
+# Дополнительные полезные команды
+backup-db:
+	$(DOCKER_COMPOSE) exec db pg_dump -U $(DB_USER) $(DB_NAME) > backup_$(shell date +%Y%m%d_%H%M%S).sql
+
+restore-db:
+	@echo "Usage: cat backup_file.sql | $(DOCKER_COMPOSE) exec -T db psql -U $(DB_USER) $(DB_NAME)"
+
+redis-cli:
+	$(DOCKER_COMPOSE) exec redis redis-cli
+
+# Для разработки
+dev:
+	$(DOCKER_COMPOSE) -f deployments/docker-compose.yml -f deployments/docker-compose.dev.yml up
+
+stop:
+	$(DOCKER_COMPOSE) stop
