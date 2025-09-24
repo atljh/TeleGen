@@ -154,7 +154,7 @@ async def on_force_generate(
 
         process = await asyncio.create_subprocess_exec(
             "python",
-            "/app/bot/generator_worker.py",
+            "/app/src/bot/generator_worker.py",
             str(flow.id),
             str(callback.message.chat.id),
             str(status_msg.message_id),
