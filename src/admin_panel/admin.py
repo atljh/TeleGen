@@ -51,6 +51,7 @@ class UserAdmin(admin.ModelAdmin):
         "first_name",
         "last_name",
         "generated_posts_count",
+        "generation_reset_at",
     )
 
     inlines: ClassVar[list[admin.TabularInline]] = [

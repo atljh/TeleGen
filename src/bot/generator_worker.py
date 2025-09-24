@@ -7,8 +7,9 @@ import time
 from aiogram import Bot
 
 from bot.containers import Container
+from bot.database.exceptions import GenerationLimitExceeded
 from bot.database.models import FlowDTO
-from bot.database.models.post import PostStatus
+from bot.database.models.post import PostDTO, PostStatus
 from bot.services.flow_service import FlowService
 from bot.services.logger_service import init_logger
 from bot.services.post import PostService
@@ -58,35 +59,50 @@ async def _start_telegram_generations(
     flow: FlowDTO,
     flow_service: FlowService,
     post_service: PostService,
-    auto_generate=False,
-) -> list:
+    allow_partial: bool = True,
+) -> list[PostDTO]:
     existing_posts = await post_service.get_all_posts_in_flow(
         flow.id, status=PostStatus.DRAFT
     )
-    existing_count = len(existing_posts)
-
-    generated_posts = await post_service.generate_auto_posts(flow.id, auto_generate)
-    generated_count = len(generated_posts) if generated_posts else 0
+    try:
+        generated_posts = await post_service.generate_auto_posts(
+            flow.id, allow_partial=allow_partial
+        )
+    except GenerationLimitExceeded as e:
+        logging.warning(f"Flow {flow.id}: {e}")
+        await flow_service.update_next_generation_time(flow.id)
+        await send_telegram_notification(bot_token, chat_id, f"{e}")
+        return []
 
     if not generated_posts:
         await flow_service.update_next_generation_time(flow.id)
         return []
 
-    total_after_generation = existing_count + generated_count
+    await _handle_flow_overflow(
+        flow, flow_service, post_service, existing_posts, generated_posts
+    )
+
+    await flow_service.update_next_generation_time(flow.id)
+    return generated_posts
+
+
+async def _handle_flow_overflow(
+    flow: FlowDTO,
+    flow_service: FlowService,
+    post_service: PostService,
+    existing_posts: list,
+    generated_posts: list,
+):
+    total_after_generation = len(existing_posts) + len(generated_posts)
     overflow = total_after_generation - flow.flow_volume
 
     if overflow > 0:
-        posts_to_delete = min(overflow, existing_count)
+        posts_to_delete = min(overflow, len(existing_posts))
         if posts_to_delete > 0:
             old_posts = existing_posts[:posts_to_delete]
             logging.info(f"Deleting {len(old_posts)} oldest posts from flow {flow.id}")
-
             for post in old_posts:
                 await post_service.delete_post(post.id)
-
-    await flow_service.update_next_generation_time(flow.id)
-
-    return generated_posts
 
 
 if __name__ == "__main__":

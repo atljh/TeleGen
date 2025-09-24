@@ -15,6 +15,9 @@ class User(models.Model):
     generated_posts_count = models.PositiveIntegerField(
         default=0, verbose_name="Кількість генерацій"
     )
+    generation_reset_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Час наступного скидання генерацій"
+    )
 
     class Meta:
         verbose_name = "Користувач"
@@ -22,10 +25,6 @@ class User(models.Model):
 
     def __str__(self):
         return f"{self.username} (Telegram ID: {self.telegram_id})"
-
-    def increment_generation(self):
-        self.generated_posts_count += 1
-        self.save(update_fields=["generated_posts_count"])
 
 
 class Channel(models.Model):
