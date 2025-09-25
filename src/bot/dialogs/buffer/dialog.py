@@ -171,6 +171,7 @@ def create_buffer_dialog():
                     on_click=go_back_to_channels,
                 )
             ),
+            LinkPreview(is_disabled=True),
             getter=paging_getter,
             state=BufferMenu.channel_main,
             parse_mode=ParseMode.HTML,
@@ -182,7 +183,6 @@ def create_buffer_dialog():
                 "<b>Джерело: {source_url}</b>\n"
                 "<b>Посилання: {original_link}</b>\n"
                 "<b>Дата публікації: {original_date}</b>\n\n"
-                "<b>Заплановано на: {scheduled_time}</b>"
             ),
             Row(
                 Back(BACK_BUTTON),

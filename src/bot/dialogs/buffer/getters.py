@@ -96,7 +96,7 @@ async def build_post_dict(post, idx: int) -> dict:
         "original_link": getattr(post, "original_link", ""),
         "scheduled_time": format_datetime(getattr(post, "scheduled_time", "")),
         "source_url": getattr(post, "source_url", ""),
-        "content_preview": (content[:150] + "...") if len(content) > 150 else content,
+        "content_preview": content,
         "full_content": content,
         "is_selected": False,
     }
