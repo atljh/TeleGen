@@ -3,7 +3,7 @@ import logging
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 
-from bot.utils.notifications import notify_admins
+from bot.services.logger_service import LogEvent, LogLevel, get_logger
 
 from ..types import AuthorizationError
 
@@ -11,7 +11,7 @@ from ..types import AuthorizationError
 class AuthorizationService:
     def __init__(self, phone: str | None = None):
         self.phone = phone
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger()
 
     async def authorize_client(self, client: TelegramClient) -> bool:
         try:
@@ -40,16 +40,34 @@ class AuthorizationService:
             return False
 
     async def _handle_password_needed(self):
-        self.logger.error("Two-factor authentication required for Userbot!")
-        await notify_admins("🔐 Потрібна двофакторна аутентифікація для Userbot!")
+        logging.error("Two-factor authentication required for Userbot!")
+        await self.logger.log(
+            LogEvent(
+                level=LogLevel.SECURITY,
+                message="Two-factor authentication required for Userbot!",
+                additional_data={"Event": "2FA Required"},
+            )
+        )
 
     async def _handle_eof_error(self):
-        self.logger.error("Userbot requires reauthorization!")
-        await notify_admins("⚠️ Userbot потребує повторної авторизації!")
+        logging.error("Userbot requires reauthorization!")
+        await self.logger.log(
+            LogEvent(
+                level=LogLevel.SECURITY,
+                message="Userbot requires reauthorization!",
+                additional_data={"Event": "EOF / Session Expired"},
+            )
+        )
 
     async def _handle_authorization_error(self, error: Exception):
-        self.logger.error(f"Authorization error: {error!s}")
-        await notify_admins(f"❌ Помилка авторизації Userbot: {error!s}")
+        logging.error(f"Authorization error: {error!s}")
+        await self.logger.log(
+            LogEvent(
+                level=LogLevel.ERROR,
+                message=f"Authorization error: {error!s}",
+                additional_data={"Event": "Auth Error"},
+            )
+        )
 
     async def send_code_request(self, client: TelegramClient) -> str | None:
         try:
