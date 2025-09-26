@@ -152,6 +152,7 @@ class TelegramLogger:
         flow_id: int,
         telegram_volume,
         web_volume,
+        auto_generate: bool = False,
     ) -> bool:
         event = LogEvent(
             level=LogLevel.GENERATION,
@@ -159,6 +160,9 @@ class TelegramLogger:
             user_id=user.id,
             username=user.username,
             additional_data={
+                "Generation_type": (
+                    "Auto generation" if auto_generate else "Force generation"
+                ),
                 "Flow ID": flow_id,
                 "Flow Name": flow_name,
                 "Telegram Volume": telegram_volume,
@@ -169,7 +173,12 @@ class TelegramLogger:
         return await self.log(event)
 
     async def generation_completed(
-        self, user: BotUser, flow_name: str, flow_id: int, result: str
+        self,
+        user: BotUser,
+        flow_name: str,
+        flow_id: int,
+        result: str,
+        auto_generate: bool = False,
     ) -> bool:
         event = LogEvent(
             level=LogLevel.SUCCESS,
@@ -177,6 +186,9 @@ class TelegramLogger:
             user_id=user.id,
             username=user.username,
             additional_data={
+                "Generation_type": (
+                    "Auto generation" if auto_generate else "Force generation"
+                ),
                 "Flow ID": flow_id,
                 "Flow Name": flow_name,
                 "Result": result,

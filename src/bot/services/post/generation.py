@@ -9,7 +9,7 @@ from bot.database.exceptions import GenerationLimitExceeded
 from bot.database.models import PostDTO
 from bot.database.repositories import FlowRepository
 from bot.services.limit_service import LimitService
-from bot.services.logger_service import SyncTelegramLogger, get_logger
+from bot.services.logger_service import SyncTelegramLogger, get_logger, init_logger
 from bot.services.post import PostBaseService
 from bot.services.telegram_userbot import EnhancedUserbotService
 from bot.services.web.web_service import WebService
@@ -34,7 +34,10 @@ class PostGenerationService:
         self.logger = get_logger()
 
     async def generate_auto_posts(
-        self, flow_id: int, allow_partial: bool = False
+        self,
+        flow_id: int,
+        allow_partial: bool = False,
+        auto_generate: bool = False,
     ) -> list[PostDTO]:
         flow = await self.flow_repo.get_flow_by_id(flow_id)
         if not flow:
@@ -48,11 +51,39 @@ class PostGenerationService:
             raise e
 
         telegram_userbot_volume, web_volume = self._calculate_volumes(flow)
+        logging.warning(
+            f"Generating posts: userbot={telegram_userbot_volume}, web={web_volume}, user: {user}"
+        )
 
-        userbot_posts = await self.userbot_service.get_last_posts(
+        if not self.logger:
+            init_logger(self.bot)
+            self.logger = get_logger()
+
+        self.sync_logger.user_started_generation(
+            user,
+            flow_name=flow.name,
+            flow_id=flow.id,
+            telegram_volume=telegram_userbot_volume,
+            web_volume=web_volume,
+            auto_generate=auto_generate,
+        )
+        userbot_posts_task = self.userbot_service.get_last_posts(
             flow, telegram_userbot_volume
         )
-        web_posts = await self.web_service.get_last_posts(flow, web_volume)
+        web_posts_task = self.web_service.get_last_posts(flow, web_volume)
+
+        userbot_posts, web_posts = await asyncio.gather(
+            userbot_posts_task,
+            web_posts_task,
+            return_exceptions=False,
+        )
+        self.sync_logger.generation_completed(
+            user=user,
+            flow_name=flow.name,
+            flow_id=flow.id,
+            result=f"{len(userbot_posts)} Telegram | {len(web_posts)} Web posts generated",
+            auto_generate=auto_generate,
+        )
         combined_posts = userbot_posts + web_posts
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
 

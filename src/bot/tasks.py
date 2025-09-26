@@ -18,7 +18,13 @@ async def _process_flows():
     for flow in flows:
         logger.info(f"Processing flow {flow.id} (volume: {flow.flow_volume})")
         try:
-            await _start_telegram_generations(flow, flow_service, post_service)
+            await _start_telegram_generations(
+                flow,
+                flow_service,
+                post_service,
+                allow_partial=True,
+                auto_generate=True,
+            )
         except Exception as e:
             logger.error(f"Failed to process flow {flow.id}: {e}")
             continue

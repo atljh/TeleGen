@@ -38,7 +38,13 @@ async def generate_flow(
             return []
 
         start_time = time.time()
-        posts = await _start_telegram_generations(flow, flow_service, post_service)
+        posts = await _start_telegram_generations(
+            flow,
+            flow_service,
+            post_service,
+            allow_partial=True,
+            auto_generate=False,
+        )
         posts_count = len(posts) if posts else 0
         logging.info(
             f"Generated {posts_count} posts for flow {flow.id} for {time.time() - start_time:.2f} sec"
@@ -60,13 +66,14 @@ async def _start_telegram_generations(
     flow_service: FlowService,
     post_service: PostService,
     allow_partial: bool = True,
+    auto_generate: bool = False,
 ) -> list[PostDTO]:
     existing_posts = await post_service.get_all_posts_in_flow(
         flow.id, status=PostStatus.DRAFT
     )
     try:
         generated_posts = await post_service.generate_auto_posts(
-            flow.id, allow_partial=allow_partial
+            flow.id, allow_partial=allow_partial, auto_generate=auto_generate
         )
     except GenerationLimitExceeded as e:
         logging.warning(f"Flow {flow.id}: {e}")

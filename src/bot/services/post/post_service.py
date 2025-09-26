@@ -61,9 +61,14 @@ class PostService:
         return await self.scheduling_service.publish_scheduled_posts()
 
     async def generate_auto_posts(
-        self, flow_id: int, allow_partial: bool = False
+        self,
+        flow_id: int,
+        allow_partial: bool = False,
+        auto_generate: bool = False,
     ) -> list[PostDTO]:
-        return await self.generation_service.generate_auto_posts(flow_id, allow_partial)
+        return await self.generation_service.generate_auto_posts(
+            flow_id, allow_partial, auto_generate
+        )
 
     async def create_post(
         self,
