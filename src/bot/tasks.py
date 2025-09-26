@@ -27,33 +27,41 @@ async def _process_flows():
 async def _publish_scheduled_posts():
     post_service = Container.post_service()
     logger.info("Checking for scheduled posts...")
+    await post_service.publish_scheduled_posts()
 
-    published = await post_service.publish_scheduled_posts()
 
-    if published:
-        logger.info(f"Successfully published {len(published)} posts")
-    else:
-        logger.info("No posts to publish")
-
-    return [post.dict() for post in published]
+def _get_or_create_event_loop():
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            raise RuntimeError("Loop is closed")
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop
 
 
 @shared_task(bind=True, max_retries=3)
 def run_scheduled_jobs(self):
-    """
-    Unified Celery task:
-    - Processes flows for generation
-    - Publishes scheduled posts
-    """
     try:
+        loop = _get_or_create_event_loop()
 
-        async def runner():
-            await _process_flows()
-            return await _publish_scheduled_posts()
+        if loop.is_running():
 
-        result = asyncio.run(runner())
-        return result
+            async def runner():
+                await _process_flows()
+                return await _publish_scheduled_posts()
+
+            task = asyncio.ensure_future(runner(), loop=loop)
+            return loop.run_until_complete(task)
+        else:
+            return loop.run_until_complete(_run_all_tasks())
 
     except Exception as e:
         logger.error(f"run_scheduled_jobs failed: {e}", exc_info=True)
         self.retry(exc=e, countdown=60)
+
+
+async def _run_all_tasks():
+    await _process_flows()
+    return await _publish_scheduled_posts()

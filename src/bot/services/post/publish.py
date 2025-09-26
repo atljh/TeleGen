@@ -40,7 +40,6 @@ class PostPublishingService:
 
     async def _send_post_to_channel(self, post: PostDTO, channel_id: str):
         caption = post.content[:1024] if len(post.content) > 1024 else post.content
-
         if post.images or post.videos:
             await self._send_media_group(post, channel_id, caption)
         else:

@@ -82,6 +82,7 @@ services:
       - redis
     working_dir: /app/src
     volumes:
+      - ../media:/app/src/media
       - ../logs:/app/src/logs
     environment:
       PYTHONPATH: /app/src
@@ -102,6 +103,7 @@ services:
       - redis
     working_dir: /app/src
     volumes:
+      - ../media:/app/src/media
       - ../logs:/app/src/logs
     environment:
       PYTHONPATH: /app/src
