@@ -176,6 +176,10 @@ class Container(containers.DeclarativeContainer):
         user_repository=user_repository,
         monobank_token=os.getenv("MONOBANK_TOKEN"),
         cryptobot_token=os.getenv("CRYPTOBOT_TOKEN"),
+        monobank_api_ur=os.getenv("MONOBANK_REDIRECT_URL"),
+        monobank_redirect_url=os.getenv("MONOBANK_API_URL"),
+        monobank_webhook_url=os.getenv("MONOBANK_WEBHOOK_URL"),
+        cryptobot_api_url=os.getenv("CRYPTOBOT_API_URL"),
         logger=providers.Singleton(logging.getLogger, "payment_service"),
     )
 

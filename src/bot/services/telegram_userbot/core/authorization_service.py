@@ -3,7 +3,7 @@ import logging
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 
-from bot.services.logger_service import LogEvent, LogLevel, get_logger
+from bot.services.logger_service import LogEvent, LogLevel, init_logger
 
 from ..types import AuthorizationError
 
@@ -11,7 +11,7 @@ from ..types import AuthorizationError
 class AuthorizationService:
     def __init__(self, phone: str | None = None):
         self.phone = phone
-        self.logger = get_logger()
+        self.logger = init_logger()
 
     async def authorize_client(self, client: TelegramClient) -> bool:
         try:

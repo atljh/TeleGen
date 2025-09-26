@@ -8,15 +8,16 @@ from bot.database.repositories import PaymentRepository, UserRepository
 
 
 class PaymentService:
-    MONOBANK_API = "https://api.monobank.ua/api/merchant/invoice/create"
-    CRYPTOBOT_API = "https://testnet-pay.crypt.bot/api/createInvoice"
-
     def __init__(
         self,
         payment_repository: PaymentRepository,
         user_repository: UserRepository,
         monobank_token: str,
         cryptobot_token: str,
+        monobank_api_url: str,
+        monobank_redirect_url: str,
+        monobank_webhook_url: str,
+        cryptobot_api_url: str,
         logger: logging.Logger | None = None,
     ):
         self.payment_repository = payment_repository
@@ -24,6 +25,10 @@ class PaymentService:
         self.monobank_token = monobank_token
         self.cryptobot_token = cryptobot_token
         self.logger = logger or logging.getLogger(__name__)
+        self.monobank_api_url = (monobank_api_url,)
+        self.monobank_redirect_url = (monobank_redirect_url,)
+        self.monobank_webhook_url = (monobank_webhook_url,)
+        self.cryptobot_api_url = cryptobot_api_url
 
     async def create_payment(
         self,
@@ -69,12 +74,12 @@ class PaymentService:
                 "reference": order_id,
                 "destination": description,
             },
-            "redirectUrl": "https://t.me/neurogram_soft_bot",
-            "webHookUrl": "https://postomat.xyz/webhook/monobank/",
+            "redirectUrl": self.monobank_redirect_url,
+            "webHookUrl": self.monobank_webhook_url,
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.MONOBANK_API, json=payload, headers=headers
+                self.monobank_api_url, json=payload, headers=headers
             ) as resp:
                 data = await resp.json()
                 if "pageUrl" not in data:
@@ -94,7 +99,7 @@ class PaymentService:
 
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.CRYPTOBOT_API, json=payload, headers=headers
+                self.cryptobot_api_url, json=payload, headers=headers
             ) as resp:
                 data = await resp.json()
                 if not data.get("ok"):
