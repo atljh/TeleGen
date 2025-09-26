@@ -97,16 +97,17 @@ class RssService:
     def is_configured(self) -> bool:
         return bool(self.rss_app_key and self.rss_app_secret)
 
-    async def get_posts_for_flow(
+    async def get_posts_for_source(
         self,
         flow: FlowDTO,
         flow_service: FlowService,
+        source: dict,
         limit: int = 10,
     ) -> AsyncIterator[dict[str, Any]]:
         try:
-            rss_urls = await self._get_flow_rss_urls(flow, flow_service)
-            self.logger.info(f"Getting posts for flow {flow.id} from {rss_urls}")
-            async for post in self._stream_posts(rss_urls, limit):
+            rss_url = await self._get_source_rss_url(flow, source, flow_service)
+            self.logger.info(f"Getting posts for flow {flow.id} from {rss_url}")
+            async for post in self._stream_posts(rss_url, limit):
                 yield self._convert_to_web_service_format(post)
 
         except TimeoutError:
@@ -114,23 +115,18 @@ class RssService:
         except Exception as e:
             self.logger.error(f"Error getting posts: {e}", exc_info=True)
 
-    async def _get_flow_rss_urls(
-        self, flow: FlowDTO, flow_service: FlowService
-    ) -> list[str]:
-        rss_urls = []
-        for source in flow.sources:
-            if source["type"] != "web":
-                continue
-            try:
-                if url := await flow_service.get_or_set_source_rss_url(
-                    flow.id, source["link"]
-                ):
-                    rss_urls.append(url)
-            except Exception as e:
-                self.logger.warning(
-                    f"Failed to get RSS URL for source {source.get('link')}: {e}"
-                )
-        return rss_urls
+    async def _get_source_rss_url(
+        self, flow: FlowDTO, source: dict, flow_service: FlowService
+    ) -> list[str] | None:
+        try:
+            if url := await flow_service.get_or_set_source_rss_url(
+                flow.id, source["link"]
+            ):
+                return url
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to get RSS URL for source {source.get('link')}: {e}"
+            )
 
     async def discover_rss_urls(
         self, sources: list[SourceDict], *, parallel: bool = True
@@ -155,20 +151,20 @@ class RssService:
 
     async def _stream_posts(
         self,
-        rss_urls: list[str],
+        rss_url: str,
         limit: int,
     ) -> AsyncIterator[RssPost]:
-        if not rss_urls:
+        if not rss_url:
             return
 
-        limits_per_url = self._calculate_limits_per_url(rss_urls, limit)
-        for url, url_limit in limits_per_url.items():
-            try:
-                async with asyncio.timeout(30):
-                    async for post in self._fetch_feed_posts_stream(url, url_limit):
-                        yield post
-            except Exception as e:
-                self.logger.warning(f"Error streaming posts from {url}: {e}")
+        # limits_per_url = self._calculate_limits_per_url(rss_urls, limit)
+        # for url, url_limit in limits_per_url.items():
+        try:
+            async with asyncio.timeout(30):
+                async for post in self._fetch_feed_posts_stream(rss_url, limit):
+                    yield post
+        except Exception as e:
+            self.logger.warning(f"Error streaming posts from {rss_url}: {e}")
 
     async def _fetch_feed_posts_stream(
         self,

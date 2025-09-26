@@ -44,14 +44,17 @@ class WebService:
         self.post_builder = post_builder
         self.logger = logger or logging.getLogger(__name__)
 
-    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> list[PostDTO]:
+    async def get_last_posts(
+        self, flow: FlowDTO, source: dict, limit: int = 10
+    ) -> list[PostDTO]:
         async with self.rss_service_factory() as rss_service:
             try:
                 raw_posts = [
                     post
-                    async for post in rss_service.get_posts_for_flow(
+                    async for post in rss_service.get_posts_for_source(
                         flow,
                         self.flow_service,
+                        source,
                         limit,
                     )
                 ][:limit]

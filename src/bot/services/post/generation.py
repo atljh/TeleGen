@@ -4,7 +4,7 @@ import logging
 from aiogram import Bot
 from asgiref.sync import sync_to_async
 
-from admin_panel.models import Flow, Post
+from admin_panel.models import Post
 from bot.database.exceptions import GenerationLimitExceeded
 from bot.database.models import PostDTO
 from bot.database.repositories import FlowRepository
@@ -50,10 +50,9 @@ class PostGenerationService:
         except GenerationLimitExceeded as e:
             raise e
 
-        telegram_userbot_volume, web_volume = self._calculate_volumes(flow)
-        logging.warning(
-            f"Generating posts: userbot={telegram_userbot_volume}, web={web_volume}, user: {user}"
-        )
+        volumes = self._calculate_volumes(flow)
+        web_volume = sum([v["volume"] for v in volumes if v["type"] == "web"])
+        telegram_volume = sum([v["volume"] for v in volumes if v["type"] == "telegram"])
 
         if not self.logger:
             init_logger(self.bot)
@@ -63,28 +62,32 @@ class PostGenerationService:
             user,
             flow_name=flow.name,
             flow_id=flow.id,
-            telegram_volume=telegram_userbot_volume,
             web_volume=web_volume,
+            telegram_volume=telegram_volume,
             auto_generate=auto_generate,
         )
-        userbot_posts_task = self.userbot_service.get_last_posts(
-            flow, telegram_userbot_volume
-        )
-        web_posts_task = self.web_service.get_last_posts(flow, web_volume)
+        tasks = []
+        for item in volumes:
+            if item["volume"] <= 0:
+                continue
+            if item["type"] == "telegram":
+                tasks.append(
+                    self.userbot_service.get_last_posts(flow, item, item["volume"])
+                )
+            elif item["type"] == "web":
+                tasks.append(
+                    self.web_service.get_last_posts(flow, item, item["volume"])
+                )
 
-        userbot_posts, web_posts = await asyncio.gather(
-            userbot_posts_task,
-            web_posts_task,
-            return_exceptions=False,
-        )
-        self.sync_logger.generation_completed(
-            user=user,
-            flow_name=flow.name,
-            flow_id=flow.id,
-            result=f"{len(userbot_posts)} Telegram | {len(web_posts)} Web posts generated",
-            auto_generate=auto_generate,
-        )
-        combined_posts = userbot_posts + web_posts
+        results = await asyncio.gather(*tasks, return_exceptions=False)
+
+        combined_posts: list[PostDTO] = []
+        for r in results:
+            if isinstance(r, Exception):
+                self.logger.error(f"Error in source task: {r!s}")
+            else:
+                combined_posts.extend(r)
+
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
 
         try:
@@ -98,29 +101,33 @@ class PostGenerationService:
             remaining = tariff.generations_available - user.generated_posts_count
             combined_posts = combined_posts[:remaining]
 
+        self.sync_logger.generation_completed(
+            user=user,
+            flow_name=flow.name,
+            flow_id=flow.id,
+            result=f"{len(combined_posts)} posts generated from {len(results)} sources",
+            auto_generate=auto_generate,
+        )
+
         return await self._create_posts_from_dtos(flow, combined_posts)
 
-    def _calculate_volumes(self, flow) -> tuple[int, int]:
+    def _calculate_volumes(self, flow) -> list[dict]:
         total_volume = flow.flow_volume
         sources = flow.sources
 
-        count_telegram = sum(1 for item in sources if item["type"] == "telegram")
-        count_web = sum(1 for item in sources if item["type"] == "web")
-
-        total_sources = count_telegram + count_web
+        total_sources = len(sources)
         if total_sources == 0:
-            return (0, 0)
+            return []
 
         base_volume = total_volume // total_sources
         remainder = total_volume % total_sources
 
-        telegram_userbot_volume = base_volume * count_telegram
-        web_volume = base_volume * count_web
+        results = []
+        for i, source in enumerate(sources):
+            volume = base_volume + (1 if i < remainder else 0)
+            results.append({**source, "volume": volume})
 
-        if remainder:
-            web_volume += remainder
-
-        return (telegram_userbot_volume, web_volume)
+        return results
 
     async def _create_posts_from_dtos(self, flow, post_dtos: list) -> list[PostDTO]:
         semaphore = asyncio.Semaphore(10)
@@ -171,27 +178,3 @@ class PostGenerationService:
             )
 
         return media_list
-
-    def _calculate_requested_volume(self, flow: Flow) -> int:
-        telegram_volume, web_volume = self._calculate_volumes(flow)
-        return telegram_volume + web_volume
-
-    def _resolve_generation_volume(
-        self, requested: int, remaining: int, allow_partial: bool
-    ) -> int:
-        if requested > remaining and not allow_partial:
-            raise GenerationLimitExceeded(
-                f"❌ Недостатньо генерацій для {requested} постів "
-                f"(доступно {remaining})"
-            )
-        return min(requested, remaining)
-
-    async def _fetch_candidate_posts(self, flow: Flow) -> list[PostDTO]:
-        telegram_volume, web_volume = self._calculate_volumes(flow)
-
-        userbot_posts = await self.userbot_service.get_last_posts(flow, telegram_volume)
-        web_posts = await self.web_service.get_last_posts(flow, web_volume)
-
-        combined = userbot_posts + web_posts
-        combined.sort(key=lambda x: x.created_at, reverse=True)
-        return combined

@@ -42,12 +42,13 @@ class TelegramClientManager:
         client = self.connection_service.create_client()
 
         try:
-            await self.connection_service.connect_client(client)
+            async with self.connection_service.connect_client(
+                client, os.getenv("SESSION_PATH", "userbot.session")
+            ) as connected_client:
+                if not await self.authorization_service.is_authorized(connected_client):
+                    await self.authorization_service.authorize_client(connected_client)
 
-            if not await self.authorization_service.is_authorized(client):
-                await self.authorization_service.authorize_client(client)
-
-            yield client
+                yield connected_client
 
         except Exception as e:
             self.logger.error(f"Помилка Telegram клієнта: {e!s}")

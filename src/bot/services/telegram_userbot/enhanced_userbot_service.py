@@ -39,24 +39,29 @@ class EnhancedUserbotService(BaseUserbotService):
         self.aisettings_service = aisettings_service
         self.openai_key = openai_key
 
-    async def get_last_posts(self, flow: FlowDTO, limit: int = 10) -> list[PostDTO]:
+    async def get_last_posts(
+        self, flow: FlowDTO, source: dict, limit: int = 10
+    ) -> list[PostDTO]:
         try:
             start_time = time.time()
 
-            raw_posts = await super().get_last_posts(flow.sources, limit)
+            raw_posts = await super().get_last_posts(source, limit)
 
             processed_posts = await self.post_converter.convert_raw_posts_to_dto(
                 raw_posts, flow
             )
+
             self.logger.warning(
-                f"[Telegram] Processed {len(processed_posts)} posts "
+                f"[Telegram] Source {source['link']}: processed {len(processed_posts)} posts "
                 f"in {time.time() - start_time:.2f}s"
             )
-
             return processed_posts
 
         except Exception as e:
-            self.logger.error(f"Error getting posts: {e!s}", exc_info=True)
+            self.logger.error(
+                f"Error getting posts from source {source['link']}: {e!s}",
+                exc_info=True,
+            )
             return []
 
     async def process_content(self, text: str, flow: FlowDTO) -> str:

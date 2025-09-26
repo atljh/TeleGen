@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 from telethon import TelegramClient
 
@@ -21,6 +22,8 @@ class ConnectionService:
         self.connection_retries = connection_retries
         self.auto_reconnect = auto_reconnect
         self.logger = logging.getLogger(__name__)
+        self._connection_lock = asyncio.Lock()
+        self._active_connections = set()
 
     def create_client(self) -> TelegramClient:
         return TelegramClient(
@@ -33,13 +36,34 @@ class ConnectionService:
             proxy=None,
         )
 
-    async def connect_client(self, client: TelegramClient) -> bool:
+    @asynccontextmanager
+    async def connect_client(self, client: TelegramClient, session_name: str):
+        async with self._connection_lock:
+            while session_name in self._active_connections:
+                await asyncio.sleep(0.1)
+
+            self._active_connections.add(session_name)
+
         try:
-            await client.connect()
-            return True
-        except Exception as e:
-            self.logger.error(f"Unexpected connection error: {e!s}")
-            raise ConnectionError(f"Unexpected error: {e!s}") from e
+            await self._connect_with_retry(client)
+            yield client
+        finally:
+            self._active_connections.discard(session_name)
+
+    async def _connect_with_retry(self, client: TelegramClient, max_retries=3):
+        for attempt in range(max_retries):
+            try:
+                if not client.is_connected():
+                    await client.connect()
+                return
+            except Exception as e:
+                if "database is locked" in str(e):
+                    if attempt == max_retries - 1:
+                        raise
+                    wait_time = (attempt + 1) * 2
+                    await asyncio.sleep(wait_time)
+                else:
+                    raise
 
     async def disconnect_client(self, client: TelegramClient) -> bool:
         try:

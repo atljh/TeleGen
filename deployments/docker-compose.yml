@@ -84,6 +84,7 @@ services:
     volumes:
       - ../media:/app/src/media
       - ../logs:/app/src/logs
+      - ../sessions:/app/src/sessions
     environment:
       PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
@@ -105,6 +106,7 @@ services:
     volumes:
       - ../media:/app/src/media
       - ../logs:/app/src/logs
+      - ../sessions:/app/src/sessions
     environment:
       PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}

@@ -38,11 +38,10 @@ class ContentProcessingService:
     ) -> PostDTO | None:
         if not post_dto.content:
             return None
-
         normalized_content = await self._normalize_content(post_dto.content)
         processed_content = await self._process_with_ai(normalized_content, flow)
 
-        final_content = await self._add_signature(processed_content, flow)
+        final_content = self._add_signature(processed_content, flow)
 
         return post_dto.copy(update={"content": final_content})
 
@@ -74,7 +73,7 @@ class ContentProcessingService:
             self.logger.error(f"ChatGPT processing failed: {e!s}")
             return text
 
-    async def _add_signature(self, text: str, flow: FlowDTO) -> str:
+    def _add_signature(self, text: str, flow: FlowDTO) -> str:
         if flow.signature:
             return f"{text}\n\n{flow.signature}"
         return text

@@ -37,50 +37,37 @@ class BaseUserbotService:
                 self.logger.error(f"Error deleting temp file {file_path}: {e!s}")
         self._temp_files.clear()
 
-    async def get_last_posts(self, sources: list[dict], limit: int = 10) -> list[dict]:
-        telegram_sources = [s for s in sources if s.get("type") == "telegram"]
-        if not telegram_sources:
-            return []
-
+    async def get_last_posts(self, source: dict, limit: int = 10) -> list[dict] | None:
         result = []
         processed_albums = set()
-        source_limits = self._calculate_source_limits(sources, limit)
         total_posts_needed = limit
 
         async with self.client_manager.get_client() as client:
-            for source in telegram_sources:
-                if source["type"] != "telegram":
-                    continue
+            if len(result) >= total_posts_needed:
+                return result[:total_posts_needed]
 
-                if len(result) >= total_posts_needed:
-                    break
+            try:
+                remaining_for_source = limit
+                if remaining_for_source <= 0:
+                    return result[:total_posts_needed]
 
-                try:
-                    remaining_for_source = source_limits[source["link"]]
-                    if remaining_for_source <= 0:
-                        continue
+                entity = await self.client_manager.get_entity(client, source["link"])
+                if not entity:
+                    return
 
-                    entity = await self.client_manager.get_entity(
-                        client, source["link"]
-                    )
-                    if not entity:
-                        continue
+                await self._process_source_messages(
+                    client,
+                    entity,
+                    source,
+                    remaining_for_source,
+                    result,
+                    processed_albums,
+                    total_posts_needed,
+                )
 
-                    await self._process_source_messages(
-                        client,
-                        entity,
-                        source,
-                        remaining_for_source,
-                        result,
-                        processed_albums,
-                        total_posts_needed,
-                    )
-
-                except Exception as e:
-                    self.logger.error(
-                        f"Error processing source {source['link']}: {e!s}"
-                    )
-                    continue
+            except Exception as e:
+                self.logger.error(f"Error processing source {source['link']}: {e!s}")
+                return
 
         self.logger.warning(
             f"Final result length: {len(result)} | Needed: {total_posts_needed}"
