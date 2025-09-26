@@ -70,7 +70,7 @@ class PaymentService:
                 "destination": description,
             },
             "redirectUrl": "https://t.me/neurogram_soft_bot",
-            "webHookUrl": "http://138.199.209.176:8000/webhook/monobank",
+            "webHookUrl": "https://postomat.xyz/webhook/monobank/",
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
