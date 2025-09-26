@@ -15,6 +15,11 @@ ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS", "localhost", "127.0.0.1", "postomat.xyz"
 ).split(",")
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
 TELEGRAM_LOG_CHANNEL_ID = os.getenv("TELEGRAM_LOG_CHANNEL_ID", default=None)
 
 INSTALLED_APPS = [
