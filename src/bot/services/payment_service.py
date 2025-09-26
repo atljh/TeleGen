@@ -25,9 +25,9 @@ class PaymentService:
         self.monobank_token = monobank_token
         self.cryptobot_token = cryptobot_token
         self.logger = logger or logging.getLogger(__name__)
-        self.monobank_api_url = (monobank_api_url,)
-        self.monobank_redirect_url = (monobank_redirect_url,)
-        self.monobank_webhook_url = (monobank_webhook_url,)
+        self.monobank_api_url = monobank_api_url
+        self.monobank_redirect_url = monobank_redirect_url
+        self.monobank_webhook_url = monobank_webhook_url
         self.cryptobot_api_url = cryptobot_api_url
 
     async def create_payment(
