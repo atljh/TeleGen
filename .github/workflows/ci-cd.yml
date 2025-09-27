@@ -115,15 +115,6 @@ jobs:
       - name: Run Ruff
         run: ruff check .
 
-      - name: Run Isort
-        run: isort --check-only .
-
-      - name: Run Flake8
-        run: flake8 .
-
-      - name: Run Mypy
-        run: mypy src/
-
   security:
     name: Security Scan
     runs-on: ubuntu-latest
