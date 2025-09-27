@@ -332,7 +332,7 @@ async def confirm_schedule(
     except Exception as e:
         logger.error(f"Error confirming schedule: {e}")
         await callback.answer(f"❌ Помилка: {e!s}")
-    await manager.switch_to(FlowMenu.select_date)
+    await manager.switch_to(FlowMenu.posts_list)
 
 
 async def on_post_info(callback: CallbackQuery, button: Button, manager: DialogManager):

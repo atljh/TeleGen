@@ -7,7 +7,6 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Back,
     Button,
-    Calendar,
     Group,
     NumberedPager,
     Row,
@@ -18,6 +17,7 @@ from aiogram_dialog.widgets.media import DynamicMedia
 from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.generation.flow.states import FlowMenu
+from bot.utils.calendar import UkrainianCalendar
 from bot.utils.constants.buttons import BACK_BUTTON
 
 from .callbacks import (
@@ -166,7 +166,7 @@ def flow_dialog() -> Dialog:
         ),
         Window(
             Const("📅 Виберіть дату публікації:"),
-            Calendar(id="calendar", on_click=select_date),
+            UkrainianCalendar(id="calendar", on_click=select_date),
             Row(Button(BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts)),
             state=FlowMenu.select_date,
         ),

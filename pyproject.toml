@@ -126,6 +126,7 @@ ignore = [
     "E501",  # line too long (handled by formatter)
     "D107",  # Missing docstring in __init__
     "RUF001",
+    "RUF002",
 ]
 
 extend-select = ["DJ"]
