@@ -4,6 +4,7 @@ from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 
 from bot.services.logger_service import LogEvent, LogLevel, get_logger
+from bot.utils.notifications import notify_admins
 
 from ..types import AuthorizationError
 
@@ -41,7 +42,7 @@ class AuthorizationService:
 
     async def _handle_password_needed(self):
         logging.error("Two-factor authentication required for Userbot!")
-        if self.loggerr:
+        if self.logger:
             await self.logger.log(
                 LogEvent(
                     level=LogLevel.SECURITY,
@@ -49,10 +50,12 @@ class AuthorizationService:
                     additional_data={"Event": "2FA Required"},
                 )
             )
+        else:
+            await notify_admins("Two-factor authentication required for Userbot!")
 
     async def _handle_eof_error(self):
         logging.error("Userbot requires reauthorization!")
-        if self.loggerr:
+        if self.logger:
             await self.logger.log(
                 LogEvent(
                     level=LogLevel.SECURITY,
@@ -60,10 +63,12 @@ class AuthorizationService:
                     additional_data={"Event": "EOF / Session Expired"},
                 )
             )
+        else:
+            await notify_admins("Userbot requires reauthorization")
 
     async def _handle_authorization_error(self, error: Exception):
         logging.error(f"Authorization error: {error!s}")
-        if self.loggerr:
+        if self.logger:
             await self.logger.log(
                 LogEvent(
                     level=LogLevel.ERROR,
@@ -71,6 +76,8 @@ class AuthorizationService:
                     additional_data={"Event": "Auth Error"},
                 )
             )
+        else:
+            await notify_admins(f"Authorization error: {error!s}")
 
     async def send_code_request(self, client: TelegramClient) -> str | None:
         try:
