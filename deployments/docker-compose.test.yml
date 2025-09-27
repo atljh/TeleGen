@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  test_db:
+    image: postgres:15
+    container_name: test_postgres
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  test_redis:
+    image: redis:7-alpine
+    container_name: test_redis
+    ports:
+      - "6380:6379"
+
+  tests:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.test
+    container_name: test_runner
+    command: >
+      sh -c "python -m pytest -v --disable-warnings --cov-report=term-missing"
+    env_file:
+      - ../.env.test
+    volumes:
+      - ../:/app
+    depends_on:
+      test_db:
+        condition: service_healthy
+      test_redis:
+        condition: service_started
+    working_dir: /app/src
+    environment:
+      PYTHONPATH: /app/src
+      DJANGO_SETTINGS_MODULE: core.settings.testing
+
+  linter:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.test
+    container_name: linter
+    command: >
+      sh -c "black --check . && isort --check-only . && flake8 . && mypy ."
+    volumes:
+      - ../:/app
+    working_dir: /app/src

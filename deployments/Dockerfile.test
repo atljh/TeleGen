@@ -1,0 +1,36 @@
+FROM python:3.11-slim-bookworm as builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml uv.lock* ./
+
+# Установите ВСЕ зависимости (dev + test)
+RUN pip install --user --no-cache-dir .[dev,test,prod]
+
+FROM python:3.11-slim-bookworm as base
+
+WORKDIR /app
+
+COPY --from=builder /root/.local /root/.local
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 redis-tools curl wget postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH="/app/src"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
+
+COPY . /app
+
+ENV DJANGO_SETTINGS_MODULE=core.settings.testing \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app/src
+
+CMD ["python", "-m", "pytest", "-v", "--disable-warnings"]

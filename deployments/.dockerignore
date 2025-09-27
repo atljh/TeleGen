@@ -14,3 +14,8 @@ __pycache__/
 *.pyd
 .Python
 .env.local
+
+!src/
+!tests/
+!pyproject.toml
+!uv.lock
