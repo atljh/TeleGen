@@ -40,6 +40,11 @@ services:
     environment:
       PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: core.settings.testing
+      TEST_DB_HOST: test_db
+      TEST_DB_NAME: test_db
+      TEST_DB_USER: postgres
+      TEST_DB_PASSWORD: postgres
+      TEST_DB_PORT: 5432
 
   linter:
     build:
