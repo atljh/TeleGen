@@ -113,3 +113,6 @@ test-local:
 clean-test:
 	docker-compose -f docker-compose.test.yml down -v
 	rm -rf htmlcov .coverage
+
+test-debug:
+	docker-compose -f deployments/docker-compose.test.yml run tests bash -c "pwd && ls -la && python -c 'import sys; print(sys.path)'"
