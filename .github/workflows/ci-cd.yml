@@ -115,9 +115,6 @@ jobs:
       - name: Run Ruff
         run: ruff check .
 
-      - name: Run Black
-        run: black --check .
-
       - name: Run Isort
         run: isort --check-only .
 
