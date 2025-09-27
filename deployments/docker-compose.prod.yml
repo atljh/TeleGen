@@ -1,0 +1,35 @@
+services:
+  bot:
+    image: ghcr.io/yourusername/telegen-bot:latest
+    restart: unless-stopped
+    env_file: .env.production
+    depends_on:
+      - db
+      - redis
+
+  admin_panel:
+    image: ghcr.io/yourusername/telegen-admin:latest
+    restart: unless-stopped
+    env_file: .env.production
+    ports:
+      - "80:8000"
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: .env.production
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
