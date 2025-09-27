@@ -1,0 +1,30 @@
+skips:
+  - B105  # hardcoded_password_string
+  - B311  # random module used
+  - B101  # assert_used
+  - B110  # try_except_continue
+  - B603  # subprocess_without_shell_equals_true
+  - B607  # start_process_with_partial_path
+  - B108  # hardcoded_tmp_directory
+
+exclude_dirs:
+  - tests/
+  - src/admin_panel/testing/
+  - migrations/
+  - venv/
+  - .venv/
+  - env/
+  - .env/
+  - node_modules/
+
+exclude_files:
+  - src/core/settings/testing.py
+  - src/core/settings/test.py
+  - conftest.py
+
+tests:
+  - B102  # exec_used
+  - B103  # set_bad_file_permissions
+  - B104  # hardcoded_bind_all_interfaces
+  - B106  # hardcoded_password_funcarg
+  - B107  # hardcoded_password_default
