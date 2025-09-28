@@ -18,7 +18,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository | toLower }}
+  IMAGE_NAME: telegen
   PYTHON_VERSION: '3.11'
 
 jobs:
