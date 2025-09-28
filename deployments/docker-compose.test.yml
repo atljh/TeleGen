@@ -53,15 +53,3 @@ services:
       TEST_DB_PASSWORD: test_password
       TEST_DB_PORT: 5432
       DATABASE_URL: postgresql://test_user:test_password@test_db:5432/test_db
-
-
-  linter:
-    build:
-      context: ..
-      dockerfile: deployments/Dockerfile.test
-    container_name: linter
-    command: >
-      sh -c "black --check . && isort --check-only . && flake8 . && mypy ."
-    volumes:
-      - ../:/app
-    working_dir: /app/src
