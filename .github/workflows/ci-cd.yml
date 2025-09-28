@@ -137,10 +137,11 @@ jobs:
           file: deployments/Dockerfile
           target: bot
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-bot:${{ steps.meta.outputs.tags }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-bot:${{ github.ref_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
 
       - name: Build and push admin panel image
         uses: docker/build-push-action@v5
