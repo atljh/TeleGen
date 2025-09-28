@@ -26,11 +26,19 @@ services:
       dockerfile: deployments/Dockerfile.test
     container_name: test_runner
     command: >
-      sh -c "python -m pytest /app/tests -v --disable-warnings --cov=src --cov-report=term-missing"
+      sh -c "
+        python -m pytest /app/tests -v \
+          --cov=src \
+          --cov-report=xml:/app/coverage.xml \
+          --cov-report=html:/app/htmlcov \
+          --cov-report=term-missing \
+          --junitxml=/app/junit/test-results.xml
+      "
     env_file:
       - ../.env.test
     volumes:
       - ../:/app
+      - ./test-reports:/app/junit
     depends_on:
       test_db:
         condition: service_healthy
