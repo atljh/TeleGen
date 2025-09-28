@@ -26,12 +26,6 @@ services:
     container_name: test_runner
     command: |
       sh -c "
-        echo 'Waiting for database to be ready...'
-        until pg_isready -h test_db -p 5432 -U test_user; do
-          echo 'Waiting for database...'
-          sleep 2
-        done
-        echo 'Database is ready! Running tests...'
         python -m pytest /app/tests -v \
           --cov=src \
           --cov-report=xml:/app/coverage.xml \
