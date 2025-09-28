@@ -35,7 +35,7 @@ jobs:
 
       - name: Build and run tests with Docker Compose
         run: |
-          docker-compose -f deployments/docker-compose.test.yml up \
+          -f deployments/docker-compose.test.yml up \
             --build \
             --abort-on-container-exit \
             --exit-code-from tests
@@ -62,7 +62,7 @@ jobs:
           flags: unittests
 
       - name: Cleanup
-        run: docker-compose -f deployments/docker-compose.test.yml down -v
+        run: -f deployments/docker-compose.test.yml down -v
 
   lint:
     name: Code Quality
@@ -187,11 +187,11 @@ jobs:
           script: |
             cd /opt/telegen
             echo "Pulling latest images..."
-            docker-compose -f deployments/docker-compose.yml pull
+            -f deployments/docker-compose.yml pull
             echo "Starting services..."
-            docker-compose -f deployments/docker-compose.yml up -d
+            -f deployments/docker-compose.yml up -d
             echo "Running migrations..."
-            docker-compose -f deployments/docker-compose.yml exec -T admin_panel python manage.py migrate
+            -f deployments/docker-compose.yml exec -T admin_panel python manage.py migrate
             echo "Staging deployment completed!"
 
       - name: Health check staging
@@ -221,15 +221,15 @@ jobs:
           script: |
             cd /opt/telegen
             echo "Pulling production images..."
-            docker-compose -f deployments/docker-compose.prod.yml pull
+            -f deployments/docker-compose.prod.yml pull
             echo "Backing up database..."
-            docker-compose -f deployments/docker-compose.prod.yml exec -T db pg_dump -U $DB_USER $DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql
+            -f deployments/docker-compose.prod.yml exec -T db pg_dump -U $DB_USER $DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql
             echo "Starting services..."
-            docker-compose -f deployments/docker-compose.prod.yml up -d
+            -f deployments/docker-compose.prod.yml up -d
             echo "Running migrations..."
-            docker-compose -f deployments/docker-compose.prod.yml exec -T admin_panel python manage.py migrate
+            -f deployments/docker-compose.prod.yml exec -T admin_panel python manage.py migrate
             echo "Collecting static files..."
-            docker-compose -f deployments/docker-compose.prod.yml exec -T admin_panel python manage.py collectstatic --noinput
+            -f deployments/docker-compose.prod.yml exec -T admin_panel python manage.py collectstatic --noinput
             echo "Production deployment completed!"
 
       - name: Health check production
