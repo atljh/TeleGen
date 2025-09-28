@@ -25,8 +25,14 @@ services:
       context: ..
       dockerfile: deployments/Dockerfile.test
     container_name: test_runner
-    command: >
+    command: |
       sh -c "
+        echo 'Waiting for database to be ready...'
+        until pg_isready -h test_db -p 5432 -U test_user; do
+          echo 'Waiting for database...'
+          sleep 2
+        done
+        echo 'Database is ready! Running tests...'
         python -m pytest /app/tests -v \
           --cov=src \
           --cov-report=xml:/app/coverage.xml \
@@ -53,6 +59,7 @@ services:
       TEST_DB_USER: test_user
       TEST_DB_PASSWORD: test_password
       TEST_DB_PORT: 5432
+
 
   linter:
     build:
