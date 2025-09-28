@@ -1,4 +1,5 @@
 import os
+import socket
 
 from .base import *  # noqa: F403
 
@@ -6,13 +7,19 @@ DEBUG = False
 TESTING = True
 
 
+default_host = "test_db"
+try:
+    socket.gethostbyname("test_db")
+except socket.error:  # noqa: UP024
+    default_host = "localhost"
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("TEST_DB_NAME", "test_db"),
         "USER": os.getenv("TEST_DB_USER", "test_user"),
         "PASSWORD": os.getenv("TEST_DB_PASSWORD", "test_password"),
-        "HOST": os.getenv("TEST_DB_HOST", "test_db"),
+        "HOST": os.getenv("TEST_DB_HOST", default_host),
         "PORT": os.getenv("TEST_DB_PORT", "5432"),
     }
 }
