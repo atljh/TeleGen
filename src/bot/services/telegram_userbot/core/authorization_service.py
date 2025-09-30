@@ -33,7 +33,7 @@ class AuthorizationService:
 
         except Exception as e:
             await self._handle_authorization_error(e)
-            raise AuthorizationError(f"Authorization failed: {e!s}") from e
+            raise AuthorizationError(f"Authorization failed: {e}") from e
 
     async def is_authorized(self, client: TelegramClient) -> bool:
         try:

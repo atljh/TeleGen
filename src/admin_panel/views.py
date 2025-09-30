@@ -12,6 +12,7 @@ payment_handler = PaymentHandler()
 
 @csrf_exempt
 def monobank_webhook(request):
+    print(request)
     if request.method == "GET":
         return HttpResponse("OK", status=200)
 

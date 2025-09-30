@@ -32,7 +32,7 @@ async def help_command(message: types.Message):
 @basic_commands_router.message(Command("start"))
 async def start_command(message: types.Message):
     await message.answer(
-        "👋 **Вітаємо у нашому боті!**\n\n"
+        "👋 <b>Вітаємо у нашому боті</b>n\n"
         "Цей бот допоможе вам з...\n\n"
         "Щоб почати, оберіть потрібну команду з меню або введіть /help",
         parse_mode="HTML",
@@ -43,7 +43,7 @@ async def start_command(message: types.Message):
 @basic_commands_router.message(Command("price"))
 async def price_command(message: types.Message):
     await message.answer(
-        "💵 **Наші ціни**\n\n"
+        "💵 <b>Наші ціни</b>\n\n"
         "🔹 Базовий тариф - 100 грн/міс\n"
         "🔹 Стандартний тариф - 200 грн/міс\n"
         "🔹 Преміум тариф - 350 грн/міс\n\n",
