@@ -19,6 +19,7 @@ from aiogram_dialog.widgets.text import Const, Format
 
 from bot.dialogs.buffer.getters import (
     edit_post_getter,
+    edit_schedule_getter,
     get_user_channels_data,
     paging_getter,
     post_info_getter,
@@ -31,15 +32,19 @@ from .callbacks import (
     back_to_post_view,
     go_back_to_channels,
     on_back_to_posts,
+    on_cancel_publish,
     on_channel_selected,
     on_edit_media,
     on_edit_post,
+    on_edit_schedule,
     on_edit_text,
     on_hide_details,
     on_post_info,
     on_publish_post,
     on_toggle_details,
     process_edit_input,
+    process_schedule_input,
+    show_cancel_confirm,
     show_publish_confirm,
 )
 
@@ -203,6 +208,18 @@ def create_buffer_dialog():
                     Const("🖼️ Змінити медіа"), id="edit_media", on_click=on_edit_media
                 ),
             ),
+            Row(
+                Button(
+                    Const("⏰ Змінити час публікації"),
+                    id="edit_schedule",
+                    on_click=on_edit_schedule,
+                ),
+                Button(
+                    Const("❌ Скасувати публікацію"),
+                    id="cancel_publish",
+                    on_click=show_cancel_confirm,
+                ),
+            ),
             Row(Button(BACK_BUTTON, id="on_back_to_posts", on_click=on_back_to_posts)),
             MessageInput(process_edit_input),
             LinkPreview(is_disabled=True),
@@ -237,7 +254,56 @@ def create_buffer_dialog():
                 ),
                 width=2,
             ),
+            LinkPreview(is_disabled=True),
             state=BufferMenu.publish_confirm,
+            parse_mode=ParseMode.HTML,
+            getter=paging_getter,
+        ),
+        Window(
+            Format("<b>⏰ Редагування часу публікації</b>\n\n"),
+            Format("Поточний час: <b>{current_schedule}</b>\n\n"),
+            Format(
+                "Надішліть нову дату та час у форматі:\n<code>DD.MM.YYYY HH:MM</code>\n\n"
+            ),
+            Format("Наприклад: <code>25.12.2024 14:30</code>"),
+            Row(
+                Back(BACK_BUTTON),
+            ),
+            MessageInput(process_schedule_input),
+            LinkPreview(is_disabled=True),
+            getter=edit_schedule_getter,
+            state=BufferMenu.edit_schedule,
+            parse_mode="HTML",
+        ),
+        Window(
+            Format(
+                "{post[content_preview]}",
+                when=lambda data, widget, manager: not data["post"].get("is_album"),
+            ),
+            Format(
+                "Альбом {post[images_count]} зобр.",
+                when=lambda data, widget, manager: data["post"].get("is_album"),
+            ),
+            DynamicMedia(
+                "media_content",
+                when=lambda data, widget, manager: not data["post"].get("is_album"),
+            ),
+            Format("\n\nВи впевнені, що хочете скасувати публікацію цього поста?"),
+            Group(
+                Button(
+                    Const("✅ Так, скасувати"),
+                    id="confirm_cancel",
+                    on_click=on_cancel_publish,
+                ),
+                Button(
+                    Const("❌ Ні, залишити"),
+                    id="dont_cancel",
+                    on_click=back_to_post_view,
+                ),
+                width=2,
+            ),
+            LinkPreview(is_disabled=True),
+            state=BufferMenu.cancel_publish_confirm,
             parse_mode=ParseMode.HTML,
             getter=paging_getter,
         ),

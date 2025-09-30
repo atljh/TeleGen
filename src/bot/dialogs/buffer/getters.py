@@ -292,3 +292,17 @@ async def post_info_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
         "original_link": post.get("original_link", ""),
         "original_date": kiev_date or original_date,
     }
+
+
+async def edit_schedule_getter(
+    dialog_manager: DialogManager, **kwargs
+) -> dict[str, Any]:
+    post_data = dialog_manager.dialog_data.get("editing_post", {})
+
+    current_schedule = post_data.get("scheduled_time", "Не заплановано")
+
+    updated_schedule = dialog_manager.dialog_data.get("updated_schedule")
+    if updated_schedule:
+        current_schedule = updated_schedule
+
+    return {"current_schedule": current_schedule, "post": post_data}

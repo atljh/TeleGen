@@ -1,14 +1,19 @@
 import asyncio
 import logging
 import os
+import re
+from datetime import datetime
 
+import pytz
 from aiogram.types import CallbackQuery, ContentType, Message
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
 from django.conf import settings
+from django.utils import timezone
 
 from bot.containers import Container
 from bot.database.exceptions import InvalidOperationError, PostNotFoundError
+from bot.database.models.post import PostStatus
 from bot.dialogs.buffer.states import BufferMenu
 from bot.dialogs.generation.states import GenerationMenu
 
@@ -314,3 +319,121 @@ async def back_to_post_view(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
     await manager.switch_to(BufferMenu.channel_main)
+
+
+async def on_edit_schedule(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    await manager.switch_to(BufferMenu.edit_schedule)
+
+
+async def show_cancel_confirm(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    await manager.switch_to(BufferMenu.cancel_publish_confirm)
+
+
+async def on_cancel_publish(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    dialog_data = await paging_getter(manager)
+    current_post = dialog_data["post"]
+    post_id = current_post["id"]
+
+    post_service = Container.post_service()
+
+    try:
+        await post_service.update_post_status(post_id=post_id, status=PostStatus.DRAFT)
+
+        manager.dialog_data["post"] = {
+            **current_post,
+            "status": "Чернетка",
+            "scheduled_time": "",
+            "is_published": False,
+        }
+
+        manager.dialog_data["needs_refresh"] = True
+        manager.dialog_data.pop("all_posts", None)
+
+        await asyncio.sleep(1)
+        await manager.switch_to(BufferMenu.channel_main)
+        await callback.message.answer(
+            "✅ Публікацію скасовано! Пост переведено в чернетки."
+        )
+
+    except PostNotFoundError:
+        logging.error(f"Post not found: {post_id}")
+        await callback.answer("❌ Пост не знайдено")
+    except InvalidOperationError as e:
+        logging.error(f"Invalid operation: {e}")
+        await callback.answer("❌ Неможливо скасувати опублікований пост")
+    except Exception as e:
+        logging.exception("Помилка при скасуванні публікації")
+        await callback.answer(f"❌ Сталася неочікувана помилка: {e!s}")
+    finally:
+        await manager.switch_to(BufferMenu.channel_main)
+
+
+async def process_schedule_input(message: Message, widget, manager: DialogManager):
+    try:
+        date_text = message.text.strip()
+
+        date_pattern = r"^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$"
+        if not re.match(date_pattern, date_text):
+            await message.answer(
+                "❌ Невірний формат дати!\n"
+                "Використовуйте: <code>DD.MM.YYYY HH:MM</code>\n"
+                "Наприклад: <code>25.12.2024 14:30</code>",
+                parse_mode="HTML",
+            )
+            return
+
+        ukraine_tz = pytz.timezone("Europe/Kiev")
+
+        try:
+            new_datetime = datetime.strptime(date_text, "%d.%m.%Y %H:%M")
+        except ValueError:
+            await message.answer(
+                "❌ Невірна дата! Перевірте правильність введених значень."
+            )
+            return
+
+        if timezone.is_naive(new_datetime):
+            scheduled_datetime = ukraine_tz.localize(new_datetime)
+        else:
+            scheduled_datetime = scheduled_datetime.astimezone(ukraine_tz)
+
+        if scheduled_datetime <= timezone.now():
+            await message.answer("❌ Час має бути у майбутньому")
+            return
+
+        post_data = manager.dialog_data.get("editing_post", {})
+        post_id = post_data.get("id")
+
+        if not post_id:
+            await message.answer("❌ Помилка: ID поста не знайдено")
+            return
+
+        post_service = Container.post_service()
+        await post_service.schedule_post(
+            post_id=post_id, scheduled_time=scheduled_datetime
+        )
+
+        manager.dialog_data["needs_refresh"] = True
+        manager.dialog_data["updated_schedule"] = scheduled_datetime.strftime(
+            "%d.%m.%Y %H:%M"
+        )
+
+        try:
+            await message.bot.delete_message(
+                chat_id=message.chat.id, message_id=message.message_id - 1
+            )
+        except Exception:
+            pass
+
+        await message.answer(f"✅ Час публікації оновлено на: {date_text}")
+        await manager.switch_to(BufferMenu.edit_post)
+
+    except Exception as e:
+        logging.error(f"Помилка при оновленні часу: {e!s}")
+        await message.answer("❌ Помилка при оновленні часу публікації")

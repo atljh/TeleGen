@@ -113,6 +113,13 @@ class PostBaseService:
                 order=video_data["order"],
             )
 
+    async def update_post_status(self, post_id: int, status: PostStatus) -> None:
+        post = await self.post_repo.get(post_id)
+        if not post:
+            raise PostNotFoundError(f"Post with id {post_id} not found")
+        post.status = status
+        await post.asave()
+
     async def delete_post(self, post_id: int) -> None:
         if not await self.post_repo.exists(post_id):
             raise PostNotFoundError(f"Post with id {post_id} not found")

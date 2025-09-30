@@ -57,6 +57,9 @@ class PostService:
     async def schedule_post(self, post_id: int, scheduled_time: datetime) -> PostDTO:
         return await self.scheduling_service.schedule_post(post_id, scheduled_time)
 
+    async def update_post_status(self, post_id: int, status: PostStatus) -> PostDTO:
+        return await self.base_service.update_post_status(post_id, status)
+
     async def publish_scheduled_posts(self) -> list[PostDTO]:
         return await self.scheduling_service.publish_scheduled_posts()
 
