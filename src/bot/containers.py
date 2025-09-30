@@ -83,6 +83,7 @@ class Container(containers.DeclarativeContainer):
         EnhancedUserbotService,
         aisettings_service=ai_settings_service,
         user_service=user_service,
+        bot=bot,
         api_id=os.getenv("USERBOT_API_ID"),
         api_hash=os.getenv("USERBOT_API_HASH"),
         phone=os.getenv("TELEGRAM_PHONE"),

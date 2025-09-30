@@ -1,6 +1,8 @@
 import logging
 import time
 
+from aiogram import Bot
+
 from bot.database.models.flow import FlowDTO
 from bot.database.models.post import PostDTO
 from bot.services.aisettings_service import AISettingsService
@@ -21,11 +23,12 @@ class EnhancedUserbotService(BaseUserbotService):
         api_hash: str,
         aisettings_service: "AISettingsService",
         user_service: "UserService",
+        bot: Bot,
         openai_key: str | None = None,
         logger: logging.Logger | None = None,
         **kwargs,
     ):
-        super().__init__(api_id, api_hash, **kwargs)
+        super().__init__(api_id, api_hash, bot, **kwargs)
 
         self.content_processor = ContentProcessingService(
             openai_key=openai_key,
@@ -35,6 +38,7 @@ class EnhancedUserbotService(BaseUserbotService):
 
         self.post_converter = PostConversionService(self.content_processor)
         self.logger = logger or logging.getLogger(__name__)
+        self.bot = bot
         self.user_service = user_service
         self.aisettings_service = aisettings_service
         self.openai_key = openai_key

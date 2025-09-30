@@ -3,6 +3,7 @@ import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from aiogram import Bot
 from telethon import TelegramClient
 
 from ..types import TelegramEntity
@@ -17,6 +18,7 @@ class TelegramClientManager:
         self,
         api_id: int,
         api_hash: str,
+        bot=Bot,
         phone: str | None = None,
         session_path: str | None = None,
         connection_retries: int = 5,
@@ -31,7 +33,7 @@ class TelegramClientManager:
             auto_reconnect=auto_reconnect,
         )
 
-        self.authorization_service = AuthorizationService(phone=phone)
+        self.authorization_service = AuthorizationService(phone=phone, bot=bot)
         self.entity_service = EntityService()
         self.download_service = DownloadService(max_retries=download_retries)
 

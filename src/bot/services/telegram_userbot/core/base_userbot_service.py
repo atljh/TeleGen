@@ -4,6 +4,7 @@ import os
 import time
 
 from aiofiles import tempfile
+from aiogram import Bot
 from telethon import TelegramClient
 
 from admin_panel.models import Post
@@ -16,6 +17,7 @@ class BaseUserbotService:
         self,
         api_id: int,
         api_hash: str,
+        bot: Bot,
         phone: str | None = None,
         session_path: str | None = None,
     ):
@@ -25,7 +27,11 @@ class BaseUserbotService:
         self.logger = logging.getLogger(__name__)
 
         self.client_manager = TelegramClientManager(
-            api_id=api_id, api_hash=api_hash, phone=phone, session_path=session_path
+            api_id=api_id,
+            api_hash=api_hash,
+            phone=phone,
+            session_path=session_path,
+            bot=bot,
         )
 
     def cleanup_temp_files(self):
