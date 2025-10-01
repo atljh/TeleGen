@@ -30,8 +30,10 @@ logs:
 clean:
 	$(DOCKER_COMPOSE) down -v --remove-orphans
 
-migrate:
+makemigrations:
 	$(MANAGE) makemigrations
+
+migrate:
 	$(MANAGE) migrate
 
 createsuperuser:
@@ -56,7 +58,7 @@ bash:
 	$(DOCKER_COMPOSE) exec admin_panel bash
 
 db-shell:
-	$(DOCKER_COMPOSE) exec db psql -U $(DB_USER) -d $(DB_NAME)
+	$(DOCKER_COMPOSE) exec db psql -U telegen_user -d telegen_db
 
 status:
 	$(DOCKER_COMPOSE) ps
