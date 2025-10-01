@@ -291,6 +291,26 @@ class Payment(models.Model):
         blank=True,
     )
 
+    tariff_period = models.ForeignKey(
+        "TariffPeriod",
+        on_delete=models.PROTECT,
+        related_name="payments",
+        verbose_name="Тарифний період",
+        null=True,
+        blank=True,
+    )
+
+    subscription = models.ForeignKey(
+        "Subscription",
+        on_delete=models.CASCADE,
+        related_name="payments",
+        verbose_name="Підписка",
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
+
     order_id = models.CharField(max_length=100, unique=True)
     external_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
     pay_url = models.URLField(blank=True)
