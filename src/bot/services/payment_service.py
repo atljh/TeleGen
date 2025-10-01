@@ -3,6 +3,7 @@ import uuid
 
 import aiohttp
 
+from admin_panel.models import TariffPeriod
 from bot.database.models import PaymentDTO
 from bot.database.repositories import PaymentRepository, UserRepository
 
@@ -35,11 +36,19 @@ class PaymentService:
         user_id: int,
         amount: float,
         payment_method: str,
+        tariff_period_id: int,
         description: str = "Оплата підписки",
         currency: str = "UAH",
         is_successful: bool = False,
     ) -> PaymentDTO:
         user = await self.user_repository.get_user_by_telegram_id(user_id)
+
+        try:
+            tariff_period = await TariffPeriod.objects.aget(id=tariff_period_id)
+        except TariffPeriod.DoesNotExist as e:
+            raise ValueError(
+                f"Tariff period with id {tariff_period_id} not found"
+            ) from e
 
         reference = uuid.uuid4().hex
         order_id = f"ORDER_{user_id}_{uuid.uuid4().hex[:8]}"
@@ -64,6 +73,7 @@ class PaymentService:
             payment_method=payment_method,
             pay_url=pay_url,
             order_id=order_id,
+            tariff_period=tariff_period,
             external_id=external_id,
             is_successful=is_successful,
         )

@@ -1,4 +1,4 @@
-from admin_panel.models import Payment, User
+from admin_panel.models import Payment, TariffPeriod, User
 from bot.database.exceptions import PaymentNotFoundError
 
 
@@ -9,6 +9,7 @@ class PaymentRepository:
         amount: float,
         payment_method: str,
         external_id: str,
+        tariff_period: TariffPeriod,
         is_successful: bool = False,
         order_id: str | None = None,
         pay_url: str | None = None,
@@ -19,6 +20,7 @@ class PaymentRepository:
             external_id=external_id,
             payment_method=payment_method,
             is_successful=is_successful,
+            tariff_period=tariff_period,
             order_id=order_id,
             pay_url=pay_url,
         )
