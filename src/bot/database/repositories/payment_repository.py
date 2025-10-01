@@ -8,6 +8,7 @@ class PaymentRepository:
         user: User,
         amount: float,
         payment_method: str,
+        external_id: str,
         is_successful: bool = False,
         order_id: str | None = None,
         pay_url: str | None = None,
@@ -15,6 +16,7 @@ class PaymentRepository:
         return await Payment.objects.acreate(
             user=user,
             amount=amount,
+            external_id=external_id,
             payment_method=payment_method,
             is_successful=is_successful,
             order_id=order_id,
