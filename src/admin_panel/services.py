@@ -148,7 +148,7 @@ class PaymentHandler:
                 f"({tariff_period.tariff.name} for {tariff_period.months} months)"
             )
 
-            async_to_sync(self.send_success_notification(user, tariff_period))
+            self.send_success_notification(user, tariff_period)
 
         except Exception as e:
             logger.error(
@@ -156,7 +156,7 @@ class PaymentHandler:
                 exc_info=True,
             )
 
-    async def send_success_notification(self, user, tariff_period):
+    def send_success_notification(self, user, tariff_period):
         try:
             from bot.containers import Container
 
@@ -169,7 +169,7 @@ class PaymentHandler:
                 "Тепер вам доступні всі функції обраного тарифу!"
             )
 
-            await bot.send_message(chat_id=user.telegram_id, text=message_text)
+            async_to_sync(bot.send_message)(chat_id=user.telegram_id, text=message_text)
 
         except Exception as e:
             logger.error(

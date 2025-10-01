@@ -299,7 +299,6 @@ class Payment(models.Model):
         null=True,
         blank=True,
     )
-
     subscription = models.ForeignKey(
         "Subscription",
         on_delete=models.CASCADE,
