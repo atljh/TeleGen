@@ -45,7 +45,7 @@ class TelegramClientManager:
 
         try:
             async with self.connection_service.connect_client(
-                client, os.getenv("SESSION_PATH", "userbot.session")
+                client, os.getenv("SESSION_PATH", "sessions/userbot.session")
             ) as connected_client:
                 if not await self.authorization_service.is_authorized(connected_client):
                     await self.authorization_service.authorize_client(connected_client)

@@ -170,11 +170,11 @@ def create_payment_dialog():
                 sep="\n",
             ),
             Row(Url(text=Const("Оплатити"), url=Jinja("{{cryptobot_link}}"))),
-            Button(
-                Const("Перевірити оплату"),
-                id="confirm_monobank",
-                on_click=on_monobank_confirm,
-            ),
+            # Button(
+            #     Const("Перевірити оплату"),
+            #     id="confirm_monobank",
+            #     on_click=on_monobank_confirm,
+            # ),
             Back(Const("⬅️ До способів")),
             LinkPreview(is_disabled=True),
             state=PaymentMenu.cryptobot_payment,

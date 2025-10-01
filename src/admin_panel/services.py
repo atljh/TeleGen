@@ -7,41 +7,94 @@ logger = logging.getLogger(__name__)
 
 class PaymentHandler:
     def handle_monobank_webhook(self, data: dict):
-        invoice = data.get("invoice", {})
-        reference = invoice.get("reference")
-        status = invoice.get("status")
+        reference = data.get("reference")
+        status = data.get("status")
+        invoice_id = data.get("invoiceId")
+
+        logger.info(
+            f"Processing Monobank webhook: reference={reference}, status={status}, invoiceId={invoice_id}"
+        )
 
         if not reference:
             logger.warning("No reference in Monobank webhook")
             return
 
         try:
-            payment = Payment.objects.get(id=reference)
+            payment = Payment.objects.get(external_id=reference)
         except Payment.DoesNotExist:
-            logger.error(f"Payment with id={reference} not found")
-            return
+            logger.error(f"Payment with external_id={reference} not found")
+            try:
+                payment = Payment.objects.get(order_id=reference)
+                logger.info(f"Found payment by order_id: {reference}")
+            except Payment.DoesNotExist:
+                logger.error(f"Payment not found for reference: {reference}")
+                return
 
         if status == "success":
             payment.is_successful = True
             payment.save(update_fields=["is_successful"])
-            logger.info(f"Payment {payment.id} marked as successful")
+            logger.info(
+                f"Payment {payment.id} marked as successful (Monobank invoice: {invoice_id})"
+            )
+
+        elif status in ["failure", "expired"]:
+            payment.is_successful = False
+            payment.save(update_fields=["is_successful"])
+            logger.warning(
+                f"Payment {payment.id} failed/expired (Monobank invoice: {invoice_id}, status: {status})"
+            )
+
+        else:
+            logger.info(
+                f"Payment {payment.id} status: {status} (Monobank invoice: {invoice_id})"
+            )
 
     def handle_cryptobot_webhook(self, data: dict):
         payload = data.get("payload", {})
         invoice_id = payload.get("invoice_id")
         status = payload.get("status")
+        hidden_message = payload.get("hidden_message", "")
 
-        if not invoice_id:
-            logger.warning("No invoice_id in CryptoBot webhook")
-            return
+        logger.info(
+            f"Processing CryptoBot webhook: invoice_id={invoice_id}, status={status}"
+        )
 
-        try:
-            payment = Payment.objects.get(id=invoice_id)
-        except Payment.DoesNotExist:
-            logger.error(f"Payment with id={invoice_id} not found")
+        payment = None
+
+        if hidden_message:
+            try:
+                import re
+
+                order_match = re.search(r"Order\s+(\S+)", hidden_message)
+                if order_match:
+                    order_id = order_match.group(1)
+                    payment = Payment.objects.get(order_id=order_id)
+                    logger.info(
+                        f"Found payment by order_id from hidden_message: {order_id}"
+                    )
+            except Payment.DoesNotExist:
+                logger.warning(
+                    f"Payment with order_id from hidden_message not found: {hidden_message}"
+                )
+
+        if not payment and invoice_id:
+            try:
+                payment = Payment.objects.get(external_id=str(invoice_id))
+                logger.info(f"Found payment by external_id: {invoice_id}")
+            except Payment.DoesNotExist:
+                logger.warning(f"Payment with external_id={invoice_id} not found")
+
+        if not payment:
+            logger.error(
+                f"Payment not found for CryptoBot webhook: invoice_id={invoice_id}, hidden_message={hidden_message}"
+            )
             return
 
         if status == "paid":
             payment.is_successful = True
             payment.save(update_fields=["is_successful"])
-            logger.info(f"Payment {payment.id} marked as successful")
+            logger.info(f"Payment {payment.id} marked as successful (CryptoBot)")
+        elif status == "expired":
+            payment.is_successful = False
+            payment.save(update_fields=["is_successful"])
+            logger.info(f"Payment {payment.id} expired (CryptoBot)")

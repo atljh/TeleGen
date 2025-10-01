@@ -40,11 +40,15 @@ class PaymentService:
         is_successful: bool = False,
     ) -> PaymentDTO:
         user = await self.user_repository.get_user_by_telegram_id(user_id)
+
+        reference = uuid.uuid4().hex
         order_id = f"ORDER_{user_id}_{uuid.uuid4().hex[:8]}"
 
         pay_url = None
         if payment_method == "monobank":
-            pay_url = await self._create_monobank_invoice(order_id, amount, description)
+            pay_url = await self._create_monobank_invoice(
+                reference, amount, description
+            )
         elif payment_method == "cryptobot":
             pay_url = await self._create_cryptobot_invoice(
                 order_id, amount, description, currency
@@ -52,38 +56,47 @@ class PaymentService:
         else:
             raise ValueError(f"Unsupported payment method: {payment_method}")
 
+        external_id = reference if payment_method == "monobank" else None
+
         payment = await self.payment_repository.create_payment(
             user=user,
             amount=amount,
             payment_method=payment_method,
             pay_url=pay_url,
             order_id=order_id,
+            external_id=external_id,
             is_successful=is_successful,
         )
 
         return PaymentDTO.from_orm(payment)
 
     async def _create_monobank_invoice(
-        self, order_id: str, amount: float, description: str
+        self, reference: str, amount: float, description: str
     ) -> str:
         headers = {"X-Token": self.monobank_token}
         payload = {
             "amount": int(float(amount) * 100),
-            "ccy": 980,  # UAH
+            "ccy": 980,
             "merchantPaymInfo": {
-                "reference": order_id,
+                "reference": reference,
                 "destination": description,
             },
             "redirectUrl": self.monobank_redirect_url,
             "webHookUrl": self.monobank_webhook_url,
         }
+
+        self.logger.info(f"Creating Monobank invoice with reference: {reference}")
+
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 self.monobank_api_url, json=payload, headers=headers
             ) as resp:
                 data = await resp.json()
                 if "pageUrl" not in data:
+                    self.logger.error(f"Monobank API error: {data}")
                     raise RuntimeError(f"Monobank error: {data}")
+
+                self.logger.info(f"Monobank invoice created: {data.get('invoiceId')}")
                 return data["pageUrl"]
 
     async def _create_cryptobot_invoice(
@@ -91,7 +104,7 @@ class PaymentService:
     ) -> str:
         headers = {"Crypto-Pay-API-Token": self.cryptobot_token}
         payload = {
-            "asset": "JET",
+            "asset": "USDT",
             "amount": str(amount),
             "description": description,
             "hidden_message": f"Order {order_id}",
@@ -103,8 +116,18 @@ class PaymentService:
             ) as resp:
                 data = await resp.json()
                 if not data.get("ok"):
+                    self.logger.error(f"CryptoBot API error: {data}")
                     raise RuntimeError(f"CryptoBot error: {data}")
-                return data["result"]["pay_url"]
+
+                result = data["result"]
+                self.logger.info(
+                    f"CryptoBot invoice created: {result.get('invoice_id')}"
+                )
+                return result["pay_url"]
+
+    async def get_payment_by_external_id(self, external_id: str) -> PaymentDTO:
+        payment = await self.payment_repository.get_payment_by_external_id(external_id)
+        return PaymentDTO.from_orm(payment)
 
     async def get_payment(self, payment_id: int) -> PaymentDTO:
         payment = await self.payment_repository.get_payment_by_id(payment_id)

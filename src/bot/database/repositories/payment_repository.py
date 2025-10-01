@@ -29,6 +29,9 @@ class PaymentRepository:
                 f"Payment with id={payment_id} not found."
             ) from e
 
+    async def get_payment_by_external_id(self, external_id: str) -> Payment:
+        return await Payment.objects.aget(external_id=external_id)
+
     async def update_payment(self, payment: Payment) -> Payment:
         await payment.asave()
         return payment
