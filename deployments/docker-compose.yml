@@ -20,7 +20,7 @@ services:
       PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
       MEDIA_ROOT: /app/src/media
-      SESSION_PATH: /app/src/sessions/userbot.session
+      SESSION_PATH: /app/sessions/userbot.session
       LOG_DIR: /app/src/logs
     command: python bot/watcher.py
 

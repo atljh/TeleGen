@@ -52,12 +52,12 @@ async def generate_flow(
 
     except Exception as e:
         logging.error(f"Помилка генерації: {e!s}", exc_info=True)
-        await send_telegram_notification(
-            bot_token,
-            chat_id,
-            f"❌ Критична помилка під час генерації флоу {flow_id}:\n_{e!s}_",
-            parse_mode="Markdown",
-        )
+        # await send_telegram_notification(
+        #     bot_token,
+        #     chat_id,
+        #     f"❌ Критична помилка під час генерації флоу {flow_id}:\n_{e!s}_",
+        #     parse_mode="Markdown",
+        # )
         raise
 
 

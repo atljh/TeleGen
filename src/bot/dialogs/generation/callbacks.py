@@ -191,14 +191,14 @@ async def show_generated_posts(
     try:
         _, stderr = await process.communicate()
 
-        if process.returncode != 0:
-            error_msg = stderr.decode().strip() if stderr else "Невідома помилка"
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=status_msg_id,
-                text=f"❌ Помилка генерації: {error_msg}",
-            )
-            return
+        # if process.returncode != 0:
+        #     error_msg = stderr.decode().strip() if stderr else "Невідома помилка"
+        #     await bot.edit_message_text(
+        #         chat_id=chat_id,
+        #         message_id=status_msg_id,
+        #         text=f"❌ Помилка генерації: {error_msg}",
+        #     )
+        #     return
 
         post_service = Container.post_service()
         posts = await post_service.get_all_posts_in_flow(
