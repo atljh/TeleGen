@@ -243,8 +243,6 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
     edited_media = dialog_manager.dialog_data.get("edited_media")
     media_info = None
 
-    logging.debug("Editing post: %s", edited_media)
-
     images = post.get("images", [])
     videos = post.get("videos", [])
 
@@ -269,11 +267,9 @@ async def edit_post_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
 
     media: MediaAttachment | None = None
     if edited_media:
-        logger.debug("Using edited media: %s", edited_media)
         media_path = get_media_path(edited_media["url"])
         media = MediaAttachment(path=media_path, type=edited_media["type"])
         dialog_manager.dialog_data["edited_media"] = None
-
     elif media_info and media_info.get("path") and os.path.exists(media_info["path"]):
         media = MediaAttachment(path=media_info["path"], type=media_info["type"])
     elif media_info and media_info.get("url"):
