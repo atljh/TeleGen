@@ -95,6 +95,7 @@ class PostBaseService:
         self, post: PostDTO, images: list[dict[str, Any]]
     ) -> None:
         await sync_to_async(lambda: post.images.all().delete())()
+        await sync_to_async(lambda: post.videos.all().delete())()
         for img_data in images:
             await sync_to_async(PostImage.objects.create)(
                 post=post,
@@ -105,6 +106,7 @@ class PostBaseService:
     async def _update_post_videos(
         self, post: PostDTO, videos: list[dict[str, Any]]
     ) -> None:
+        await sync_to_async(lambda: post.images.all().delete())()
         await sync_to_async(lambda: post.videos.all().delete())()
         for video_data in videos:
             await sync_to_async(PostVideo.objects.create)(
