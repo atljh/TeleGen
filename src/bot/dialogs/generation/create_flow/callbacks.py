@@ -99,6 +99,7 @@ async def on_source_link_entered(
         await limit_service.check_sources_limit(
             user=user,
             dialog_sources=manager.dialog_data["sources"] + [new_source],
+            source_type=new_source["type"],
         )
     except SourceLimitExceeded as e:
         await message.answer(str(e))

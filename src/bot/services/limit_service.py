@@ -56,6 +56,7 @@ class LimitService:
         user: User,
         flow: Flow | None = None,
         dialog_sources: list[dict] | None = None,
+        source_type: str | None = None,
     ):
         tariff = await self.get_user_tariff(user)
         if not tariff:
@@ -75,6 +76,31 @@ class LimitService:
             raise SourceLimitExceeded(
                 f"❌ Ліміт джерел для одного флоу досягнуто ({tariff.sources_available})"
             )
+
+        await self.check_sources_platform_compatibility(
+            tariff=tariff, source_type=source_type
+        )
+
+    async def check_sources_platform_compatibility(
+        self,
+        tariff: Tariff,
+        source_type: str | None = None,
+    ):
+        if not source_type:
+            return
+
+        source_type = source_type.lower()
+
+        is_telegram_source = source_type in ["telegram", "tg", "channel"]
+        is_web_source = source_type in ["web", "website", "rss", "news"]
+
+        if tariff.platforms == Tariff.PLATFORM_TG and is_web_source:
+            raise SourceLimitExceeded(
+                "❌ Ваш тариф підтримує тільки Telegram джерела.\n"
+            )
+
+        elif tariff.platforms == Tariff.PLATFORM_WEB and is_telegram_source:
+            raise SourceLimitExceeded("❌ Ваш тариф підтримує тільки веб-джерела.\n")
 
     async def check_generations_limit(self, user: User, new_generations: int = 0):
         await self._reset_generations_if_needed(user)

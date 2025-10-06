@@ -308,7 +308,9 @@ async def on_source_link_entered(
         limit_service = Container.limit_service()
         try:
             user = await sync_to_async(lambda: flow.channel.user)()
-            await limit_service.check_sources_limit(user, flow=flow)
+            await limit_service.check_sources_limit(
+                user, flow=flow, source_type=source_type
+            )
         except SourceLimitExceeded as e:
             await message.answer(str(e))
             await manager.switch_to(FlowSettingsMenu.source_settings)
