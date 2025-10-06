@@ -28,7 +28,12 @@ class AISettingsInline(admin.StackedInline):
 class SubscriptionInline(admin.TabularInline):
     model = Subscription
     extra = 0
-    fields = ("tariff_period", "end_date")
+    show_change_link = True
+    fields = ("tariff_period", "is_active", "end_date")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(is_active=True)
 
 
 class ChannelInline(admin.TabularInline):
