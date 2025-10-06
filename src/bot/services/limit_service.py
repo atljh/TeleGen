@@ -1,6 +1,5 @@
 import logging
 
-from asgiref.sync import sync_to_async
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
@@ -28,7 +27,6 @@ class LimitService:
 
     async def _reset_generations_if_needed(self, user: User):
         now = timezone.now()
-        logging.warning(now)
         if not user.generation_reset_at or now >= user.generation_reset_at:
             user.generated_posts_count = 0
             user.generation_reset_at = now + relativedelta(months=1)
@@ -54,29 +52,28 @@ class LimitService:
             )
 
     async def check_sources_limit(
-        self, user: User, dialog_sources: list[dict] | None = None
+        self,
+        user: User,
+        flow: Flow | None = None,
+        dialog_sources: list[dict] | None = None,
     ):
         tariff = await self.get_user_tariff(user)
         if not tariff:
             return
 
-        flows_sources = await sync_to_async(list)(
-            Flow.objects.filter(channel__user_id=user.id).values_list(
-                "sources", flat=True
-            )
-        )
-        sources_total = sum(len(sources) for sources in flows_sources)
         if dialog_sources:
-            sources_total += len(dialog_sources)
+            sources_count = len(dialog_sources)
+        elif flow:
+            sources_count = len(flow.sources) + 1
         else:
-            sources_total += 1
+            sources_count = 1
 
-        if sources_total > tariff.sources_available:
+        if sources_count > tariff.sources_available:
             self.logger.warning(
-                f"Користувач {user.id} перевищив ліміт джерел: {sources_total}/{tariff.sources_available}"
+                f"Користувач {user.id} перевищив ліміт джерел для флоу: {sources_count}/{tariff.sources_available}"
             )
             raise SourceLimitExceeded(
-                f"❌ Ліміт джерел досягнуто ({tariff.sources_available})"
+                f"❌ Ліміт джерел для одного флоу досягнуто ({tariff.sources_available})"
             )
 
     async def check_generations_limit(self, user: User, new_generations: int = 0):
