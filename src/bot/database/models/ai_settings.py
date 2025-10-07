@@ -12,6 +12,7 @@ class AISettingsDTO(BaseModel):
     role: str | None = None
     role_content: str | None = None
     created_at: datetime
+    use_custom_prompt: bool = True
 
     model_config = ConfigDict(from_attributes=True)
 

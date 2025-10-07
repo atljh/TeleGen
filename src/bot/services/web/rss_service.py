@@ -164,6 +164,7 @@ class RssService:
                 async for post in self._fetch_feed_posts_stream(rss_url, limit):
                     yield post
         except Exception as e:
+            self.logger.error(e, exc_info=True)
             self.logger.warning(f"Error streaming posts from {rss_url}: {e}")
 
     async def _fetch_feed_posts_stream(
