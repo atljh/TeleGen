@@ -77,7 +77,8 @@ class ChannelAdmin(admin.ModelAdmin):
 class FlowAdmin(admin.ModelAdmin):
     list_display = ("name", "frequency", "next_generation_time")
     list_filter = ("frequency",)
-    search_fields = ("name", "theme")
+    search_fields = ("name", "theme", "channel__name", "channel__channel_id")
+    readonly_fields = ("created_at", "next_generation_time")
 
     inlines: ClassVar[list[admin.TabularInline]] = [AISettingsInline]
 
