@@ -13,7 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=100)
-def get_media_path(media_url: str) -> str:
+def get_media_path(media_url: str) -> str | None:
+    if not media_url:
+        return None
+    if media_url.startswith("http://") or media_url.startswith("https://"):
+        return media_url
     return os.path.join(settings.MEDIA_ROOT, media_url.split("/media/")[-1])
 
 
@@ -54,21 +58,25 @@ async def send_media_album(
                 continue
 
             media_path = get_media_path(file_url)
-            if not os.path.exists(media_path):
-                logger.warning("Media file not found on disk: %s", media_path)
-                continue
+            if media_path.startswith("http"):
+                file_input = media_path
+            else:
+                if not os.path.exists(media_path):
+                    logger.warning("Media file not found on disk: %s", media_path)
+                    continue
+                file_input = FSInputFile(media_path)
 
             caption = post_data.get("content") if i == 0 else None
 
             if item in images:
                 media = InputMediaPhoto(
-                    media=FSInputFile(media_path),
+                    media=file_input,
                     caption=caption,
                     parse_mode=ParseMode.HTML,
                 )
             else:
                 media = InputMediaVideo(
-                    media=FSInputFile(media_path),
+                    media=file_input,
                     caption=caption,
                     parse_mode=ParseMode.HTML,
                 )
