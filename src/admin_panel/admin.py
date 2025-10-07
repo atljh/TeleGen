@@ -104,7 +104,13 @@ class PostAdmin(admin.ModelAdmin):
         "created_at",
     )
     readonly_fields = ("created_at",)
-    search_fields = ("content", "source_url")
+    search_fields = (
+        "content",
+        "source_url",
+        "flow__name",
+        "original_link",
+        "flow__channel__name",
+    )
     list_filter = ("status", "created_at")
     inlines: ClassVar[list[admin.TabularInline]] = [PostImageInline, PostVideoInline]
 
