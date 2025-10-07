@@ -79,7 +79,7 @@ class PostGenerationService:
                     self.web_service.get_last_posts(flow, item, item["volume"])
                 )
 
-        results = await asyncio.gather(*tasks, return_exceptions=False)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
         combined_posts: list[PostDTO] = []
         for r in results:
@@ -108,6 +108,9 @@ class PostGenerationService:
             result=f"{len(combined_posts)} posts generated from {len(results)} sources",
             auto_generate=auto_generate,
         )
+
+        user.generated_posts_count += len(combined_posts)
+        await sync_to_async(user.save)()
 
         return await self._create_posts_from_dtos(flow, combined_posts)
 
