@@ -2,6 +2,7 @@ from typing import Any
 
 from aiogram_dialog import DialogManager
 from asgiref.sync import sync_to_async
+from django.utils import timezone
 
 from admin_panel.models import Subscription, Tariff, TariffPeriod
 from bot.containers import Container
@@ -46,9 +47,7 @@ async def packages_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, 
             subscription.tariff_period.tariff.name if subscription else "Без підписки"
         ),
         "days_left": (
-            (subscription.end_date - subscription.start_date).days
-            if subscription
-            else 0
+            max((subscription.end_date - timezone.now()).days, 0) if subscription else 0
         ),
     }
 
