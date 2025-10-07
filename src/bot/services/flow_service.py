@@ -37,7 +37,7 @@ class FlowService:
         title_highlight: bool,
         cta: bool,
         frequency: GenerationFrequency | str,
-        signature: str | None = None,
+        signature: str | None = "",
         flow_volume: int = 5,
     ) -> FlowDTO:
         channel = await self.channel_repository.get_channel_by_id(channel_id)

@@ -81,34 +81,32 @@ class ChatGPTContentProcessor(ContentProcessor):
         return results
 
     async def _get_or_create_user_prompt(self, text: str, flow: FlowDTO) -> str:
+        default_prompt = self._build_system_prompt(text)
         try:
-            default_prompt = self._build_system_prompt(text)
+            aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
+            if aisettings.use_custom_prompt and aisettings.prompt:
+                return aisettings.prompt
             return default_prompt
 
-            # aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
-            # return aisettings.prompt
-
         except AISettingsNotFoundError:
-            default_prompt = self._build_system_prompt(text)
             try:
                 await self.aisettings_service.create_aisettings(
                     flow=flow, prompt=default_prompt, style=str(flow.theme)
                 )
-                return default_prompt
-
             except UniqueViolation:
-                existing_settings = (
-                    await self.aisettings_service.get_aisettings_by_flow(flow)
+                aisettings = await self.aisettings_service.get_aisettings_by_flow(flow)
+                return (
+                    aisettings.prompt
+                    if aisettings.use_custom_prompt
+                    else default_prompt
                 )
-                return existing_settings.prompt
-
             except Exception as create_error:
                 logging.error(f"Error creating AI settings: {create_error!s}")
-                return default_prompt
+            return default_prompt
 
         except Exception as e:
             logging.error(f"Error getting flow prompt: {e!s}")
-            return self._build_system_prompt(text)
+            return default_prompt
 
     async def process(self, text: str) -> str:
         try:

@@ -24,12 +24,14 @@ class FlowRepository:
         title_highlight: bool,
         cta: bool,
         frequency: str,
-        signature: str | None = None,
+        signature: str = "",
         flow_volume: int = 5,
     ) -> Flow:
         valid_frequencies = [f.value for f in GenerationFrequency]
         if frequency not in valid_frequencies:
             raise ValueError(f"Invalid frequency. Allowed: {valid_frequencies}")
+        if signature is None:
+            signature = ""
         try:
             flow = await Flow.objects.acreate(
                 channel=channel,
@@ -118,8 +120,8 @@ class FlowRepository:
             use_premium_emojis=flow.use_premium_emojis,
             title_highlight=flow.title_highlight,
             cta=flow.cta,
-            frequency=flow.frequency,
-            signature=flow.signature,
+            frequency=flow.frequency or "",
+            signature=flow.signature or "",
             flow_volume=flow.flow_volume,
             next_generation_time=flow.next_generation_time,
             created_at=flow.created_at,

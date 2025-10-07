@@ -105,7 +105,9 @@ class Flow(models.Model):
         choices=GenerationFrequency.choices,
         verbose_name="Частота генерації",
     )
-    signature = models.TextField(blank=True, verbose_name="Підпис до постів")
+    signature = models.CharField(
+        max_length=255, default="", blank=True, verbose_name="Підпис до постів"
+    )
     flow_volume = models.PositiveSmallIntegerField(
         default=5, verbose_name="Кількість постів у флоу"
     )
@@ -335,6 +337,10 @@ class AISettings(models.Model):
     role = models.CharField(max_length=255, verbose_name="Роль", blank=True)
     role_content = models.TextField(verbose_name="Текст роли", blank=True)
     style = models.CharField(max_length=100, verbose_name="Стиль", blank=True)
+
+    use_custom_prompt = models.BooleanField(
+        default=True, verbose_name="Використовувати пользовательский промпт"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
     class Meta:
