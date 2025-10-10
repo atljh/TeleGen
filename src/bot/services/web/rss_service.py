@@ -452,32 +452,65 @@ class RssService:
             return False
         return True
 
-    async def _make_api_request(self, url: str, attempt: int) -> str | None:
+    async def _make_api_request(
+        self, url: str, attempt: int, max_attempts: int = 3
+    ) -> str | None:
         await self._random_delay()
 
-        async with self.session.post(
-            "https://api.rss.app/v1/feeds",
-            headers=self._prepare_api_headers(self.headers),
-            json={"url": url},
-            timeout=10,
-        ) as response:
-            return await self._process_api_response(response, url)
+        try:
+            async with self.session.post(
+                "https://api.rss.app/v1/feeds",
+                headers=self._prepare_api_headers(self.headers),
+                json={"url": url},
+                timeout=10,
+            ) as response:
+                result = await self._process_api_response(
+                    response, url, attempt, max_attempts
+                )
+                if result is None and attempt < max_attempts:
+                    await asyncio.sleep(1)
+                    return await self._make_api_request(url, attempt + 1, max_attempts)
+
+                return result
+
+        except TimeoutError:
+            self.logger.warning(
+                f"Timeout for URL {url}, attempt {attempt}/{max_attempts}"
+            )
+            if attempt < max_attempts:
+                await asyncio.sleep(1)
+                return await self._make_api_request(url, attempt + 1, max_attempts)
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Unexpected error for URL {url}: {e}")
+            if attempt < max_attempts:
+                await asyncio.sleep(1)
+                return await self._make_api_request(url, attempt + 1, max_attempts)
+            return None
 
     def _prepare_api_headers(self, headers: dict) -> dict:
         return {k: str(v) for k, v in headers.items() if v is not None}
 
     async def _process_api_response(
-        self, response: aiohttp.ClientResponse, url: str
+        self,
+        response: aiohttp.ClientResponse,
+        url: str,
+        attempt: int,
+        max_attempts: int,
     ) -> str | None:
         if response.status == 200:
             data = await response.json()
             return data.get("rss_feed_url")
 
-        error_data = await self._parse_api_error(response)
-        await self._notify_api_error(response.status, error_data, url)
+        if response.status >= 400 and attempt < max_attempts:
+            self.logger.warning(
+                f"Server error {response.status} for URL {url}, attempt {attempt}/{max_attempts}. Retrying..."
+            )
+            return None
 
-        if response.status >= 500:
-            raise Exception(f"Server error: {response.status}")
+        error_data = await self._parse_api_error(response)
+        self.logger.error(f"Error {response.status} for URL {url}: {error_data}")
         return None
 
     async def _parse_api_error(self, response: aiohttp.ClientResponse) -> dict:
