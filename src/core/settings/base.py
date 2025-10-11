@@ -9,15 +9,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 
-DEBUG = False
+DEBUG = os.getenv("DEBUG", True)
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://" + host for host in ALLOWED_HOSTS if host != "localhost"
-]
+CSRF_TRUSTED_ORIGINS = ["*"]
+
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
