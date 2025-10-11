@@ -21,6 +21,7 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
+
 TELEGRAM_LOG_CHANNEL_ID = os.getenv("TELEGRAM_LOG_CHANNEL_ID", default=None)
 
 INSTALLED_APPS = [
@@ -44,6 +45,16 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
+
+
+if DEBUG:
+    MIDDLEWARE = [
+        mw for mw in MIDDLEWARE if mw != "django.middleware.csrf.CsrfViewMiddleware"
+    ]
+
+    CSRF_TRUSTED_ORIGINS = ["*"]
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
 
 
 ROOT_URLCONF = "core.urls"
