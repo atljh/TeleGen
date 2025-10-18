@@ -147,11 +147,14 @@ class PostGenerationService:
         if total_after_generation > max_volume:
             to_remove = total_after_generation - max_volume
             oldest_posts = existing_posts[-to_remove:]
+
             if oldest_posts:
                 ids_to_delete = [p.id for p in oldest_posts]
-                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).adelete)()
+                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).delete)()
+
                 msg = f"🧹 Flow '{flow.name}' (id={flow.id}): удалено {len(ids_to_delete)} старых постов"
                 logging.info(msg)
+
                 try:
                     self.sync_logger.log_message(msg)
                 except Exception:

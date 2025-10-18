@@ -54,7 +54,8 @@ dependencies = [
     "setuptools>=80.9.0",
     "pre-commit>=4.3.0",
     "pydantic-settings>=2.10.1",
-
+    "brotli>=1.1.0",
+    "brotlipy>=0.7.0",
 ]
 
 [project.optional-dependencies]
