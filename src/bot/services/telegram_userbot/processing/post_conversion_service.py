@@ -21,6 +21,8 @@ class PostConversionService:
         self, raw_posts: list[dict], flow: FlowDTO
     ) -> list[PostDTO]:
         tasks = []
+        if raw_posts is None:
+            return []
         for raw_post in raw_posts:
             if not raw_post:
                 continue
