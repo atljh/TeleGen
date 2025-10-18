@@ -132,8 +132,30 @@ class PostGenerationService:
 
         return results
 
-    async def _create_posts_from_dtos(self, flow, post_dtos: list) -> list[PostDTO]:
+    async def _create_posts_from_dtos(
+        self, flow, post_dtos: list[PostDTO]
+    ) -> list[PostDTO]:
         semaphore = asyncio.Semaphore(10)
+
+        existing_posts = await sync_to_async(
+            lambda: list(Post.objects.filter(flow=flow).order_by("-created_at"))
+        )()
+
+        max_volume = flow.flow_volume or 30
+        total_after_generation = len(existing_posts) + len(post_dtos)
+
+        if total_after_generation > max_volume:
+            to_remove = total_after_generation - max_volume
+            oldest_posts = existing_posts[-to_remove:]
+            if oldest_posts:
+                ids_to_delete = [p.id for p in oldest_posts]
+                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).adelete)()
+                msg = f"🧹 Flow '{flow.name}' (id={flow.id}): удалено {len(ids_to_delete)} старых постов"
+                logging.info(msg)
+                try:
+                    self.sync_logger.log_message(msg)
+                except Exception:
+                    pass
 
         async def _process_single_post(post_dto: PostDTO) -> PostDTO | None:
             async with semaphore:
@@ -167,7 +189,19 @@ class PostGenerationService:
         tasks = [_process_single_post(dto) for dto in post_dtos]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        return [res for res in results if isinstance(res, PostDTO)]
+        created_posts = [res for res in results if isinstance(res, PostDTO)]
+
+        msg = (
+            f"✅ Flow '{flow.name}' (id={flow.id}): создано {len(created_posts)} постов, "
+            f"текущий размер ленты ≤ {max_volume}"
+        )
+        logging.info(msg)
+        try:
+            self.sync_logger.log_message(msg)
+        except Exception:
+            pass
+
+        return created_posts
 
     def _prepare_media_list(self, post_dto) -> list[dict]:
         media_list = [
