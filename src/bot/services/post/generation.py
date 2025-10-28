@@ -136,29 +136,7 @@ class PostGenerationService:
         self, flow, post_dtos: list[PostDTO]
     ) -> list[PostDTO]:
         semaphore = asyncio.Semaphore(10)
-
-        existing_posts = await sync_to_async(
-            lambda: list(Post.objects.filter(flow=flow).order_by("-created_at"))
-        )()
-
         max_volume = flow.flow_volume or 30
-        total_after_generation = len(existing_posts) + len(post_dtos)
-
-        if total_after_generation > max_volume:
-            to_remove = total_after_generation - max_volume
-            oldest_posts = existing_posts[-to_remove:]
-
-            if oldest_posts:
-                ids_to_delete = [p.id for p in oldest_posts]
-                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).delete)()
-
-                msg = f"🧹 Flow '{flow.name}' (id={flow.id}): удалено {len(ids_to_delete)} старых постов"
-                logging.info(msg)
-
-                try:
-                    self.sync_logger.log_message(msg)
-                except Exception:
-                    pass
 
         async def _process_single_post(post_dto: PostDTO) -> PostDTO | None:
             async with semaphore:
@@ -194,9 +172,31 @@ class PostGenerationService:
 
         created_posts = [res for res in results if isinstance(res, PostDTO)]
 
+        # После создания новых постов удаляем старые, чтобы соблюсти flow_volume
+        existing_posts = await sync_to_async(
+            lambda: list(Post.objects.filter(flow=flow).order_by("-created_at"))
+        )()
+
+        current_total = len(existing_posts)
+        if current_total > max_volume:
+            to_remove = current_total - max_volume
+            oldest_posts = existing_posts[-to_remove:]
+
+            if oldest_posts:
+                ids_to_delete = [p.id for p in oldest_posts]
+                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).delete)()
+
+                msg = f"🧹 Flow '{flow.name}' (id={flow.id}): удалено {len(ids_to_delete)} старых постов, осталось {max_volume}"
+                logging.info(msg)
+
+                try:
+                    self.sync_logger.log_message(msg)
+                except Exception:
+                    pass
+
         msg = (
             f"✅ Flow '{flow.name}' (id={flow.id}): создано {len(created_posts)} постов, "
-            f"текущий размер ленты ≤ {max_volume}"
+            f"текущий размер ленты = {min(current_total, max_volume)}"
         )
         logging.info(msg)
         try:
