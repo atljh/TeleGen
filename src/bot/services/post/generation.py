@@ -81,14 +81,52 @@ class PostGenerationService:
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        combined_posts: list[PostDTO] = []
-        for r in results:
+        # Group posts by source to ensure even distribution
+        posts_by_source: list[list[PostDTO]] = []
+        source_names: list[str] = []
+
+        for i, r in enumerate(results):
+            source_type = volumes[i].get("type", "unknown")
+            source_link = volumes[i].get("link", "unknown")
+            source_names.append(f"{source_type}:{source_link}")
+
             if isinstance(r, Exception):
                 self.logger.error(f"Error in source task: {r!s}")
+                posts_by_source.append([])
             else:
-                combined_posts.extend(r)
+                # Sort each source's posts by date
+                source_posts = sorted(
+                    r, key=lambda x: x.original_date or x.created_at, reverse=True
+                )
+                posts_by_source.append(source_posts)
 
-        combined_posts.sort(key=lambda x: x.created_at, reverse=True)
+        # Distribute posts evenly across sources using round-robin
+        combined_posts: list[PostDTO] = []
+        source_indices = [0] * len(posts_by_source)  # Track position in each source
+
+        while len(combined_posts) < flow.flow_volume:
+            added_any = False
+            for source_idx, source_posts in enumerate(posts_by_source):
+                if len(combined_posts) >= flow.flow_volume:
+                    break
+                idx = source_indices[source_idx]
+                if idx < len(source_posts):
+                    combined_posts.append(source_posts[idx])
+                    source_indices[source_idx] += 1
+                    added_any = True
+
+            # If no posts were added in this round, we're out of posts
+            if not added_any:
+                break
+
+        # Log distribution
+        distribution_info = ", ".join(
+            [f"{source_names[i]}: {count}" for i, count in enumerate(source_indices)]
+        )
+        logging.info(
+            f"Post distribution across sources - {distribution_info} | "
+            f"Total: {len(combined_posts)}/{flow.flow_volume}"
+        )
 
         # Check if no posts were generated
         if len(combined_posts) == 0 and len(volumes) > 0:

@@ -42,6 +42,8 @@ async def generate_flow(
             flow,
             flow_service,
             post_service,
+            chat_id,
+            bot_token,
             allow_partial=True,
             auto_generate=False,
         )
@@ -65,6 +67,8 @@ async def _start_telegram_generations(
     flow: FlowDTO,
     flow_service: FlowService,
     post_service: PostService,
+    chat_id: int | None,
+    bot_token: str | None,
     allow_partial: bool = True,
     auto_generate: bool = False,
 ) -> list[PostDTO]:
@@ -83,6 +87,21 @@ async def _start_telegram_generations(
 
     if not generated_posts:
         await flow_service.update_next_generation_time(flow.id)
+        # Notify user that no posts were generated (if chat_id is available)
+        if chat_id and bot_token:
+            error_msg = (
+                f"⚠️ *Генерація завершена без результатів*\n\n"
+                f"Флоу: *{flow.name}*\n\n"
+                f"❌ Сгенерованих постів не знайдено\\.\n\n"
+                f"Можливі причини:\n"
+                f"• Вичерпана квота OpenAI API\n"
+                f"• Помилки обробки контенту\n"
+                f"• Відсутність нових постів в джерелах\n\n"
+                f"Перевірте налаштування API ключа та баланс OpenAI\\."
+            )
+            await send_telegram_notification(
+                bot_token, chat_id, error_msg, parse_mode="MarkdownV2"
+            )
         return []
 
     await _handle_flow_overflow(

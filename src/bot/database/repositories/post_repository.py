@@ -58,7 +58,7 @@ class PostRepository:
             post
             async for post in query.select_related("flow")
             .prefetch_related("images")
-            .order_by("-created_at")[offset : offset + limit]
+            .order_by("-original_date", "-created_at")[offset : offset + limit]
         ]
 
     async def exists(self, post_id: int) -> bool:

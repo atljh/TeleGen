@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from celery import shared_task
 
@@ -12,16 +13,23 @@ logger = logging.getLogger(__name__)
 async def _process_flows():
     flow_service = Container.flow_service()
     post_service = Container.post_service()
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
     flows = await flow_service.get_flows_due_for_generation()
 
     for flow in flows:
         logger.info(f"Processing flow {flow.id} (volume: {flow.flow_volume})")
         try:
+            # Get user for the flow to send notifications
+            user = await flow_service.get_user_by_flow_id(flow.id)
+            chat_id = user.telegram_id if user else None
+
             await _start_telegram_generations(
                 flow,
                 flow_service,
                 post_service,
+                chat_id,
+                bot_token,
                 allow_partial=True,
                 auto_generate=True,
             )

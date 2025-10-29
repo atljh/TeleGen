@@ -193,7 +193,7 @@ class ChatGPTContentProcessor(ContentProcessor):
                 last_error = e
                 if attempt == self.max_retries:
                     raise
-                wait_time = min(120, 2 ** attempt)
+                wait_time = min(5, 2 ** attempt)
                 logging.info(f"Rate limit hit, waiting {wait_time}s before retry {attempt + 1}/{self.max_retries}")
                 await asyncio.sleep(wait_time)
 
