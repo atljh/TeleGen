@@ -118,3 +118,106 @@ clean-test:
 
 test-debug:
 	docker-compose -f deployments/docker-compose.test.yml run tests bash -c "pwd && ls -la && python -c 'import sys; print(sys.path)'"
+
+PYTHON_RUN = $(DOCKER_COMPOSE) exec -T admin_panel python
+
+.PHONY: test-flows test-gen-list test-gen-random test-gen-exact test-gen-clean test-scenario-overflow test-scenario-all
+
+test-flows:
+	@echo "📋 Available flows:"
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --list
+
+test-gen-list: test-flows
+
+test-gen-random:
+	@echo "🎲 Creating random number of posts for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --flow-id $(FLOW_ID)
+
+test-gen-exact:
+	@echo "🎯 Creating $(COUNT) posts for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --flow-id $(FLOW_ID) --exact $(COUNT)
+
+test-gen-range:
+	@echo "🎲 Creating random posts ($(MIN)-$(MAX)) for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --flow-id $(FLOW_ID) --min-posts $(MIN) --max-posts $(MAX)
+
+test-gen-clean:
+	@echo "🧹 Cleaning test posts for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --flow-id $(FLOW_ID) --delete
+
+test-scenario-overflow:
+	@echo "🧪 Running overflow scenario for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_flow_scenarios.py --flow-id $(FLOW_ID) --scenario overflow
+
+test-scenario-publish:
+	@echo "🧪 Running publish cycle scenario for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_flow_scenarios.py --flow-id $(FLOW_ID) --scenario publish-cycle
+
+test-scenario-schedule:
+	@echo "🧪 Running schedule scenario for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_flow_scenarios.py --flow-id $(FLOW_ID) --scenario schedule
+
+test-scenario-edge:
+	@echo "🧪 Running edge cases scenario for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_flow_scenarios.py --flow-id $(FLOW_ID) --scenario edge-cases
+
+test-scenario-all:
+	@echo "🧪 Running ALL scenarios for flow $(FLOW_ID)..."
+	@$(PYTHON_RUN) /app/scripts/test_flow_scenarios.py --flow-id $(FLOW_ID) --scenario all
+
+test-quick:
+	@echo "⚡ Quick test: 10 posts for flow 1"
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --flow-id 1 --exact 10
+
+test-overflow:
+	@echo "🌊 Overflow test: 50 posts for flow 1"
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --flow-id 1 --exact 50
+
+test-full:
+	@echo "🎯 Full test suite for flow 1"
+	@$(PYTHON_RUN) /app/scripts/test_flow_scenarios.py --flow-id 1 --scenario all
+
+test-clean-all:
+	@echo "🧹 Cleaning all test posts for flow 1"
+	@$(PYTHON_RUN) /app/scripts/test_post_generation.py --flow-id 1 --delete
+
+# Help for test commands
+test-help:
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║         📚 TeleGen Post Generation Test Commands              ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "⚠️  SYNTAX: make command FLOW_ID=N (NOT --flow-id)"
+	@echo ""
+	@echo "📋 List & Info:"
+	@echo "  make test-flows              List all available flows"
+	@echo ""
+	@echo "🎲 Generate Posts:"
+	@echo "  make test-gen-random FLOW_ID=2          Random 5-15 posts"
+	@echo "  make test-gen-exact FLOW_ID=2 COUNT=10  Exact number"
+	@echo "  make test-gen-range FLOW_ID=2 MIN=3 MAX=8  Custom range"
+	@echo ""
+	@echo "🧪 Test Scenarios:"
+	@echo "  make test-scenario-overflow FLOW_ID=2   Test overflow (2x posts)"
+	@echo "  make test-scenario-publish FLOW_ID=2    Test publish cycle"
+	@echo "  make test-scenario-schedule FLOW_ID=2   Test scheduling"
+	@echo "  make test-scenario-edge FLOW_ID=2       Test edge cases"
+	@echo "  make test-scenario-all FLOW_ID=2        Run ALL scenarios"
+	@echo ""
+	@echo "⚡ Quick Shortcuts (for flow 1):"
+	@echo "  make test-quick              Create 10 posts"
+	@echo "  make test-overflow           Create 50 posts"
+	@echo "  make test-full               Run full test suite"
+	@echo ""
+	@echo "🧹 Cleanup:"
+	@echo "  make test-gen-clean FLOW_ID=2            Clean specific flow"
+	@echo "  make test-clean-all                      Clean flow 1"
+	@echo ""
+	@echo "💡 Examples:"
+	@echo "  make test-flows"
+	@echo "  make test-gen-exact FLOW_ID=2 COUNT=20"
+	@echo "  make test-scenario-publish FLOW_ID=2"
+	@echo "  make test-quick && make test-clean-all"
+	@echo ""
+	@echo "🔍 Note: Commands run inside Docker containers"
+	@echo ""
