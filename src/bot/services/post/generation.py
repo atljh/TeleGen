@@ -208,8 +208,9 @@ class PostGenerationService:
         """
         Creates posts from DTOs with proper error handling.
 
-        Note: We don't delete old posts anymore - dialogs will show only flow_volume posts.
-        This avoids complex deletion logic and potential bugs.
+        Note: Posts are never deleted - all posts are kept in DB as history/backup.
+        Dialogs only display the latest flow_volume posts.
+        New posts gradually replace old ones in the display as they are generated.
         """
         semaphore = asyncio.Semaphore(10)
 

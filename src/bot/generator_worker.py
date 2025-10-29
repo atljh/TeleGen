@@ -72,9 +72,6 @@ async def _start_telegram_generations(
     allow_partial: bool = True,
     auto_generate: bool = False,
 ) -> list[PostDTO]:
-    existing_posts = await post_service.get_all_posts_in_flow(
-        flow.id, status=PostStatus.DRAFT
-    )
     try:
         generated_posts = await post_service.generate_auto_posts(
             flow.id, allow_partial=allow_partial, auto_generate=auto_generate
@@ -104,31 +101,10 @@ async def _start_telegram_generations(
             )
         return []
 
-    await _handle_flow_overflow(
-        flow, flow_service, post_service, existing_posts, generated_posts
-    )
-
+    # No deletion needed - dialogs will show only flow_volume posts
+    # All posts are kept in DB as history/backup
     await flow_service.update_next_generation_time(flow.id)
     return generated_posts
-
-
-async def _handle_flow_overflow(
-    flow: FlowDTO,
-    flow_service: FlowService,
-    post_service: PostService,
-    existing_posts: list,
-    generated_posts: list,
-):
-    total_after_generation = len(existing_posts) + len(generated_posts)
-    overflow = total_after_generation - flow.flow_volume
-
-    if overflow > 0:
-        posts_to_delete = min(overflow, len(existing_posts))
-        if posts_to_delete > 0:
-            old_posts = existing_posts[:posts_to_delete]
-            logging.info(f"Deleting {len(old_posts)} oldest posts from flow {flow.id}")
-            for post in old_posts:
-                await post_service.delete_post(post.id)
 
 
 if __name__ == "__main__":
