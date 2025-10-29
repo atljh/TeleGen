@@ -122,8 +122,13 @@ class PostGenerationService:
         if total_sources == 0:
             return []
 
-        base_volume = total_volume // total_sources
-        remainder = total_volume % total_sources
+        # Request more posts than needed to account for duplicates and errors
+        # We'll fetch 2x the desired amount, then trim to exact count later
+        buffer_multiplier = 2
+        buffered_volume = total_volume * buffer_multiplier
+
+        base_volume = buffered_volume // total_sources
+        remainder = buffered_volume % total_sources
 
         results = []
         for i, source in enumerate(sources):
@@ -136,44 +141,14 @@ class PostGenerationService:
         self, flow, post_dtos: list[PostDTO]
     ) -> list[PostDTO]:
         """
-        Creates posts from DTOs with proper cleanup and error handling.
+        Creates posts from DTOs with proper error handling.
 
-        Strategy:
-        1. First, delete old posts to make room
-        2. Then create new posts
-        3. Handle duplicates gracefully
+        Note: We don't delete old posts anymore - dialogs will show only flow_volume posts.
+        This avoids complex deletion logic and potential bugs.
         """
         semaphore = asyncio.Semaphore(10)
-        max_volume = flow.flow_volume or 30
 
-        # Step 1: Clean up old posts BEFORE creating new ones
-        existing_posts = await sync_to_async(
-            lambda: list(Post.objects.filter(flow=flow).order_by("-created_at"))
-        )()
-
-        current_count = len(existing_posts)
-        expected_new_count = len(post_dtos)
-
-        # Calculate how many old posts to remove to make room for new ones
-        if current_count + expected_new_count > max_volume:
-            # We need to delete oldest posts to stay within limit
-            space_needed = (current_count + expected_new_count) - max_volume
-            to_remove = min(space_needed, current_count)
-
-            if to_remove > 0:
-                oldest_posts = existing_posts[-to_remove:]
-                ids_to_delete = [p.id for p in oldest_posts]
-
-                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).delete)()
-
-                msg = f"🧹 Flow '{flow.name}' (id={flow.id}): удалено {len(ids_to_delete)} старых постов для освобождения места"
-                logging.info(msg)
-                try:
-                    self.sync_logger.log_message(msg)
-                except Exception:
-                    pass
-
-        # Step 2: Create new posts with proper error handling
+        # Create new posts with proper error handling
         async def _process_single_post(post_dto: PostDTO) -> PostDTO | None:
             async with semaphore:
                 try:
@@ -212,24 +187,21 @@ class PostGenerationService:
 
         created_posts = [res for res in results if isinstance(res, PostDTO)]
 
-        # Step 3: Final cleanup if we still exceed limit
-        final_count = await sync_to_async(Post.objects.filter(flow=flow).count)()
-
-        if final_count > max_volume:
-            posts_to_trim = await sync_to_async(
-                lambda: list(
-                    Post.objects.filter(flow=flow).order_by("-created_at")[max_volume:]
-                )
-            )()
-
-            if posts_to_trim:
-                ids_to_delete = [p.id for p in posts_to_trim]
-                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).delete)()
-                logging.info(f"Final cleanup: удалено {len(ids_to_delete)} постов")
+        # Count posts for statistics (no deletion, just reporting)
+        draft_count = await sync_to_async(
+            Post.objects.filter(flow=flow, status=Post.DRAFT).count
+        )()
+        published_count = await sync_to_async(
+            Post.objects.filter(flow=flow, status=Post.PUBLISHED).count
+        )()
+        scheduled_count = await sync_to_async(
+            Post.objects.filter(flow=flow, status=Post.SCHEDULED).count
+        )()
 
         msg = (
-            f"✅ Flow '{flow.name}' (id={flow.id}): создано {len(created_posts)} постов, "
-            f"текущий размер ленты = {min(final_count, max_volume)}"
+            f"✅ Flow '{flow.name}' (id={flow.id}): створено {len(created_posts)} нових постів\n"
+            f"📊 Статистика: чернеток={draft_count}, опубліковано={published_count}, заплановано={scheduled_count}\n"
+            f"ℹ️ У діалозі показується останні {flow.flow_volume} чернеток"
         )
         logging.info(msg)
         try:

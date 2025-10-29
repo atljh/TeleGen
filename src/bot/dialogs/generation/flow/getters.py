@@ -165,9 +165,16 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
 
     if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
         try:
-            posts = await build_posts_list(flow.id, status=PostStatus.DRAFT)
+            # Load ALL draft posts
+            all_posts = await build_posts_list(flow.id, status=PostStatus.DRAFT)
+            # Show only last flow_volume posts (newest first)
+            max_posts = flow.flow_volume if hasattr(flow, 'flow_volume') else 10
+            posts = all_posts[:max_posts]  # Already sorted by newest first
+
             dialog_manager.dialog_data["all_posts"] = posts
             dialog_manager.dialog_data["total_posts"] = len(posts)
+
+            logger.info(f"Loaded {len(all_posts)} total drafts, showing {len(posts)} (limit={max_posts})")
         except Exception as e:
             logger.error("Помилка завантаження постів: %s", e, exc_info=True)
             return data

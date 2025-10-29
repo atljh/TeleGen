@@ -207,19 +207,28 @@ async def set_timezone(callback: CallbackQuery, button: Button, manager: DialogM
         await callback.answer("Невідомий часовий пояс")
         return
 
-    channel_service = Container.channel_service()
-    channel = manager.dialog_data["selected_channel"]
+    try:
+        channel_service = Container.channel_service()
+        channel = manager.dialog_data["selected_channel"]
 
-    await channel_service.update_channel(channel_id=channel.id, timezone=tz)
+        updated_channel = await channel_service.update_channel(channel_id=channel.id, timezone=tz)
 
-    display_names = {
-        "Europe/Kiev": "🇺🇦 Київ (UTC+2)",
-        "Europe/London": "🇪🇺 Лондон (UTC+0)",
-        "America/New_York": "🇺🇸 Нью-Йорк (UTC-4)",
-    }
+        # Update the channel in dialog data with the latest version
+        manager.dialog_data["selected_channel"] = updated_channel
 
-    await callback.answer(f"Часовий пояс встановлено: {display_names[tz]}")
-    await manager.switch_to(SettingsMenu.channel_main_settings)
+        display_names = {
+            "Europe/Kiev": "🇺🇦 Київ (UTC+2)",
+            "Europe/London": "🇪🇺 Лондон (UTC+0)",
+            "America/New_York": "🇺🇸 Нью-Йорк (UTC-4)",
+        }
+
+        await callback.answer(f"Часовий пояс встановлено: {display_names[tz]}")
+        await manager.switch_to(SettingsMenu.channel_main_settings)
+    except Exception as e:
+        logger.error(f"Error setting timezone: {e}", exc_info=True)
+        await callback.answer("❌ Помилка при зміні часового поясу")
+        # Don't crash - stay on the same screen
+        return
 
 
 async def toggle_emoji(

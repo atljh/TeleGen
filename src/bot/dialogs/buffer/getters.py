@@ -151,13 +151,21 @@ async def paging_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, An
     if dialog_data.pop("needs_refresh", False) or "all_posts" not in dialog_data:
         post_service = Container.post_service()
         try:
+            # Load ALL scheduled posts
             raw_posts = await post_service.get_all_posts_in_flow(
                 flow.id, status=PostStatus.SCHEDULED
             )
+
+            # Show only flow_volume posts (newest first)
+            max_posts = flow.flow_volume if hasattr(flow, 'flow_volume') else 10
+            limited_posts = list(raw_posts)[:max_posts]
+
             dialog_data["all_posts"] = [
-                await build_post_dict(post, idx) for idx, post in enumerate(raw_posts)
+                await build_post_dict(post, idx) for idx, post in enumerate(limited_posts)
             ]
             dialog_data["total_posts"] = len(dialog_data["all_posts"])
+
+            logging.info(f"Loaded {len(raw_posts)} total scheduled, showing {len(limited_posts)} (limit={max_posts})")
         except Exception as e:
             logging.error(f"Помилка завантаження постів: {e!s}")
 

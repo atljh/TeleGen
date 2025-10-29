@@ -38,8 +38,16 @@ class ContentProcessingService:
     ) -> PostDTO | None:
         if not post_dto.content:
             return None
+
         normalized_content = await self._normalize_content(post_dto.content)
         processed_content = await self._process_with_ai(normalized_content, flow)
+
+        # Check if AI processing failed (returns None on error)
+        if processed_content is None:
+            self.logger.warning(
+                f"AI processing failed for post {post_dto.source_id}, skipping post creation"
+            )
+            return None
 
         final_content = self._add_signature(processed_content, flow)
 
@@ -58,7 +66,7 @@ class ContentProcessingService:
         async with self._semaphore:
             return await self._process_with_chatgpt(text, flow)
 
-    async def _process_with_chatgpt(self, text: str, flow: FlowDTO) -> str:
+    async def _process_with_chatgpt(self, text: str, flow: FlowDTO) -> str | None:
         try:
             await self.user_service.get_user_by_flow(flow)
             processor = ChatGPTContentProcessor(
@@ -68,10 +76,12 @@ class ContentProcessingService:
                 timeout=15.0,
                 aisettings_service=self.aisettings_service,
             )
-            return await processor.process(text)
+            result = await processor.process(text)
+            # If processor returned None, it means AI processing failed
+            return result
         except Exception as e:
             self.logger.error(f"ChatGPT processing failed: {e!s}")
-            return text
+            return None
 
     def _add_signature(self, text: str, flow: FlowDTO) -> str:
         if flow.signature:

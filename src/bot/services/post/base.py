@@ -65,9 +65,10 @@ class PostBaseService:
                 logger.info(f"Post with source_id={source_id} already exists, skipping")
                 return None
 
-        # Atomic transaction: create post + media together
-        async def _create_with_transaction():
-            async with transaction.atomic():
+        # Create sync function for transaction
+        @sync_to_async
+        def _create_in_transaction():
+            with transaction.atomic():
                 post = PostFactory.create_post(
                     flow=flow,
                     content=content,
@@ -79,16 +80,17 @@ class PostBaseService:
                     original_date=original_date,
                     source_id=source_id,
                 )
-
-                post = await self.post_repo.save(post)
-
-                # Process media inside transaction
-                if media_list:
-                    await self.media_service.process_media_list(post, media_list)
-
+                post.save()
                 return post
 
-        return await sync_to_async(_create_with_transaction)()
+        # Create post in transaction
+        post = await _create_in_transaction()
+
+        # Process media after post is created
+        if media_list:
+            await self.media_service.process_media_list(post, media_list)
+
+        return post
 
     async def update_post(
         self,

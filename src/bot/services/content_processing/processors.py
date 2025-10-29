@@ -131,17 +131,33 @@ class ChatGPTContentProcessor(ContentProcessor):
 
         except openai.RateLimitError as e:
             logging.error(f"OpenAI quota exceeded: {e!s}")
-            await self._notify_admin("OpenAI quota exceeded")
-            return text
+            error_msg = (
+                f"⚠️ <b>OpenAI Quota Exceeded</b>\n\n"
+                f"Flow: <code>{self.flow.name}</code> (ID: {self.flow.id})\n"
+                f"Model: <code>{self.model}</code>\n\n"
+                f"Error: <code>{str(e)[:200]}</code>\n\n"
+                f"Повертаємо оригінальний текст без обробки."
+            )
+            await self._notify_admin(error_msg)
+            # Return special marker to indicate processing failed
+            return None
 
         except openai.APIError as e:
             logging.error(f"OpenAI API error: {e!s}")
-            await self._notify_admin(f"OpenAI API error: {e!s}")
-            return text
+            error_msg = (
+                f"❌ <b>OpenAI API Error</b>\n\n"
+                f"Flow: <code>{self.flow.name}</code> (ID: {self.flow.id})\n"
+                f"Model: <code>{self.model}</code>\n\n"
+                f"Error: <code>{str(e)[:200]}</code>"
+            )
+            await self._notify_admin(error_msg)
+            # Return special marker to indicate processing failed
+            return None
 
         except Exception as e:
             logging.error(f"Unexpected processing error: {e!s}", exc_info=True)
-            return text
+            # Return special marker to indicate processing failed
+            return None
 
     async def _call_ai_with_retry(self, text: str, system_prompt: str) -> str:
         messages = [
@@ -198,7 +214,7 @@ class ChatGPTContentProcessor(ContentProcessor):
 
     async def _notify_admin(self, message: str):
         try:
-            await notify_admins(message)
+            await notify_admins(message, parse_mode="HTML")
         except Exception as e:
             logging.error(f"Failed to send admin notification: {e!s}")
 
