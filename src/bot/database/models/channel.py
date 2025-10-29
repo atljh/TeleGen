@@ -14,6 +14,7 @@ class ChannelDTO(BaseModel):
     is_active: bool = True
     notifications: bool = True
     timezone: str = "UTC"
+    title_emoji: str = ""
 
     model_config = ConfigDict(from_attributes=True)
 

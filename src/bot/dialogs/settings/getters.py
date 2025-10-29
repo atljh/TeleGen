@@ -74,7 +74,8 @@ async def notification_getter(dialog_manager: DialogManager, **kwargs):
 
 async def emoji_getter(dialog_manager: DialogManager, **kwargs):
     channel = dialog_manager.dialog_data["selected_channel"]
+    title_emoji = getattr(channel, "title_emoji", "")
     return {
-        "emoji_enabled": getattr(channel, "emoji_enabled", False),
+        "title_emoji": title_emoji if title_emoji else "Не встановлено",
         "channel_name": channel.name,
     }

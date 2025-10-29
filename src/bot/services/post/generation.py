@@ -90,6 +90,33 @@ class PostGenerationService:
 
         combined_posts.sort(key=lambda x: x.created_at, reverse=True)
 
+        # Check if no posts were generated
+        if len(combined_posts) == 0 and len(volumes) > 0:
+            error_msg = (
+                f"⚠️ <b>Не вдалося згенерувати пости</b>\n\n"
+                f"Flow: <code>{flow.name}</code> (ID: {flow.id})\n"
+                f"Джерел: {len(results)}\n\n"
+                f"❌ Сгенерованих постів не знайдено.\n\n"
+                f"Можливі причини:\n"
+                f"• Вичерпана квота OpenAI API\n"
+                f"• Помилки обробки контенту\n\n"
+                f"Перевірте налаштування API ключа та баланс OpenAI."
+            )
+            self.logger.warning(error_msg)
+            try:
+                self.sync_logger.log_message(error_msg)
+            except Exception:
+                pass
+
+            self.sync_logger.generation_completed(
+                user=user,
+                flow_name=flow.name,
+                flow_id=flow.id,
+                result="0 posts generated - all posts failed AI processing",
+                auto_generate=auto_generate,
+            )
+            return []
+
         try:
             await self.limit_service.check_generations_limit(
                 user, new_generations=len(combined_posts)

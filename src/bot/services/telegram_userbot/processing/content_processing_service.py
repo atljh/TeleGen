@@ -24,7 +24,7 @@ class ContentProcessingService:
         self.aisettings_service = aisettings_service
         self.user_service = user_service
         self._openai_client = None
-        self._semaphore = asyncio.Semaphore(10)
+        self._semaphore = asyncio.Semaphore(3)
         self.logger = logging.getLogger(__name__)
 
     @property
@@ -72,7 +72,7 @@ class ContentProcessingService:
             processor = ChatGPTContentProcessor(
                 api_key=self.openai_key,
                 flow=flow,
-                max_retries=2,
+                max_retries=5,
                 timeout=15.0,
                 aisettings_service=self.aisettings_service,
             )

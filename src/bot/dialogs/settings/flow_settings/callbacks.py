@@ -108,6 +108,66 @@ async def toggle_title_highlight(
     )
 
 
+async def toggle_emojis(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    if "channel_flow" not in manager.dialog_data:
+        manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
+
+    current = manager.dialog_data["channel_flow"].use_emojis
+
+    manager.dialog_data["channel_flow"].use_emojis = not current
+
+    flow_service = Container.flow_service()
+    await flow_service.update_flow(
+        flow_id=manager.dialog_data["channel_flow"].id, use_emojis=not current
+    )
+
+    await callback.answer(
+        f"Використання емодзі {'увімкнено' if not current else 'вимкнено'}"
+    )
+
+
+async def toggle_premium_emojis(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    if "channel_flow" not in manager.dialog_data:
+        manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
+
+    current = manager.dialog_data["channel_flow"].use_premium_emojis
+
+    manager.dialog_data["channel_flow"].use_premium_emojis = not current
+
+    flow_service = Container.flow_service()
+    await flow_service.update_flow(
+        flow_id=manager.dialog_data["channel_flow"].id, use_premium_emojis=not current
+    )
+
+    await callback.answer(
+        f"Преміум емодзі {'увімкнено' if not current else 'вимкнено'}"
+    )
+
+
+async def toggle_cta(
+    callback: CallbackQuery, button: Button, manager: DialogManager
+):
+    if "channel_flow" not in manager.dialog_data:
+        manager.dialog_data["channel_flow"] = manager.start_data["channel_flow"]
+
+    current = manager.dialog_data["channel_flow"].cta
+
+    manager.dialog_data["channel_flow"].cta = not current
+
+    flow_service = Container.flow_service()
+    await flow_service.update_flow(
+        flow_id=manager.dialog_data["channel_flow"].id, cta=not current
+    )
+
+    await callback.answer(
+        f"Заклик до дії (CTA) {'увімкнено' if not current else 'вимкнено'}"
+    )
+
+
 async def configure_ad_block(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):

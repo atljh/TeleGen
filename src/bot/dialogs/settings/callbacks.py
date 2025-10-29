@@ -75,7 +75,46 @@ async def open_timezone_settings(
 async def open_emoji_settings(
     callback: CallbackQuery, button: Button, manager: DialogManager
 ):
-    await callback.answer("Функція в розробці")
+    await manager.switch_to(SettingsMenu.emoji_settings)
+
+
+async def handle_emoji_input(
+    message: Message, dialog: Dialog, manager: DialogManager
+):
+    try:
+        emoji = message.text.strip()
+
+        if len(emoji) > 10:
+            await message.answer(
+                "⚠️ <b>Емодзі занадто довгий</b>\nМаксимум 10 символів",
+                parse_mode=ParseMode.HTML,
+            )
+            return
+
+        channel_service = Container.channel_service()
+        channel = manager.dialog_data["selected_channel"]
+
+        updated_channel = await channel_service.update_channel(
+            channel_id=channel.id, title_emoji=emoji
+        )
+        manager.dialog_data["selected_channel"] = updated_channel
+
+        if emoji:
+            await message.answer(
+                f"✅ <b>Емодзі встановлено:</b> {emoji}", parse_mode=ParseMode.HTML
+            )
+        else:
+            await message.answer(
+                "✅ <b>Емодзі видалено</b>", parse_mode=ParseMode.HTML
+            )
+
+        await manager.switch_to(SettingsMenu.channel_main_settings)
+
+    except Exception as e:
+        logger.error(f"Error updating title emoji: {e}", exc_info=True)
+        await message.answer(
+            "❌ <b>Помилка при оновленні емодзі</b>", parse_mode=ParseMode.HTML
+        )
 
 
 async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):

@@ -34,6 +34,9 @@ from .callbacks import (
     to_select_source_to_delete,
     to_select_source_to_edit,
     toggle_ad_block,
+    toggle_cta,
+    toggle_emojis,
+    toggle_premium_emojis,
     toggle_title_highlight,
 )
 from .getters import (
@@ -82,7 +85,22 @@ def create_flow_settings_window():
                 id="title_highlight",
                 on_click=toggle_title_highlight,
             ),
-            # Button(Const("📢 Рекламний блок"), id="ad_block", on_click=configure_ad_block),
+            Button(
+                Format("😀 Використання емодзі: {use_emojis}"),
+                id="toggle_emojis",
+                on_click=toggle_emojis,
+            ),
+            Button(
+                Format("⭐ Преміум емодзі: {use_premium_emojis}"),
+                id="toggle_premium_emojis",
+                on_click=toggle_premium_emojis,
+                when=lambda data, widget, manager: data.get("use_emojis_enabled", False),
+            ),
+            Button(
+                Format("📢 Заклик до дії (CTA): {cta}"),
+                id="toggle_cta",
+                on_click=toggle_cta,
+            ),
             Button(
                 Const("📊 Кількість постів у флоу"),
                 id="posts_in_flow",

@@ -53,6 +53,10 @@ async def flow_settings_getter(dialog_manager: DialogManager, **kwargs):
         "title_highlight": (
             "Так" if getattr(flow_data, "title_highlight", False) else "Ні"
         ),
+        "use_emojis": "Так" if getattr(flow_data, "use_emojis", False) else "Ні",
+        "use_premium_emojis": "Так" if getattr(flow_data, "use_premium_emojis", False) else "Ні",
+        "cta": "Так" if getattr(flow_data, "cta", False) else "Ні",
+        "use_emojis_enabled": getattr(flow_data, "use_emojis", False),
         "flow_volume": getattr(flow_data, "flow_volume", 5),
         "signature": getattr(flow_data, "signature", "Немає підпису"),
     }

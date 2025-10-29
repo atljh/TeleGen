@@ -21,6 +21,7 @@ from .callbacks import (
     cancel_delete_channel,
     confirm_delete_channel,
     delete_channel,
+    handle_emoji_input,
     handle_sig_input,
     on_channel_selected,
     open_emoji_settings,
@@ -199,8 +200,10 @@ def create_settings_dialog():
         Window(
             Format(
                 "😊 <b>Налаштування емодзі для {channel_name}</b>\n\n"
-                "Додавати випадкові емодзі перед заголовками"
+                "Поточне емодзі: <b>{title_emoji}</b>\n\n"
+                "Введіть новий емодзі або відправте пусте повідомлення для видалення:"
             ),
+            MessageInput(handle_emoji_input),
             Button(BACK_BUTTON, id="open_settings", on_click=open_settings),
             state=SettingsMenu.emoji_settings,
             parse_mode=ParseMode.HTML,

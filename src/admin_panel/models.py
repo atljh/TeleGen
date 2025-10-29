@@ -61,6 +61,12 @@ class Channel(models.Model):
         default="Europe/Kiev",
         verbose_name="Часовий пояс",
     )
+    title_emoji = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        verbose_name="Емодзі перед заголовком",
+    )
 
     class Meta:
         verbose_name = "Канал"

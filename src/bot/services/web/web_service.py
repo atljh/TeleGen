@@ -59,7 +59,19 @@ class WebService:
                     )
                 ][:limit]
                 enriched_posts = await self._enrich_posts(raw_posts)
-                return await self._process_and_build_posts(enriched_posts, flow)
+                processed_posts = await self._process_and_build_posts(enriched_posts, flow)
+
+                if len(enriched_posts) > 0 and len(processed_posts) == 0:
+                    self.logger.warning(
+                        f"[Web] Source {source['link']}: received {len(enriched_posts)} raw posts "
+                        f"but ALL failed AI processing (likely quota/API errors)"
+                    )
+                else:
+                    self.logger.info(
+                        f"[Web] Source {source['link']}: processed {len(processed_posts)}/{len(enriched_posts)} posts"
+                    )
+
+                return processed_posts
 
             except Exception as e:
                 self.logger.error(f"Failed to get posts: {e}", exc_info=True)
@@ -120,6 +132,13 @@ class WebService:
                 if isinstance(content, Exception):
                     self.logger.warning(
                         f"Content processing failed for post {post.get('source_id')}: {content}"
+                    )
+                    continue
+
+                # Skip if content processing failed (None from quota/API errors)
+                if content is None:
+                    self.logger.warning(
+                        f"Content processing returned None for post {post.get('source_id')} (likely quota error)"
                     )
                     continue
 

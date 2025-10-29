@@ -27,7 +27,7 @@ class ContentProcessorService:
                 api_key=self.openai_key,
                 flow=flow,
                 aisettings_service=self.aisettings_service,
-                max_retries=2,
+                max_retries=5,
                 timeout=30.0,
             )
             return await processor.process_batch(texts)

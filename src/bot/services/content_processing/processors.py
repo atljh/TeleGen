@@ -49,7 +49,7 @@ class ChatGPTContentProcessor(ContentProcessor):
         flow: FlowDTO,
         aisettings_service: AISettingsService,
         model: str = "gpt-4o-mini",
-        max_retries: int = 2,
+        max_retries: int = 5,
         timeout: float = 15.0,
         cache_size_limit: int = 1000,
     ):
@@ -76,7 +76,7 @@ class ChatGPTContentProcessor(ContentProcessor):
             results.extend(batch_results)
 
             if i + self.max_batch_size < len(texts):
-                await asyncio.sleep(1)
+                await asyncio.sleep(3)
 
         return results
 
@@ -193,7 +193,8 @@ class ChatGPTContentProcessor(ContentProcessor):
                 last_error = e
                 if attempt == self.max_retries:
                     raise
-                wait_time = min(10, 2 ** (attempt + 1))
+                wait_time = min(120, 2 ** attempt)
+                logging.info(f"Rate limit hit, waiting {wait_time}s before retry {attempt + 1}/{self.max_retries}")
                 await asyncio.sleep(wait_time)
 
             except openai.APIError as e:

@@ -55,10 +55,16 @@ class EnhancedUserbotService(BaseUserbotService):
                 raw_posts, flow
             )
 
-            self.logger.warning(
-                f"[Telegram] Source {source['link']}: processed {len(processed_posts)} posts "
-                f"in {time.time() - start_time:.2f}s"
-            )
+            if len(raw_posts) > 0 and len(processed_posts) == 0:
+                self.logger.warning(
+                    f"[Telegram] Source {source['link']}: received {len(raw_posts)} raw posts "
+                    f"but ALL failed AI processing (likely quota/API errors)"
+                )
+            else:
+                self.logger.warning(
+                    f"[Telegram] Source {source['link']}: processed {len(processed_posts)}/{len(raw_posts)} posts "
+                    f"in {time.time() - start_time:.2f}s"
+                )
             return processed_posts
 
         except Exception as e:
