@@ -134,11 +134,9 @@ class PostGenerationService:
                 f"⚠️ <b>Не вдалося згенерувати пости</b>\n\n"
                 f"Flow: <code>{flow.name}</code> (ID: {flow.id})\n"
                 f"Джерел: {len(results)}\n\n"
-                f"❌ Сгенерованих постів не знайдено.\n\n"
                 f"Можливі причини:\n"
                 f"• Вичерпана квота OpenAI API\n"
                 f"• Помилки обробки контенту\n\n"
-                f"Перевірте налаштування API ключа та баланс OpenAI."
             )
             self.logger.warning(error_msg)
             try:

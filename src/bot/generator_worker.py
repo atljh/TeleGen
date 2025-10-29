@@ -94,10 +94,8 @@ async def _start_telegram_generations(
                 f"Флоу: *{flow.name}*\n\n"
                 f"❌ Сгенерованих постів не знайдено\\.\n\n"
                 f"Можливі причини:\n"
-                f"• Вичерпана квота OpenAI API\n"
                 f"• Помилки обробки контенту\n"
                 f"• Відсутність нових постів в джерелах\n\n"
-                f"Перевірте налаштування API ключа та баланс OpenAI\\."
             )
             await send_telegram_notification(
                 bot_token, chat_id, error_msg, parse_mode="MarkdownV2"
