@@ -77,7 +77,7 @@ def flow_dialog() -> Dialog:
                 when=lambda data, widget, manager: not data["post"].get("is_album"),
             ),
             Format(
-                "Альбом {post[images_count]} зобр.",
+                "{post[content]}\n\n📷 Альбом ({post[images_count]} медіа)",
                 when=lambda data, widget, manager: data["post"].get("is_album"),
             ),
             DynamicMedia(
@@ -240,7 +240,7 @@ def flow_dialog() -> Dialog:
                 when=lambda data, widget, manager: not data["post"].get("is_album"),
             ),
             Format(
-                "Альбом {post[images_count]} зобр.",
+                "{post[content]}\n\n📷 Альбом ({post[images_count]} медіа)",
                 when=lambda data, widget, manager: data["post"].get("is_album"),
             ),
             DynamicMedia(

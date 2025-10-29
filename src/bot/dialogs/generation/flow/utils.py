@@ -52,36 +52,58 @@ async def send_media_album(
             return None
 
         media_group = []
-        for i, item in enumerate(media_items):
-            file_url = getattr(item, "url", None)
+
+        # Process images first
+        for i, image in enumerate(images):
+            file_url = getattr(image, "url", None)
             if not file_url:
                 continue
 
             media_path = get_media_path(file_url)
-            if media_path.startswith("http"):
+            if media_path and media_path.startswith("http"):
                 file_input = media_path
             else:
-                if not os.path.exists(media_path):
-                    logger.warning("Media file not found on disk: %s", media_path)
+                if not media_path or not os.path.exists(media_path):
+                    logger.warning("Image file not found on disk: %s", media_path)
                     continue
                 file_input = FSInputFile(media_path)
 
             caption = post_data.get("content") if i == 0 else None
 
-            if item in images:
-                media = InputMediaPhoto(
-                    media=file_input,
-                    caption=caption,
-                    parse_mode=ParseMode.HTML,
-                )
-            else:
-                media = InputMediaVideo(
-                    media=file_input,
-                    caption=caption,
-                    parse_mode=ParseMode.HTML,
-                )
-
+            media = InputMediaPhoto(
+                media=file_input,
+                caption=caption,
+                parse_mode=ParseMode.HTML,
+            )
             media_group.append(media)
+
+        # Then process videos
+        for i, video in enumerate(videos):
+            file_url = getattr(video, "url", None)
+            if not file_url:
+                continue
+
+            media_path = get_media_path(file_url)
+            if media_path and media_path.startswith("http"):
+                file_input = media_path
+            else:
+                if not media_path or not os.path.exists(media_path):
+                    logger.warning("Video file not found on disk: %s", media_path)
+                    continue
+                file_input = FSInputFile(media_path)
+
+            # Caption only on first item if no images
+            caption = post_data.get("content") if len(media_group) == 0 else None
+
+            media = InputMediaVideo(
+                media=file_input,
+                caption=caption,
+                parse_mode=ParseMode.HTML,
+            )
+            media_group.append(media)
+
+        # Limit to 10 items (Telegram limit)
+        media_group = media_group[:10]
 
         if not media_group:
             return None
