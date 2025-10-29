@@ -135,20 +135,56 @@ class PostGenerationService:
     async def _create_posts_from_dtos(
         self, flow, post_dtos: list[PostDTO]
     ) -> list[PostDTO]:
+        """
+        Creates posts from DTOs with proper cleanup and error handling.
+
+        Strategy:
+        1. First, delete old posts to make room
+        2. Then create new posts
+        3. Handle duplicates gracefully
+        """
         semaphore = asyncio.Semaphore(10)
         max_volume = flow.flow_volume or 30
 
+        # Step 1: Clean up old posts BEFORE creating new ones
+        existing_posts = await sync_to_async(
+            lambda: list(Post.objects.filter(flow=flow).order_by("-created_at"))
+        )()
+
+        current_count = len(existing_posts)
+        expected_new_count = len(post_dtos)
+
+        # Calculate how many old posts to remove to make room for new ones
+        if current_count + expected_new_count > max_volume:
+            # We need to delete oldest posts to stay within limit
+            space_needed = (current_count + expected_new_count) - max_volume
+            to_remove = min(space_needed, current_count)
+
+            if to_remove > 0:
+                oldest_posts = existing_posts[-to_remove:]
+                ids_to_delete = [p.id for p in oldest_posts]
+
+                await sync_to_async(Post.objects.filter(id__in=ids_to_delete).delete)()
+
+                msg = f"🧹 Flow '{flow.name}' (id={flow.id}): удалено {len(ids_to_delete)} старых постов для освобождения места"
+                logging.info(msg)
+                try:
+                    self.sync_logger.log_message(msg)
+                except Exception:
+                    pass
+
+        # Step 2: Create new posts with proper error handling
         async def _process_single_post(post_dto: PostDTO) -> PostDTO | None:
             async with semaphore:
                 try:
-                    exists = await Post.objects.filter(
-                        source_id=post_dto.source_id
-                    ).aexists()
-                    if exists:
-                        logging.info(f"Skipping duplicate post: {post_dto.source_id}")
+                    # Skip if no source_id
+                    if not post_dto.source_id:
+                        logging.warning("Post DTO has no source_id, skipping")
                         return None
 
                     media_list = self._prepare_media_list(post_dto)
+
+                    # create_post now handles duplicate checking internally
                     post = await self.post_service.create_post(
                         flow=flow,
                         content=post_dto.content,
@@ -162,9 +198,13 @@ class PostGenerationService:
 
                     if post:
                         return await PostDTO.from_orm_async(post)
+                    return None
 
                 except Exception as e:
-                    logging.error(f"Post creation failed: {e!s}", exc_info=True)
+                    logging.error(
+                        f"Post creation failed for source_id={post_dto.source_id}: {e!s}",
+                        exc_info=True,
+                    )
                     return None
 
         tasks = [_process_single_post(dto) for dto in post_dtos]
@@ -172,31 +212,24 @@ class PostGenerationService:
 
         created_posts = [res for res in results if isinstance(res, PostDTO)]
 
-        # После создания новых постов удаляем старые, чтобы соблюсти flow_volume
-        existing_posts = await sync_to_async(
-            lambda: list(Post.objects.filter(flow=flow).order_by("-created_at"))
-        )()
+        # Step 3: Final cleanup if we still exceed limit
+        final_count = await sync_to_async(Post.objects.filter(flow=flow).count)()
 
-        current_total = len(existing_posts)
-        if current_total > max_volume:
-            to_remove = current_total - max_volume
-            oldest_posts = existing_posts[-to_remove:]
+        if final_count > max_volume:
+            posts_to_trim = await sync_to_async(
+                lambda: list(
+                    Post.objects.filter(flow=flow).order_by("-created_at")[max_volume:]
+                )
+            )()
 
-            if oldest_posts:
-                ids_to_delete = [p.id for p in oldest_posts]
+            if posts_to_trim:
+                ids_to_delete = [p.id for p in posts_to_trim]
                 await sync_to_async(Post.objects.filter(id__in=ids_to_delete).delete)()
-
-                msg = f"🧹 Flow '{flow.name}' (id={flow.id}): удалено {len(ids_to_delete)} старых постов, осталось {max_volume}"
-                logging.info(msg)
-
-                try:
-                    self.sync_logger.log_message(msg)
-                except Exception:
-                    pass
+                logging.info(f"Final cleanup: удалено {len(ids_to_delete)} постов")
 
         msg = (
             f"✅ Flow '{flow.name}' (id={flow.id}): создано {len(created_posts)} постов, "
-            f"текущий размер ленты = {min(current_total, max_volume)}"
+            f"текущий размер ленты = {min(final_count, max_volume)}"
         )
         logging.info(msg)
         try:

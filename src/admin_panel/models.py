@@ -231,6 +231,11 @@ class Post(models.Model):
                 condition=models.Q(source_id__isnull=False),
             )
         ]
+        indexes: ClassVar[list[models.Index]] = [
+            models.Index(fields=["flow", "-created_at"]),
+            models.Index(fields=["source_id"]),
+            models.Index(fields=["status", "scheduled_time"]),
+        ]
 
     def __str__(self):
         return f"Пост від {self.created_at.strftime('%Y-%m-%d %H:%M')}"

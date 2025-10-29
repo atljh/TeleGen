@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any
 
 from asgiref.sync import sync_to_async
+from django.db import transaction
 from django.utils import timezone
 
 from admin_panel.models import Flow, Post, PostImage, PostVideo
@@ -41,25 +42,53 @@ class PostBaseService:
         status: PostStatus | None = None,
         scheduled_time: datetime | None = None,
         source_id: str | None = None,
-    ) -> Post:
+    ) -> Post | None:
+        """
+        Create a post with media in an atomic transaction.
+        Returns None if post with this source_id already exists.
+        """
         if scheduled_time and scheduled_time < timezone.now():
             raise InvalidOperationError("Scheduled time cannot be in the past")
 
-        post = PostFactory.create_post(
-            flow=flow,
-            content=content,
-            status=status or PostStatus.DRAFT,
-            scheduled_time=scheduled_time,
-            source_url=source_url,
-            original_content=original_content,
-            original_link=original_link,
-            original_date=original_date,
-            source_id=source_id,
-        )
+        # Validate media before creating post
+        if media_list:
+            try:
+                await self.media_service.validate_media_list(media_list)
+            except Exception as e:
+                logger.error(f"Media validation failed: {e!s}")
+                raise InvalidOperationError(f"Invalid media: {e!s}") from e
 
-        post = await self.post_repo.save(post)
-        await self.media_service.process_media_list(post, media_list)
-        return post
+        # Use get_or_create to avoid race conditions
+        if source_id:
+            existing = await Post.objects.filter(source_id=source_id).afirst()
+            if existing:
+                logger.info(f"Post with source_id={source_id} already exists, skipping")
+                return None
+
+        # Atomic transaction: create post + media together
+        async def _create_with_transaction():
+            async with transaction.atomic():
+                post = PostFactory.create_post(
+                    flow=flow,
+                    content=content,
+                    status=status or PostStatus.DRAFT,
+                    scheduled_time=scheduled_time,
+                    source_url=source_url,
+                    original_content=original_content,
+                    original_link=original_link,
+                    original_date=original_date,
+                    source_id=source_id,
+                )
+
+                post = await self.post_repo.save(post)
+
+                # Process media inside transaction
+                if media_list:
+                    await self.media_service.process_media_list(post, media_list)
+
+                return post
+
+        return await sync_to_async(_create_with_transaction)()
 
     async def update_post(
         self,

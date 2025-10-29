@@ -15,7 +15,19 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-CSRF_TRUSTED_ORIGINS = ["*"]
+# Get CSRF trusted origins from env or use defaults
+csrf_origins_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if csrf_origins_env:
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip() for origin in csrf_origins_env.split(",") if origin.strip()
+    ]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost",
+        "http://127.0.0.1",
+    ]
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
@@ -50,8 +62,6 @@ if DEBUG:
     MIDDLEWARE = [
         mw for mw in MIDDLEWARE if mw != "django.middleware.csrf.CsrfViewMiddleware"
     ]
-
-    CSRF_TRUSTED_ORIGINS = ["*"]
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
 
