@@ -79,7 +79,10 @@ async def _start_telegram_generations(
     except GenerationLimitExceeded as e:
         logging.warning(f"Flow {flow.id}: {e}")
         await flow_service.update_next_generation_time(flow.id)
-        await send_telegram_notification(bot_token, chat_id, f"{e}")
+        if chat_id and bot_token:
+            await send_telegram_notification(
+                bot_token, chat_id, str(e), parse_mode="MarkdownV2"
+            )
         return []
 
     if not generated_posts:

@@ -164,7 +164,16 @@ class PostGenerationService:
                 raise e
             tariff = await self.limit_service.get_user_tariff(user)
             remaining = tariff.generations_available - user.generated_posts_count
+
+            # If no posts can be created due to limit, always raise
+            if remaining <= 0:
+                raise e
+
             combined_posts = combined_posts[:remaining]
+            logging.warning(
+                f"Generation limit reached: trimmed to {remaining} posts "
+                f"(user has {user.generated_posts_count}/{tariff.generations_available})"
+            )
 
         self.sync_logger.generation_completed(
             user=user,

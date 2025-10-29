@@ -113,7 +113,10 @@ class LimitService:
                 f"Користувач {user.id} перевищив ліміт генерацій: {user.generated_posts_count + new_generations}/{tariff.generations_available}"
             )
             raise GenerationLimitExceeded(
-                f"❌ Ліміт генерацій досягнуто ({tariff.generations_available}/місяць)"
+                f"⚠️ *Ліміт генерацій досягнуто*\n\n"
+                f"Згенеровано: {user.generated_posts_count}/{tariff.generations_available} постів\n"
+                f"Ліміт оновиться наступного місяця\\.\n\n"
+                f"Для збільшення ліміту оновіть тарифний план\\."
             )
 
     async def increment_generations(self, user: User, count: int = 1):
