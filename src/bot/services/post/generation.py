@@ -214,6 +214,12 @@ class PostGenerationService:
         """
         semaphore = asyncio.Semaphore(10)
 
+        # Get latest post date once to avoid multiple DB queries
+        latest_post = await sync_to_async(
+            Post.objects.filter(flow=flow).order_by("-original_date").first
+        )()
+        latest_date = latest_post.original_date if latest_post and latest_post.original_date else None
+
         # Create new posts with proper error handling
         async def _process_single_post(post_dto: PostDTO) -> PostDTO | None:
             async with semaphore:
@@ -222,6 +228,15 @@ class PostGenerationService:
                     if not post_dto.source_id:
                         logging.warning("Post DTO has no source_id, skipping")
                         return None
+
+                    # Skip if post is older than existing posts
+                    if post_dto.original_date and latest_date:
+                        if post_dto.original_date <= latest_date:
+                            logging.info(
+                                f"Skipping old post {post_dto.source_id} from {post_dto.original_date} "
+                                f"(latest in DB: {latest_date})"
+                            )
+                            return None
 
                     media_list = self._prepare_media_list(post_dto)
 
@@ -252,6 +267,12 @@ class PostGenerationService:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         created_posts = [res for res in results if isinstance(res, PostDTO)]
+
+        skipped_count = len(post_dtos) - len(created_posts)
+        if skipped_count > 0:
+            logging.info(
+                f"Skipped {skipped_count} posts (duplicates or older than existing)"
+            )
 
         # Count posts for statistics (no deletion, just reporting)
         draft_count = await sync_to_async(
