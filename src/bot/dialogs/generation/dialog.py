@@ -40,9 +40,13 @@ def create_generation_dialog():
         ),
         Window(
             Format(
-                "<b>Назва: {dialog_data[selected_channel].name}</b>\n"
-                "<b>Дата додавання: {dialog_data[selected_channel].created_at:%d.%m.%Y}</b>\n\n"
-                "<b>Флоу: {channel_flow}</b>"
+                "*Назва:* {dialog_data[selected_channel].name}\n"
+                "*Дата додавання:* {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
+                "*Флоу:* {channel_flow}\n\n"
+                "*Статистика постів:*\n"
+                "├ Telegram: {telegram_posts}\n"
+                "├ Web: {web_posts}\n"
+                "└ Всього: {total_posts}"
             ),
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow, when="has_flow"),
@@ -66,7 +70,7 @@ def create_generation_dialog():
                 Back(BACK_BUTTON),
             ),
             state=GenerationMenu.channel_main,
-            parse_mode=ParseMode.HTML,
+            parse_mode=ParseMode.MARKDOWN,
             getter=selected_channel_getter,
         ),
     )

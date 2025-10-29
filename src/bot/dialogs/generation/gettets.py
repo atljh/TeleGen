@@ -32,12 +32,37 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
             "channel_flow": "Вiдсутнiй",
             "has_flow": False,
             "no_flow": True,
+            "telegram_posts": 0,
+            "web_posts": 0,
+            "total_posts": 0,
         }
 
     dialog_manager.dialog_data["selected_channel"] = selected_channel
     dialog_manager.dialog_data["channel_flow"] = channel_flow
 
     has_flow = bool(channel_flow)
+
+    # Count posts by source type if flow exists
+    telegram_posts = 0
+    web_posts = 0
+    total_posts = 0
+
+    if has_flow and channel_flow:
+        from admin_panel.models import Post
+        from asgiref.sync import sync_to_async
+
+        # Get all draft posts for this flow
+        posts = await sync_to_async(list)(
+            Post.objects.filter(flow_id=channel_flow.id, status=Post.DRAFT)
+        )
+        total_posts = len(posts)
+
+        # Count by source type
+        for post in posts:
+            if post.source_url and "t.me" in post.source_url:
+                telegram_posts += 1
+            else:
+                web_posts += 1
 
     return {
         "channel_name": selected_channel.name,
@@ -46,4 +71,7 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
         "channel_flow": "Присутнiй" if has_flow else "Вiдсутнiй",
         "has_flow": has_flow,
         "no_flow": not has_flow,
+        "telegram_posts": telegram_posts,
+        "web_posts": web_posts,
+        "total_posts": total_posts,
     }
