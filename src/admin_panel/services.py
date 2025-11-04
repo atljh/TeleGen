@@ -4,7 +4,7 @@ from datetime import timedelta
 from asgiref.sync import async_to_sync
 from django.utils import timezone
 
-from .models import Payment, Subscription
+from .models import Payment, PromoCode, Subscription, TariffPeriod
 
 logger = logging.getLogger(__name__)
 
@@ -175,3 +175,83 @@ class PaymentHandler:
             logger.error(
                 f"Error sending success notification to user {user.telegram_id}: {e}"
             )
+
+    def send_promo_success_notification(self, user, tariff_period, promo_code):
+        """Send notification when subscription is activated via promo code"""
+        try:
+            from bot.containers import Container
+
+            bot = Container.bot()
+            message_text = (
+                "🎉 Вітаємо! Ваша підписка успішно активована за промокодом!\n\n"
+                f"🎫 Промокод: {promo_code.code}\n"
+                f"📋 Тариф: {tariff_period.tariff.name}\n"
+                f"⏱️ Термін: {tariff_period.get_months_display()}\n"
+                f"💰 Безкоштовно!\n\n"
+                "Тепер вам доступні всі функції обраного тарифу!"
+            )
+
+            async_to_sync(bot.send_message)(chat_id=user.telegram_id, text=message_text)
+
+        except Exception as e:
+            logger.error(
+                f"Error sending promo success notification to user {user.telegram_id}: {e}"
+            )
+
+    def activate_subscription_from_promo(self, user, promo_code: PromoCode):
+        """Activate subscription for a user using a promo code (without payment)"""
+        try:
+            # Get the tariff period for this promo code
+            tariff_period = TariffPeriod.objects.get(
+                tariff=promo_code.tariff,
+                months=promo_code.months
+            )
+
+            # Deactivate all existing active subscriptions
+            active_subscriptions = Subscription.objects.filter(
+                user=user, is_active=True
+            )
+
+            for subscription in active_subscriptions:
+                subscription.is_active = False
+                subscription.save(update_fields=["is_active"])
+                logger.info(
+                    f"Deactivated previous subscription {subscription.id} for user {user.telegram_id}"
+                )
+
+            # Create new subscription
+            start_date = timezone.now()
+            end_date = start_date + timedelta(days=tariff_period.months * 30)
+
+            subscription = Subscription.objects.create(
+                user=user,
+                tariff_period=tariff_period,
+                start_date=start_date,
+                end_date=end_date,
+                is_active=True,
+            )
+
+            logger.info(
+                f"Activated subscription {subscription.id} for user {user.telegram_id} "
+                f"via promo code {promo_code.code} "
+                f"({tariff_period.tariff.name} for {tariff_period.months} months)"
+            )
+
+            # Send success notification
+            self.send_promo_success_notification(user, tariff_period, promo_code)
+
+            return subscription
+
+        except TariffPeriod.DoesNotExist:
+            logger.error(
+                f"TariffPeriod not found for promo code {promo_code.code}: "
+                f"tariff={promo_code.tariff.name}, months={promo_code.months}"
+            )
+            return None
+        except Exception as e:
+            logger.error(
+                f"Error activating subscription from promo code {promo_code.code} "
+                f"for user {user.telegram_id}: {e}",
+                exc_info=True,
+            )
+            return None

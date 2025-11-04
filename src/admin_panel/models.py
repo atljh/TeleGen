@@ -499,11 +499,6 @@ class PromoCode(models.Model):
         choices=TariffPeriod.PERIOD_CHOICES,
         verbose_name="Термін підписки"
     )
-    discount_percent = models.PositiveSmallIntegerField(
-        default=0,
-        verbose_name="Знижка (%)",
-        help_text="Відсоток знижки від 0 до 100"
-    )
     is_active = models.BooleanField(
         default=True,
         verbose_name="Активний"
@@ -519,7 +514,7 @@ class PromoCode(models.Model):
         ordering: ClassVar[list[str]] = ["-created_at"]
 
     def __str__(self):
-        return f"{self.code} ({self.tariff.name} – {self.get_months_display()}, -{self.discount_percent}%)"
+        return f"{self.code} ({self.tariff.name} – {self.get_months_display()})"
 
 
 class Subscription(models.Model):

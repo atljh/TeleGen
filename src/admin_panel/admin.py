@@ -153,11 +153,11 @@ class TariffPeriodAdmin(admin.ModelAdmin):
 
 @admin.register(PromoCode)
 class PromoCodeAdmin(admin.ModelAdmin):
-    list_display = ("code", "tariff", "months", "discount_percent", "is_active", "created_at")
+    list_display = ("code", "tariff", "months", "is_active", "created_at")
     list_filter = ("is_active", "tariff", "months")
     search_fields = ("code", "tariff__name")
     ordering = ("-created_at",)
-    fields = ("code", "tariff", "months", "discount_percent", "is_active", "created_at")
+    fields = ("code", "tariff", "months", "is_active", "created_at")
     readonly_fields = ("created_at",)
 
 

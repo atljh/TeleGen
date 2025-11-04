@@ -5,7 +5,8 @@ from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button, Select
 from asgiref.sync import sync_to_async
 
-from admin_panel.models import PromoCode, TariffPeriod
+from admin_panel.models import PromoCode, TariffPeriod, User
+from admin_panel.services import PaymentHandler
 from bot.dialogs.settings.payment.states import PaymentMenu
 
 from .getters import packages_getter, periods_getter
@@ -81,56 +82,55 @@ async def on_back_to_periods(
 async def on_promocode_entered(
     callback: CallbackQuery, button: Button, manager: DialogManager, promo: str
 ):
-    """Validate and apply promo code"""
+    """Validate promo code and activate free subscription"""
     promo_code = promo.strip().upper()
     logging.info(f"Validating promo code: {promo_code}")
 
-    selected_package = manager.dialog_data.get("selected_package")
-    selected_period = manager.dialog_data.get("selected_period")
-
-    if not selected_package or not selected_period:
-        manager.dialog_data["promocode_status"] = "error"
-        manager.dialog_data["promocode_error"] = "Спочатку оберіть тариф та період"
-        return
-
-    # Get tariff period from DB
-    tariff_period = await TariffPeriod.objects.filter(
-        tariff_id=int(selected_package["id"]),
-        id=int(selected_period["id"])
-    ).afirst()
-
-    if not tariff_period:
-        manager.dialog_data["promocode_status"] = "error"
-        manager.dialog_data["promocode_error"] = "Помилка: тариф не знайдено"
-        return
-
-    # Validate promo code
-    promo_obj = await PromoCode.objects.filter(
+    # Find promo code in database
+    promo_obj = await PromoCode.objects.select_related("tariff").filter(
         code=promo_code,
-        tariff_id=int(selected_package["id"]),
-        months=tariff_period.months,
         is_active=True
     ).afirst()
 
     if not promo_obj:
-        manager.dialog_data["promocode_status"] = "error"
-        manager.dialog_data["promocode_error"] = "Промокод недійсний або не підходить для обраного тарифу"
+        await callback.answer("❌ Промокод недійсний або неактивний", show_alert=True)
         return
 
-    # Apply discount
-    original_price = float(tariff_period.price)
-    discount_amount = original_price * (promo_obj.discount_percent / 100)
-    final_price = original_price - discount_amount
+    # Get tariff period for this promo code
+    tariff_period = await TariffPeriod.objects.filter(
+        tariff=promo_obj.tariff,
+        months=promo_obj.months
+    ).afirst()
 
-    # Save promo code data
-    manager.dialog_data["promocode"] = promo_code
-    manager.dialog_data["promocode_id"] = promo_obj.id
-    manager.dialog_data["promocode_status"] = "success"
-    manager.dialog_data["original_price"] = original_price
-    manager.dialog_data["discount_percent"] = promo_obj.discount_percent
-    manager.dialog_data["discount_amount"] = discount_amount
-    manager.dialog_data["total_price"] = final_price
+    if not tariff_period:
+        await callback.answer("❌ Помилка: тарифний період не знайдено", show_alert=True)
+        logging.error(f"TariffPeriod not found for promo {promo_code}: tariff={promo_obj.tariff.id}, months={promo_obj.months}")
+        return
 
-    logging.info(f"Promo code applied: {promo_code}, discount: {promo_obj.discount_percent}%, new price: {final_price}")
+    # All promo codes give free subscription - activate immediately
+    telegram_user_id = callback.from_user.id
 
-    await manager.switch_to(PaymentMenu.promocode_success)
+    # Get Django user from database
+    user = await User.objects.filter(telegram_id=telegram_user_id).afirst()
+
+    if not user:
+        await callback.answer("❌ Користувача не знайдено в системі", show_alert=True)
+        logging.error(f"User not found for telegram_id: {telegram_user_id}")
+        return
+
+    # Activate subscription using PaymentHandler service
+    payment_handler = PaymentHandler()
+    subscription = await sync_to_async(payment_handler.activate_subscription_from_promo)(
+        user, promo_obj
+    )
+
+    if subscription:
+        logging.info(
+            f"Free subscription activated for user {telegram_user_id} "
+            f"via promo code {promo_code}"
+        )
+        # Close the dialog - subscription is already activated
+        await manager.done()
+    else:
+        await callback.answer("❌ Помилка активації підписки. Спробуйте пізніше", show_alert=True)
+        logging.error(f"Failed to activate subscription from promo code {promo_code}")

@@ -32,13 +32,13 @@ from .getters import (
     monobank_getter,
     packages_getter,
     periods_getter,
-    promocode_success_getter,
     success_getter,
 )
 
 
 def create_payment_dialog():
     return Dialog(
+        # First window - package selection with promo code button
         Window(
             Multi(
                 Format("<b>Підписка на бота</b>"),
@@ -60,48 +60,33 @@ def create_payment_dialog():
                 ),
             ),
             Row(
+                Button(
+                    Const("🎟 Є промокод?"),
+                    id="input_promocode",
+                    on_click=lambda c, w, m: m.switch_to(PaymentMenu.promocode),
+                ),
+            ),
+            Row(
                 Cancel(BACK_BUTTON),
             ),
             state=PaymentMenu.main,
             getter=packages_getter,
             parse_mode=ParseMode.HTML,
         ),
+        # Promo code input window
         Window(
             Multi(
-                Const("<b>Введіть промокод:</b>\n"),
-                Const("Приклад: <code>WELCOME10</code>"),
+                Const("<b>🎟 Введіть промокод</b>\n"),
+                Const("Після введення промокоду підписка активується автоматично\n"),
+                Const("Приклад: <code>WELCOME2024</code>"),
                 sep="\n",
             ),
             TextInput(
                 id="promocode_input",
                 on_success=on_promocode_entered,
-                on_error=lambda m, d, e: m.dialog().show(Const("❌ Невірний формат")),
             ),
             Back(BACK_BUTTON),
             state=PaymentMenu.promocode,
-            parse_mode=ParseMode.HTML,
-        ),
-        Window(
-            Multi(
-                Const("✅ <b>Промокод успішно застосовано!</b>\n"),
-                Format(""),
-                Format("<b>Промокод:</b> <code>{promocode}</code>"),
-                Format("<b>Пакет:</b> <code>{package[name]}</code>"),
-                Format("<b>Термін:</b> <code>{period[name]}</code>"),
-                Format(""),
-                Format("<b>Оригінальна ціна:</b> <s>{original_price} грн</s>"),
-                Format("<b>Знижка:</b> <code>-{discount_percent}%</code> (<code>-{discount_amount} грн</code>)"),
-                Format("<b>Ціна зі знижкою:</b> <code>{total_price} грн</code> 🎉"),
-                sep="\n",
-            ),
-            Button(
-                Const("➡️ До оплати"),
-                id="continue_to_payment",
-                on_click=lambda c, w, m: m.switch_to(PaymentMenu.choose_method),
-            ),
-            Back(BACK_BUTTON),
-            state=PaymentMenu.promocode_success,
-            getter=promocode_success_getter,
             parse_mode=ParseMode.HTML,
         ),
         Window(
@@ -148,13 +133,6 @@ def create_payment_dialog():
                     Const("₿ CryptoBot"), id="cryptobot_pay", on_click=on_method_selected
                 ),
                 width=2,
-            ),
-            Row(
-                Button(
-                    Const("🎟 Ввести промокод"),
-                    id="input_promocode",
-                    on_click=lambda c, w, m: m.switch_to(PaymentMenu.promocode),
-                ),
             ),
             Back(Const("⬅️ До термінів")),
             state=PaymentMenu.choose_method,
