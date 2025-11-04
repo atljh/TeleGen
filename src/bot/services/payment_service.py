@@ -40,6 +40,7 @@ class PaymentService:
         description: str = "Оплата підписки",
         currency: str = "UAH",
         is_successful: bool = False,
+        promo_code_id: int | None = None,
     ) -> PaymentDTO:
         user = await self.user_repository.get_user_by_telegram_id(user_id)
 
@@ -76,6 +77,7 @@ class PaymentService:
             tariff_period=tariff_period,
             external_id=external_id,
             is_successful=is_successful,
+            promo_code_id=promo_code_id,
         )
 
         return PaymentDTO.from_orm(payment)

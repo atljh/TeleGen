@@ -1,4 +1,4 @@
-from admin_panel.models import Payment, TariffPeriod, User
+from admin_panel.models import Payment, PromoCode, TariffPeriod, User
 from bot.database.exceptions import PaymentNotFoundError
 
 
@@ -13,7 +13,15 @@ class PaymentRepository:
         is_successful: bool = False,
         order_id: str | None = None,
         pay_url: str | None = None,
+        promo_code_id: int | None = None,
     ) -> Payment:
+        promo_code = None
+        if promo_code_id:
+            try:
+                promo_code = await PromoCode.objects.aget(id=promo_code_id)
+            except PromoCode.DoesNotExist:
+                pass  # If promo code not found, proceed without it
+
         return await Payment.objects.acreate(
             user=user,
             amount=amount,
@@ -23,6 +31,7 @@ class PaymentRepository:
             tariff_period=tariff_period,
             order_id=order_id,
             pay_url=pay_url,
+            promo_code=promo_code,
         )
 
     async def get_payment_by_id(self, payment_id: int) -> Payment:

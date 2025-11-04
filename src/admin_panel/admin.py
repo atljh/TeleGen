@@ -11,6 +11,7 @@ from .models import (
     Post,
     PostImage,
     PostVideo,
+    PromoCode,
     Subscription,
     Tariff,
     TariffPeriod,
@@ -148,6 +149,16 @@ class TariffPeriodAdmin(admin.ModelAdmin):
     list_filter = ("tariff", "months")
     search_fields = ("tariff__name",)
     ordering = ("tariff", "months")
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ("code", "tariff", "months", "discount_percent", "is_active", "created_at")
+    list_filter = ("is_active", "tariff", "months")
+    search_fields = ("code", "tariff__name")
+    ordering = ("-created_at",)
+    fields = ("code", "tariff", "months", "discount_percent", "is_active", "created_at")
+    readonly_fields = ("created_at",)
 
 
 @admin.register(Subscription)

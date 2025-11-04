@@ -88,18 +88,36 @@ async def methods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, A
     selected_package = dialog_manager.dialog_data.get("selected_package")
     selected_period = dialog_manager.dialog_data.get("selected_period")
 
-    total_price = "0.00"
-    if selected_package and selected_period:
-        tariff_period = await TariffPeriod.objects.filter(
-            tariff_id=int(selected_package["id"]), id=int(selected_period["id"])
-        ).afirst()
+    # Check if promo code was applied
+    promo_applied = dialog_manager.dialog_data.get("promocode_status") == "success"
 
-        if tariff_period:
-            total_price = f"{tariff_period.price:.2f}"
+    total_price = "0.00"
+    original_price = "0.00"
+    discount_info = ""
+
+    if selected_package and selected_period:
+        if promo_applied:
+            # Use discounted price from dialog_data
+            total_price = f"{dialog_manager.dialog_data.get('total_price', 0):.2f}"
+            original_price = f"{dialog_manager.dialog_data.get('original_price', 0):.2f}"
+            discount_percent = dialog_manager.dialog_data.get('discount_percent', 0)
+            discount_info = f"-{discount_percent}% (промокод: {dialog_manager.dialog_data.get('promocode', '')})"
+        else:
+            tariff_period = await TariffPeriod.objects.filter(
+                tariff_id=int(selected_package["id"]), id=int(selected_period["id"])
+            ).afirst()
+
+            if tariff_period:
+                total_price = f"{tariff_period.price:.2f}"
+                original_price = total_price
+
     return {
         "package": selected_package,
         "period": selected_period,
         "total_price": total_price,
+        "original_price": original_price,
+        "discount_info": discount_info,
+        "promo_applied": promo_applied,
     }
 
 
@@ -125,6 +143,7 @@ async def monobank_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, 
     package = dialog_manager.dialog_data.get("selected_package")
     period = dialog_manager.dialog_data.get("selected_period")
     total_price = dialog_manager.dialog_data.get("total_price")
+    promo_code_id = dialog_manager.dialog_data.get("promocode_id")
     user_id = dialog_manager.event.from_user.id
 
     payment_dto = await payment_service.create_payment(
@@ -134,6 +153,7 @@ async def monobank_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, 
         tariff_period_id=int(period["id"]),
         description=f"Підписка: {package['name']} • {period['name']}",
         currency="UAH",
+        promo_code_id=promo_code_id,
     )
 
     return {
@@ -150,6 +170,7 @@ async def cryptobot_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
     package = dialog_manager.dialog_data.get("selected_package")
     period = dialog_manager.dialog_data.get("selected_period")
     total_price = dialog_manager.dialog_data.get("total_price")
+    promo_code_id = dialog_manager.dialog_data.get("promocode_id")
     user_id = dialog_manager.event.from_user.id
 
     payment_dto = await payment_service.create_payment(
@@ -159,6 +180,7 @@ async def cryptobot_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
         payment_method="cryptobot",
         description=f"Підписка: {package['name']} • {period['name']}",
         currency="USDT",
+        promo_code_id=promo_code_id,
     )
 
     return {

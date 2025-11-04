@@ -312,6 +312,14 @@ class Payment(models.Model):
         null=True,
         blank=True,
     )
+    promo_code = models.ForeignKey(
+        "PromoCode",
+        on_delete=models.SET_NULL,
+        related_name="payments",
+        verbose_name="Промокод",
+        null=True,
+        blank=True,
+    )
     subscription = models.ForeignKey(
         "Subscription",
         on_delete=models.CASCADE,
@@ -410,14 +418,10 @@ class Tariff(models.Model):
     ]
 
     code = models.CharField(
-        max_length=50, choices=TARIFF_CHOICES, unique=True, verbose_name="Код тарифу"
+        max_length=50, unique=True, verbose_name="Код тарифу"
     )
     name = models.CharField(max_length=100, verbose_name="Назва")
     description = models.TextField(blank=True, verbose_name="Опис")
-
-    level = models.PositiveSmallIntegerField(
-        default=1, help_text="Рівень тарифу (1 - безкоштовний, 2 - базовий, 3 - профі)"
-    )
 
     channels_available = models.PositiveSmallIntegerField(
         default=0, verbose_name="Доступно каналів"
@@ -445,7 +449,6 @@ class Tariff(models.Model):
     class Meta:
         verbose_name = "Тариф"
         verbose_name_plural = "Тарифи"
-        ordering: ClassVar[list[str]] = ["level"]
 
     def __str__(self):
         return f"{self.get_name_display()} ({self.get_code_display()})"
@@ -472,10 +475,6 @@ class TariffPeriod(models.Model):
         choices=PERIOD_CHOICES, verbose_name="Термін підписки"
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна")
-    promo_code = models.CharField(max_length=50, blank=True, verbose_name="Промокод")
-    discount_percent = models.PositiveSmallIntegerField(
-        default=0, verbose_name="Знижка (%)"
-    )
 
     class Meta:
         verbose_name = "Термін тарифу"
@@ -484,6 +483,43 @@ class TariffPeriod(models.Model):
 
     def __str__(self):
         return f"{self.tariff} – {self.get_months_display()} ({self.price}₴)"
+
+
+class PromoCode(models.Model):
+    code = models.CharField(
+        max_length=50, unique=True, verbose_name="Промокод"
+    )
+    tariff = models.ForeignKey(
+        Tariff,
+        on_delete=models.CASCADE,
+        related_name="promo_codes",
+        verbose_name="Тариф"
+    )
+    months = models.PositiveSmallIntegerField(
+        choices=TariffPeriod.PERIOD_CHOICES,
+        verbose_name="Термін підписки"
+    )
+    discount_percent = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name="Знижка (%)",
+        help_text="Відсоток знижки від 0 до 100"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активний"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата створення"
+    )
+
+    class Meta:
+        verbose_name = "Промокод"
+        verbose_name_plural = "Промокоди"
+        ordering: ClassVar[list[str]] = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.code} ({self.tariff.name} – {self.get_months_display()}, -{self.discount_percent}%)"
 
 
 class Subscription(models.Model):

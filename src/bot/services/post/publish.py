@@ -4,9 +4,12 @@ import os
 from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import FSInputFile, InputMediaPhoto, InputMediaVideo
+from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
+from admin_panel.models import Post
 from bot.database.exceptions import InvalidOperationError
 from bot.database.models import PostDTO, PostStatus
 from bot.services.post.base import PostBaseService
@@ -20,13 +23,35 @@ class PostPublishingService:
         self.post_service = post_base_service
 
     async def publish_post(self, post_id: int, channel_id: str) -> PostDTO:
-        post = await self.post_service.get_post(post_id)
-        if post.status == PostStatus.PUBLISHED:
-            raise InvalidOperationError("Пост вже опублiкований!")
+        """
+        Publish a post to a channel with transaction protection to prevent duplicates.
+        Uses database-level locking to ensure only one publish operation succeeds.
+        """
+        @sync_to_async
+        def check_and_lock_post():
+            """Check post status and lock it to prevent concurrent modifications"""
+            with transaction.atomic():
+                # Lock the post row for update until transaction completes
+                post_obj = Post.objects.select_for_update().get(id=post_id)
+
+                # Check status while holding the lock
+                if post_obj.status == PostStatus.PUBLISHED.value:
+                    raise InvalidOperationError("Пост вже опублiкований!")
+
+                # Return locked status - post will remain locked until transaction commits
+                return True
 
         try:
+            # Check and lock the post
+            await check_and_lock_post()
+
+            # Get post data using the existing service method (outside transaction)
+            post = await self.post_service.get_post(post_id)
+
+            # Send to channel
             await self._send_post_to_channel(post, channel_id)
 
+            # Update status after successful send
             return await self.post_service.update_post(
                 post_id=post_id,
                 status=PostStatus.PUBLISHED,
@@ -34,8 +59,12 @@ class PostPublishingService:
                 publication_date=timezone.now(),
                 scheduled_time=None,
             )
+
+        except InvalidOperationError:
+            # Re-raise InvalidOperationError without wrapping
+            raise
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error publishing post {post_id}: {e}", exc_info=True)
             raise InvalidOperationError("Помилка публiкацiї") from e
 
     async def _send_post_to_channel(self, post: PostDTO, channel_id: str):
@@ -47,12 +76,15 @@ class PostPublishingService:
 
     async def _send_media_group(self, post: PostDTO, channel_id: str, caption: str):
         media_group = []
+        caption_added = False
 
         for i, image in enumerate(post.images):
+            # Add caption only to the first media item
+            should_add_caption = not caption_added
             if image.url.startswith(("http://", "https://")):
                 media = InputMediaPhoto(
                     media=image.url,
-                    caption=caption if i == 0 and not post.videos else None,
+                    caption=caption if should_add_caption else None,
                     parse_mode="HTML",
                 )
                 media_group.append(media)
@@ -60,19 +92,27 @@ class PostPublishingService:
                 media_path = os.path.join(settings.MEDIA_ROOT, image.url.lstrip("/"))
                 media = InputMediaPhoto(
                     media=FSInputFile(media_path),
-                    caption=caption if i == 0 and not post.videos else None,
+                    caption=caption if should_add_caption else None,
                     parse_mode="HTML",
                 )
                 media_group.append(media)
 
+            if should_add_caption:
+                caption_added = True
+
         for j, video in enumerate(post.videos):
+            # Add caption only to the first media item (if not already added)
+            should_add_caption = not caption_added
             media_path = os.path.join(settings.MEDIA_ROOT, video.url.lstrip("/"))
             media = InputMediaVideo(
                 media=FSInputFile(media_path),
-                caption=caption if j == 0 and not post.images else None,
+                caption=caption if should_add_caption else None,
                 parse_mode="HTML",
             )
             media_group.append(media)
+
+            if should_add_caption:
+                caption_added = True
 
         if media_group:
             await self.bot.send_media_group(chat_id=channel_id, media=media_group)
