@@ -71,9 +71,6 @@ async def periods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, A
             if period.months == 1
             else f"{period.months} місяців",
             "price": f"{period.price}",
-            "discount_display": f" -{period.discount_percent}%"
-            if period.discount_percent
-            else "",
         }
         for period in periods
     ]
@@ -98,8 +95,15 @@ async def methods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, A
     if selected_package and selected_period:
         if promo_applied:
             # Use discounted price from dialog_data
-            total_price = f"{dialog_manager.dialog_data.get('total_price', 0):.2f}"
-            original_price = f"{dialog_manager.dialog_data.get('original_price', 0):.2f}"
+            total_price_val = dialog_manager.dialog_data.get('total_price', 0)
+            original_price_val = dialog_manager.dialog_data.get('original_price', 0)
+            # Convert to float if string
+            if isinstance(total_price_val, str):
+                total_price_val = float(total_price_val)
+            if isinstance(original_price_val, str):
+                original_price_val = float(original_price_val)
+            total_price = f"{total_price_val:.2f}"
+            original_price = f"{original_price_val:.2f}"
             discount_percent = dialog_manager.dialog_data.get('discount_percent', 0)
             discount_info = f"-{discount_percent}% (промокод: {dialog_manager.dialog_data.get('promocode', '')})"
         else:
@@ -134,6 +138,21 @@ async def promocode_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
         "selected_package": dialog_manager.dialog_data.get("selected_package"),
         "entered_promocode": dialog_manager.dialog_data.get("entered_promocode", ""),
         "promocode_status": dialog_manager.dialog_data.get("promocode_status", ""),
+    }
+
+
+async def promocode_success_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
+    selected_package = dialog_manager.dialog_data.get("selected_package")
+    selected_period = dialog_manager.dialog_data.get("selected_period")
+
+    return {
+        "package": selected_package,
+        "period": selected_period,
+        "promocode": dialog_manager.dialog_data.get("promocode", ""),
+        "original_price": f"{dialog_manager.dialog_data.get('original_price', 0):.2f}",
+        "discount_percent": dialog_manager.dialog_data.get("discount_percent", 0),
+        "discount_amount": f"{dialog_manager.dialog_data.get('discount_amount', 0):.2f}",
+        "total_price": f"{dialog_manager.dialog_data.get('total_price', 0):.2f}",
     }
 
 

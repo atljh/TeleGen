@@ -32,6 +32,7 @@ from .getters import (
     monobank_getter,
     packages_getter,
     periods_getter,
+    promocode_success_getter,
     success_getter,
 )
 
@@ -59,13 +60,6 @@ def create_payment_dialog():
                 ),
             ),
             Row(
-                Button(
-                    Const("Ввести промокод"),
-                    id="input_promocode",
-                    on_click=lambda c, w, m: m.switch_to(PaymentMenu.promocode),
-                ),
-            ),
-            Row(
                 Cancel(BACK_BUTTON),
             ),
             state=PaymentMenu.main,
@@ -89,6 +83,29 @@ def create_payment_dialog():
         ),
         Window(
             Multi(
+                Const("✅ <b>Промокод успішно застосовано!</b>\n"),
+                Format(""),
+                Format("<b>Промокод:</b> <code>{promocode}</code>"),
+                Format("<b>Пакет:</b> <code>{package[name]}</code>"),
+                Format("<b>Термін:</b> <code>{period[name]}</code>"),
+                Format(""),
+                Format("<b>Оригінальна ціна:</b> <s>{original_price} грн</s>"),
+                Format("<b>Знижка:</b> <code>-{discount_percent}%</code> (<code>-{discount_amount} грн</code>)"),
+                Format("<b>Ціна зі знижкою:</b> <code>{total_price} грн</code> 🎉"),
+                sep="\n",
+            ),
+            Button(
+                Const("➡️ До оплати"),
+                id="continue_to_payment",
+                on_click=lambda c, w, m: m.switch_to(PaymentMenu.choose_method),
+            ),
+            Back(BACK_BUTTON),
+            state=PaymentMenu.promocode_success,
+            getter=promocode_success_getter,
+            parse_mode=ParseMode.HTML,
+        ),
+        Window(
+            Multi(
                 Format("<b>Оберіть термін підписки</b>"),
                 Format("\n"),
                 Format("<b>Обраний пакет:</b> <code>{selected_package[name]}</code>"),
@@ -98,9 +115,7 @@ def create_payment_dialog():
             ),
             Group(
                 Select(
-                    text=Format(
-                        "{item[name]} • {item[price]} {item[discount_display]}"
-                    ),
+                    text=Format("{item[name]} • {item[price]} грн"),
                     item_id_getter=lambda item: item["id"],
                     items="periods",
                     id="period_select",
@@ -122,17 +137,24 @@ def create_payment_dialog():
                 Format(""),
                 Format("<b>Пакет:</b> <code>{package[name]}</code>"),
                 Format("<b>Термін:</b> <code>{period[name]}</code>"),
-                Format("<b>Загальна сума:</b> <code>{total_price}</code>"),
+                Format("<b>Загальна сума:</b> <code>{total_price} грн</code>"),
                 sep="\n",
             ),
             Group(
                 Button(
-                    Const("Monobank"), id="monobank_pay", on_click=on_method_selected
+                    Const("💳 Monobank"), id="monobank_pay", on_click=on_method_selected
                 ),
                 Button(
-                    Const("CryptoBot"), id="cryptobot_pay", on_click=on_method_selected
+                    Const("₿ CryptoBot"), id="cryptobot_pay", on_click=on_method_selected
                 ),
                 width=2,
+            ),
+            Row(
+                Button(
+                    Const("🎟 Ввести промокод"),
+                    id="input_promocode",
+                    on_click=lambda c, w, m: m.switch_to(PaymentMenu.promocode),
+                ),
             ),
             Back(Const("⬅️ До термінів")),
             state=PaymentMenu.choose_method,
@@ -149,11 +171,6 @@ def create_payment_dialog():
                 sep="\n",
             ),
             Row(Url(text=Const("Оплатити"), url=Jinja("{{monobank_link}}"))),
-            Button(
-                Const("Перевірити оплату"),
-                id="confirm_monobank",
-                on_click=on_monobank_confirm,
-            ),
             Back(Const("⬅️ До способів")),
             LinkPreview(is_disabled=True),
             state=PaymentMenu.monobank_payment,
@@ -170,11 +187,6 @@ def create_payment_dialog():
                 sep="\n",
             ),
             Row(Url(text=Const("Оплатити"), url=Jinja("{{cryptobot_link}}"))),
-            # Button(
-            #     Const("Перевірити оплату"),
-            #     id="confirm_monobank",
-            #     on_click=on_monobank_confirm,
-            # ),
             Back(Const("⬅️ До способів")),
             LinkPreview(is_disabled=True),
             state=PaymentMenu.cryptobot_payment,

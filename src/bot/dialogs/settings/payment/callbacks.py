@@ -28,7 +28,8 @@ async def on_period_selected(
     period = next((p for p in data["periods"] if p["id"] == item_id), None)
     if period:
         manager.dialog_data["selected_period"] = period
-        manager.dialog_data["total_price"] = period["price"]
+        # Convert price string to float for calculations
+        manager.dialog_data["total_price"] = float(period["price"])
         await manager.switch_to(PaymentMenu.choose_method)
 
 
@@ -132,4 +133,4 @@ async def on_promocode_entered(
 
     logging.info(f"Promo code applied: {promo_code}, discount: {promo_obj.discount_percent}%, new price: {final_price}")
 
-    await manager.switch_to(PaymentMenu.choose_method)
+    await manager.switch_to(PaymentMenu.promocode_success)

@@ -4,6 +4,7 @@ from aiogram.fsm.state import State, StatesGroup
 class PaymentMenu(StatesGroup):
     main = State()
     promocode = State()
+    promocode_success = State()
     choose_period = State()
     choose_method = State()
     monobank_payment = State()
