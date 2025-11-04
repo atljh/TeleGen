@@ -115,10 +115,19 @@ class PaymentService:
         self, order_id: str, amount: float, description: str, currency: str
     ) -> str:
         headers = {"Crypto-Pay-API-Token": self.cryptobot_token}
+
+        # CryptoBot поддерживает только криптовалюты
+        # Конвертируем UAH в USDT (примерный курс: 1 USDT ≈ 41 UAH)
+        usdt_rate = 41.0  # Курс UAH к USDT
+        if currency == "UAH":
+            amount_usdt = round(amount / usdt_rate, 2)
+        else:
+            amount_usdt = amount
+
         payload = {
             "asset": "USDT",
-            "amount": str(amount),
-            "description": description,
+            "amount": str(amount_usdt),
+            "description": f"{description} ({amount:.2f} UAH ≈ {amount_usdt:.2f} USDT)",
             "hidden_message": f"Order {order_id}",
         }
 
@@ -133,7 +142,7 @@ class PaymentService:
 
                 result = data["result"]
                 self.logger.info(
-                    f"CryptoBot invoice created: {result.get('invoice_id')}"
+                    f"CryptoBot invoice created: {result.get('invoice_id')}, {amount:.2f} UAH → {amount_usdt:.2f} USDT"
                 )
                 return result["pay_url"]
 

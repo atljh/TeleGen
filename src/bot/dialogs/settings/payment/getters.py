@@ -198,7 +198,7 @@ async def cryptobot_getter(dialog_manager: DialogManager, **kwargs) -> dict[str,
         tariff_period_id=int(period["id"]),
         payment_method="cryptobot",
         description=f"Підписка: {package['name']} • {period['name']}",
-        currency="USDT",
+        currency="UAH",
         promo_code_id=promo_code_id,
     )
 
