@@ -68,9 +68,15 @@ class PostPublishingService:
             raise InvalidOperationError("Помилка публiкацiї") from e
 
     async def _send_post_to_channel(self, post: PostDTO, channel_id: str):
-        caption = post.content[:1024] if len(post.content) > 1024 else post.content
         if post.images or post.videos:
-            await self._send_media_group(post, channel_id, caption)
+            # If content is longer than Telegram's caption limit, send media without caption
+            # and then send full text as separate message
+            if len(post.content) > 1024:
+                await self._send_media_group(post, channel_id, caption=None)
+                await self._send_text_message(post, channel_id)
+            else:
+                # Content fits in caption, send normally
+                await self._send_media_group(post, channel_id, post.content)
         else:
             await self._send_text_message(post, channel_id)
 

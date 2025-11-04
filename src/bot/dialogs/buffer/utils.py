@@ -58,7 +58,7 @@ async def send_media_album(
             caption = post_data.get("content") if i == 0 else None
             media = InputMediaPhoto(
                 media=FSInputFile(media_path),
-                caption=caption,
+                # caption=caption,
                 parse_mode=ParseMode.HTML,
             )
             media_group.append(media)

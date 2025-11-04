@@ -53,7 +53,6 @@ async def send_media_album(
 
         media_group = []
 
-        # Process images first
         for i, image in enumerate(images):
             file_url = getattr(image, "url", None)
             if not file_url:
@@ -72,12 +71,11 @@ async def send_media_album(
 
             media = InputMediaPhoto(
                 media=file_input,
-                caption=caption,
+                # caption=caption,
                 parse_mode=ParseMode.HTML,
             )
             media_group.append(media)
 
-        # Then process videos
         for i, video in enumerate(videos):
             file_url = getattr(video, "url", None)
             if not file_url:
@@ -92,12 +90,11 @@ async def send_media_album(
                     continue
                 file_input = FSInputFile(media_path)
 
-            # Caption only on first item if no images
             caption = post_data.get("content") if len(media_group) == 0 else None
 
             media = InputMediaVideo(
                 media=file_input,
-                caption=caption,
+                # caption=caption,
                 parse_mode=ParseMode.HTML,
             )
             media_group.append(media)
