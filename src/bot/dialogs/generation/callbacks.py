@@ -191,21 +191,28 @@ async def show_generated_posts(
     try:
         _, stderr = await process.communicate()
 
-        # if process.returncode != 0:
-        #     error_msg = stderr.decode().strip() if stderr else "Невідома помилка"
-        #     await bot.edit_message_text(
-        #         chat_id=chat_id,
-        #         message_id=status_msg_id,
-        #         text=f"❌ Помилка генерації: {error_msg}",
-        #     )
-        #     return
+        logger.info(f"Generation process finished with returncode: {process.returncode}")
+
+        # Проверяем код возврата процесса
+        if process.returncode != 0:
+            # Генерация провалилась (например, нет подписки или лимит исчерпан)
+            # Уведомление уже отправлено из generator_worker, просто удаляем статус
+            logger.warning(f"Generation failed with returncode {process.returncode}, deleting status message")
+            try:
+                await bot.delete_message(chat_id, status_msg_id)
+            except Exception:
+                pass  # Сообщение уже могло быть удалено
+            return
 
         post_service = Container.post_service()
         posts = await post_service.get_all_posts_in_flow(
             flow_id, status=PostStatus.DRAFT
         )
 
+        logger.info(f"Found {len(posts) if posts else 0} draft posts for flow {flow_id}")
+
         if not posts:
+            logger.warning(f"No draft posts found for flow {flow_id}, showing info message")
             await bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=status_msg_id,
@@ -228,12 +235,14 @@ async def show_generated_posts(
             ]
         )
 
+        logger.info(f"Sending success message for flow {flow.name} ({flow_id})")
         await bot.send_message(
             chat_id=chat_id,
             text=f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n",
             parse_mode="Markdown",
             reply_markup=keyboard,
         )
+        logger.info(f"Success message sent for flow {flow_id}")
 
     except Exception as e:
         logging.error(f"Помилка показу постів: {e!s}", exc_info=True)

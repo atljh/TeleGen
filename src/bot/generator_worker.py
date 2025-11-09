@@ -49,8 +49,12 @@ async def generate_flow(
         )
         posts_count = len(posts) if posts else 0
         logging.info(
+            f"generate_flow: _start_telegram_generations returned {posts_count} posts"
+        )
+        logging.info(
             f"Generated {posts_count} posts for flow {flow.id} for {time.time() - start_time:.2f} sec"
         )
+        return posts
 
     except Exception as e:
         logging.error(f"Помилка генерації: {e!s}", exc_info=True)
@@ -76,6 +80,7 @@ async def _start_telegram_generations(
         generated_posts = await post_service.generate_auto_posts(
             flow.id, allow_partial=allow_partial, auto_generate=auto_generate
         )
+        logging.info(f"_start_telegram_generations: generate_auto_posts returned {len(generated_posts) if generated_posts else 0} posts")
     except GenerationLimitExceeded as e:
         logging.warning(f"Flow {flow.id}: {e}")
         await flow_service.update_next_generation_time(flow.id)
@@ -105,6 +110,7 @@ async def _start_telegram_generations(
     # No deletion needed - dialogs will show only flow_volume posts
     # All posts are kept in DB as history/backup
     await flow_service.update_next_generation_time(flow.id)
+    logging.info(f"_start_telegram_generations: Returning {len(generated_posts)} posts")
     return generated_posts
 
 
@@ -118,6 +124,13 @@ if __name__ == "__main__":
 
     async def main():
         init_logger(bot)
-        await generate_flow(flow_id, chat_id)
+        posts = await generate_flow(flow_id, chat_id)
+        posts_count = len(posts) if posts else 0
+        logging.info(f"generator_worker: Generated {posts_count} posts for flow {flow_id}")
+        # Если генерация провалилась (нет постов), возвращаем ненулевой код
+        if not posts:
+            logging.warning(f"generator_worker: No posts generated, exiting with code 1")
+            sys.exit(1)
+        logging.info(f"generator_worker: Exiting with code 0 (success)")
 
     asyncio.run(main())

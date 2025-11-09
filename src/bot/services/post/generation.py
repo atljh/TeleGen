@@ -181,10 +181,12 @@ class PostGenerationService:
             auto_generate=auto_generate,
         )
 
-        user.generated_posts_count += len(combined_posts)
+        created_posts = await self._create_posts_from_dtos(flow, combined_posts)
+        logging.info(f"generate_auto_posts: _create_posts_from_dtos returned {len(created_posts)} posts")
+        user.generated_posts_count += len(created_posts)
         await sync_to_async(user.save)()
-
-        return await self._create_posts_from_dtos(flow, combined_posts)
+        logging.info(f"generate_auto_posts: Returning {len(created_posts)} posts")
+        return created_posts
 
     def _calculate_volumes(self, flow) -> list[dict]:
         total_volume = flow.flow_volume
@@ -219,6 +221,7 @@ class PostGenerationService:
         Dialogs only display the latest flow_volume posts.
         New posts gradually replace old ones in the display as they are generated.
         """
+        logging.info(f"_create_posts_from_dtos: Starting with {len(post_dtos)} post DTOs for flow {flow.id}")
         semaphore = asyncio.Semaphore(10)
 
         # Get latest post date once to avoid multiple DB queries
@@ -273,8 +276,10 @@ class PostGenerationService:
         tasks = [_process_single_post(dto) for dto in post_dtos]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
+        logging.info(f"_create_posts_from_dtos: gather completed, processing {len(results)} results")
         created_posts = [res for res in results if isinstance(res, PostDTO)]
 
+        logging.info(f"_create_posts_from_dtos: Created {len(created_posts)} posts out of {len(post_dtos)} DTOs")
         skipped_count = len(post_dtos) - len(created_posts)
         if skipped_count > 0:
             logging.info(
@@ -303,6 +308,7 @@ class PostGenerationService:
         except Exception:
             pass
 
+        logging.info(f"_create_posts_from_dtos: Returning {len(created_posts)} created posts")
         return created_posts
 
     def _prepare_media_list(self, post_dto) -> list[dict]:
