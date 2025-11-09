@@ -36,13 +36,23 @@ class LimitService:
 
     async def check_channels_limit(self, user: User):
         tariff = await self.get_user_tariff(user)
-        if not tariff:
-            return
 
         user_channels_count = (
             await Flow.objects.filter(channel__user_id=user.id).acount() + 1
         )
 
+        # Если нет подписки - лимит 1 канал
+        if not tariff:
+            if user_channels_count > 1:
+                self.logger.warning(
+                    f"Користувач {user.id} спробував додати більше 1 каналу без підписки"
+                )
+                raise ChannelLimitExceeded(
+                    "❌ Для додавання більше 1 каналу потрібна активна підписка"
+                )
+            return
+
+        # Если есть подписка - проверяем лимит тарифа
         if user_channels_count > tariff.channels_available:
             self.logger.warning(
                 f"Користувач {user.id} перевищив ліміт каналів: {user_channels_count}/{tariff.channels_available}"
@@ -60,7 +70,12 @@ class LimitService:
     ):
         tariff = await self.get_user_tariff(user)
         if not tariff:
-            return
+            self.logger.warning(
+                f"Користувач {user.id} спробував додати джерело без активної підписки"
+            )
+            raise SourceLimitExceeded(
+                "❌ Для додавання джерел потрібна активна підписка"
+            )
 
         if dialog_sources:
             sources_count = len(dialog_sources)
@@ -106,7 +121,14 @@ class LimitService:
         await self._reset_generations_if_needed(user)
         tariff = await self.get_user_tariff(user)
         if not tariff:
-            return
+            self.logger.warning(
+                f"Користувач {user.id} спробував генерувати без активної підписки"
+            )
+            raise GenerationLimitExceeded(
+                f"⚠️ *Немає активної підписки*\n\n"
+                f"Для генерації постів потрібна активна підписка\\.\n"
+                f"Оформіть підписку для доступу до функціоналу\\."
+            )
 
         if user.generated_posts_count + new_generations > tariff.generations_available:
             self.logger.warning(

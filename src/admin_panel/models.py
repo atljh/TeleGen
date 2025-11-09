@@ -533,6 +533,7 @@ class Subscription(models.Model):
     start_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата початку")
     end_date = models.DateTimeField(verbose_name="Дата закінчення")
     is_active = models.BooleanField(default=True, verbose_name="Активна")
+    is_trial = models.BooleanField(default=False, verbose_name="Пробний період")
 
     class Meta:
         verbose_name = "Підписка"

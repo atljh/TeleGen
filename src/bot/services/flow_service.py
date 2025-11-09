@@ -5,6 +5,8 @@ from typing import Any
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
+from admin_panel.models import Flow
+from admin_panel.utils import create_trial_subscription_for_user
 from bot.database.exceptions import FlowNotFoundError
 from bot.database.models.flow import ContentLength, FlowDTO, GenerationFrequency
 from bot.database.models.user import UserDTO
@@ -41,6 +43,18 @@ class FlowService:
         flow_volume: int = 5,
     ) -> FlowDTO:
         channel = await self.channel_repository.get_channel_by_id(channel_id)
+
+        # Проверяем, первый ли это канал у пользователя
+        # Если да, создаем trial подписку
+        user = await sync_to_async(lambda: channel.user)()
+        user_flows_count = await Flow.objects.filter(channel__user_id=user.id).acount()
+
+        if user_flows_count == 0:
+            # Это первый канал пользователя - выдаем trial подписку
+            logging.info(
+                f"Creating first flow for user {user.id}, granting trial subscription"
+            )
+            await create_trial_subscription_for_user(user)
 
         if isinstance(content_length, ContentLength):
             content_length = content_length.value

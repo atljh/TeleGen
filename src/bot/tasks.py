@@ -2,8 +2,11 @@ import asyncio
 import logging
 import os
 
+from asgiref.sync import sync_to_async
 from celery import shared_task
+from django.utils import timezone
 
+from admin_panel.models import Subscription
 from bot.containers import Container
 from bot.generator_worker import _start_telegram_generations
 
@@ -44,6 +47,47 @@ async def _publish_scheduled_posts():
     await post_service.publish_scheduled_posts()
 
 
+async def _deactivate_expired_subscriptions():
+    """
+    Деактивирует истекшие подписки.
+    Проверяет все активные подписки и деактивирует те, у которых истек срок.
+    """
+    now = timezone.now()
+    logger.info("Checking for expired subscriptions...")
+
+    try:
+        # Получаем все активные подписки с истекшим сроком
+        expired_subscriptions = await sync_to_async(list)(
+            Subscription.objects.filter(
+                is_active=True,
+                end_date__lt=now
+            ).select_related('user', 'tariff_period__tariff')
+        )
+
+        if not expired_subscriptions:
+            logger.info("No expired subscriptions found")
+            return
+
+        deactivated_count = 0
+        for subscription in expired_subscriptions:
+            subscription.is_active = False
+            await sync_to_async(subscription.save)(update_fields=['is_active'])
+
+            logger.info(
+                f"Deactivated expired subscription {subscription.id} for user {subscription.user.id} "
+                f"(tariff: {subscription.tariff_period.tariff.name}, "
+                f"trial: {subscription.is_trial}, "
+                f"expired: {subscription.end_date})"
+            )
+            deactivated_count += 1
+
+        logger.info(f"✅ Deactivated {deactivated_count} expired subscriptions")
+
+    except Exception as e:
+        logger.error(f"Error deactivating expired subscriptions: {e}", exc_info=True)
+        raise
+
+
 def _get_or_create_event_loop():
     try:
         loop = asyncio.get_event_loop()
@@ -78,4 +122,21 @@ def run_scheduled_jobs(self):
 
 async def _run_all_tasks():
     await _process_flows()
-    return await _publish_scheduled_posts()
+    await _publish_scheduled_posts()
+    return await _deactivate_expired_subscriptions()
+
+
+@shared_task(bind=True, max_retries=3)
+def deactivate_expired_subscriptions_task(self):
+    try:
+        loop = _get_or_create_event_loop()
+
+        if loop.is_running():
+            task = asyncio.ensure_future(_deactivate_expired_subscriptions(), loop=loop)
+            return loop.run_until_complete(task)
+        else:
+            return loop.run_until_complete(_deactivate_expired_subscriptions())
+
+    except Exception as e:
+        logger.error(f"deactivate_expired_subscriptions_task failed: {e}", exc_info=True)
+        self.retry(exc=e, countdown=300)

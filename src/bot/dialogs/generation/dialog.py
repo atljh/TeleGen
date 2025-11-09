@@ -43,10 +43,6 @@ def create_generation_dialog():
                 "*Назва:* {dialog_data[selected_channel].name}\n"
                 "*Дата додавання:* {dialog_data[selected_channel].created_at:%d.%m.%Y}\n\n"
                 "*Флоу:* {channel_flow}\n\n"
-                "*Статистика постів:*\n"
-                "├ Telegram: {telegram_posts}\n"
-                "├ Web: {web_posts}\n"
-                "└ Всього: {total_posts}"
             ),
             Column(
                 Button(Const("Флоу"), id="flow", on_click=on_flow, when="has_flow"),

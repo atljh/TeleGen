@@ -123,4 +123,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "bot.tasks.run_scheduled_jobs",
         "schedule": 60.0,
     },
+    "deactivate-expired-subscriptions": {
+        "task": "bot.tasks.deactivate_expired_subscriptions_task",
+        "schedule": 3600.0,
+    },
 }

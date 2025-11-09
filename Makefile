@@ -20,9 +20,10 @@ down:
 restart:
 	$(DOCKER_COMPOSE) restart
 
-rebuild:
+res:
 	$(DOCKER_COMPOSE) down
 	$(DOCKER_COMPOSE) up --build -d
+	$(DOCKER_COMPOSE) logs -f
 
 logs:
 	$(DOCKER_COMPOSE) logs -f

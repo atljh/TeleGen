@@ -51,8 +51,17 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f"○ Tariff already exists: {welcome_tariff.name}")
 
-            # Create periods for Welcome tariff (only trial, so no paid periods)
-            # The trial_duration_days handles the free period
+            # Create trial period for Welcome tariff
+            # This is needed for the trial subscription to work
+            welcome_period, created = TariffPeriod.objects.get_or_create(
+                tariff=welcome_tariff,
+                months=1,
+                defaults={"price": 0.00},
+            )
+            if created:
+                self.stdout.write(
+                    f"  ✓ Created trial period: {welcome_period.get_months_display()} - Free"
+                )
 
             # Basic Tariff
             basic_tariff, created = Tariff.objects.get_or_create(
