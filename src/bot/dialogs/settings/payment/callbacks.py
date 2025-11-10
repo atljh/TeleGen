@@ -5,7 +5,7 @@ from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button, Select
 from asgiref.sync import sync_to_async
 
-from admin_panel.models import PromoCode, TariffPeriod, User
+from admin_panel.models import PromoCode, Subscription, TariffPeriod, User
 from admin_panel.services import PaymentHandler
 from bot.dialogs.settings.payment.states import PaymentMenu
 
@@ -132,5 +132,19 @@ async def on_promocode_entered(
         # Close the dialog - subscription is already activated
         await manager.done()
     else:
-        await callback.answer("❌ Помилка активації підписки. Спробуйте пізніше", show_alert=True)
+        # Check if user has an active subscription that might be preventing the downgrade
+        active_subscription = await Subscription.objects.select_related(
+            "tariff_period__tariff"
+        ).filter(
+            user=user,
+            is_active=True
+        ).afirst()
+
+        if active_subscription and not tariff_period.tariff.is_higher_than(active_subscription.tariff_period.tariff):
+            await callback.answer(
+                f"❌ Не можна використати цей промокод: у вас вже є підписка {active_subscription.tariff_period.tariff.name}",
+                show_alert=True
+            )
+        else:
+            await callback.answer("❌ Помилка активації підписки. Спробуйте пізніше", show_alert=True)
         logging.error(f"Failed to activate subscription from promo code {promo_code}")

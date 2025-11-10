@@ -118,6 +118,23 @@ class PaymentHandler:
                 logger.error(f"No tariff period found for payment {payment.id}")
                 return
 
+            # Check if user is trying to downgrade to a lower-tier subscription
+            active_subscription = Subscription.objects.filter(
+                user=user, is_active=True
+            ).select_related('tariff_period__tariff').first()
+
+            if active_subscription:
+                current_tariff = active_subscription.tariff_period.tariff
+                new_tariff = tariff_period.tariff
+
+                if not new_tariff.is_higher_than(current_tariff) and new_tariff.level != current_tariff.level:
+                    logger.warning(
+                        f"User {user.telegram_id} attempted to downgrade from "
+                        f"{current_tariff.name} (level {current_tariff.level}) to "
+                        f"{new_tariff.name} (level {new_tariff.level}). Payment {payment.id} rejected."
+                    )
+                    return
+
             active_subscriptions = Subscription.objects.filter(
                 user=user, is_active=True
             )
@@ -206,6 +223,23 @@ class PaymentHandler:
                 tariff=promo_code.tariff,
                 months=promo_code.months
             )
+
+            # Check if user is trying to downgrade to a lower-tier subscription
+            active_subscription = Subscription.objects.filter(
+                user=user, is_active=True
+            ).select_related('tariff_period__tariff').first()
+
+            if active_subscription:
+                current_tariff = active_subscription.tariff_period.tariff
+                new_tariff = tariff_period.tariff
+
+                if not new_tariff.is_higher_than(current_tariff) and new_tariff.level != current_tariff.level:
+                    logger.warning(
+                        f"User {user.telegram_id} attempted to use promo code {promo_code.code} to downgrade from "
+                        f"{current_tariff.name} (level {current_tariff.level}) to "
+                        f"{new_tariff.name} (level {new_tariff.level}). Promo code rejected."
+                    )
+                    return None
 
             # Deactivate all existing active subscriptions
             active_subscriptions = Subscription.objects.filter(

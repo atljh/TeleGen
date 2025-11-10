@@ -24,6 +24,9 @@ async def packages_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, 
         .afirst()
     )
 
+    # Get current tariff to filter out lower-tier subscriptions
+    current_tariff = subscription.tariff_period.tariff if subscription else None
+
     packages = [
         {
             "id": tariff.id,
@@ -38,7 +41,8 @@ async def packages_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, 
             "features": tariff.description or "",
         }
         for tariff in tariffs
-        if tariff.code != "free"
+        # Filter out: free tariff and tariffs lower than current subscription
+        if tariff.code != "free" and tariff.is_higher_than(current_tariff)
     ]
 
     return {

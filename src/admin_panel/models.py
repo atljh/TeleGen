@@ -459,6 +459,22 @@ class Tariff(models.Model):
     def get_code_display(self):
         return self.code
 
+    @property
+    def level(self) -> int:
+        """Return tariff hierarchy level (higher is better)"""
+        levels = {
+            self.FREE: 0,
+            self.BASIC: 1,
+            self.PRO: 2,
+        }
+        return levels.get(self.code, 0)
+
+    def is_higher_than(self, other_tariff) -> bool:
+        """Check if this tariff is higher than another tariff"""
+        if other_tariff is None:
+            return True
+        return self.level > other_tariff.level
+
 
 class TariffPeriod(models.Model):
     PERIOD_CHOICES: ClassVar[list[tuple[int, str]]] = [
