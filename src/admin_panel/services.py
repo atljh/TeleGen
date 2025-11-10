@@ -124,17 +124,44 @@ class PaymentHandler:
             ).select_related('tariff_period__tariff').first()
 
             if active_subscription:
-                current_tariff = active_subscription.tariff_period.tariff
-                new_tariff = tariff_period.tariff
+                current_tariff_period = active_subscription.tariff_period
 
-                if not new_tariff.is_higher_than(current_tariff) and new_tariff.level != current_tariff.level:
+                # Validate that this is an upgrade (higher tariff OR same tariff with longer period)
+                if not tariff_period.is_upgrade_from(current_tariff_period):
                     logger.warning(
                         f"User {user.telegram_id} attempted to downgrade from "
-                        f"{current_tariff.name} (level {current_tariff.level}) to "
-                        f"{new_tariff.name} (level {new_tariff.level}). Payment {payment.id} rejected."
+                        f"{current_tariff_period.tariff.name} {current_tariff_period.months}m "
+                        f"to {tariff_period.tariff.name} {tariff_period.months}m. Payment {payment.id} rejected."
                     )
                     return
 
+                # Check if this is same tariff upgrade (longer period)
+                if tariff_period.is_same_tariff_upgrade(current_tariff_period):
+                    # Create subscription that starts after current one ends
+                    start_date = active_subscription.end_date
+                    end_date = start_date + timedelta(days=tariff_period.months * 30)
+
+                    subscription = Subscription.objects.create(
+                        user=user,
+                        tariff_period=tariff_period,
+                        start_date=start_date,
+                        end_date=end_date,
+                        is_active=False,  # Will be activated when current subscription ends
+                    )
+
+                    payment.subscription = subscription
+                    payment.save(update_fields=["subscription"])
+
+                    logger.info(
+                        f"Scheduled subscription {subscription.id} for user {user.telegram_id} "
+                        f"({tariff_period.tariff.name} for {tariff_period.months} months) "
+                        f"to start on {start_date}"
+                    )
+
+                    self.send_success_notification(user, tariff_period)
+                    return
+
+            # For tariff upgrades or new subscriptions, deactivate current and start immediately
             active_subscriptions = Subscription.objects.filter(
                 user=user, is_active=True
             )
@@ -230,17 +257,43 @@ class PaymentHandler:
             ).select_related('tariff_period__tariff').first()
 
             if active_subscription:
-                current_tariff = active_subscription.tariff_period.tariff
-                new_tariff = tariff_period.tariff
+                current_tariff_period = active_subscription.tariff_period
 
-                if not new_tariff.is_higher_than(current_tariff) and new_tariff.level != current_tariff.level:
+                # Validate that this is an upgrade (higher tariff OR same tariff with longer period)
+                if not tariff_period.is_upgrade_from(current_tariff_period):
                     logger.warning(
                         f"User {user.telegram_id} attempted to use promo code {promo_code.code} to downgrade from "
-                        f"{current_tariff.name} (level {current_tariff.level}) to "
-                        f"{new_tariff.name} (level {new_tariff.level}). Promo code rejected."
+                        f"{current_tariff_period.tariff.name} {current_tariff_period.months}m "
+                        f"to {tariff_period.tariff.name} {tariff_period.months}m. Promo code rejected."
                     )
                     return None
 
+                # Check if this is same tariff upgrade (longer period)
+                if tariff_period.is_same_tariff_upgrade(current_tariff_period):
+                    # Create subscription that starts after current one ends
+                    start_date = active_subscription.end_date
+                    end_date = start_date + timedelta(days=tariff_period.months * 30)
+
+                    subscription = Subscription.objects.create(
+                        user=user,
+                        tariff_period=tariff_period,
+                        start_date=start_date,
+                        end_date=end_date,
+                        is_active=False,  # Will be activated when current subscription ends
+                    )
+
+                    logger.info(
+                        f"Scheduled subscription {subscription.id} for user {user.telegram_id} "
+                        f"via promo code {promo_code.code} "
+                        f"({tariff_period.tariff.name} for {tariff_period.months} months) "
+                        f"to start on {start_date}"
+                    )
+
+                    # Send success notification
+                    self.send_promo_success_notification(user, tariff_period, promo_code)
+                    return subscription
+
+            # For tariff upgrades or new subscriptions, deactivate current and start immediately
             # Deactivate all existing active subscriptions
             active_subscriptions = Subscription.objects.filter(
                 user=user, is_active=True

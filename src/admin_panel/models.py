@@ -500,6 +500,35 @@ class TariffPeriod(models.Model):
     def __str__(self):
         return f"{self.tariff} – {self.get_months_display()} ({self.price}₴)"
 
+    def is_upgrade_from(self, other_tariff_period) -> bool:
+        """
+        Check if this tariff period is an upgrade from another.
+        Upgrade means: higher tariff level OR same tariff with longer period
+        """
+        if other_tariff_period is None:
+            return True
+
+        # Higher tariff level is always an upgrade
+        if self.tariff.level > other_tariff_period.tariff.level:
+            return True
+
+        # Same tariff level with longer period is an upgrade
+        if self.tariff.level == other_tariff_period.tariff.level and self.months > other_tariff_period.months:
+            return True
+
+        return False
+
+    def is_same_tariff_upgrade(self, other_tariff_period) -> bool:
+        """
+        Check if this is an upgrade within the same tariff (longer period)
+        """
+        if other_tariff_period is None:
+            return False
+        return (
+            self.tariff.level == other_tariff_period.tariff.level
+            and self.months > other_tariff_period.months
+        )
+
 
 class PromoCode(models.Model):
     code = models.CharField(

@@ -140,9 +140,10 @@ async def on_promocode_entered(
             is_active=True
         ).afirst()
 
-        if active_subscription and not tariff_period.tariff.is_higher_than(active_subscription.tariff_period.tariff):
+        if active_subscription and not tariff_period.is_upgrade_from(active_subscription.tariff_period):
+            current = active_subscription.tariff_period
             await callback.answer(
-                f"❌ Не можна використати цей промокод: у вас вже є підписка {active_subscription.tariff_period.tariff.name}",
+                f"❌ Не можна використати цей промокод: у вас вже є підписка {current.tariff.name} на {current.months} міс.",
                 show_alert=True
             )
         else:

@@ -42,7 +42,11 @@ async def packages_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, 
         }
         for tariff in tariffs
         # Filter out: free tariff and tariffs lower than current subscription
-        if tariff.code != "free" and tariff.is_higher_than(current_tariff)
+        # BUT allow current tariff (for longer periods)
+        if tariff.code != "free" and (
+            tariff.is_higher_than(current_tariff)
+            or (current_tariff and tariff.level == current_tariff.level)
+        )
     ]
 
     return {
@@ -63,10 +67,30 @@ async def periods_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, A
         return {"periods": [], "selected_package": {}}
 
     tariff_id = selected_package["id"]
+    user = dialog_manager.event.from_user
+
+    # Get user's active subscription
+    subscription = (
+        await Subscription.objects.select_related(
+            "tariff_period", "tariff_period__tariff"
+        )
+        .filter(
+            user__telegram_id=user.id,
+            is_active=True,
+        )
+        .afirst()
+    )
 
     periods = await sync_to_async(list)(
-        TariffPeriod.objects.filter(tariff_id=tariff_id).order_by("months")
+        TariffPeriod.objects.filter(tariff_id=tariff_id).select_related("tariff").order_by("months")
     )
+
+    # Filter periods based on current subscription
+    if subscription:
+        current_tariff_period = subscription.tariff_period
+        # If user selected their current tariff, show only longer periods
+        if subscription.tariff_period.tariff_id == tariff_id:
+            periods = [p for p in periods if p.months > current_tariff_period.months]
 
     periods_data = [
         {

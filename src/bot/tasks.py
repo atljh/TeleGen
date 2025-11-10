@@ -49,11 +49,12 @@ async def _publish_scheduled_posts():
 
 async def _deactivate_expired_subscriptions():
     """
-    Деактивирует истекшие подписки.
+    Деактивирует истекшие подписки и активирует запланированные.
     Проверяет все активные подписки и деактивирует те, у которых истек срок.
+    Также активирует подписки, у которых наступил срок start_date.
     """
     now = timezone.now()
-    logger.info("Checking for expired subscriptions...")
+    logger.info("Checking for expired and scheduled subscriptions...")
 
     try:
         # Получаем все активные подписки с истекшим сроком
@@ -63,10 +64,6 @@ async def _deactivate_expired_subscriptions():
                 end_date__lt=now
             ).select_related('user', 'tariff_period__tariff')
         )
-
-        if not expired_subscriptions:
-            logger.info("No expired subscriptions found")
-            return
 
         deactivated_count = 0
         for subscription in expired_subscriptions:
@@ -81,10 +78,38 @@ async def _deactivate_expired_subscriptions():
             )
             deactivated_count += 1
 
-        logger.info(f"✅ Deactivated {deactivated_count} expired subscriptions")
+        if deactivated_count > 0:
+            logger.info(f"✅ Deactivated {deactivated_count} expired subscriptions")
+        else:
+            logger.info("No expired subscriptions found")
+
+        scheduled_subscriptions = await sync_to_async(list)(
+            Subscription.objects.filter(
+                is_active=False,
+                start_date__lte=now,
+                end_date__gt=now
+            ).select_related('user', 'tariff_period__tariff')
+        )
+
+        activated_count = 0
+        for subscription in scheduled_subscriptions:
+            subscription.is_active = True
+            await sync_to_async(subscription.save)(update_fields=['is_active'])
+
+            logger.info(
+                f"Activated scheduled subscription {subscription.id} for user {subscription.user.id} "
+                f"(tariff: {subscription.tariff_period.tariff.name}, "
+                f"started: {subscription.start_date})"
+            )
+            activated_count += 1
+
+        if activated_count > 0:
+            logger.info(f"✅ Activated {activated_count} scheduled subscriptions")
+        else:
+            logger.info("No scheduled subscriptions to activate")
 
     except Exception as e:
-        logger.error(f"Error deactivating expired subscriptions: {e}", exc_info=True)
+        logger.error(f"Error managing subscriptions: {e}", exc_info=True)
         raise
 
 
