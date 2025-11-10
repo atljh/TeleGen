@@ -45,6 +45,7 @@ class PostGenerationService:
 
         user = await sync_to_async(lambda: flow.channel.user)()
 
+        # Check subscription and limits BEFORE starting generation
         try:
             await self.limit_service.check_generations_limit(user, new_generations=0)
         except GenerationLimitExceeded as e:

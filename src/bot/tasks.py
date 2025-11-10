@@ -48,16 +48,10 @@ async def _publish_scheduled_posts():
 
 
 async def _deactivate_expired_subscriptions():
-    """
-    Деактивирует истекшие подписки и активирует запланированные.
-    Проверяет все активные подписки и деактивирует те, у которых истек срок.
-    Также активирует подписки, у которых наступил срок start_date.
-    """
     now = timezone.now()
     logger.info("Checking for expired and scheduled subscriptions...")
 
     try:
-        # Получаем все активные подписки с истекшим сроком
         expired_subscriptions = await sync_to_async(list)(
             Subscription.objects.filter(
                 is_active=True,

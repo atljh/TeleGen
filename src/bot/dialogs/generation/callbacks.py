@@ -143,6 +143,13 @@ async def on_force_generate(
             await callback.answer("⚠️ Не обрано флоу для генерації", show_alert=True)
             return
 
+        # Prevent multiple simultaneous generation requests
+        if dialog_data.get("generation_in_progress"):
+            await callback.answer("⚠️ Генерація вже запущена, зачекайте...", show_alert=True)
+            return
+
+        dialog_data["generation_in_progress"] = True
+
         await callback.answer("🔄 Запускаю генерацію...")
 
         bot = manager.middleware_data["bot"]
@@ -171,12 +178,15 @@ async def on_force_generate(
                 status_msg_id=status_msg.message_id,
                 bot=bot,
                 flow=flow,
+                dialog_data=dialog_data,
             )
         )
         return task
 
     except Exception as e:
         logging.error(f"Помилка запуску генерації: {e!s}")
+        # Reset generation flag on error
+        dialog_data["generation_in_progress"] = False
         await callback.message.answer(f"❌ Помилка: {e!s}", parse_mode="Markdown")
 
 
@@ -187,6 +197,7 @@ async def show_generated_posts(
     status_msg_id: int,
     bot: Bot,
     flow,
+    dialog_data: dict,
 ):
     try:
         _, stderr = await process.communicate()
@@ -249,3 +260,7 @@ async def show_generated_posts(
         await bot.send_message(
             chat_id=chat_id, text=f"❌ Не вдалося показати пости: {e!s}"
         )
+    finally:
+        # Reset generation flag
+        if dialog_data is not None:
+            dialog_data["generation_in_progress"] = False
