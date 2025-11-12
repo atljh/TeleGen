@@ -283,7 +283,7 @@ class Payment(models.Model):
 
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="payments",
         verbose_name="Користувач",
     )
@@ -297,7 +297,7 @@ class Payment(models.Model):
     is_successful = models.BooleanField(default=False, verbose_name="Успішний")
     subscription = models.ForeignKey(
         "Subscription",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="payments",
         verbose_name="Підписка",
         null=True,
