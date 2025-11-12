@@ -134,11 +134,10 @@ async def _deactivate_expired_subscriptions():
                     user_id=user_id,
                     is_active=True
                 ).select_related('user', 'tariff_period__tariff')
-                .order_by('-created_at')  # От новых к старым
+                .order_by('-id')
             )
 
             if len(user_subscriptions) > 1:
-                # Оставляем первую (самую новую), деактивируем остальные
                 for old_sub in user_subscriptions[1:]:
                     old_sub.is_active = False
                     await sync_to_async(old_sub.save)(update_fields=['is_active'])
