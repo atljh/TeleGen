@@ -320,14 +320,6 @@ class Payment(models.Model):
         null=True,
         blank=True,
     )
-    subscription = models.ForeignKey(
-        "Subscription",
-        on_delete=models.CASCADE,
-        related_name="payments",
-        verbose_name="Підписка",
-        null=True,
-        blank=True,
-    )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата створення")
 
