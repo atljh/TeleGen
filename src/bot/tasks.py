@@ -87,7 +87,6 @@ async def _deactivate_expired_subscriptions():
 
         activated_count = 0
         for subscription in scheduled_subscriptions:
-            # Deactivate all other active subscriptions for this user
             other_active = await sync_to_async(list)(
                 Subscription.objects.filter(
                     user=subscription.user,
@@ -117,6 +116,41 @@ async def _deactivate_expired_subscriptions():
             logger.info(f"✅ Activated {activated_count} scheduled subscriptions")
         else:
             logger.info("No scheduled subscriptions to activate")
+
+        from django.db.models import Count
+        users_with_multiple_subs = await sync_to_async(list)(
+            Subscription.objects.filter(is_active=True)
+            .values('user')
+            .annotate(sub_count=Count('id'))
+            .filter(sub_count__gt=1)
+        )
+
+        cleaned_count = 0
+        for user_data in users_with_multiple_subs:
+            user_id = user_data['user']
+
+            user_subscriptions = await sync_to_async(list)(
+                Subscription.objects.filter(
+                    user_id=user_id,
+                    is_active=True
+                ).select_related('user', 'tariff_period__tariff')
+                .order_by('created_at')
+            )
+
+            if len(user_subscriptions) > 1:
+                for old_sub in user_subscriptions[:-1]:
+                    old_sub.is_active = False
+                    await sync_to_async(old_sub.save)(update_fields=['is_active'])
+
+                    logger.info(
+                        f"Deactivated old subscription {old_sub.id} for user {old_sub.user.id} "
+                        f"(user had {len(user_subscriptions)} active subscriptions, "
+                        f"kept the newest: {user_subscriptions[-1].id})"
+                    )
+                    cleaned_count += 1
+
+        if cleaned_count > 0:
+            logger.info(f"✅ Cleaned up {cleaned_count} duplicate active subscriptions")
 
     except Exception as e:
         logger.error(f"Error managing subscriptions: {e}", exc_info=True)
