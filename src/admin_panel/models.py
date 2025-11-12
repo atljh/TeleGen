@@ -283,7 +283,7 @@ class Payment(models.Model):
 
     user = models.ForeignKey(
         User,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="payments",
         verbose_name="Користувач",
     )
