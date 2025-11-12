@@ -113,6 +113,22 @@ class TelegramLogger:
         except Exception:
             return False
 
+    def warning(self, message: str, **kwargs):
+        """Standard logging interface: warning level"""
+        logging.warning(message)
+
+    def info(self, message: str, **kwargs):
+        """Standard logging interface: info level"""
+        logging.info(message)
+
+    def error(self, message: str, **kwargs):
+        """Standard logging interface: error level"""
+        logging.error(message)
+
+    def debug(self, message: str, **kwargs):
+        """Standard logging interface: debug level"""
+        logging.debug(message)
+
     async def user_created_channel(
         self, user: BotUser, channel_name: str, channel_id: int
     ) -> bool:
@@ -499,3 +515,19 @@ class SyncTelegramLogger:
             "additional_data": {"Flow ID": flow_id, "Error": error_message},
         }
         return self._send_log_sync(event_data)
+
+    def warning(self, message: str, **kwargs):
+        """Standard logging interface: warning level"""
+        logging.warning(message)
+
+    def info(self, message: str, **kwargs):
+        """Standard logging interface: info level"""
+        logging.info(message)
+
+    def error(self, message: str, **kwargs):
+        """Standard logging interface: error level"""
+        logging.error(message)
+
+    def debug(self, message: str, **kwargs):
+        """Standard logging interface: debug level"""
+        logging.debug(message)
