@@ -215,12 +215,16 @@ async def show_generated_posts(
                 pass  # Сообщение уже могло быть удалено
             return
 
+        # Small delay to ensure DB transaction is committed
+        await asyncio.sleep(0.5)
+
         post_service = Container.post_service()
+        logger.info(f"Querying draft posts for flow {flow_id} ({flow.name})")
         posts = await post_service.get_all_posts_in_flow(
             flow_id, status=PostStatus.DRAFT
         )
 
-        logger.info(f"Found {len(posts) if posts else 0} draft posts for flow {flow_id}")
+        logger.info(f"Found {len(posts) if posts else 0} draft posts for flow {flow_id} ({flow.name})")
 
         if not posts:
             logger.warning(f"No draft posts found for flow {flow_id}, showing info message")
@@ -231,6 +235,7 @@ async def show_generated_posts(
             )
             return
 
+        logger.info(f"Deleting status message {status_msg_id}")
         await bot.delete_message(chat_id, status_msg_id)
 
         from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -253,7 +258,7 @@ async def show_generated_posts(
             parse_mode="Markdown",
             reply_markup=keyboard,
         )
-        logger.info(f"Success message sent for flow {flow_id}")
+        logger.info(f"✅ Success message sent for flow {flow_id}")
 
     except Exception as e:
         logging.error(f"Помилка показу постів: {e!s}", exc_info=True)

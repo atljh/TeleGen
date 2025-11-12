@@ -124,13 +124,19 @@ if __name__ == "__main__":
 
     async def main():
         init_logger(bot)
+        logging.info(f"generator_worker: Starting generation for flow {flow_id}, chat_id={chat_id}")
         posts = await generate_flow(flow_id, chat_id)
         posts_count = len(posts) if posts else 0
         logging.info(f"generator_worker: Generated {posts_count} posts for flow {flow_id}")
+
         # Если генерация провалилась (нет постов), возвращаем ненулевой код
         if not posts:
             logging.warning(f"generator_worker: No posts generated, exiting with code 1")
             sys.exit(1)
+
+        # Log post IDs for debugging
+        post_ids = [p.id for p in posts if p and p.id]
+        logging.info(f"generator_worker: Created posts with IDs: {post_ids}")
         logging.info(f"generator_worker: Exiting with code 0 (success)")
 
     asyncio.run(main())

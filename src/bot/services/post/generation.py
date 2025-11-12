@@ -252,6 +252,7 @@ class PostGenerationService:
                     media_list = self._prepare_media_list(post_dto)
 
                     # create_post now handles duplicate checking internally
+                    logging.debug(f"Creating post with source_id={post_dto.source_id}")
                     post = await self.post_service.create_post(
                         flow=flow,
                         content=post_dto.content,
@@ -264,8 +265,11 @@ class PostGenerationService:
                     )
 
                     if post:
+                        logging.info(f"✅ Post created: id={post.id}, source_id={post_dto.source_id}")
                         return await PostDTO.from_orm_async(post)
-                    return None
+                    else:
+                        logging.warning(f"Post already exists: source_id={post_dto.source_id}")
+                        return None
 
                 except Exception as e:
                     logging.error(
