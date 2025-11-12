@@ -187,7 +187,10 @@ class ChatGPTContentProcessor(ContentProcessor):
                     max_tokens=2000,
                     timeout=self.request_timeout,
                 )
-                return response.choices[0].message.content.strip()
+                result = response.choices[0].message.content.strip()
+                # Enforce strict length limit
+                result = self._enforce_length_limit(result)
+                return result
 
             except openai.RateLimitError as e:
                 last_error = e
@@ -223,28 +226,33 @@ class ChatGPTContentProcessor(ContentProcessor):
         return await self._get_or_create_user_prompt(text, flow)
 
     def _build_system_prompt(self, text: str) -> str:
+        max_chars = self._get_length_instruction()
         rules = [
             "You are a professional post editor.",
-            "Translate it to Ukranian",
+            "Translate it to Ukrainian.",
             "Edit the text according to the following rules:",
             "1. Keep the original meaning, but improve readability and clarity.",
             "2. Remove unnecessary links, formatting artifacts, hashtags, and special characters.",
-            f"3. Ensure the text does not exceed {self._get_length_instruction()} characters. "
+            f"3. IMPORTANT: The final text MUST be {max_chars} or less. This is a strict requirement.",
+            f"   If the content is longer, summarize or trim it while preserving key information.",
             f"4. Rewrite the text in the following style: {self.flow.theme}.",
-            "Do not remove or truncate text if it is already within the limit.",
         ]
 
+        rule_num = 5
         if self.flow.use_emojis:
             emoji_type = "premium" if self.flow.use_premium_emojis else "regular"
-            rules.append(f"5. Use relevant {emoji_type} emojis")
+            rules.append(f"{rule_num}. Use relevant {emoji_type} emojis")
+            rule_num += 1
 
         if self.flow.title_highlight:
             rules.append(
-                "6. Format the title using <b> tags, and add an empty line immediately after it."
+                f"{rule_num}. Format the title using <b> tags, and add an empty line immediately after it."
             )
+            rule_num += 1
 
         if self.flow.cta:
-            rules.append(f"7. Add CTA: {self.flow.cta}")
+            rules.append(f"{rule_num}. Add CTA: {self.flow.cta}")
+            rule_num += 1
 
         rules.append("Return only the edited content without commentary.")
         return "\n".join(rules)
@@ -256,3 +264,47 @@ class ChatGPTContentProcessor(ContentProcessor):
             "to_1000": "1000 characters",
         }
         return length_mapping.get(self.flow.content_length, "300 characters")
+
+    def _get_max_length(self) -> int:
+        """Get maximum length in characters for the current flow"""
+        length_mapping = {
+            "to_100": 100,
+            "to_300": 300,
+            "to_1000": 1000,
+        }
+        return length_mapping.get(self.flow.content_length, 300)
+
+    def _enforce_length_limit(self, text: str) -> str:
+        """Enforce strict length limit by truncating text if needed"""
+        max_length = self._get_max_length()
+        original_length = len(text)
+
+        if original_length <= max_length:
+            return text
+
+        logging.info(
+            f"Truncating content from {original_length} to {max_length} chars "
+            f"for flow {self.flow.id} ({self.flow.name})"
+        )
+
+        # Truncate at max_length, trying to break at a sentence or word boundary
+        truncated = text[:max_length]
+
+        # Try to break at sentence boundary
+        last_sentence = max(
+            truncated.rfind(". "),
+            truncated.rfind("! "),
+            truncated.rfind("? "),
+            truncated.rfind("\n"),
+        )
+
+        if last_sentence > max_length * 0.7:  # If we found a good break point (>70% of max)
+            return truncated[: last_sentence + 1].strip()
+
+        # Otherwise, try to break at word boundary
+        last_space = truncated.rfind(" ")
+        if last_space > max_length * 0.8:  # If we found a word boundary (>80% of max)
+            return truncated[:last_space].strip() + "..."
+
+        # Last resort: hard truncate
+        return truncated.strip() + "..."
