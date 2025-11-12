@@ -83,10 +83,18 @@ async def _deactivate_expired_subscriptions():
                 start_date__lte=now,
                 end_date__gt=now
             ).select_related('user', 'tariff_period__tariff')
+            .order_by('user', '-id')
         )
 
+        users_processed = set()
         activated_count = 0
+
         for subscription in scheduled_subscriptions:
+            if subscription.user_id in users_processed:
+                continue
+
+            users_processed.add(subscription.user_id)
+
             other_active = await sync_to_async(list)(
                 Subscription.objects.filter(
                     user=subscription.user,
