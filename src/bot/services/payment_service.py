@@ -37,7 +37,7 @@ class PaymentService:
         amount: float,
         payment_method: str,
         tariff_period_id: int,
-        description: str = "Оплата підписки",
+        description: str = "Оплата за інформаційні послуги. Без ПДВ.",
         currency: str = "UAH",
         is_successful: bool = False,
         promo_code_id: int | None = None,
