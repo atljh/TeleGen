@@ -49,8 +49,76 @@ from .callbacks import (
 )
 
 
+async def on_dialog_start(data, manager: DialogManager):
+    """Reset dialog state when entering buffer dialog from main menu"""
+    from bot.utils.message_tracker import save_message_ids
+
+    # Save message_ids to global tracker BEFORE clearing dialog_data
+    try:
+        if manager.dialog_data:
+            message_ids = manager.dialog_data.get("message_ids", [])
+            if message_ids:
+                user_id = manager.event.from_user.id
+                save_message_ids(user_id, message_ids)
+    except Exception:
+        pass
+
+    # Clear all cached data to force reload from first post
+    # Keep only essential data from start_data
+    start_data = manager.start_data or {}
+    selected_channel = start_data.get("selected_channel")
+    channel_flow = start_data.get("channel_flow")
+    from_gen = start_data.get("from_gen")
+    item_id = start_data.get("item_id")
+
+    # Clear dialog_data completely
+    manager.dialog_data.clear()
+
+    # Restore essential data
+    if selected_channel:
+        manager.dialog_data["selected_channel"] = selected_channel
+    if channel_flow:
+        manager.dialog_data["channel_flow"] = channel_flow
+    if from_gen is not None:
+        manager.dialog_data["from_gen"] = from_gen
+    if item_id:
+        manager.dialog_data["item_id"] = item_id
+
+    # Force refresh posts list on first show
+    manager.dialog_data["needs_refresh"] = True
+
+
+async def on_dialog_close(result, manager: DialogManager):
+    """Clean up messages when dialog is closed"""
+    from bot.utils.message_tracker import clear_message_ids
+
+    message_ids = manager.dialog_data.get("message_ids", [])
+    if message_ids:
+        bot = manager.middleware_data.get("bot")
+        chat_id = manager.middleware_data.get("event_chat")
+        if bot and chat_id:
+            from .utils import safe_delete_messages
+            await safe_delete_messages(bot, chat_id.id, message_ids)
+            manager.dialog_data["message_ids"] = []
+
+            # Clear from global tracker
+            try:
+                user_id = manager.event.from_user.id
+                clear_message_ids(user_id)
+            except Exception:
+                pass
+
+            # Also clear from FSMContext
+            try:
+                state = manager.middleware_data.get("state")
+                if state:
+                    await state.update_data(message_ids=[])
+            except Exception:
+                pass
+
+
 async def on_dialog_result(event, manager: DialogManager, result):
-    if manager.current_state() == BufferError.channel_main:
+    if manager.current_state() == BufferMenu.channel_main:
         if manager.dialog_data.pop("needs_refresh", False):
             manager.dialog_data.pop("all_posts", None)
             await manager.show()
@@ -307,5 +375,7 @@ def create_buffer_dialog():
             parse_mode=ParseMode.HTML,
             getter=paging_getter,
         ),
+        on_start=on_dialog_start,
+        on_close=on_dialog_close,
         on_process_result=on_dialog_result,
     )

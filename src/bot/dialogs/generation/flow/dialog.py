@@ -50,6 +50,69 @@ def chunked(iterable, n):
 times = [f"{hour:02d}:{minute:02d}" for hour in range(8, 23) for minute in (0, 30)]
 
 
+async def on_dialog_start(data, manager: DialogManager):
+    from bot.utils.message_tracker import save_message_ids
+
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("🔄 FlowMenu on_dialog_start called")
+
+    # Save message_ids to global tracker BEFORE clearing dialog_data
+    try:
+        if manager.dialog_data:
+            message_ids = manager.dialog_data.get("message_ids", [])
+            logger.info(f"Found {len(message_ids)} message_ids in dialog_data: {message_ids}")
+            if message_ids:
+                user_id = manager.event.from_user.id
+                logger.info(f"💾 Saving to global tracker for user {user_id}")
+                save_message_ids(user_id, message_ids)
+            else:
+                logger.info("No message_ids to save")
+        else:
+            logger.info("dialog_data is empty")
+    except Exception as e:
+        logger.error(f"Error in on_dialog_start: {e}", exc_info=True)
+
+    start_data = manager.start_data or {}
+    channel_flow = start_data.get("channel_flow")
+    selected_channel = start_data.get("selected_channel")
+
+    manager.dialog_data.clear()
+
+    if channel_flow:
+        manager.dialog_data["channel_flow"] = channel_flow
+    if selected_channel:
+        manager.dialog_data["selected_channel"] = selected_channel
+
+    manager.dialog_data["needs_refresh"] = True
+
+
+async def on_dialog_close(result, manager: DialogManager):
+    from bot.utils.message_tracker import clear_message_ids
+
+    message_ids = manager.dialog_data.get("message_ids", [])
+    if message_ids:
+        bot = manager.middleware_data.get("bot")
+        chat_id = manager.middleware_data.get("event_chat")
+        if bot and chat_id:
+            from .utils import safe_delete_messages
+            await safe_delete_messages(bot, chat_id.id, message_ids)
+            manager.dialog_data["message_ids"] = []
+
+            try:
+                user_id = manager.event.from_user.id
+                clear_message_ids(user_id)
+            except Exception:
+                pass
+
+            try:
+                state = manager.middleware_data.get("state")
+                if state:
+                    await state.update_data(message_ids=[])
+            except Exception:
+                pass
+
+
 async def on_dialog_result(event, manager: DialogManager, result):
     if manager.current_state() == FlowMenu.posts_list:
         if manager.dialog_data.pop("needs_refresh", False):
@@ -265,5 +328,7 @@ def flow_dialog() -> Dialog:
             parse_mode=ParseMode.HTML,
             getter=paging_getter,
         ),
+        on_start=on_dialog_start,
+        on_close=on_dialog_close,
         on_process_result=on_dialog_result,
     )
