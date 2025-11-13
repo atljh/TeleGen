@@ -21,6 +21,8 @@ async def generate_flow(
     chat_id: int,
 ) -> list:
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    flow = None
+    flow_service = None
     try:
         flow_service = Container.flow_service()
         post_service = Container.post_service()
@@ -58,6 +60,12 @@ async def generate_flow(
 
     except Exception as e:
         logging.error(f"Помилка генерації: {e!s}", exc_info=True)
+        # Update next generation time even on error to prevent infinite loops
+        if flow and flow_service:
+            try:
+                await flow_service.update_next_generation_time(flow.id)
+            except Exception as update_error:
+                logging.error(f"Failed to update next generation time: {update_error}")
         # await send_telegram_notification(
         #     bot_token,
         #     chat_id,
@@ -89,6 +97,11 @@ async def _start_telegram_generations(
                 bot_token, chat_id, str(e), parse_mode="MarkdownV2"
             )
         return []
+    except Exception as e:
+        logging.error(f"Error generating posts for flow {flow.id}: {e}", exc_info=True)
+        # Update next generation time even on error to prevent infinite loops
+        await flow_service.update_next_generation_time(flow.id)
+        raise
 
     if not generated_posts:
         await flow_service.update_next_generation_time(flow.id)

@@ -38,6 +38,8 @@ async def _process_flows():
             )
         except Exception as e:
             logger.error(f"Failed to process flow {flow.id}: {e}")
+            # Update next generation time even on error to prevent infinite loops
+            await flow_service.update_next_generation_time(flow.id)
             continue
 
 
