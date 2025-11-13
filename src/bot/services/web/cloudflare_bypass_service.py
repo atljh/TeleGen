@@ -2,7 +2,6 @@ import asyncio
 import time
 
 import cloudscraper
-import undetected_chromedriver as uc
 
 
 class CloudflareBypass:
@@ -26,43 +25,13 @@ class CloudflareBypass:
             self.logger.error(f"CloudScraper error: {e!s}")
         return None
 
-    async def fetch_with_selenium(self, url: str) -> str | None:
-        options = uc.ChromeOptions()
-        options.add_argument("--headless=new")
-        options.add_argument("--disable-blink-features=AutomationControlled")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument("--disable-gpu")
-
-        driver = None
-        try:
-            driver = uc.Chrome(options=options, headless=True, use_subprocess=False)
-            driver.get(url)
-
-            await asyncio.sleep(5)
-
-            if "Checking your browser" in driver.page_source:
-                self.logger.info("Solving Cloudflare challenge...")
-                await asyncio.sleep(10)
-
-            if "Just a moment" not in driver.page_source:
-                return driver.page_source
-
-        except Exception as e:
-            self.logger.error(f"Selenium error: {e!s}")
-        finally:
-            if driver:
-                driver.quit()
-        return None
-
     async def _try_methods(self, url: str) -> str | None:
         content = await self.fetch_with_cloudscraper(url)
         if content:
             return content
 
-        self.logger.warning("CloudScraper failed, falling back to Selenium")
-        return await self.fetch_with_selenium(url)
+        self.logger.warning("CloudScraper failed, Selenium is disabled")
+        return None
 
     async def get_page_content(self, url: str) -> str | None:
         start_time = time.time()
