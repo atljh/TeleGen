@@ -51,6 +51,13 @@ class EnhancedUserbotService(BaseUserbotService):
 
             raw_posts = await super().get_last_posts(source, limit)
 
+            # Handle case when raw_posts is None (entity not found or error)
+            if raw_posts is None:
+                self.logger.warning(
+                    f"Source {source['link']}: failed to fetch posts (entity not found or error)"
+                )
+                return []
+
             processed_posts = await self.post_converter.convert_raw_posts_to_dto(
                 raw_posts, flow
             )

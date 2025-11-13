@@ -3,6 +3,7 @@ import logging
 
 from aiogram import Bot
 from asgiref.sync import sync_to_async
+from django.utils import timezone
 
 from admin_panel.models import Post
 from bot.database.exceptions import GenerationLimitExceeded
@@ -242,10 +243,19 @@ class PostGenerationService:
 
                     # Skip if post is older than existing posts
                     if post_dto.original_date and latest_date:
-                        if post_dto.original_date <= latest_date:
+                        # Make both datetimes timezone-aware for comparison
+                        post_date = post_dto.original_date
+                        if timezone.is_naive(post_date):
+                            post_date = timezone.make_aware(post_date)
+
+                        latest_date_aware = latest_date
+                        if timezone.is_naive(latest_date_aware):
+                            latest_date_aware = timezone.make_aware(latest_date_aware)
+
+                        if post_date <= latest_date_aware:
                             logging.info(
-                                f"Skipping old post {post_dto.source_id} from {post_dto.original_date} "
-                                f"(latest in DB: {latest_date})"
+                                f"Skipping old post {post_dto.source_id} from {post_date} "
+                                f"(latest in DB: {latest_date_aware})"
                             )
                             return None
 
