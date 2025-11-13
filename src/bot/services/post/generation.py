@@ -97,9 +97,14 @@ class PostGenerationService:
                 posts_by_source.append([])
             else:
                 # Sort each source's posts by date
-                source_posts = sorted(
-                    r, key=lambda x: x.original_date or x.created_at, reverse=True
-                )
+                def get_sort_date(post):
+                    date = post.original_date or post.created_at
+                    # Ensure the date is timezone-aware for comparison
+                    if date and timezone.is_naive(date):
+                        date = timezone.make_aware(date)
+                    return date
+
+                source_posts = sorted(r, key=get_sort_date, reverse=True)
                 posts_by_source.append(source_posts)
 
         # Distribute posts evenly across sources using round-robin
