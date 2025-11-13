@@ -15,14 +15,34 @@ class WebScraperService:
         self, cf_bypass: CloudflareBypass, logger: logging.Logger | None = None
     ) -> None:
         self.cf_bypass = cf_bypass
-        self.session = aiohttp.ClientSession()
+        self._session: aiohttp.ClientSession | None = None
         self.logger = logger or logging.getLogger(__name__)
+
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        """Lazy initialization of aiohttp session"""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
 
     async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *exc_info) -> None:
         await self.close()
+
+    def __del__(self):
+        """Cleanup when object is garbage collected"""
+        if self._session and not self._session.closed:
+            try:
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self.close())
+                else:
+                    loop.run_until_complete(self.close())
+            except Exception:
+                pass  # Ignore errors during cleanup
 
     async def scrape_page(self, url: str) -> WebPost | None:
         """
@@ -54,7 +74,8 @@ class WebScraperService:
             return None
 
     async def close(self) -> None:
-        await self.session.close()
+        if self._session and not self._session.closed:
+            await self._session.close()
 
     async def _fetch_html(self, url: str) -> str | None:
         try:

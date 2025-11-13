@@ -50,7 +50,6 @@ dependencies = [
     "ruff>=0.12.12",
     "flake8==7.0.0",
     "isort==5.13.2",
-    "undetected-chromedriver>=3.5.5",
     "setuptools>=80.9.0",
     "pre-commit>=4.3.0",
     "pydantic-settings>=2.10.1",
@@ -90,11 +89,6 @@ prod = [
     "sentry-sdk==1.40.0",
     "uvicorn[standard]==0.29.0",
     "uvloop==0.19.0",
-]
-
-scraping = [
-    "selenium-wire",
-    "undetected-chromedriver",
 ]
 
 docs = [

@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import Self
 
 import aiohttp
 
@@ -30,6 +31,24 @@ class PaymentService:
         self.monobank_redirect_url = monobank_redirect_url
         self.monobank_webhook_url = monobank_webhook_url
         self.cryptobot_api_url = cryptobot_api_url
+        self._session: aiohttp.ClientSession | None = None
+
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        """Lazy initialization of aiohttp session"""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *exc_info) -> None:
+        await self.close()
+
+    async def close(self) -> None:
+        if self._session and not self._session.closed:
+            await self._session.close()
 
     async def create_payment(
         self,
@@ -99,17 +118,16 @@ class PaymentService:
 
         self.logger.info(f"Creating Monobank invoice with reference: {reference}")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.monobank_api_url, json=payload, headers=headers
-            ) as resp:
-                data = await resp.json()
-                if "pageUrl" not in data:
-                    self.logger.error(f"Monobank API error: {data}")
-                    raise RuntimeError(f"Monobank error: {data}")
+        async with self.session.post(
+            self.monobank_api_url, json=payload, headers=headers
+        ) as resp:
+            data = await resp.json()
+            if "pageUrl" not in data:
+                self.logger.error(f"Monobank API error: {data}")
+                raise RuntimeError(f"Monobank error: {data}")
 
-                self.logger.info(f"Monobank invoice created: {data.get('invoiceId')}")
-                return data["pageUrl"]
+            self.logger.info(f"Monobank invoice created: {data.get('invoiceId')}")
+            return data["pageUrl"]
 
     async def _create_cryptobot_invoice(
         self, order_id: str, amount: float, description: str, currency: str
@@ -131,20 +149,19 @@ class PaymentService:
             "hidden_message": f"Order {order_id}",
         }
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.cryptobot_api_url, json=payload, headers=headers
-            ) as resp:
-                data = await resp.json()
-                if not data.get("ok"):
-                    self.logger.error(f"CryptoBot API error: {data}")
-                    raise RuntimeError(f"CryptoBot error: {data}")
+        async with self.session.post(
+            self.cryptobot_api_url, json=payload, headers=headers
+        ) as resp:
+            data = await resp.json()
+            if not data.get("ok"):
+                self.logger.error(f"CryptoBot API error: {data}")
+                raise RuntimeError(f"CryptoBot error: {data}")
 
-                result = data["result"]
-                self.logger.info(
-                    f"CryptoBot invoice created: {result.get('invoice_id')}, {amount:.2f} UAH → {amount_usdt:.2f} USDT"
-                )
-                return result["pay_url"]
+            result = data["result"]
+            self.logger.info(
+                f"CryptoBot invoice created: {result.get('invoice_id')}, {amount:.2f} UAH → {amount_usdt:.2f} USDT"
+            )
+            return result["pay_url"]
 
     async def get_payment_by_external_id(self, external_id: str) -> PaymentDTO:
         payment = await self.payment_repository.get_payment_by_external_id(external_id)

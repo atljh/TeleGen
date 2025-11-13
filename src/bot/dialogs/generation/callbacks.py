@@ -153,9 +153,11 @@ async def on_force_generate(
         await callback.answer("🔄 Запускаю генерацію...")
 
         bot = manager.middleware_data["bot"]
+        # Escape markdown special characters in flow name
+        flow_name = flow.name.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
         status_msg = await bot.send_message(
             chat_id=callback.message.chat.id,
-            text=f"⚡ Генерація для флоу *{flow.name}*...",
+            text=f"⚡ Генерація для флоу *{flow_name}*...",
             parse_mode="Markdown",
         )
 
@@ -187,7 +189,9 @@ async def on_force_generate(
         logging.error(f"Помилка запуску генерації: {e!s}")
         # Reset generation flag on error
         dialog_data["generation_in_progress"] = False
-        await callback.message.answer(f"❌ Помилка: {e!s}", parse_mode="Markdown")
+        # Escape markdown special characters to avoid parse errors
+        error_text = str(e).replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
+        await callback.message.answer(f"❌ Помилка: {error_text}", parse_mode="Markdown")
 
 
 async def show_generated_posts(
@@ -236,7 +240,10 @@ async def show_generated_posts(
             return
 
         logger.info(f"Deleting status message {status_msg_id}")
-        await bot.delete_message(chat_id, status_msg_id)
+        try:
+            await bot.delete_message(chat_id, status_msg_id)
+        except Exception as e:
+            logger.debug(f"Could not delete status message {status_msg_id}: {e}")
 
         from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -252,9 +259,11 @@ async def show_generated_posts(
         )
 
         logger.info(f"Sending success message for flow {flow.name} ({flow_id})")
+        # Escape markdown special characters in flow name
+        flow_name = flow.name.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
         await bot.send_message(
             chat_id=chat_id,
-            text=f"✅ Генерація для флоу *{flow.name}* завершена успішно!\n",
+            text=f"✅ Генерація для флоу *{flow_name}* завершена успішно!\n",
             parse_mode="Markdown",
             reply_markup=keyboard,
         )

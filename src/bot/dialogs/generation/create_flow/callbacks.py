@@ -321,9 +321,11 @@ async def start_generation_process(
         await callback.answer("🔄 Запускаю генерацію...")
 
         bot = manager.middleware_data["bot"]
+        # Escape markdown special characters in flow name
+        flow_name = flow.name.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
         status_msg = await bot.send_message(
             chat_id=callback.message.chat.id,
-            text=f"⚡ Генерація для флоу *{flow.name}*...",
+            text=f"⚡ Генерація для флоу *{flow_name}*...",
             parse_mode="Markdown",
         )
 
@@ -346,10 +348,13 @@ async def start_generation_process(
                 status_msg_id=status_msg.message_id,
                 bot=bot,
                 flow=flow,
+                dialog_data=manager.dialog_data,
             )
         )
         return task
 
     except Exception as e:
         logging.error(f"Помилка запуску генерації: {e!s}")
-        await callback.message.answer(f"❌ Помилка: {e!s}", parse_mode="Markdown")
+        # Escape markdown special characters to avoid parse errors
+        error_text = str(e).replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
+        await callback.message.answer(f"❌ Помилка: {error_text}", parse_mode="Markdown")

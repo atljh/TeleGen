@@ -566,12 +566,11 @@ class RssService:
 
     async def _find_feed_id_by_url(self, rss_url: str) -> str | None:
         try:
-            async with aiohttp.ClientSession() as session:
-                page = 1
-                while True:
-                    url = f"{self.base_url}/feeds?page={page}&limit=100"
+            page = 1
+            while True:
+                url = f"{self.base_url}/feeds?page={page}&limit=100"
 
-                    async with session.get(url, headers=self.headers) as response:
+                async with self.session.get(url, headers=self.headers) as response:
                         if response.status != 200:
                             self.logger.error(
                                 f"Failed to fetch feeds: {response.status}"
@@ -599,24 +598,23 @@ class RssService:
 
     async def _delete_feed(self, feed_id: str) -> bool:
         try:
-            async with aiohttp.ClientSession() as session:
-                url = f"{self.base_url}/feeds/{feed_id}"
+            url = f"{self.base_url}/feeds/{feed_id}"
 
-                async with session.delete(url, headers=self.headers) as response:
-                    if response.status == 200:
-                        self.logger.info(f"Successfully deleted RSS feed: {feed_id}")
-                        return True
-                    elif response.status == 404:
-                        self.logger.info(
-                            f"RSS feed not found (already deleted?): {feed_id}"
-                        )
-                        return True
-                    else:
-                        error_text = await response.text()
-                        self.logger.error(
-                            f"Failed to delete RSS feed {feed_id}: {response.status} - {error_text}"
-                        )
-                        return False
+            async with self.session.delete(url, headers=self.headers) as response:
+                if response.status == 200:
+                    self.logger.info(f"Successfully deleted RSS feed: {feed_id}")
+                    return True
+                elif response.status == 404:
+                    self.logger.info(
+                        f"RSS feed not found (already deleted?): {feed_id}"
+                    )
+                    return True
+                else:
+                    error_text = await response.text()
+                    self.logger.error(
+                        f"Failed to delete RSS feed {feed_id}: {response.status} - {error_text}"
+                    )
+                    return False
 
         except Exception as e:
             self.logger.error(f"Error deleting feed {feed_id}: {e!s}")
@@ -627,22 +625,21 @@ class RssService:
             return None
 
         try:
-            async with aiohttp.ClientSession() as session:
-                url = f"{self.base_url}/feeds"
-                payload = {"url": source_url, "format": "json"}
+            url = f"{self.base_url}/feeds"
+            payload = {"url": source_url, "format": "json"}
 
-                async with session.post(
-                    url, headers=self.headers, json=payload
-                ) as response:
-                    if response.status == 201:
-                        data = await response.json()
-                        return data.get("data")
-                    else:
-                        error_text = await response.text()
-                        self.logger.error(
-                            f"Failed to create RSS feed: {response.status} - {error_text}"
-                        )
-                        return None
+            async with self.session.post(
+                url, headers=self.headers, json=payload
+            ) as response:
+                if response.status == 201:
+                    data = await response.json()
+                    return data.get("data")
+                else:
+                    error_text = await response.text()
+                    self.logger.error(
+                        f"Failed to create RSS feed: {response.status} - {error_text}"
+                    )
+                    return None
 
         except Exception as e:
             self.logger.error(f"Error creating RSS feed: {e!s}")
@@ -656,26 +653,25 @@ class RssService:
             all_feeds = []
             page = 1
 
-            async with aiohttp.ClientSession() as session:
-                while True:
-                    url = f"{self.base_url}/feeds?page={page}&limit=100"
+            while True:
+                url = f"{self.base_url}/feeds?page={page}&limit=100"
 
-                    async with session.get(url, headers=self.headers) as response:
-                        if response.status != 200:
-                            break
+                async with self.session.get(url, headers=self.headers) as response:
+                    if response.status != 200:
+                        break
 
-                        data = await response.json()
-                        feeds = data.get("data", [])
+                    data = await response.json()
+                    feeds = data.get("data", [])
 
-                        if not feeds:
-                            break
+                    if not feeds:
+                        break
 
-                        all_feeds.extend(feeds)
+                    all_feeds.extend(feeds)
 
-                        if len(feeds) < 100:
-                            break
+                    if len(feeds) < 100:
+                        break
 
-                        page += 1
+                    page += 1
 
             return all_feeds
 
