@@ -134,9 +134,10 @@ async def _deactivate_expired_subscriptions():
 
             for old_sub in other_active:
                 old_sub.is_active = False
-                await sync_to_async(old_sub.save)(update_fields=['is_active'])
+                old_sub.end_date = now  # Prevent re-activation in next cycle
+                await sync_to_async(old_sub.save)(update_fields=['is_active', 'end_date'])
                 logger.info(
-                    f"Deactivated old subscription {old_sub.id} for user {subscription.user.id} "
+                    f"Deactivated and expired old subscription {old_sub.id} for user {subscription.user.id} "
                     f"to activate scheduled subscription {subscription.id}"
                 )
 
