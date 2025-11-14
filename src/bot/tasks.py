@@ -85,17 +85,45 @@ async def _deactivate_expired_subscriptions():
                 start_date__lte=now,
                 end_date__gt=now
             ).select_related('user', 'tariff_period__tariff')
-            .order_by('user', '-id')
+            .order_by('user')
         )
+
+        # Group subscriptions by user and select the best one for each user
+        users_subscriptions = {}
+        for subscription in scheduled_subscriptions:
+            user_id = subscription.user_id
+            if user_id not in users_subscriptions:
+                users_subscriptions[user_id] = []
+            users_subscriptions[user_id].append(subscription)
 
         users_processed = set()
         activated_count = 0
 
-        for subscription in scheduled_subscriptions:
-            if subscription.user_id in users_processed:
+        for user_id, user_subs in users_subscriptions.items():
+            if user_id in users_processed:
                 continue
 
-            users_processed.add(subscription.user_id)
+            # Select the best subscription: highest tariff level, then longest period, then newest
+            best_subscription = max(
+                user_subs,
+                key=lambda s: (
+                    s.tariff_period.tariff.level,  # Higher level is better
+                    s.tariff_period.months,         # Longer period is better
+                    s.id                             # Newer subscription is better
+                )
+            )
+
+            subscription = best_subscription
+            users_processed.add(user_id)
+
+            # Log the selection if there were multiple options
+            if len(user_subs) > 1:
+                logger.info(
+                    f"User {user_id} has {len(user_subs)} scheduled subscriptions. "
+                    f"Selected best: #{subscription.id} "
+                    f"({subscription.tariff_period.tariff.name} - {subscription.tariff_period.months}m, "
+                    f"level: {subscription.tariff_period.tariff.level})"
+                )
 
             other_active = await sync_to_async(list)(
                 Subscription.objects.filter(
@@ -121,6 +149,19 @@ async def _deactivate_expired_subscriptions():
                 f"started: {subscription.start_date})"
             )
             activated_count += 1
+
+            # Clean up other scheduled subscriptions that were not activated (downgrades/duplicates)
+            if len(user_subs) > 1:
+                other_scheduled = [s for s in user_subs if s.id != subscription.id]
+                for other_sub in other_scheduled:
+                    # Set end_date to now to prevent re-activation
+                    other_sub.end_date = now
+                    await sync_to_async(other_sub.save)(update_fields=['end_date'])
+                    logger.info(
+                        f"Expired unactivated scheduled subscription {other_sub.id} for user {user_id} "
+                        f"({other_sub.tariff_period.tariff.name} - {other_sub.tariff_period.months}m, "
+                        f"level: {other_sub.tariff_period.tariff.level}) - was not better than activated subscription"
+                    )
 
         if activated_count > 0:
             logger.info(f"✅ Activated {activated_count} scheduled subscriptions")
