@@ -110,6 +110,14 @@ class PaymentHandler:
 
     def activate_subscription(self, payment: Payment):
         try:
+            # Idempotency check: if payment already has a subscription, skip processing
+            if payment.subscription is not None:
+                logger.info(
+                    f"Payment {payment.id} already has subscription {payment.subscription.id}. "
+                    f"Skipping duplicate webhook processing."
+                )
+                return
+
             user = payment.user
 
             tariff_period = payment.tariff_period
@@ -119,9 +127,10 @@ class PaymentHandler:
                 return
 
             # Check if user is trying to downgrade to a lower-tier subscription
+            # Order by start_date descending to get the most recent active subscription
             active_subscription = Subscription.objects.filter(
                 user=user, is_active=True
-            ).select_related('tariff_period__tariff').first()
+            ).select_related('tariff_period__tariff').order_by('-start_date').first()
 
             if active_subscription:
                 current_tariff_period = active_subscription.tariff_period
@@ -130,8 +139,11 @@ class PaymentHandler:
                 if not tariff_period.is_upgrade_from(current_tariff_period):
                     logger.warning(
                         f"User {user.telegram_id} attempted to downgrade from "
-                        f"{current_tariff_period.tariff.name} {current_tariff_period.months}m "
-                        f"to {tariff_period.tariff.name} {tariff_period.months}m. Payment {payment.id} rejected."
+                        f"{current_tariff_period.tariff.name} (code: '{current_tariff_period.tariff.code}', "
+                        f"level: {current_tariff_period.tariff.level}) {current_tariff_period.months}m "
+                        f"to {tariff_period.tariff.name} (code: '{tariff_period.tariff.code}', "
+                        f"level: {tariff_period.tariff.level}) {tariff_period.months}m. "
+                        f"Payment {payment.id} rejected."
                     )
                     return
 
@@ -252,9 +264,10 @@ class PaymentHandler:
             )
 
             # Check if user is trying to downgrade to a lower-tier subscription
+            # Order by start_date descending to get the most recent active subscription
             active_subscription = Subscription.objects.filter(
                 user=user, is_active=True
-            ).select_related('tariff_period__tariff').first()
+            ).select_related('tariff_period__tariff').order_by('-start_date').first()
 
             if active_subscription:
                 current_tariff_period = active_subscription.tariff_period
@@ -263,8 +276,11 @@ class PaymentHandler:
                 if not tariff_period.is_upgrade_from(current_tariff_period):
                     logger.warning(
                         f"User {user.telegram_id} attempted to use promo code {promo_code.code} to downgrade from "
-                        f"{current_tariff_period.tariff.name} {current_tariff_period.months}m "
-                        f"to {tariff_period.tariff.name} {tariff_period.months}m. Promo code rejected."
+                        f"{current_tariff_period.tariff.name} (code: '{current_tariff_period.tariff.code}', "
+                        f"level: {current_tariff_period.tariff.level}) {current_tariff_period.months}m "
+                        f"to {tariff_period.tariff.name} (code: '{tariff_period.tariff.code}', "
+                        f"level: {tariff_period.tariff.level}) {tariff_period.months}m. "
+                        f"Promo code rejected."
                     )
                     return None
 

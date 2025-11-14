@@ -459,7 +459,21 @@ class Tariff(models.Model):
             self.BASIC: 1,
             self.PRO: 2,
         }
-        return levels.get(self.code, 0)
+        # Normalize code: strip whitespace and convert to lowercase
+        normalized_code = self.code.strip().lower() if self.code else ""
+
+        level = levels.get(normalized_code, None)
+        if level is None:
+            # Log warning for unknown tariff codes
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"Unknown tariff code '{self.code}' (normalized: '{normalized_code}'). "
+                f"Returning default level 0. Expected codes: {list(levels.keys())}"
+            )
+            return 0
+
+        return level
 
     def is_higher_than(self, other_tariff) -> bool:
         """Check if this tariff is higher than another tariff"""
