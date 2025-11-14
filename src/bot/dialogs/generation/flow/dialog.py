@@ -51,9 +51,10 @@ times = [f"{hour:02d}:{minute:02d}" for hour in range(8, 23) for minute in (0, 3
 
 
 async def on_dialog_start(data, manager: DialogManager):
+    import logging
+
     from bot.utils.message_tracker import save_message_ids
 
-    import logging
     logger = logging.getLogger(__name__)
     logger.info("🔄 FlowMenu on_dialog_start called")
 
@@ -61,7 +62,9 @@ async def on_dialog_start(data, manager: DialogManager):
     try:
         if manager.dialog_data:
             message_ids = manager.dialog_data.get("message_ids", [])
-            logger.info(f"Found {len(message_ids)} message_ids in dialog_data: {message_ids}")
+            logger.info(
+                f"Found {len(message_ids)} message_ids in dialog_data: {message_ids}"
+            )
             if message_ids:
                 user_id = manager.event.from_user.id
                 logger.info(f"💾 Saving to global tracker for user {user_id}")
@@ -96,6 +99,7 @@ async def on_dialog_close(result, manager: DialogManager):
         chat_id = manager.middleware_data.get("event_chat")
         if bot and chat_id:
             from .utils import safe_delete_messages
+
             await safe_delete_messages(bot, chat_id.id, message_ids)
             manager.dialog_data["message_ids"] = []
 
