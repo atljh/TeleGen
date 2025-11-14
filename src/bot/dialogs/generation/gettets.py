@@ -17,10 +17,10 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
     start_data = dialog_manager.start_data or {}
     dialog_data = dialog_manager.dialog_data or {}
 
-    selected_channel = start_data.get("selected_channel") or dialog_data.get(
+    selected_channel = dialog_data.get("selected_channel") or start_data.get(
         "selected_channel"
     )
-    channel_flow = start_data.get("channel_flow", False) or dialog_data.get(
+    channel_flow = dialog_data.get("channel_flow", False) or start_data.get(
         "channel_flow", False
     )
 
@@ -42,22 +42,20 @@ async def selected_channel_getter(dialog_manager: DialogManager, **kwargs):
 
     has_flow = bool(channel_flow)
 
-    # Count posts by source type if flow exists
     telegram_posts = 0
     web_posts = 0
     total_posts = 0
 
     if has_flow and channel_flow:
-        from admin_panel.models import Post
         from asgiref.sync import sync_to_async
 
-        # Get all draft posts for this flow
+        from admin_panel.models import Post
+
         posts = await sync_to_async(list)(
             Post.objects.filter(flow_id=channel_flow.id, status=Post.DRAFT)
         )
         total_posts = len(posts)
 
-        # Count by source type
         for post in posts:
             if post.source_url and "t.me" in post.source_url:
                 telegram_posts += 1
