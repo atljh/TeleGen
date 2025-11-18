@@ -138,7 +138,7 @@ class PaymentService:
             "amount": str(amount),
             "currency_type": "fiat",
             "fiat": "UAH",
-            "accepted_assets": "USDT,TON,BTC,DOGE,LTC,ETH,BNB,TRX,USDC,JET,SEND",
+            "accepted_assets": "USDT,TON,SOL,TRX,GRAM,BTC,ETH,DOGE,LTC,BNB,USDC",
             "description": description,
             "hidden_message": f"Order {order_id}",
         }
