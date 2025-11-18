@@ -211,6 +211,7 @@ async def monobank_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, 
     }
 
 
+
 async def cryptobot_getter(dialog_manager: DialogManager, **kwargs) -> dict[str, Any]:
     payment_service = Container.payment_service()
 
