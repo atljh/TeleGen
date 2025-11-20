@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import time
+import json
 
 from aiogram import Bot
 
@@ -150,6 +151,10 @@ if __name__ == "__main__":
         # Log post IDs for debugging
         post_ids = [p.id for p in posts if p and p.id]
         logging.info(f"generator_worker: Created posts with IDs: {post_ids}")
+        
+        # Output JSON for the main process to read
+        print(f"RESULT_JSON:{json.dumps({'status': 'success', 'post_ids': post_ids})}")
+        
         logging.info(f"generator_worker: Exiting with code 0 (success)")
 
     asyncio.run(main())

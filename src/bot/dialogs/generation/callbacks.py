@@ -204,34 +204,57 @@ async def show_generated_posts(
     dialog_data: dict,
 ):
     try:
-        _, stderr = await process.communicate()
+        stdout, stderr = await process.communicate()
 
         logger.info(f"Generation process finished with returncode: {process.returncode}")
 
-        # Проверяем код возврата процесса
         if process.returncode != 0:
-            # Генерация провалилась (например, нет подписки или лимит исчерпан)
-            # Уведомление уже отправлено из generator_worker, просто удаляем статус
             logger.warning(f"Generation failed with returncode {process.returncode}, deleting status message")
             try:
                 await bot.delete_message(chat_id, status_msg_id)
-            except Exception:
-                pass  # Сообщение уже могло быть удалено
+            except Exception as e:
+                logger.error(f"Failed to delete status message: {e!s}")
+                pass
             return
 
-        # Small delay to ensure DB transaction is committed
+        import json
+        post_ids = []
+        stdout_str = stdout.decode() if stdout else ""
+        
+        for line in stdout_str.splitlines():
+            if line.startswith("RESULT_JSON:"):
+                try:
+                    json_str = line.replace("RESULT_JSON:", "", 1)
+                    data = json.loads(json_str)
+                    if data.get("status") == "success":
+                        post_ids = data.get("post_ids", [])
+                except Exception as e:
+                    logger.error(f"Failed to parse result JSON: {e}")
+
         await asyncio.sleep(0.5)
 
         post_service = Container.post_service()
-        logger.info(f"Querying draft posts for flow {flow_id} ({flow.name})")
-        posts = await post_service.get_all_posts_in_flow(
-            flow_id, status=PostStatus.DRAFT
-        )
+        
+        if post_ids:
+            logger.info(f"Fetching specific generated posts: {post_ids}")
+            posts = []
+            for pid in post_ids:
+                try:
+                    post = await post_service.get_post(pid)
+                    posts.append(post)
+                except Exception as e:
+                    logger.error(f"Failed to fetch post {pid}: {e}")
+        else:
+            logger.warning(f"No post IDs found in worker output, falling back to querying all drafts")
+            logger.info(f"Querying draft posts for flow {flow_id} ({flow.name})")
+            posts = await post_service.get_all_posts_in_flow(
+                flow_id, status=PostStatus.DRAFT
+            )
 
-        logger.info(f"Found {len(posts) if posts else 0} draft posts for flow {flow_id} ({flow.name})")
+        logger.info(f"Found {len(posts) if posts else 0} posts for flow {flow_id} ({flow.name})")
 
         if not posts:
-            logger.warning(f"No draft posts found for flow {flow_id}, showing info message")
+            logger.warning(f"No posts found for flow {flow_id}, showing info message")
             await bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=status_msg_id,
